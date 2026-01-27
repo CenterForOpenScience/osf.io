@@ -1,8 +1,14 @@
 import pytest
+
 from django.contrib.contenttypes.models import ContentType
 
 from api.base.settings.defaults import API_BASE
-from osf.models import NotificationType, OSFUser, AbstractNode
+from osf.models import (
+    AbstractNode,
+    NotificationSubscription,
+    NotificationType,
+    OSFUser
+)
 from osf_tests.factories import (
     AuthUserFactory,
     NodeFactory,
@@ -17,12 +23,28 @@ class TestSubscriptionDetail:
         return AuthUserFactory()
 
     @pytest.fixture()
+    def user_missing_subscriptions(self):
+        return AuthUserFactory()
+
+    @pytest.fixture()
     def user_no_permission(self):
         return AuthUserFactory()
 
     @pytest.fixture()
     def node(self, user):
         return NodeFactory(creator=user)
+
+    @pytest.fixture()
+    def node_missing_subscriptions(self, user_missing_subscriptions):
+        node = NodeFactory(creator=user_missing_subscriptions)
+        subscription = NotificationSubscription.objects.get(
+            user=user_missing_subscriptions,
+            notification_type__name=NotificationType.Type.NODE_FILE_UPDATED.value,
+            object_id=node.id,
+            content_type=ContentType.objects.get_for_model(AbstractNode)
+        )
+        subscription.delete()
+        return node
 
     @pytest.fixture()
     def notification_user_global_file_updated(self, user):
@@ -66,6 +88,14 @@ class TestSubscriptionDetail:
         return f'/{API_BASE}subscriptions/{user._id}_global_reviews/'
 
     @pytest.fixture()
+    def url_user_global_file_updated_missing(self, user_missing_subscriptions):
+        return f'/{API_BASE}subscriptions/{user_missing_subscriptions._id}_global_file_updated/'
+
+    @pytest.fixture()
+    def url_user_global_reviews_missing(self, user_missing_subscriptions):
+        return f'/{API_BASE}subscriptions/{user_missing_subscriptions._id}_global_reviews/'
+
+    @pytest.fixture()
     def url_node_file_updated(self, node):
         return f'/{API_BASE}subscriptions/{node._id}_files_updated/'
 
@@ -76,6 +106,10 @@ class TestSubscriptionDetail:
     @pytest.fixture()
     def url_node_file_updated_without_permission(self, node_without_permission):
         return f'/{API_BASE}subscriptions/{node_without_permission._id}_files_updated/'
+
+    @pytest.fixture()
+    def url_node_file_updated_missing(self, node_missing_subscriptions):
+        return f'/{API_BASE}subscriptions/{node_missing_subscriptions._id}_files_updated/'
 
     @pytest.fixture()
     def url_invalid(self):
@@ -152,6 +186,40 @@ class TestSubscriptionDetail:
         assert res.status_code == 200
         assert notification_id == f'{user._id}_global_reviews'
 
+    def test_user_global_file_updated_subscription_detail_missing_and_created(
+            self,
+            app,
+            user_missing_subscriptions,
+            url_user_global_file_updated_missing,
+    ):
+        assert not NotificationSubscription.objects.filter(
+            user=user_missing_subscriptions,
+            notification_type__name=NotificationType.Type.USER_FILE_UPDATED.value,
+            object_id=user_missing_subscriptions.id,
+            content_type=ContentType.objects.get_for_model(OSFUser)
+        ).exists()
+        res = app.get(url_user_global_file_updated_missing, auth=user_missing_subscriptions.auth)
+        notification_id = res.json['data']['id']
+        assert res.status_code == 200
+        assert notification_id == f'{user_missing_subscriptions._id}_global_file_updated'
+
+    def test_user_global_reviews_subscription_detail_missing_and_created(
+            self,
+            app,
+            user_missing_subscriptions,
+            url_user_global_reviews_missing,
+    ):
+        assert not NotificationSubscription.objects.filter(
+            user=user_missing_subscriptions,
+            notification_type__name=NotificationType.Type.REVIEWS_SUBMISSION_STATUS.value,
+            object_id=user_missing_subscriptions.id,
+            content_type=ContentType.objects.get_for_model(OSFUser)
+        ).exists()
+        res = app.get(url_user_global_reviews_missing, auth=user_missing_subscriptions.auth)
+        notification_id = res.json['data']['id']
+        assert res.status_code == 200
+        assert notification_id == f'{user_missing_subscriptions._id}_global_reviews'
+
     def test_node_file_updated_subscription_detail_success(
             self,
             app,
@@ -164,6 +232,24 @@ class TestSubscriptionDetail:
         notification_id = res.json['data']['id']
         assert res.status_code == 200
         assert notification_id == f'{node._id}_files_updated'
+
+    def test_node_file_updated_subscription_detail_missing_and_created(
+            self,
+            app,
+            user_missing_subscriptions,
+            node_missing_subscriptions,
+            url_node_file_updated_missing,
+    ):
+        assert not NotificationSubscription.objects.filter(
+            user=user_missing_subscriptions,
+            notification_type__name=NotificationType.Type.NODE_FILE_UPDATED.value,
+            object_id=node_missing_subscriptions.id,
+            content_type=ContentType.objects.get_for_model(AbstractNode)
+        ).exists()
+        res = app.get(url_node_file_updated_missing, auth=user_missing_subscriptions.auth)
+        notification_id = res.json['data']['id']
+        assert res.status_code == 200
+        assert notification_id == f'{node_missing_subscriptions._id}_files_updated'
 
     def test_node_file_updated_subscription_detail_not_found(
             self,
