@@ -238,11 +238,13 @@ class SubscriptionDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView):
             sentry.log_message(f'Missing default subscription has been created: [user={user_guid}], node={node_guid} type={notification_type}, legacy_id={subscription_id}]')
 
         if missing_subscription_created:
-            subscription = missing_subscription_created
+            # Note: must use `annotated_obj_qs` to insert `legacy_id` so that `SubscriptionSerializer` can build data
+            # properly; in addition, there should be only one result
+            subscription = annotated_obj_qs.get(legacy_id=subscription_id)
         else:
-            subscription = existing_subscriptions.filter(user=self.request.user).order_by('id').last()
-            if not subscription:
-                raise PermissionDenied
+            subscription = existing_subscriptions.order_by('id').last()
+        if not subscription:
+            raise PermissionDenied
 
         self.check_object_permissions(self.request, subscription)
         return subscription
