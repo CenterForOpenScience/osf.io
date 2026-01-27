@@ -1,4 +1,4 @@
-from django.db.models import Value, When, Case, OuterRef, Subquery
+from django.db.models import Value, When, Case, OuterRef, Subquery, F
 from django.db.models.fields import CharField, IntegerField
 from django.db.models.functions import Concat, Cast
 from django.contrib.contenttypes.models import ContentType
@@ -46,6 +46,10 @@ class SubscriptionList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin):
     def get_queryset(self):
         user_guid = self.request.user._id
 
+        provider_ct = ContentType.objects.get(app_label='osf', model='abstractprovider')
+        node_ct = ContentType.objects.get(app_label='osf', model='abstractnode')
+        user_ct = ContentType.objects.get(app_label='osf', model='osfuser')
+
         node_subquery = AbstractNode.objects.filter(
             id=Cast(OuterRef('object_id'), IntegerField()),
         ).values('guids___id')[:1]
@@ -60,11 +64,13 @@ class SubscriptionList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin):
             NotificationType.Type.ADDON_FILE_REMOVED.value,
             NotificationType.Type.FOLDER_CREATED.value,
         ]
-        _global_reviews = [
+        _global_reviews_provider = [
             NotificationType.Type.PROVIDER_NEW_PENDING_SUBMISSIONS.value,
             NotificationType.Type.PROVIDER_REVIEWS_SUBMISSION_CONFIRMATION.value,
             NotificationType.Type.PROVIDER_REVIEWS_RESUBMISSION_CONFIRMATION.value,
             NotificationType.Type.PROVIDER_NEW_PENDING_WITHDRAW_REQUESTS.value,
+        ]
+        _global_reviews_user = [
             NotificationType.Type.REVIEWS_SUBMISSION_STATUS.value,
         ]
         _node_file_updated = [
@@ -80,27 +86,31 @@ class SubscriptionList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin):
         ]
 
         qs = NotificationSubscription.objects.filter(
-            notification_type__name__in=[
-                NotificationType.Type.USER_FILE_UPDATED.value,
-                NotificationType.Type.NODE_FILE_UPDATED.value,
-                NotificationType.Type.PROVIDER_NEW_PENDING_SUBMISSIONS.value,
-            ] + _global_reviews + _global_file_updated + _node_file_updated,
+            notification_type__name__in=_global_reviews_provider + _global_reviews_user + _global_file_updated + _node_file_updated,
             user=self.request.user,
         ).annotate(
             event_name=Case(
                 When(
                     notification_type__name__in=_node_file_updated,
+                    content_type=node_ct,
                     then=Value('files_updated'),
                 ),
                 When(
                     notification_type__name__in=_global_file_updated,
+                    content_type=user_ct,
                     then=Value('global_file_updated'),
                 ),
                 When(
-                    notification_type__name__in=_global_reviews,
+                    notification_type__name__in=_global_reviews_provider,
+                    content_type=provider_ct,
                     then=Value('global_reviews'),
                 ),
-                default=Value('notification_type__name'),
+                When(
+                    notification_type__name__in=_global_reviews_user,
+                    content_type=user_ct,
+                    then=Value('global_reviews'),
+                ),
+                default=F('notification_type__name'),
             ),
             legacy_id=Case(
                 When(
@@ -112,10 +122,16 @@ class SubscriptionList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin):
                     then=Value(f'{user_guid}_global_file_updated'),
                 ),
                 When(
-                    notification_type__name__in=_global_reviews,
+                    notification_type__name__in=_global_reviews_provider,
+                    content_type=provider_ct,
                     then=Value(f'{user_guid}_global_reviews'),
                 ),
-                default=Value('notification_type__name'),
+                When(
+                    notification_type__name__in=_global_reviews_user,
+                    content_type=user_ct,
+                    then=Value(f'{user_guid}_global_reviews'),
+                ),
+                default=F('notification_type__name'),
             ),
         ).distinct('legacy_id')
 
