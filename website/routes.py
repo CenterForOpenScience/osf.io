@@ -1719,15 +1719,16 @@ def make_url_map(app):
             json_renderer,
         ),
 
-        Rule(
-            [
-                '/project/<pid>/subscriptions/',
-                '/project/<pid>/node/<nid>/subscriptions/'
-            ],
-            'get',
-            notification_views.get_node_subscriptions,
-            json_renderer,
-        ),
+        #  Legacy v1 API for notifications no longer used by Angular/Post-NR
+        # Rule(
+        #     [
+        #         '/project/<pid>/subscriptions/',
+        #         '/project/<pid>/node/<nid>/subscriptions/'
+        #     ],
+        #     'get',
+        #     notification_views.get_node_subscriptions,
+        #     json_renderer,
+        # ),
 
         Rule(
             [
@@ -1739,12 +1740,13 @@ def make_url_map(app):
             json_renderer,
         ),
 
-        Rule(
-            '/subscriptions/',
-            'post',
-            notification_views.configure_subscription,
-            json_renderer,
-        ),
+        #  Legacy v1 API for notifications no longer used by Angular/Post-NR
+        # Rule(
+        #     '/subscriptions/',
+        #     'post',
+        #     notification_views.configure_subscription,
+        #     json_renderer,
+        # ),
 
         Rule(
             [
