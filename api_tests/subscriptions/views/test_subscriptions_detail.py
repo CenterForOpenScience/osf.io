@@ -42,7 +42,7 @@ class TestSubscriptionDetail:
     @pytest.fixture()
     def notification_user_global_reviews(self, user):
         return NotificationSubscriptionFactory(
-            notification_type=NotificationType.Type.PROVIDER_NEW_PENDING_SUBMISSIONS.instance,
+            notification_type=NotificationType.Type.REVIEWS_SUBMISSION_STATUS.instance,
             object_id=user.id,
             content_type_id=ContentType.objects.get_for_model(OSFUser).id,
             user=user,
@@ -107,31 +107,54 @@ class TestSubscriptionDetail:
             }
         }
 
-    def test_subscription_detail_invalid_user(self, app, user, user_no_auth, notification, url, payload):
-        res = app.get(
+    def test_user_global_subscription_detail_permission_denied(
+            self,
+            app,
+            user,
+            user_no_auth,
+            notification,
+            notification_user_global_reviews,
             url,
-            auth=user_no_auth.auth,
-            expect_errors=True
-        )
+            url_user_global_reviews
+    ):
+        res = app.get(url, auth=user_no_auth.auth, expect_errors=True)
+        assert res.status_code == 403
+        res = app.get(url_user_global_reviews, auth=user_no_auth.auth, expect_errors=True)
         assert res.status_code == 403
 
-    def test_subscription_detail_no_user(
-            self, app, user, user_no_auth, notification, url, url_invalid, payload, payload_invalid
-    ):
-        res = app.get(
+    def test_user_global_subscription_detail_forbidden(
+            self,
+            app,
+            user,
+            user_no_auth,
+            notification,
+            notification_user_global_reviews,
             url,
-            expect_errors=True
-        )
+            url_user_global_reviews
+    ):
+        res = app.get(url, expect_errors=True)
+        assert res.status_code == 401
+        res = app.get(url_user_global_reviews, expect_errors=True)
         assert res.status_code == 401
 
-    def test_subscription_detail_valid_user(
-            self, app, user, user_no_auth, notification, url, url_invalid, payload, payload_invalid
+    def test_user_global_subscription_detail_success(
+            self,
+            app,
+            user,
+            user_no_auth,
+            notification,
+            notification_user_global_reviews,
+            url,
+            url_user_global_reviews
     ):
-
         res = app.get(url, auth=user.auth)
         notification_id = res.json['data']['id']
         assert res.status_code == 200
         assert notification_id == f'{user._id}_global_file_updated'
+        res = app.get(url_user_global_reviews, auth=user.auth)
+        notification_id = res.json['data']['id']
+        assert res.status_code == 200
+        assert notification_id == f'{user._id}_global_reviews'
 
     def test_node_file_updated_subscription_detail_success(self, app, user, node, notification_node_file_updated, url_node_file_updated):
         res = app.get(url_node_file_updated, auth=user.auth)

@@ -167,7 +167,6 @@ class SubscriptionDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView):
         node_file_updated_nt = NotificationType.Type.NODE_FILE_UPDATED.instance
         user_ct = ContentType.objects.get_for_model(OSFUser)
         node_ct = ContentType.objects.get_for_model(AbstractNode)
-        provider_ct = ContentType.objects.get_for_model(AbstractProvider)
 
         node_subquery = AbstractNode.objects.filter(
             id=Cast(OuterRef('object_id'), IntegerField()),
@@ -187,8 +186,8 @@ class SubscriptionDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView):
                     then=Value(f'{user_guid}_global_file_updated'),
                 ),
                 When(
-                    notification_type__name=NotificationType.Type.PROVIDER_NEW_PENDING_SUBMISSIONS.value,
-                    content_type=provider_ct,
+                    notification_type__name=NotificationType.Type.REVIEWS_SUBMISSION_STATUS.value,
+                    content_type=user_ct,
                     then=Value(f'{user_guid}_global_reviews'),
                 ),
                 default=Value(f'{user_guid}_global'),
