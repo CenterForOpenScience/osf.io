@@ -56,9 +56,13 @@ class Notification(models.Model):
         if save:
             self.mark_sent()
 
-    def mark_sent(self) -> None:
+    def mark_sent(self, fake_sent=False) -> None:
+        update_fields = ['sent']
         self.sent = timezone.now()
-        self.save(update_fields=['sent'])
+        if fake_sent:
+            update_fields.append('fake_sent')
+            self.fake_sent = True
+        self.save(update_fields=update_fields)
 
     def render(self) -> str:
         """Render the notification message using the event context."""
