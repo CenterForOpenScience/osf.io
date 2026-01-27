@@ -17,16 +17,12 @@ class TestSubscriptionDetail:
         return AuthUserFactory()
 
     @pytest.fixture()
-    def node(self, user):
-        return NodeFactory(creator=user)
-
-    @pytest.fixture()
-    def node_without_permission(self):
-        return NodeFactory()
-
-    @pytest.fixture()
     def user_no_auth(self):
         return AuthUserFactory()
+
+    @pytest.fixture()
+    def node(self, user):
+        return NodeFactory(creator=user)
 
     @pytest.fixture()
     def notification(self, user):
@@ -156,19 +152,52 @@ class TestSubscriptionDetail:
         assert res.status_code == 200
         assert notification_id == f'{user._id}_global_reviews'
 
-    def test_node_file_updated_subscription_detail_success(self, app, user, node, notification_node_file_updated, url_node_file_updated):
+    def test_node_file_updated_subscription_detail_success(
+            self,
+            app,
+            user,
+            node,
+            notification_node_file_updated,
+            url_node_file_updated
+    ):
         res = app.get(url_node_file_updated, auth=user.auth)
         notification_id = res.json['data']['id']
         assert res.status_code == 200
         assert notification_id == f'{node._id}_files_updated'
 
-    def test_node_file_updated_subscription_detail_not_found(self, app, user, node, notification_node_file_updated, url_node_file_updated_not_found):
+    def test_node_file_updated_subscription_detail_not_found(
+            self,
+            app,
+            user,
+            node,
+            notification_node_file_updated,
+            url_node_file_updated_not_found
+    ):
         res = app.get(url_node_file_updated_not_found, auth=user.auth, expect_errors=True)
         assert res.status_code == 404
 
-    def test_node_file_updated_subscription_detail_permission_denied(self, app, user, node, notification_node_file_updated, url_node_file_updated_without_permission):
-        res = app.get(url_node_file_updated_without_permission, auth=user.auth, expect_errors=True)
+    def test_node_file_updated_subscription_detail_permission_denied(
+            self,
+            app,
+            user,
+            user_no_auth,
+            node,
+            notification_node_file_updated,
+            url_node_file_updated
+    ):
+        res = app.get(url_node_file_updated, auth=user_no_auth.auth, expect_errors=True)
         assert res.status_code == 403
+
+    def test_node_file_updated_subscription_detail_forbidden(
+            self,
+            app,
+            user,
+            node,
+            notification_node_file_updated,
+            url_node_file_updated
+    ):
+        res = app.get(url_node_file_updated, expect_errors=True)
+        assert res.status_code == 401
 
     def test_subscription_detail_invalid_notification_id_no_user(
         self, app, user, user_no_auth, notification, url, url_invalid, payload, payload_invalid
