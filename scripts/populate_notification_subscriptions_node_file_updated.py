@@ -36,6 +36,7 @@ def populate_nodes_notification_subscriptions():
 
     nodes_qs = (
         Node.objects
+        .filter(is_deleted=False)
         .annotate(
             contributors_count=Count('_contributors', distinct=True),
             notifications_count=Coalesce(

@@ -4,6 +4,8 @@ django.setup()
 from website.app import init_app
 init_app(routes=False)
 
+from django.utils import timezone
+from datetime import timedelta
 from datetime import datetime
 from framework.celery_tasks import app as celery_app
 from django.contrib.contenttypes.models import ContentType
@@ -11,18 +13,22 @@ from osf.models import OSFUser, NotificationSubscription, NotificationType
 
 
 @celery_app.task(name='scripts.populate_reviews_notification_subscriptions')
-def populate_reviews_notification_subscriptions():
+def populate_reviews_notification_subscriptions(per_last_years: int =None, batch_size=1000):
     print('---Starting REVIEWS_SUBMISSION_STATUS subscriptions population script----')
     global_start = datetime.now()
 
-    batch_size = 1000
     review_nt = NotificationType.Type.REVIEWS_SUBMISSION_STATUS
 
     user_ct = ContentType.objects.get_for_model(OSFUser)
-
-    user_qs = OSFUser.objects.exclude(
-        subscriptions__notification_type__name=NotificationType.Type.REVIEWS_SUBMISSION_STATUS.instance
-    ).distinct('id')
+    if per_last_years:
+        one_year_ago = timezone.now() - timedelta(days=365 * per_last_years)
+        user_qs = OSFUser.objects.filter(last_login__gte=one_year_ago).exclude(
+            subscriptions__notification_type__name=NotificationType.Type.REVIEWS_SUBMISSION_STATUS.instance
+        ).distinct('id')
+    else:
+        user_qs = OSFUser.objects.exclude(
+            subscriptions__notification_type__name=NotificationType.Type.REVIEWS_SUBMISSION_STATUS.instance
+        ).distinct('id')
 
     items_to_create = []
     total_created = 0
