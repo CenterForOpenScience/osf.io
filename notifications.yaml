@@ -462,13 +462,6 @@ notification_types:
     template: 'website/templates/file_updated.html.mako'
     tests: ['tests/test_events.py']
 
-  - name: node_file_updated
-    subject: 'File Updated'
-    __docs__: ...
-    object_content_type_model_name: abstractnode
-    template: 'website/templates/file_updated.html.mako'
-    tests: ['tests/test_events.py']
-
   - name: node_institutional_access_request
     subject: 'Institutional Access Request'
     __docs__: ...

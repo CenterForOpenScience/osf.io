@@ -309,7 +309,7 @@ class TestFileMoved(OsfTestCase):
         self.file_sub = factories.NotificationSubscriptionFactory(
             object_id=self.project.id,
             content_type=ContentType.objects.get_for_model(self.project),
-            notification_type=NotificationType.objects.get(name=NotificationType.Type.NODE_FILES_UPDATED)
+            notification_type=NotificationType.objects.get(name=NotificationType.Type.NODE_FILE_UPDATED)
         )
         self.file_sub.save()
 
@@ -407,7 +407,7 @@ class TestFileCopied(OsfTestCase):
         self.file_sub = factories.NotificationSubscriptionFactory(
             object_id=self.project.id,
             content_type=ContentType.objects.get_for_model(self.project),
-            notification_type=NotificationType.objects.get(name=NotificationType.Type.NODE_FILES_UPDATED)
+            notification_type=NotificationType.objects.get(name=NotificationType.Type.NODE_FILE_UPDATED)
         )
         self.file_sub.save()
 
