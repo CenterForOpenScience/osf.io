@@ -376,7 +376,8 @@ class TestGVSessionOptimization:
             mock_get_addon_from_gv.assert_called_once_with(
                 gv_pk='github',
                 requesting_user_id=user._id,
-                auth=auth
+                auth=auth,
+                cached=True
             )
             assert result == mock_addon
 
@@ -402,7 +403,8 @@ class TestGVSessionOptimization:
             mock_get_addon_from_gv.assert_called_once_with(
                 gv_pk='github',
                 requesting_user_id=request_user_id,
-                auth=auth
+                auth=auth,
+                cached=True
             )
             assert result == mock_addon
 
@@ -425,7 +427,8 @@ class TestGVSessionOptimization:
             mock_get_addon_from_gv.assert_called_once_with(
                 gv_pk='github',
                 requesting_user_id=None,
-                auth=None
+                auth=None,
+                cached=True
             )
             assert result == mock_addon
 
@@ -464,7 +467,8 @@ class TestGVSessionOptimization:
             mock_get_addon_from_gv.assert_called_once_with(
                 gv_pk='github',
                 requesting_user_id=request_user_id,
-                auth=auth
+                auth=auth,
+                cached=True
             )
             assert result == mock_addon
 
