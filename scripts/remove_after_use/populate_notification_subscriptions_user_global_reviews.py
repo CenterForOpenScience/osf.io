@@ -5,24 +5,23 @@ from website.app import init_app
 init_app(routes=False)
 
 from django.utils import timezone
-from datetime import timedelta
+from dateutil.relativedelta import relativedelta
 from datetime import datetime
 from framework.celery_tasks import app as celery_app
 from django.contrib.contenttypes.models import ContentType
 from osf.models import OSFUser, NotificationSubscription, NotificationType
 
 
-@celery_app.task(name='scripts.populate_reviews_notification_subscriptions')
-def populate_reviews_notification_subscriptions(per_last_years: int =None, batch_size=1000):
+@celery_app.task(name='scripts.remove_after_use.populate_notification_subscriptions_user_global_reviews')
+def populate_notification_subscriptions_user_global_reviews(per_last_years: int | None = None, batch_size: int = 1000):
     print('---Starting REVIEWS_SUBMISSION_STATUS subscriptions population script----')
     global_start = datetime.now()
 
     review_nt = NotificationType.Type.REVIEWS_SUBMISSION_STATUS
-
     user_ct = ContentType.objects.get_for_model(OSFUser)
     if per_last_years:
-        one_year_ago = timezone.now() - timedelta(days=365 * per_last_years)
-        user_qs = OSFUser.objects.filter(last_login__gte=one_year_ago).exclude(
+        from_date = timezone.now() - relativedelta(years=per_last_years)
+        user_qs = OSFUser.objects.filter(date_last_login__gte=from_date).exclude(
             subscriptions__notification_type__name=NotificationType.Type.REVIEWS_SUBMISSION_STATUS.instance
         ).distinct('id')
     else:
@@ -32,6 +31,7 @@ def populate_reviews_notification_subscriptions(per_last_years: int =None, batch
 
     items_to_create = []
     total_created = 0
+
     batch_start = datetime.now()
     for count, user in enumerate(user_qs, 1):
         items_to_create.append(
@@ -81,8 +81,8 @@ def populate_reviews_notification_subscriptions(per_last_years: int =None, batch
     print(f'Created {total_created} subscriptions.')
     print('----Creation finished----')
 
-@celery_app.task(name='scripts.update_reviews_notification_subscriptions')
-def update_reviews_notification_subscriptions():
+@celery_app.task(name='scripts.remove_after_use.update_notification_subscriptions_user_global_reviews')
+def update_notification_subscriptions_user_global_reviews():
     print('---Starting REVIEWS_SUBMISSION_STATUS subscriptions updating script----')
 
     review_nt = NotificationType.Type.REVIEWS_SUBMISSION_STATUS
