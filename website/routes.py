@@ -56,7 +56,6 @@ from website.preprints import views as preprint_views
 from website.registries import views as registries_views
 from website.reviews import views as reviews_views
 from website.institutions import views as institution_views
-from website.notifications import views as notification_views
 from website.ember_osf_web import views as ember_osf_web_views
 from website.closed_challenges import views as closed_challenges_views
 from website.identifiers import views as identifier_views
@@ -1712,22 +1711,24 @@ def make_url_map(app):
             json_renderer,
         ),
 
-        Rule(
-            '/subscriptions/',
-            'get',
-            notification_views.get_subscriptions,
-            json_renderer,
-        ),
+        # Legacy v1 API for notifications, which is no longer used by Angular/Post-NR
+        # Rule(
+        #     '/subscriptions/',
+        #     'get',
+        #     notification_views.get_subscriptions,
+        #     json_renderer,
+        # ),
 
-        Rule(
-            [
-                '/project/<pid>/subscriptions/',
-                '/project/<pid>/node/<nid>/subscriptions/'
-            ],
-            'get',
-            notification_views.get_node_subscriptions,
-            json_renderer,
-        ),
+        # Legacy v1 API for notifications, which is no longer used by Angular/Post-NR
+        # Rule(
+        #     [
+        #         '/project/<pid>/subscriptions/',
+        #         '/project/<pid>/node/<nid>/subscriptions/'
+        #     ],
+        #     'get',
+        #     notification_views.get_node_subscriptions,
+        #     json_renderer,
+        # ),
 
         Rule(
             [
@@ -1739,12 +1740,13 @@ def make_url_map(app):
             json_renderer,
         ),
 
-        Rule(
-            '/subscriptions/',
-            'post',
-            notification_views.configure_subscription,
-            json_renderer,
-        ),
+        # Legacy v1 API for notifications, which is no longer used by Angular/Post-NR
+        # Rule(
+        #     '/subscriptions/',
+        #     'post',
+        #     notification_views.configure_subscription,
+        #     json_renderer,
+        # ),
 
         Rule(
             [
