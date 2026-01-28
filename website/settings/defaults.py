@@ -452,6 +452,7 @@ class CeleryConfig:
         'osf.management.commands.ingest_cedar_metadata_templates',
         'osf.metrics.reporters',
         'scripts.populate_notification_subscriptions',
+        'scripts.remove_after_use.notification_subscription_provider_ct',
     }
 
     med_pri_modules = {
@@ -581,6 +582,7 @@ class CeleryConfig:
         'osf.external.spam.tasks',
         'api.share.utils',
         'scripts.populate_notification_subscriptions',
+        'scripts.remove_after_use.notification_subscription_provider_ct',
     )
 
     # Modules that need metrics and release requirements

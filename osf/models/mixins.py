@@ -1084,7 +1084,7 @@ class ReviewProviderMixin(GuardianMixin):
         for subscription in self.DEFAULT_SUBSCRIPTIONS:
             NotificationSubscription.objects.get_or_create(
                 user=user,
-                content_type=ContentType.objects.get_for_model(self, for_concrete_model=False),
+                content_type=ContentType.objects.get_for_model(self),
                 object_id=self.id,
                 notification_type=subscription.instance,
                 message_frequency='instantly',
@@ -1102,7 +1102,7 @@ class ReviewProviderMixin(GuardianMixin):
                 NotificationSubscription.objects.filter(
                     notification_type=subscription.instance,
                     user=user,
-                    content_type=ContentType.objects.get_for_model(self, for_concrete_model=False),
+                    content_type=ContentType.objects.get_for_model(self),
                     object_id=self.id,
                 ).delete()
 

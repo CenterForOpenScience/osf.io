@@ -46,12 +46,7 @@ class SubscriptionList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin):
     def get_queryset(self):
         user_guid = self.request.user._id
 
-        provider_ct_list = [
-            ContentType.objects.get(app_label='osf', model='abstractprovider'),
-            ContentType.objects.get(app_label='osf', model='registrationprovider'),
-            ContentType.objects.get(app_label='osf', model='collectionprovider'),
-            ContentType.objects.get(app_label='osf', model='preprintprovider'),
-        ]
+        provider_ct = ContentType.objects.get(app_label='osf', model='abstractprovider')
         node_ct = ContentType.objects.get(app_label='osf', model='abstractnode')
         user_ct = ContentType.objects.get(app_label='osf', model='osfuser')
 
@@ -107,7 +102,7 @@ class SubscriptionList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin):
                 ),
                 When(
                     notification_type__name__in=_global_reviews_provider,
-                    content_type__in=provider_ct_list,
+                    content_type=provider_ct,
                     then=Value('global_reviews'),
                 ),
                 When(
@@ -128,7 +123,7 @@ class SubscriptionList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin):
                 ),
                 When(
                     notification_type__name__in=_global_reviews_provider,
-                    content_type__in=provider_ct_list,
+                    content_type=provider_ct,
                     then=Value(f'{user_guid}_global_reviews'),
                 ),
                 When(
