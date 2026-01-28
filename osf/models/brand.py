@@ -25,5 +25,18 @@ class Brand(BaseModel):
     secondary_color = models.CharField(max_length=7)
     background_color = models.CharField(max_length=7, blank=True, null=True)
 
+    def get_provider_types(self):
+        unique_types = self.providers.values_list('type', flat=True).distinct()
+        results = []
+        # cast osf.collectionprovider, osf.registrationprovider, osf.preprintprovider to more readable UI format
+        for unique_type in unique_types:
+            if 'registration' in unique_type:
+                results.append('Registry')
+            elif 'collection' in unique_type:
+                results.append('Collection')
+            elif 'preprint' in unique_type:
+                results.append('Preprint')
+        return ', '.join(results)
+
     def __str__(self):
         return f'{self.name} ({self.id})'
