@@ -436,6 +436,12 @@ class CeleryConfig:
         'scripts.populate_new_and_noteworthy_projects',
         'website.search.elastic_search',
         'scripts.generate_sitemap',
+        'scripts.remove_after_use.populate_nodes_notification_subscriptions',
+        'scripts.remove_after_use.update_nodes_notification_subscriptions',
+        'scripts.remove_after_use.populate_notification_subscriptions_user_global_file_updated',
+        'scripts.remove_after_use.update_notification_subscriptions_user_global_file_updated',
+        'scripts.remove_after_use.populate_notification_subscriptions_user_global_reviews',
+        'scripts.remove_after_use.update_notification_subscriptions_user_global_reviews',
         'osf.management.commands.clear_expired_sessions',
         'osf.management.commands.delete_withdrawn_or_failed_registration_files',
         'osf.management.commands.migrate_pagecounter_data',
@@ -451,7 +457,6 @@ class CeleryConfig:
         'osf.management.commands.monthly_reporters_go',
         'osf.management.commands.ingest_cedar_metadata_templates',
         'osf.metrics.reporters',
-        'scripts.populate_notification_subscriptions',
         'scripts.remove_after_use.merge_notification_subscription_provider_ct',
     }
 
@@ -566,6 +571,12 @@ class CeleryConfig:
         'scripts.approve_embargo_terminations',
         'scripts.triggered_mails',
         'scripts.generate_sitemap',
+        'scripts.remove_after_use.populate_nodes_notification_subscriptions',
+        'scripts.remove_after_use.update_nodes_notification_subscriptions',
+        'scripts.remove_after_use.populate_notification_subscriptions_user_global_file_updated',
+        'scripts.remove_after_use.update_notification_subscriptions_user_global_file_updated',
+        'scripts.remove_after_use.populate_notification_subscriptions_user_global_reviews',
+        'scripts.remove_after_use.update_notification_subscriptions_user_global_reviews',
         'scripts.premigrate_created_modified',
         'scripts.add_missing_identifiers_to_preprints',
         'osf.management.commands.clear_expired_sessions',
@@ -581,7 +592,6 @@ class CeleryConfig:
         'osf.management.commands.monthly_reporters_go',
         'osf.external.spam.tasks',
         'api.share.utils',
-        'scripts.populate_notification_subscriptions',
         'scripts.remove_after_use.merge_notification_subscription_provider_ct',
     )
 
