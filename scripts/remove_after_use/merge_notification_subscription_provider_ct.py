@@ -9,8 +9,8 @@ from framework.celery_tasks import app as celery_app
 from osf.models import NotificationSubscription
 
 
-@celery_app.task(name='scripts.remove_after_use.notification_subscription_provider_ct')
-def update_notification_subscription_provider_ct():
+@celery_app.task(name='scripts.remove_after_use.merge_notification_subscription_provider_ct')
+def merge_notification_subscription_provider_ct():
 
     abstract_provider_ct = ContentType.objects.get_by_natural_key('osf', 'abstractprovider')
 
@@ -28,4 +28,4 @@ def update_notification_subscription_provider_ct():
 
 
 if __name__ == '__main__':
-    update_notification_subscription_provider_ct.delay()
+    merge_notification_subscription_provider_ct.delay()

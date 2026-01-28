@@ -46,9 +46,9 @@ class SubscriptionList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin):
     def get_queryset(self):
         user_guid = self.request.user._id
 
-        provider_ct = ContentType.objects.get(app_label='osf', model='abstractprovider')
-        node_ct = ContentType.objects.get(app_label='osf', model='abstractnode')
-        user_ct = ContentType.objects.get(app_label='osf', model='osfuser')
+        provider_ct = ContentType.objects.get_by_natural_key(app_label='osf', model='abstractprovider')
+        node_ct = ContentType.objects.get_by_natural_key(app_label='osf', model='abstractnode')
+        user_ct = ContentType.objects.get_by_natural_key(app_label='osf', model='osfuser')
 
         node_subquery = AbstractNode.objects.filter(
             id=Cast(OuterRef('object_id'), IntegerField()),
