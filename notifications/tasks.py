@@ -1,7 +1,6 @@
 import itertools
 from calendar import monthrange
 from datetime import date
-from django.contrib.contenttypes.models import ContentType
 from django.db import connection
 from django.utils import timezone
 from django.core.validators import EmailValidator
@@ -183,26 +182,25 @@ def send_moderator_email_task(self, user_id, notification_ids, provider_content_
             email_task.save()
             return
 
-        ProviderModel = ContentType.objects.get_for_id(provider_content_type_id).model_class()
         try:
-            provider = ProviderModel.objects.get(id=provider_id)
+            provider = AbstractProvider.objects.get(id=provider_id)
         except AbstractProvider.DoesNotExist:
-            log_message(f'Provider with id {provider_id} does not exist for model {ProviderModel.name}')
+            log_message(f'Provider with id {provider_id} does not exist for model {provider.type}')
             email_task.status = 'FAILURE'
-            email_task.error_message = f'Provider with id {provider_id} does not exist for model {ProviderModel.name}'
+            email_task.error_message = f'Provider with id {provider_id} does not exist for model {provider.type}'
             email_task.save()
             return
         except AttributeError as err:
-            log_message(f'Error retrieving provider with id {provider_id} for model {ProviderModel.name}: {err}')
+            log_message(f'Error retrieving provider with id {provider_id} for model {provider.type}: {err}')
             email_task.status = 'FAILURE'
-            email_task.error_message = f'Error retrieving provider with id {provider_id} for model {ProviderModel.name}: {err}'
+            email_task.error_message = f'Error retrieving provider with id {provider_id} for model {provider.type}: {err}'
             email_task.save()
             return
 
         if provider is None:
-            log_message(f'Provider with id {provider_id} does not exist for model {ProviderModel.name}')
+            log_message(f'Provider with id {provider_id} does not exist for model {provider.type}')
             email_task.status = 'FAILURE'
-            email_task.error_message = f'Provider with id {provider_id} does not exist for model {ProviderModel.name}'
+            email_task.error_message = f'Provider with id {provider_id} does not exist for model {provider.type}'
             email_task.save()
             return
 
