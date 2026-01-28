@@ -226,7 +226,6 @@ class NotificationType(models.Model):
             used.
         """
         from osf.models.notification_subscription import NotificationSubscription
-        from osf.models.provider import AbstractProvider
 
         if is_digest != self.is_digest_type:
             sentry.log_message(f'NotificationType.emit called with is_digest={is_digest} for '
@@ -234,11 +233,7 @@ class NotificationType(models.Model):
                 'is_digest value will be overridden.')
             is_digest = self.is_digest_type
 
-        # use concrete model for AbstractProvider to specifically get the provider content type
-        if isinstance(subscribed_object, AbstractProvider):
-            content_type = ContentType.objects.get_for_model(subscribed_object, for_concrete_model=False) if subscribed_object else None
-        else:
-            content_type = ContentType.objects.get_for_model(subscribed_object) if subscribed_object else None
+        content_type = ContentType.objects.get_for_model(subscribed_object) if subscribed_object else None
 
         if message_frequency is None:
             message_frequency = self.get_group_frequency_or_default(user, subscribed_object, content_type)
