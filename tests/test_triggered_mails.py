@@ -22,7 +22,7 @@ from scripts.triggered_mails import (
 def _inactive_time():
     """Make a timestamp that is definitely 'inactive' regardless of threshold settings."""
     # Very conservative: 12 weeks ago
-    return timezone.now() - timedelta(weeks=12)
+    return timezone.now() - timedelta(weeks=52)
 
 
 def _recent_time():
@@ -114,20 +114,14 @@ class TestTriggeredMails(OsfTestCase):
         assert ids == {u1.id, u2.id}
 
     def test_finder_excludes_users_with_existing_task(self):
-        """Inactive users but one already has a no_login EmailTask -> excluded."""
+        """Inactive users but one already has a no_login_email_last_sent -> excluded."""
         u1 = UserFactory(fullname='Jalen Hurts')
         u2 = UserFactory(fullname='Jason Kelece')
         u1.date_last_login = _inactive_time()
         u2.date_last_login = _inactive_time()
+        u2.no_login_email_last_sent = timezone.now()
         u1.save()
         u2.save()
-
-        # Pretend u2 already had this email flow (SUCCESS qualifies for exclusion)
-        EmailTask.objects.create(
-            task_id=f"{NO_LOGIN_PREFIX}existing-success",
-            user=u2,
-            status='SUCCESS',
-        )
 
         users = list(find_inactive_users_without_enqueued_or_sent_no_login())
         ids = {u.id for u in users}

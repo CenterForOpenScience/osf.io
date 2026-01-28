@@ -1,6 +1,6 @@
 import itertools
 from calendar import monthrange
-from datetime import date, datetime
+from datetime import date
 from django.contrib.contenttypes.models import ContentType
 from django.db import connection
 from django.utils import timezone
@@ -34,10 +34,8 @@ def safe_render_notification(notifications, email_task):
             email_task.save()
             failed_notifications.append(notification.id)
             # Mark notifications that failed to render as fake sent
-            # Use 1000/12/31 to distinguish itself from another type of fake sent 1000/1/1
+            notification.mark_sent(fake_sent=True)
             log_message(f'Error rendering notification, mark as fake sent: [notification_id={notification.id}]')
-            notification.sent = datetime(1000, 12, 31)
-            notification.save()
             continue
 
         rendered_notifications.append(rendered)
@@ -102,9 +100,10 @@ def send_user_email_task(self, user_id, notification_ids, **kwargs):
         notifications_qs = notifications_qs.exclude(id__in=failed_notifications)
 
         if not rendered_notifications:
+            email_task.status = 'SUCCESS'
             if email_task.error_message:
                 logger.error(f'Partial success for send_user_email_task for user {user_id}. Task id: {self.request.id}. Errors: {email_task.error_message}')
-            email_task.status = 'SUCCESS'
+                email_task.status = 'PARTIAL_SUCCESS'
             email_task.save()
             return
 
@@ -123,10 +122,10 @@ def send_user_email_task(self, user_id, notification_ids, **kwargs):
         notifications_qs.update(sent=timezone.now())
 
         email_task.status = 'SUCCESS'
-        email_task.save()
-
         if email_task.error_message:
             logger.error(f'Partial success for send_user_email_task for user {user_id}. Task id: {self.request.id}. Errors: {email_task.error_message}')
+            email_task.status = 'PARTIAL_SUCCESS'
+        email_task.save()
 
     except Exception as e:
         retry_count = self.request.retries
@@ -177,9 +176,10 @@ def send_moderator_email_task(self, user_id, notification_ids, provider_content_
         notifications_qs = notifications_qs.exclude(id__in=failed_notifications)
 
         if not rendered_notifications:
+            email_task.status = 'SUCCESS'
             if email_task.error_message:
                 logger.error(f'Partial success for send_moderator_email_task for user {user_id}. Task id: {self.request.id}. Errors: {email_task.error_message}')
-            email_task.status = 'SUCCESS'
+                email_task.status = 'PARTIAL_SUCCESS'
             email_task.save()
             return
 
@@ -211,10 +211,10 @@ def send_moderator_email_task(self, user_id, notification_ids, provider_content_
             current_admins = provider.get_group('admin')
             if current_admins is None or not current_admins.user_set.filter(id=user.id).exists():
                 log_message(f"User is not a moderator for provider {provider._id} - notifications will be marked as sent.")
-                email_task.status = 'FAILURE'
+                email_task.status = 'AUTO_FIXED'
                 email_task.error_message = f'User is not a moderator for provider {provider._id}'
                 email_task.save()
-                notifications_qs.update(sent=datetime(1000, 1, 1))
+                notifications_qs.update(sent=timezone.now(), fake_sent=True)
                 return
 
         additional_context = {}
@@ -274,10 +274,10 @@ def send_moderator_email_task(self, user_id, notification_ids, provider_content_
         notifications_qs.update(sent=timezone.now())
 
         email_task.status = 'SUCCESS'
-        email_task.save()
-
         if email_task.error_message:
             logger.error(f'Partial success for send_moderator_email_task for user {user_id}. Task id: {self.request.id}. Errors: {email_task.error_message}')
+            email_task.status = 'PARTIAL_SUCCESS'
+        email_task.save()
 
     except Exception as e:
         retry_count = self.request.retries
