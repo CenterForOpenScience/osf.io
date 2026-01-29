@@ -18,6 +18,7 @@ from django.conf import settings
 from django.contrib.auth.base_user import AbstractBaseUser, BaseUserManager
 from django.contrib.auth.hashers import check_password
 from django.contrib.auth.models import PermissionsMixin
+from django.core.exceptions import FieldDoesNotExist
 from django.dispatch import receiver
 from django.db import models
 from django.db.models import Count, Exists, OuterRef
@@ -2015,14 +2016,12 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         """
         Complies with GDPR guidelines by disabling the account and removing identifying information.
         """
-
-        # Check if user has something intentionally public, like preprints or registrations
-        self._validate_no_public_entities()
-
-        # Check if user has any non-registration AbstractNodes or DraftRegistrations that they might still share with
-        # other contributors
         self._validate_and_remove_resource_for_gdpr_delete(
-            self.nodes.exclude(type='osf.registration'),  # Includes DraftNodes and other typed nodes
+            self.nodes.all(),
+            hard_delete=False
+        )
+        self._validate_and_remove_resource_for_gdpr_delete(
+            self.preprints.all(),
             hard_delete=False
         )
         self._validate_and_remove_resource_for_gdpr_delete(
@@ -2032,39 +2031,6 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
 
         # Finally delete the user's info.
         self._clear_identifying_information()
-
-    def _validate_no_public_entities(self):
-        """
-        Ensure that the user doesn't have any public facing resources like Registrations or Preprints
-        that would be left with other contributors after this deletion.
-
-        Allow GDPR deletion if the user is the sole contributor on a public Registration or Preprint.
-        """
-        from osf.models import Preprint, AbstractNode
-
-        registrations_with_others = AbstractNode.objects.annotate(
-            contrib_count=Count('_contributors', distinct=True),
-        ).filter(
-            _contributors=self,
-            deleted__isnull=True,
-            type='osf.registration',
-            contrib_count__gt=1
-        ).exists()
-
-        if registrations_with_others:
-            raise UserStateError('You cannot delete this user because they have one or more registrations.')
-
-        preprints_with_others = Preprint.objects.annotate(
-            contrib_count=Count('_contributors', distinct=True),
-        ).filter(
-            _contributors=self,
-            ever_public=True,
-            deleted__isnull=True,
-            contrib_count__gt=1
-        ).exists()
-
-        if preprints_with_others:
-            raise UserStateError('You cannot delete this user because they have one or more preprints.')
 
     def _validate_and_remove_resource_for_gdpr_delete(self, resources, hard_delete):
         """
@@ -2090,18 +2056,23 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         )
 
         shared_resources = resources.exclude(id__in=personal_resources.values_list('id'))
-        for node in shared_resources:
-            self._validate_admin_status_for_gdpr_delete(node)
-            self._validate_addons_for_gdpr_delete(node)
+        for resource in shared_resources:
+            self._validate_admin_status_for_gdpr_delete(resource)
+            self._validate_addons_for_gdpr_delete(resource)
 
         for resource in shared_resources.all():
             logger.info(f'Removing {self._id} as a contributor to {resource.__class__.__name__} (pk:{resource.pk})...')
             resource.remove_contributor(self, auth=Auth(self), log=False)
+            if getattr(resource, 'is_public', False) and hasattr(resource, 'update_search'):
+                resource.update_search()
 
-        # Delete all personal entities (excluding public registrations)
+        # Delete all personal non-public entities
         personal_to_delete = personal_resources
-        if hasattr(model, 'is_public') and hasattr(model, 'type'):
-            personal_to_delete = personal_to_delete.exclude(is_public=True, type='osf.registration')
+        try:
+            if model._meta.get_field('is_public'):
+                personal_to_delete = personal_to_delete.exclude(is_public=True)
+        except FieldDoesNotExist:
+            pass
 
         for entity in personal_to_delete.all():
             if hard_delete:
@@ -2109,7 +2080,11 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
                 entity.delete()
             else:
                 logger.info(f'Soft-deleting {entity.__class__.__name__} (pk: {entity.pk})...')
-                entity.remove_node(auth=Auth(self))
+                if hasattr(entity, 'remove_node'):
+                    entity.remove_node(auth=Auth(self))
+                else:
+                    entity.is_deleted = True
+                    entity.save()
 
     def _clear_identifying_information(self):
         '''
