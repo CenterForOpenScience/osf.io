@@ -1185,7 +1185,7 @@ class TestDeactivatedUser:
     def test_requesting_as_deactivated_user_returns_400_response(
             self, app, user_one):
         url = f'/{API_BASE}users/{user_one._id}/'
-        res = app.get(url, auth=user_one.auth, expect_errors=True)
+        res = app.get(url, auth=user_one.auth, expect_errors=False)
         assert res.status_code == 200
         user_one.is_disabled = True
         user_one.save()
@@ -1196,7 +1196,7 @@ class TestDeactivatedUser:
     def test_unconfirmed_users_return_entire_user_object(
             self, app, user_one, user_two):
         url = f'/{API_BASE}users/{user_one._id}/'
-        res = app.get(url, auth=user_two.auth, expect_errors=True)
+        res = app.get(url, auth=user_two.auth, expect_errors=False)
         assert res.status_code == 200
         user_one.is_registered = False
         user_one.save()
@@ -1209,7 +1209,7 @@ class TestDeactivatedUser:
     def test_requesting_deactivated_user_returns_410_response_and_meta_info(
             self, app, user_one, user_two):
         url = f'/{API_BASE}users/{user_one._id}/'
-        res = app.get(url, auth=user_two.auth, expect_errors=True)
+        res = app.get(url, auth=user_two.auth, expect_errors=False)
         assert res.status_code == 200
         user_one.is_disabled = True
         user_one.save()
@@ -1222,6 +1222,21 @@ class TestDeactivatedUser:
         assert urlparse(
             res.json['errors'][0]['meta']['profile_image']).netloc == 'secure.gravatar.com'
         assert res.json['errors'][0]['detail'] == 'The requested user is no longer available.'
+
+    def test_gdpr_deleted_user_returns_404_and_no_meta_info(
+            self, app, user_one, user_two):
+        url = f'/{API_BASE}users/{user_one._id}/'
+        res = app.get(url, auth=user_two.auth, expect_errors=False)
+        assert res.status_code == 200
+
+        user_one.gdpr_delete()
+        user_one.save()
+
+        res = app.get(url, auth=user_two.auth, expect_errors=True)
+        assert res.status_code == 404
+        if res.json:
+            assert 'errors' in res.json
+            assert 'meta' not in res.json['errors'][0]
 
 
 @pytest.mark.django_db
