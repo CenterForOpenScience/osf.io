@@ -158,6 +158,9 @@ class PreprintMixin(NodeMixin):
                 raise PermissionDenied(
                     detail='This preprint is pending moderation and is not yet publicly available.',
                 )
+            # May raise a permission denied
+            if check_object_permissions:
+                self.check_object_permissions(self.request, preprint)
             raise NotFound
 
         # May raise a permission denied

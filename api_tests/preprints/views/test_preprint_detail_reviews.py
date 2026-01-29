@@ -120,7 +120,7 @@ class TestReviewsPreprintDetailPermissions:
 
     #   test_unpublished_invisible_to_public
         res = app.get(unpublished_url, expect_errors=True)
-        assert res.status_code == 401
+        assert res.status_code == 403
 
     def test_reviews_preprint_initial_detail(
             self, app, admin, write_contrib, non_contrib,
@@ -167,4 +167,4 @@ class TestReviewsPreprintDetailPermissions:
 
     #   test_private_invisible_to_public
         res = app.get(private_url, expect_errors=True)
-        assert res.status_code == 401
+        assert res.status_code == 403
