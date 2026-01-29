@@ -106,7 +106,7 @@ class PreprintListMatchesPreprintDetailMixin:
             d['id'] for d in res.json['data']]
 
         res = app.get(detail_url, expect_errors=True)
-        assert res.status_code == 401
+        assert res.status_code == 403
 
 
 @pytest.mark.django_db
