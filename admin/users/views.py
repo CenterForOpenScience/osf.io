@@ -216,23 +216,24 @@ class UserGDPRDeleteView(UserMixin, View):
             user = self.get_object()
             user.gdpr_delete()
             user.save()
-
-            # Bulk update SHARE for all public resources
-            for node in user.nodes.filter(is_public=True, is_deleted=False):
-                node.update_search()
-            for preprint in user.preprints.filter(is_public=True, deleted__isnull=True):
-                preprint.update_search()
-
-            messages.success(request, f'User {user._id} was successfully GDPR deleted')
-            update_admin_log(
-                user_id=self.request.user.id,
-                object_id=user.pk,
-                object_repr='User',
-                message=f'User {user._id} was successfully GDPR deleted',
-                action_flag=USER_GDPR_DELETED
-            )
         except UserStateError as e:
             messages.warning(request, str(e))
+
+        messages.success(request, f'User {user._id} was successfully GDPR deleted')
+
+        # Update SHARE for all public resources
+        for node in user.nodes.filter(is_public=True, is_deleted=False):
+            node.update_search()
+        for preprint in user.preprints.filter(is_public=True, deleted__isnull=True):
+            preprint.update_search()
+
+        update_admin_log(
+            user_id=self.request.user.id,
+            object_id=user.pk,
+            object_repr='User',
+            message=f'User {user._id} was successfully GDPR deleted',
+            action_flag=USER_GDPR_DELETED
+        )
 
         return redirect(self.get_success_url())
 

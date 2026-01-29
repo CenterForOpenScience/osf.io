@@ -2228,6 +2228,7 @@ class TestUserGdprDelete:
 
         assert registration.contributors.count() == 1
         assert registration.contributors.first() == other_user
+        assert not registration.is_deleted
         assert user.deleted is not None
 
     def test_gdpr_delete_removes_user_from_shared_preprints(self, user, preprint):
