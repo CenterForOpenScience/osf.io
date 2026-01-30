@@ -71,6 +71,7 @@ def populate_notification_subscriptions_user_global_file_updated(per_last_years:
             batch_start = datetime.now()
 
     if items_to_create:
+        final_batch_start = datetime.now()
         print(f'Creating final batch of {len(items_to_create)} subscriptions...')
         try:
             NotificationSubscription.objects.bulk_create(
@@ -81,6 +82,8 @@ def populate_notification_subscriptions_user_global_file_updated(per_last_years:
             total_created += len(items_to_create)
         except Exception as e:
             print(f'Error during bulk_create: {e}')
+        final_batch_end = datetime.now()
+        print(f'Final batch took {final_batch_end - final_batch_start}')
 
     global_end = datetime.now()
     print(f'Total time for USER_FILE_UPDATED subscription population: {global_end - global_start}')
