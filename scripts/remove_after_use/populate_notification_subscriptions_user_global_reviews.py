@@ -22,11 +22,11 @@ def populate_notification_subscriptions_user_global_reviews(per_last_years: int 
     if per_last_years:
         from_date = timezone.now() - relativedelta(years=per_last_years)
         user_qs = OSFUser.objects.filter(date_last_login__gte=from_date).exclude(
-            subscriptions__notification_type__name=NotificationType.Type.REVIEWS_SUBMISSION_STATUS.instance
+            subscriptions__notification_type__name=review_nt.instance
         ).distinct('id')
     else:
         user_qs = OSFUser.objects.exclude(
-            subscriptions__notification_type__name=NotificationType.Type.REVIEWS_SUBMISSION_STATUS.instance
+            subscriptions__notification_type__name=review_nt.instance
         ).distinct('id')
 
     items_to_create = []
