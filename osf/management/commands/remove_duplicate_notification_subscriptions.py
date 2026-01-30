@@ -1,6 +1,6 @@
 from django.core.management.base import BaseCommand
 from django.db import transaction
-from django.db.models import OuterRef, Exists
+from django.db.models import OuterRef, Exists, Q
 
 from osf.models import NotificationSubscription, NotificationType
 
@@ -51,7 +51,7 @@ class Command(BaseCommand):
         )
 
         invalid_digest = NotificationSubscription.objects.filter(
-            notification_type_id__notin=digest_type_ids,
+            ~Q(notification_type_id__in=digest_type_ids),
             _is_digest=True,
         )
 
