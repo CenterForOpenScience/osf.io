@@ -9,6 +9,7 @@ from osf.metadata import gather
 from .datacite import DataciteJsonMetadataSerializer, DataciteXmlMetadataSerializer
 from .google_dataset_json_ld import GoogleDatasetJsonLdSerializer
 from .turtle import TurtleMetadataSerializer
+from .linkset import SignpostLinkset, SignpostLinksetJSON
 
 
 METADATA_SERIALIZER_REGISTRY = {
@@ -16,6 +17,8 @@ METADATA_SERIALIZER_REGISTRY = {
     'datacite-json': DataciteJsonMetadataSerializer,
     'datacite-xml': DataciteXmlMetadataSerializer,
     'google-dataset-json-ld': GoogleDatasetJsonLdSerializer,
+    'linkset': SignpostLinkset,
+    'linkset-json': SignpostLinksetJSON
 }
 
 
