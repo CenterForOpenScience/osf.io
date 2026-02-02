@@ -6,6 +6,7 @@ import logging
 
 from django.contrib.contenttypes.models import ContentType
 from django import db
+from mimetypes import MimeTypes
 import rdflib
 
 from api.caching.tasks import get_storage_usage_total
@@ -43,6 +44,8 @@ from website import settings as website_settings
 
 
 logger = logging.getLogger(__name__)
+
+mime = MimeTypes()
 
 
 ##### BEGIN "public" api #####
@@ -700,6 +703,12 @@ def gather_files(focus):
         yield (OSF.contains, file_focus)
         if (primary_file_id is not None) and file.id == primary_file_id:
             yield (DCTERMS.requires, file_focus)
+
+
+@gather.er(DCAT.mediaType)
+def gather_file_mediatype(focus):
+    mime_type = mime.guess_type(focus.dbmodel.name)
+    yield (DCAT.mediaType, mime_type[0]) if mime_type else (DCAT.mediaType, 'application/octet-stream')
 
 
 @gather.er(DCTERMS.hasPart, DCTERMS.isPartOf)

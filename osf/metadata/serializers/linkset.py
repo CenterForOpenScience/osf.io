@@ -12,7 +12,7 @@ from collections import defaultdict
 import dataclasses
 import json
 from ._base import MetadataSerializer
-from osf.metadata.rdfutils import DOI, DCTERMS, OWL, RDF, OSF
+from osf.metadata.rdfutils import DOI, DCTERMS, OWL, RDF, OSF, DCAT
 from website.settings import DOMAIN
 from urllib.parse import urljoin
 from website.util import web_url_for
@@ -59,8 +59,8 @@ class BaseSignpostLinkset(MetadataSerializer, abc.ABC):
 
         # item
         for _file_iri in self.basket[OSF.contains]:
-            # add file mediatype attr? if available
-            yield SignpostLink(focus_iri, 'item', str(_file_iri), ())
+            mime_type = next(self.basket[_file_iri:DCAT.mediaType])
+            yield SignpostLink(focus_iri, 'item', str(_file_iri), [('type', mime_type)])
 
 
 class SignpostLinkset(BaseSignpostLinkset):
