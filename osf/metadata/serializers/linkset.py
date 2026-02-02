@@ -74,7 +74,8 @@ class SignpostLinkset(BaseSignpostLinkset):
         see example https://www.rfc-editor.org/rfc/rfc9264.html#section-7.1
         FAIR signposting: https://signposting.org/FAIR/
         """
-        return ',\n'.join(self._serialize_link(link) for link in self._each_link())
+        result = ',\n'.join(self._serialize_link(link) for link in self._each_link()) + '\n'
+        return "{}\n".format(result)
 
     def _serialize_link(self, link: SignpostLink) -> str:
         segments = [
@@ -100,7 +101,7 @@ class SignpostLinksetJSON(BaseSignpostLinkset):
         grouped_links = defaultdict(lambda: defaultdict(list))
 
         for link in self._each_link():
-            link_entry = {"href": link.target_uri}
+            link_entry = {'href': link.target_uri}
 
             for key, value in link.target_attrs:
                 link_entry[key] = value
@@ -109,8 +110,8 @@ class SignpostLinksetJSON(BaseSignpostLinkset):
 
         linkset = []
         for anchor, relations in grouped_links.items():
-            anchor_entry = {"anchor": anchor}
+            anchor_entry = {'anchor': anchor}
             anchor_entry.update(relations)
             linkset.append(anchor_entry)
 
-        return json.dumps({"linkset": linkset}, indent=2)
+        return json.dumps({'linkset': linkset}, indent=2)
