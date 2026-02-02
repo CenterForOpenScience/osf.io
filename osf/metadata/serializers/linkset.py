@@ -75,7 +75,7 @@ class SignpostLinkset(BaseSignpostLinkset):
         FAIR signposting: https://signposting.org/FAIR/
         """
         result = ',\n'.join(self._serialize_link(link) for link in self._each_link()) + '\n'
-        return "{}\n".format(result)
+        return '{}\n'.format(result)
 
     def _serialize_link(self, link: SignpostLink) -> str:
         segments = [
