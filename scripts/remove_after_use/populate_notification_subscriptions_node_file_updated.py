@@ -12,8 +12,8 @@ from django.db.models.functions import Cast, Coalesce
 from osf.models import  Node, NotificationSubscription, NotificationType
 
 
-@celery_app.task(name='scripts.remove_after_use.populate_nodes_notification_subscriptions')
-def populate_notification_subscriptions_user_global_file_updated(batch_size: int = 1000):
+@celery_app.task(name='scripts.remove_after_use.populate_notification_subscriptions_node_file_updated')
+def populate_notification_subscriptions_node_file_updated(batch_size: int = 1000):
     print('---Starting NODE_FILE_UPDATED subscriptions population script----')
     global_start = datetime.now()
 
@@ -109,8 +109,8 @@ def populate_notification_subscriptions_user_global_file_updated(batch_size: int
     print(f'Created {total_created} subscriptions.')
     print('----Creation finished----')
 
-@celery_app.task(name='scripts.remove_after_use.update_nodes_notification_subscriptions')
-def update_notification_subscriptions_user_global_file_updated():
+@celery_app.task(name='scripts.remove_after_use.update_notification_subscriptions_node_file_updated')
+def update_notification_subscriptions_node_file_updated():
     print('---Starting NODE_FILE_UPDATED subscriptions update script----')
 
     node_file_nt = NotificationType.Type.NODE_FILE_UPDATED
