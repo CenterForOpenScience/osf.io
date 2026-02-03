@@ -1,15 +1,14 @@
 from django.core.management.base import BaseCommand
 from django.db import transaction
-from django.db.models import OuterRef, Exists
+from django.db.models import OuterRef, Exists, Q
 
-from osf.models import NotificationSubscription
+from osf.models import NotificationSubscription, NotificationType
 
 
 class Command(BaseCommand):
     help = (
         'Remove duplicate NotificationSubscription records, keeping only the highest-id record: '
         'Default uniqueness: (user, content_type, object_id, notification_type, is_digest); '
-        'Optional uniqueness with --exclude-is-digest: (user, content_type, object_id, notification_type).'
     )
 
     def add_arguments(self, parser):
@@ -18,53 +17,78 @@ class Command(BaseCommand):
             action='store_true',
             help='Show how many rows would be deleted without deleting anything.',
         )
-        parser.add_argument(
-            '--exclude-is-digest',
-            action='store_true',
-            default=False,
-            help='Whether to exclude _is_digest field in unique_together')
 
     def handle(self, *args, **options):
 
         self.stdout.write('Finding duplicate NotificationSubscription records…')
+        digest_type_names = {
+            # User types
+            NotificationType.Type.USER_NO_ADDON.value,
+            # File types
+            NotificationType.Type.ADDON_FILE_COPIED.value,
+            NotificationType.Type.ADDON_FILE_MOVED.value,
+            NotificationType.Type.ADDON_FILE_RENAMED.value,
+            NotificationType.Type.FILE_ADDED.value,
+            NotificationType.Type.FILE_REMOVED.value,
+            NotificationType.Type.FILE_UPDATED.value,
+            NotificationType.Type.FOLDER_CREATED.value,
+            NotificationType.Type.NODE_FILE_UPDATED.value,
+            NotificationType.Type.USER_FILE_UPDATED.value,
+            # Review types
+            NotificationType.Type.COLLECTION_SUBMISSION_SUBMITTED.value,
+            NotificationType.Type.PROVIDER_NEW_PENDING_SUBMISSIONS.value,
+            NotificationType.Type.PROVIDER_NEW_PENDING_WITHDRAW_REQUESTS.value,
+            NotificationType.Type.REVIEWS_SUBMISSION_STATUS.value,
+        }
 
-        if options['exclude_is_digest']:
-            to_remove = NotificationSubscription.objects.filter(
-                Exists(
-                    NotificationSubscription.objects.filter(
-                        user_id=OuterRef('user_id'),
-                        content_type_id=OuterRef('content_type_id'),
-                        object_id=OuterRef('object_id'),
-                        notification_type_id=OuterRef('notification_type_id'),
-                        id__gt=OuterRef('id'),  # keep most recent record
-                    )
+        digest_type_ids = NotificationType.objects.filter(
+            name__in=digest_type_names
+        ).values_list('id', flat=True)
+
+        invalid_non_digest = NotificationSubscription.objects.filter(
+            notification_type_id__in=digest_type_ids,
+            _is_digest=False,
+        )
+        invalid_non_digest_count = invalid_non_digest.count()
+
+        invalid_digest = NotificationSubscription.objects.filter(
+            ~Q(notification_type_id__in=digest_type_ids),
+            _is_digest=True,
+        )
+        invalid_digest_count = invalid_digest.count()
+
+        if not options['dry']:
+            invalid_non_digest.update(_is_digest=True)
+            invalid_digest.update(_is_digest=False)
+
+        to_remove = NotificationSubscription.objects.filter(
+            Exists(
+                NotificationSubscription.objects.filter(
+                    user_id=OuterRef('user_id'),
+                    content_type_id=OuterRef('content_type_id'),
+                    object_id=OuterRef('object_id'),
+                    notification_type_id=OuterRef('notification_type_id'),
+                    _is_digest=OuterRef('_is_digest'),
+                    id__gt=OuterRef('id'),  # keep most recent record
                 )
             )
-        else:
-            to_remove = NotificationSubscription.objects.filter(
-                Exists(
-                    NotificationSubscription.objects.filter(
-                        user_id=OuterRef('user_id'),
-                        content_type_id=OuterRef('content_type_id'),
-                        object_id=OuterRef('object_id'),
-                        notification_type_id=OuterRef('notification_type_id'),
-                        _is_digest=OuterRef('_is_digest'),
-                        id__gt=OuterRef('id'),  # keep most recent record
-                    )
-                )
-            )
+        )
 
         count = to_remove.count()
         self.stdout.write(f"Duplicates to remove: {count}")
+        self.stdout.write(f"Invalid non-digest records: {invalid_non_digest_count}")
+        self.stdout.write(f"Invalid digest records: {invalid_digest_count}")
 
-        if count == 0:
-            self.stdout.write(self.style.SUCCESS('No duplicates found.'))
+        if count == 0 and invalid_non_digest_count == 0 and invalid_digest_count == 0:
+            self.stdout.write(self.style.SUCCESS('No duplicates or invalid records found.'))
+            return
 
         if options['dry']:
             self.stdout.write(self.style.WARNING('Dry run enabled — no records were deleted.'))
             return
 
-        if count > 0:
-            with transaction.atomic():
-                deleted, _ = to_remove.delete()
-            self.stdout.write(self.style.SUCCESS(f"Successfully removed {deleted} duplicate records."))
+        with transaction.atomic():
+            deleted, _ = to_remove.delete()
+        self.stdout.write(self.style.SUCCESS(f"Successfully removed {deleted} duplicate records."))
+        self.stdout.write(self.style.SUCCESS(f"Successfully updated {invalid_non_digest_count} non-digest records."))
+        self.stdout.write(self.style.SUCCESS(f"Successfully updated {invalid_digest_count} digest records."))
