@@ -1,0 +1,51 @@
+{
+  "linkset": [
+    {
+      "anchor": "http://localhost:5000/w4ibb",
+      "author": [
+        {
+          "href": "http://localhost:5000/w1ibb"
+        }
+      ],
+      "type": [
+        {
+          "href": "https://schema.datacite.org/meta/kernel-4/#Preprint"
+        },
+        {
+          "href": "https://osf.io/vocab/2022/Preprint"
+        }
+      ],
+      "citeas": [
+        {
+          "href": "https://doi.org/11.pp/FK2osf.io/w4ibb_v1"
+        }
+      ],
+      "describedby": [
+        {
+          "href": "http://localhost:5000/metadata/w4ibb_v1/",
+          "type": "text/turtle; charset=utf-8"
+        },
+        {
+          "href": "http://localhost:5000/metadata/w4ibb_v1/",
+          "type": "application/json"
+        },
+        {
+          "href": "http://localhost:5000/metadata/w4ibb_v1/",
+          "type": "application/xml"
+        },
+        {
+          "href": "http://localhost:5000/metadata/w4ibb_v1/",
+          "type": "application/ld+json"
+        },
+        {
+          "href": "http://localhost:5000/metadata/w4ibb_v1/",
+          "type": "application/linkset"
+        },
+        {
+          "href": "http://localhost:5000/metadata/w4ibb_v1/",
+          "type": "application/linkset+json"
+        }
+      ]
+    }
+  ]
+}

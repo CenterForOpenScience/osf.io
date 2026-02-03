@@ -1,0 +1,54 @@
+{
+  "linkset": [
+    {
+      "anchor": "http://localhost:5000/w2ibb",
+      "author": [
+        {
+          "href": "http://localhost:5000/w1ibb"
+        }
+      ],
+      "type": [
+        {
+          "href": "https://osf.io/vocab/2022/Project"
+        }
+      ],
+      "citeas": [
+        {
+          "href": "https://doi.org/10.70102/FK2osf.io/w2ibb"
+        }
+      ],
+      "describedby": [
+        {
+          "href": "http://localhost:5000/metadata/w2ibb/",
+          "type": "text/turtle; charset=utf-8"
+        },
+        {
+          "href": "http://localhost:5000/metadata/w2ibb/",
+          "type": "application/json"
+        },
+        {
+          "href": "http://localhost:5000/metadata/w2ibb/",
+          "type": "application/xml"
+        },
+        {
+          "href": "http://localhost:5000/metadata/w2ibb/",
+          "type": "application/ld+json"
+        },
+        {
+          "href": "http://localhost:5000/metadata/w2ibb/",
+          "type": "application/linkset"
+        },
+        {
+          "href": "http://localhost:5000/metadata/w2ibb/",
+          "type": "application/linkset+json"
+        }
+      ],
+      "item": [
+        {
+          "href": "http://localhost:5000/w3ibb",
+          "type": "application/octet-stream"
+        }
+      ]
+    }
+  ]
+}

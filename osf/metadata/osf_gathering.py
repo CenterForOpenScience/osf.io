@@ -708,7 +708,7 @@ def gather_files(focus):
 @gather.er(DCAT.mediaType)
 def gather_file_mediatype(focus):
     mime_type = mime.guess_type(focus.dbmodel.name)
-    yield (DCAT.mediaType, mime_type[0]) if mime_type else (DCAT.mediaType, 'application/octet-stream')
+    yield (DCAT.mediaType, 'application/octet-stream') if mime_type == (None, None) else (DCAT.mediaType, mime_type[0])
 
 
 @gather.er(DCTERMS.hasPart, DCTERMS.isPartOf)
