@@ -6,10 +6,8 @@ from django.db.models.functions import Concat, Cast
 
 from rest_framework import generics
 from rest_framework import permissions as drf_permissions
-from rest_framework.exceptions import NotFound
 from rest_framework.response import Response
 
-from framework import sentry
 from framework.auth.oauth_scopes import CoreScopes
 
 from api.base.views import JSONAPIBaseView
@@ -22,6 +20,7 @@ from api.subscriptions.serializers import (
     RegistrationSubscriptionSerializer,
 )
 from api.subscriptions.permissions import IsSubscriptionOwner
+from api.subscriptions import utils
 
 from osf.models import (
     CollectionProvider,
@@ -177,10 +176,8 @@ class SubscriptionDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView):
 
     def get_object(self):
         subscription_id = self.kwargs['subscription_id']
+        user = self.request.user
         user_guid = self.request.user._id
-        user_file_updated_nt = NotificationType.Type.USER_FILE_UPDATED.instance
-        reviews_submission_status_nt = NotificationType.Type.REVIEWS_SUBMISSION_STATUS.instance
-        node_file_updated_nt = NotificationType.Type.NODE_FILE_UPDATED.instance
         user_ct = ContentType.objects.get_for_model(OSFUser)
         node_ct = ContentType.objects.get_for_model(AbstractNode)
 
@@ -188,9 +185,8 @@ class SubscriptionDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView):
             id=Cast(OuterRef('object_id'), IntegerField()),
         ).values('guids___id')[:1]
 
-        node_guid = 'n/a'
         missing_subscription_created = None
-        annotated_obj_qs = NotificationSubscription.objects.filter(user=self.request.user).annotate(
+        annotated_obj_qs = NotificationSubscription.objects.filter(user=user).annotate(
             legacy_id=Case(
                 When(
                     notification_type__name=NotificationType.Type.NODE_FILE_UPDATED.value,
@@ -211,53 +207,16 @@ class SubscriptionDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView):
             ),
         )
         existing_subscriptions = annotated_obj_qs.filter(legacy_id=subscription_id)
-        if not existing_subscriptions.exists():
-            # `global_file_updated` and `global_reviews` should exist by default for every user.
-            # If not found, create them with `none` frequency and `_is_digest=True` as default.
-            if subscription_id == f'{user_guid}_global_file_updated':
-                notification_type = user_file_updated_nt
-                content_type = user_ct
-                object_id = self.request.user.id
-            elif subscription_id == f'{user_guid}_global_reviews':
-                notification_type = reviews_submission_status_nt
-                content_type = user_ct
-                object_id = self.request.user.id
-            elif subscription_id.endswith('_global_file_updated') or subscription_id.endswith('_global_reviews'):
-                # Mismatched request user and subscription user
-                sentry.log_message(f'Permission denied: [user={user_guid}, legacy_id={subscription_id}]')
-                raise PermissionDenied
-            elif subscription_id.endswith('_files_updated'):
-                notification_type = node_file_updated_nt
-                content_type = node_ct
-                node_guid = subscription_id[:-len('_files_updated')]
-                node = AbstractNode.objects.filter(guids___id=node_guid, is_deleted=False, type='osf.node').first()
-                if not node:
-                    # The node in the legacy subscription ID does not exist or is invalid
-                    sentry.log_message(f'Node not found in legacy subscription ID: [user={user_guid}, legacy_id={subscription_id}]')
-                    raise NotFound
-                if not node.is_contributor(self.request.user):
-                    # The request user is not a contributor of the node
-                    sentry.log_message(f'Permission denied: [user={user_guid}], node={node_guid}, legacy_id={subscription_id}]')
-                    raise PermissionDenied
-                object_id = node.id
-            else:
-                sentry.log_message(f'Subscription not found: [user={user_guid}, legacy_id={subscription_id}]')
-                raise NotFound
-            missing_subscription_created = NotificationSubscription.objects.create(
-                notification_type=notification_type,
-                user=self.request.user,
-                content_type=content_type,
-                object_id=object_id,
-                _is_digest=True,
-                message_frequency='none',
-            )
-            sentry.log_message(f'Missing default subscription has been created: [user={user_guid}], node={node_guid} type={notification_type}, legacy_id={subscription_id}]')
 
+        # TODO: Rework the missing subscription code after fully populating the OSF DB with all missing notifications
+        if not existing_subscriptions.exists():
+            missing_subscription_created = utils.create_missing_notification_from_legacy_id(subscription_id, user)
         if missing_subscription_created:
             # Note: must use `annotated_obj_qs` to insert `legacy_id` so that `SubscriptionSerializer` can build data
             # properly; in addition, there should be only one result
             subscription = annotated_obj_qs.get(legacy_id=subscription_id)
         else:
+            # TODO: Use `get()` and fails/warns on multiple objects after fully de-duplicating the OSF DB
             subscription = existing_subscriptions.order_by('id').last()
         if not subscription:
             raise PermissionDenied
