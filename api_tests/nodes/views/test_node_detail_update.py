@@ -8,7 +8,7 @@ from api.caching.utils import storage_usage_cache
 from api_tests.nodes.views.utils import NodeCRUDTestCase
 from api_tests.subjects.mixins import UpdateSubjectsMixin
 from framework.auth.core import Auth
-from osf.models import NodeLog, NotificationType
+from osf.models import NodeLog, NotificationTypeEnum
 from osf.utils.sanitize import strip_html
 from osf.utils import permissions
 from osf_tests.factories import (
@@ -47,7 +47,7 @@ class TestNodeUpdate(NodeCRUDTestCase):
                 ]
                 }
         }
-        with assert_notification(type=NotificationType.Type.NODE_AFFILIATION_CHANGED, user=user_two, times=2):
+        with assert_notification(type=NotificationTypeEnum.NODE_AFFILIATION_CHANGED, user=user_two, times=2):
             res = app.patch_json_api(
                 url_private,
                 make_node_payload(

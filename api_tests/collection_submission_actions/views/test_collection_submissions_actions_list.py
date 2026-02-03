@@ -5,7 +5,7 @@ from osf_tests.factories import AuthUserFactory
 from django.utils import timezone
 from osf_tests.factories import NodeFactory, CollectionFactory, CollectionProviderFactory
 
-from osf.models import CollectionSubmission, NotificationType
+from osf.models import CollectionSubmission, NotificationTypeEnum
 from osf.utils.workflows import CollectionSubmissionsTriggers, CollectionSubmissionStates
 from tests.utils import capture_notifications
 
@@ -133,9 +133,9 @@ class TestCollectionSubmissionsActionsListPOSTPermissions:
             )
         assert len(notifications['emits']) == 1
         if moderator_trigger is CollectionSubmissionsTriggers.ACCEPT:
-            assert notifications['emits'][0]['type'] == NotificationType.Type.COLLECTION_SUBMISSION_ACCEPTED
+            assert notifications['emits'][0]['type'] == NotificationTypeEnum.COLLECTION_SUBMISSION_ACCEPTED
         if moderator_trigger is CollectionSubmissionsTriggers.REJECT:
-            assert notifications['emits'][0]['type'] == NotificationType.Type.COLLECTION_SUBMISSION_REJECTED
+            assert notifications['emits'][0]['type'] == NotificationTypeEnum.COLLECTION_SUBMISSION_REJECTED
         assert resp.status_code == 201
 
     @pytest.mark.parametrize('moderator_trigger', [CollectionSubmissionsTriggers.ACCEPT, CollectionSubmissionsTriggers.REJECT])
@@ -181,13 +181,13 @@ class TestCollectionSubmissionsActionsListPOSTPermissions:
         assert resp.status_code == 201
         if user_role == UserRoles.MODERATOR:
             assert len(notifications['emits']) == 1
-            assert notifications['emits'][0]['type'] == NotificationType.Type.COLLECTION_SUBMISSION_REMOVED_MODERATOR
+            assert notifications['emits'][0]['type'] == NotificationTypeEnum.COLLECTION_SUBMISSION_REMOVED_MODERATOR
             assert notifications['emits'][0]['kwargs']['user'] == collection_submission.creator
         else:
             assert len(notifications['emits']) == 2
-            assert notifications['emits'][0]['type'] == NotificationType.Type.COLLECTION_SUBMISSION_REMOVED_ADMIN
+            assert notifications['emits'][0]['type'] == NotificationTypeEnum.COLLECTION_SUBMISSION_REMOVED_ADMIN
             assert notifications['emits'][0]['kwargs']['user'] == collection_submission.creator
-            assert notifications['emits'][1]['type'] == NotificationType.Type.COLLECTION_SUBMISSION_REMOVED_ADMIN
+            assert notifications['emits'][1]['type'] == NotificationTypeEnum.COLLECTION_SUBMISSION_REMOVED_ADMIN
             assert notifications['emits'][1]['kwargs']['user'] == node.contributors.last()
 
 
@@ -211,7 +211,7 @@ class TestSubmissionsActionsListPOSTBehavior:
         with capture_notifications() as notifications:
             app.post_json_api(POST_URL, payload, auth=test_auth)
         assert len(notifications['emits']) == 1
-        assert notifications['emits'][0]['type'] == NotificationType.Type.COLLECTION_SUBMISSION_ACCEPTED
+        assert notifications['emits'][0]['type'] == NotificationTypeEnum.COLLECTION_SUBMISSION_ACCEPTED
 
         user = collection_submission.collection.provider.get_group('moderator').user_set.first()
         collection_submission.refresh_from_db()
@@ -230,7 +230,7 @@ class TestSubmissionsActionsListPOSTBehavior:
         with capture_notifications() as notifications:
             app.post_json_api(POST_URL, payload, auth=test_auth)
         assert len(notifications['emits']) == 1
-        assert notifications['emits'][0]['type'] == NotificationType.Type.COLLECTION_SUBMISSION_REJECTED
+        assert notifications['emits'][0]['type'] == NotificationTypeEnum.COLLECTION_SUBMISSION_REJECTED
 
         user = collection_submission.collection.provider.get_group('moderator').user_set.first()
         collection_submission.refresh_from_db()
@@ -249,9 +249,9 @@ class TestSubmissionsActionsListPOSTBehavior:
         with capture_notifications() as notifications:
             app.post_json_api(POST_URL, payload, auth=test_auth)
         assert len(notifications['emits']) == 2
-        assert notifications['emits'][0]['type'] == NotificationType.Type.COLLECTION_SUBMISSION_CANCEL
+        assert notifications['emits'][0]['type'] == NotificationTypeEnum.COLLECTION_SUBMISSION_CANCEL
         assert notifications['emits'][0]['kwargs']['user'] == collection_submission.creator
-        assert notifications['emits'][1]['type'] == NotificationType.Type.COLLECTION_SUBMISSION_CANCEL
+        assert notifications['emits'][1]['type'] == NotificationTypeEnum.COLLECTION_SUBMISSION_CANCEL
         assert notifications['emits'][0]['kwargs']['user'] == node.creator
 
         collection_submission.refresh_from_db()
@@ -271,7 +271,7 @@ class TestSubmissionsActionsListPOSTBehavior:
         with capture_notifications() as notifications:
             app.post_json_api(POST_URL, payload, auth=test_auth)
         assert len(notifications['emits']) == 1
-        assert notifications['emits'][0]['type'] == NotificationType.Type.COLLECTION_SUBMISSION_REMOVED_MODERATOR
+        assert notifications['emits'][0]['type'] == NotificationTypeEnum.COLLECTION_SUBMISSION_REMOVED_MODERATOR
         user = collection_submission.collection.provider.get_group('moderator').user_set.first()
         collection_submission.refresh_from_db()
         action = collection_submission.actions.last()
@@ -322,7 +322,7 @@ class TestSubmissionsActionsListPOSTBehavior:
                 expect_errors=True
             )
         assert len(notifications['emits']) == 1
-        assert notifications['emits'][0]['type'] == NotificationType.Type.COLLECTION_SUBMISSION_ACCEPTED
+        assert notifications['emits'][0]['type'] == NotificationTypeEnum.COLLECTION_SUBMISSION_ACCEPTED
         assert resp.status_code == 201
 
 

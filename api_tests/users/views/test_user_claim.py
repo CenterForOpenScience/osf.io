@@ -6,7 +6,7 @@ from api.base.settings.defaults import API_BASE
 from api.users.views import ClaimUser
 from api_tests.utils import only_supports_methods
 from framework.auth.core import Auth
-from osf.models import NotificationType
+from osf.models import NotificationTypeEnum
 from osf_tests.factories import (
     AuthUserFactory,
     ProjectFactory,
@@ -126,7 +126,7 @@ class TestClaimUser:
                 self.payload(email='david@david.son', id=project._id),
             )
         assert len(notifications['emits']) == 1
-        assert notifications['emits'][0]['type'] == NotificationType.Type.USER_INVITE_DEFAULT
+        assert notifications['emits'][0]['type'] == NotificationTypeEnum.USER_INVITE_DEFAULT
         assert res.status_code == 204
 
     def test_claim_unauth_success_with_claimer_email(self, app, url, unreg_user, project, claimer):
@@ -137,8 +137,8 @@ class TestClaimUser:
             )
         assert res.status_code == 204
         assert len(notifications['emits']) == 2
-        assert notifications['emits'][0]['type'] == NotificationType.Type.USER_FORWARD_INVITE_REGISTERED
-        assert notifications['emits'][1]['type'] == NotificationType.Type.USER_PENDING_VERIFICATION_REGISTERED
+        assert notifications['emits'][0]['type'] == NotificationTypeEnum.USER_FORWARD_INVITE_REGISTERED
+        assert notifications['emits'][1]['type'] == NotificationTypeEnum.USER_PENDING_VERIFICATION_REGISTERED
 
     def test_claim_unauth_success_with_unknown_email(self, app, url, project, unreg_user):
         with capture_notifications() as notifications:
@@ -148,8 +148,8 @@ class TestClaimUser:
             )
         assert res.status_code == 204
         assert len(notifications['emits']) == 2
-        assert notifications['emits'][0]['type'] == NotificationType.Type.USER_PENDING_VERIFICATION
-        assert notifications['emits'][1]['type'] == NotificationType.Type.USER_FORWARD_INVITE
+        assert notifications['emits'][0]['type'] == NotificationTypeEnum.USER_PENDING_VERIFICATION
+        assert notifications['emits'][1]['type'] == NotificationTypeEnum.USER_FORWARD_INVITE
 
     def test_claim_unauth_success_with_preprint_id(self, app, url, preprint, unreg_user):
         with capture_notifications() as notifications:
@@ -159,7 +159,7 @@ class TestClaimUser:
             )
         assert res.status_code == 204
         assert len(notifications['emits']) == 1
-        assert notifications['emits'][0]['type'] == NotificationType.Type.USER_INVITE_DEFAULT
+        assert notifications['emits'][0]['type'] == NotificationTypeEnum.USER_INVITE_DEFAULT
 
     def test_claim_auth_failure(self, app, url, claimer, wrong_preprint, project, unreg_user, referrer):
         _url = url.format(unreg_user._id)
@@ -228,8 +228,8 @@ class TestClaimUser:
                     expect_errors=True
                 )
             assert len(notifications['emits']) == 2
-            assert notifications['emits'][0]['type'] == NotificationType.Type.USER_FORWARD_INVITE_REGISTERED
-            assert notifications['emits'][1]['type'] == NotificationType.Type.USER_PENDING_VERIFICATION_REGISTERED
+            assert notifications['emits'][0]['type'] == NotificationTypeEnum.USER_FORWARD_INVITE_REGISTERED
+            assert notifications['emits'][1]['type'] == NotificationTypeEnum.USER_PENDING_VERIFICATION_REGISTERED
         res = app.post_json_api(
             url.format(unreg_user._id),
             self.payload(id=project._id),
@@ -248,8 +248,8 @@ class TestClaimUser:
             )
         assert res.status_code == 204
         assert len(notifications['emits']) == 2
-        assert notifications['emits'][0]['type'] == NotificationType.Type.USER_FORWARD_INVITE_REGISTERED
-        assert notifications['emits'][1]['type'] == NotificationType.Type.USER_PENDING_VERIFICATION_REGISTERED
+        assert notifications['emits'][0]['type'] == NotificationTypeEnum.USER_FORWARD_INVITE_REGISTERED
+        assert notifications['emits'][1]['type'] == NotificationTypeEnum.USER_PENDING_VERIFICATION_REGISTERED
 
 
 @pytest.mark.django_db

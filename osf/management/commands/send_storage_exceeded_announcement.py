@@ -4,7 +4,7 @@ from tqdm import tqdm
 
 from django.core.management.base import BaseCommand
 
-from osf.models import Node, OSFUser, NotificationType
+from osf.models import Node, OSFUser, NotificationType, NotificationTypeEnum
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
@@ -40,7 +40,7 @@ def main(json_file, dry=False):
             if not dry:
                 try:
                     NotificationType.objects.get(
-                        name=NotificationType.Type.USER_STORAGE_CAP_EXCEEDED_ANNOUNCEMENT
+                        name=NotificationTypeEnum.USER_STORAGE_CAP_EXCEEDED_ANNOUNCEMENT
                     ).emit(
                         user=user,
                         event_context={

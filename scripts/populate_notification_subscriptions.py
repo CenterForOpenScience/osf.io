@@ -8,21 +8,21 @@ from framework.celery_tasks import app as celery_app
 from django.contrib.contenttypes.models import ContentType
 from django.db.models import Count, F, OuterRef, Subquery, IntegerField, CharField
 from django.db.models.functions import Cast
-from osf.models import OSFUser, Node, NotificationSubscription, NotificationType
+from osf.models import OSFUser, Node, NotificationSubscription, NotificationTypeEnum
 
 
 @celery_app.task(name='scripts.populate_notification_subscriptions')
 def populate_notification_subscriptions():
     created = 0
-    user_file_nt = NotificationType.Type.USER_FILE_UPDATED.instance
-    review_nt = NotificationType.Type.REVIEWS_SUBMISSION_STATUS.instance
-    node_file_nt = NotificationType.Type.NODE_FILE_UPDATED.instance
+    user_file_nt = NotificationTypeEnum.USER_FILE_UPDATED.instance
+    review_nt = NotificationTypeEnum.REVIEWS_SUBMISSION_STATUS.instance
+    node_file_nt = NotificationTypeEnum.NODE_FILE_UPDATED.instance
 
     user_ct = ContentType.objects.get_for_model(OSFUser)
     node_ct = ContentType.objects.get_for_model(Node)
 
-    reviews_qs = OSFUser.objects.exclude(subscriptions__notification_type__name=NotificationType.Type.REVIEWS_SUBMISSION_STATUS).distinct('id')
-    files_qs = OSFUser.objects.exclude(subscriptions__notification_type__name=NotificationType.Type.USER_FILE_UPDATED).distinct('id')
+    reviews_qs = OSFUser.objects.exclude(subscriptions__notification_type__name=NotificationTypeEnum.REVIEWS_SUBMISSION_STATUS).distinct('id')
+    files_qs = OSFUser.objects.exclude(subscriptions__notification_type__name=NotificationTypeEnum.USER_FILE_UPDATED).distinct('id')
 
     node_notifications_sq = (
         NotificationSubscription.objects.filter(

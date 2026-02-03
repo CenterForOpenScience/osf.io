@@ -15,7 +15,7 @@ from osf.models import (
     PreprintRequest,
     Institution,
     OSFUser,
-    NotificationType,
+    NotificationTypeEnum,
 )
 from osf.utils.workflows import DefaultStates, RequestTypes, NodeRequestTypes
 from osf.utils import permissions as osf_permissions
@@ -188,7 +188,7 @@ class NodeRequestCreateSerializer(NodeRequestSerializer):
 
             comment = validated_data.get('comment', '').strip() or language.EMPTY_REQUEST_INSTITUTIONAL_ACCESS_REQUEST_TEXT
 
-            NotificationType.Type.NODE_INSTITUTIONAL_ACCESS_REQUEST.instance.emit(
+            NotificationTypeEnum.NODE_INSTITUTIONAL_ACCESS_REQUEST.instance.emit(
                 user=recipient,
                 subscribed_object=node_request.target,
                 event_context={
