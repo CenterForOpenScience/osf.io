@@ -73,3 +73,10 @@ def create_missing_notification_from_legacy_id(legacy_id, user):
         f'Missing default subscription has been created: [user={user._id}], node={node_guid} type={notification_type}, legacy_id={legacy_id}]',
     )
     return missing_subscription_created
+
+def create_missing_notifications_from_event_name(filter_event_names, user):
+    # Note: this may not be needed since 1) missing node subscriptions are created in the LIST view when filter by
+    # legacy ID, and 2) missing user global subscriptions are created in DETAILS view with legacy ID. However, log
+    # this message to sentry for tracking how often this happens.
+    sentry.log_message(f'Detected empty subscription list when filter by event names: [event={filter_event_names}, user={user._id}]')
+    return None

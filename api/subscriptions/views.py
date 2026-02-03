@@ -49,11 +49,16 @@ class SubscriptionList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin):
     required_write_scopes = [CoreScopes.NULL]
 
     def get_queryset(self):
+
+        user = self.request.user
         user_guid = self.request.user._id
 
-        provider_ct = ContentType.objects.get_by_natural_key(app_label='osf', model='abstractprovider')
-        node_ct = ContentType.objects.get_by_natural_key(app_label='osf', model='abstractnode')
-        user_ct = ContentType.objects.get_by_natural_key(app_label='osf', model='osfuser')
+        filter_id = self.request.query_params.get('filter[id]')
+        filter_event_name = self.request.query_params.get('filter[event_name]')
+
+        provider_ct = ContentType.objects.get_for_model(AbstractProvider)
+        node_ct = ContentType.objects.get_for_model(AbstractNode)
+        user_ct = ContentType.objects.get_for_model(OSFUser)
 
         node_subquery = AbstractNode.objects.filter(
             id=Cast(OuterRef('object_id'), IntegerField()),
@@ -90,10 +95,8 @@ class SubscriptionList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin):
             NotificationType.Type.FILE_UPDATED.value,
         ]
 
-        qs = NotificationSubscription.objects.filter(
-            notification_type__name__in=_global_reviews_provider + _global_reviews_user + _global_file_updated + _node_file_updated,
-            user=self.request.user,
-        ).annotate(
+        full_set_of_types = _global_reviews_provider + _global_reviews_user + _global_file_updated + _node_file_updated
+        annotated_qs = NotificationSubscription.objects.filter(notification_type__name__in=full_set_of_types, user=user).annotate(
             event_name=Case(
                 When(
                     notification_type__name__in=_node_file_updated,
@@ -140,17 +143,29 @@ class SubscriptionList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin):
             ),
         ).distinct('legacy_id')
 
-        # Apply manual filter for legacy_id if requested
-        filter_id = self.request.query_params.get('filter[id]')
-        if filter_id:
-            qs = qs.filter(legacy_id=filter_id)
-            # convert to list comprehension because legacy_id is an annotation, not in DB
-        # Apply manual filter for event_name if requested
-        filter_event_name = self.request.query_params.get('filter[event_name]')
-        if filter_event_name:
-            qs = qs.filter(event_name__in=filter_event_name.split(','))
+        return_qs = annotated_qs
 
-        return qs
+        # Apply manual filter for legacy_id if requested
+        if filter_id:
+            return_qs = annotated_qs.filter(legacy_id=filter_id)
+            # TODO: Rework missing subscription fix after fully populating the OSF DB with all missing notifications
+            if not return_qs.exists():
+                missing_subscription_created = utils.create_missing_notification_from_legacy_id(filter_id, user)
+                if missing_subscription_created:
+                    return_qs = annotated_qs.filter(legacy_id=filter_id)
+            # `filter_id` takes priority over `filter_event_name`
+            return return_qs
+
+        # Apply manual filter for event_name if requested
+        if filter_event_name:
+            filter_event_names = filter_event_name.split(',')
+            return_qs = annotated_qs.filter(event_name__in=filter_event_names)
+            # TODO: Rework missing subscription fix after fully populating the OSF DB with all missing notifications
+            if not return_qs.exists():
+                utils.create_missing_notification_from_legacy_id(filter_event_names, user)
+
+        return return_qs
+
 
 class AbstractProviderSubscriptionList(SubscriptionList):
     def get_queryset(self):
@@ -208,7 +223,7 @@ class SubscriptionDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView):
         )
         existing_subscriptions = annotated_obj_qs.filter(legacy_id=subscription_id)
 
-        # TODO: Rework the missing subscription code after fully populating the OSF DB with all missing notifications
+        # TODO: Rework missing subscription fix after fully populating the OSF DB with all missing notifications
         if not existing_subscriptions.exists():
             missing_subscription_created = utils.create_missing_notification_from_legacy_id(subscription_id, user)
         if missing_subscription_created:
