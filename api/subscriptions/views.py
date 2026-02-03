@@ -96,7 +96,10 @@ class SubscriptionList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin):
         ]
 
         full_set_of_types = _global_reviews_provider + _global_reviews_user + _global_file_updated + _node_file_updated
-        annotated_qs = NotificationSubscription.objects.filter(notification_type__name__in=full_set_of_types, user=user).annotate(
+        annotated_qs = NotificationSubscription.objects.filter(
+            notification_type__name__in=full_set_of_types,
+            user=user,
+        ).annotate(
             event_name=Case(
                 When(
                     notification_type__name__in=_node_file_updated,
@@ -149,7 +152,8 @@ class SubscriptionList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin):
         if filter_id:
             return_qs = annotated_qs.filter(legacy_id=filter_id)
             # TODO: Rework missing subscription fix after fully populating the OSF DB with all missing notifications
-            if not return_qs.exists():
+            # NOTE: `.exists()` errors for unknown reason, possibly due to complex annotation with `.distinct()`
+            if return_qs.count() == 0:
                 missing_subscription_created = utils.create_missing_notification_from_legacy_id(filter_id, user)
                 if missing_subscription_created:
                     return_qs = annotated_qs.filter(legacy_id=filter_id)
@@ -161,7 +165,8 @@ class SubscriptionList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin):
             filter_event_names = filter_event_name.split(',')
             return_qs = annotated_qs.filter(event_name__in=filter_event_names)
             # TODO: Rework missing subscription fix after fully populating the OSF DB with all missing notifications
-            if not return_qs.exists():
+            # NOTE: `.exists()` errors for unknown reason, possibly due to complex annotation with `.distinct()`
+            if return_qs.count() == 0:
                 utils.create_missing_notification_from_legacy_id(filter_event_names, user)
 
         return return_qs
