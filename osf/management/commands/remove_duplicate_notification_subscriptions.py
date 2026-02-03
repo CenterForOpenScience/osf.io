@@ -49,13 +49,19 @@ class Command(BaseCommand):
             notification_type_id__in=digest_type_ids,
             _is_digest=False,
         )
+        invalid_non_digest_count = invalid_non_digest.count()
 
         invalid_digest = NotificationSubscription.objects.filter(
             ~Q(notification_type_id__in=digest_type_ids),
             _is_digest=True,
         )
+        invalid_digest_count = invalid_digest.count()
 
-        duplicate_same_kind = NotificationSubscription.objects.filter(
+        if not options['dry']:
+            invalid_non_digest.update(_is_digest=True)
+            invalid_digest.update(_is_digest=False)
+
+        to_remove = NotificationSubscription.objects.filter(
             Exists(
                 NotificationSubscription.objects.filter(
                     user_id=OuterRef('user_id'),
@@ -68,17 +74,13 @@ class Command(BaseCommand):
             )
         )
 
-        to_remove = (
-            invalid_non_digest
-            | invalid_digest
-            | duplicate_same_kind
-        )
-
         count = to_remove.count()
         self.stdout.write(f"Duplicates to remove: {count}")
+        self.stdout.write(f"Invalid non-digest records: {invalid_non_digest_count}")
+        self.stdout.write(f"Invalid digest records: {invalid_digest_count}")
 
-        if count == 0:
-            self.stdout.write(self.style.SUCCESS('No duplicates found.'))
+        if count == 0 and invalid_non_digest_count == 0 and invalid_digest_count == 0:
+            self.stdout.write(self.style.SUCCESS('No duplicates or invalid records found.'))
             return
 
         if options['dry']:
@@ -88,3 +90,5 @@ class Command(BaseCommand):
         with transaction.atomic():
             deleted, _ = to_remove.delete()
         self.stdout.write(self.style.SUCCESS(f"Successfully removed {deleted} duplicate records."))
+        self.stdout.write(self.style.SUCCESS(f"Successfully updated {invalid_non_digest_count} non-digest records."))
+        self.stdout.write(self.style.SUCCESS(f"Successfully updated {invalid_digest_count} digest records."))
