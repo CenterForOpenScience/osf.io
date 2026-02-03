@@ -1,7 +1,6 @@
 import itertools
 from calendar import monthrange
-from datetime import date, datetime
-from django.contrib.contenttypes.models import ContentType
+from datetime import date
 from django.db import connection
 from django.utils import timezone
 from django.core.validators import EmailValidator
@@ -34,10 +33,8 @@ def safe_render_notification(notifications, email_task):
             email_task.save()
             failed_notifications.append(notification.id)
             # Mark notifications that failed to render as fake sent
-            # Use 1000/12/31 to distinguish itself from another type of fake sent 1000/1/1
+            notification.mark_sent(fake_sent=True)
             log_message(f'Error rendering notification, mark as fake sent: [notification_id={notification.id}]')
-            notification.sent = datetime(1000, 12, 31)
-            notification.save()
             continue
 
         rendered_notifications.append(rendered)
@@ -102,9 +99,10 @@ def send_user_email_task(self, user_id, notification_ids, **kwargs):
         notifications_qs = notifications_qs.exclude(id__in=failed_notifications)
 
         if not rendered_notifications:
+            email_task.status = 'SUCCESS'
             if email_task.error_message:
                 logger.error(f'Partial success for send_user_email_task for user {user_id}. Task id: {self.request.id}. Errors: {email_task.error_message}')
-            email_task.status = 'SUCCESS'
+                email_task.status = 'PARTIAL_SUCCESS'
             email_task.save()
             return
 
@@ -123,10 +121,10 @@ def send_user_email_task(self, user_id, notification_ids, **kwargs):
         notifications_qs.update(sent=timezone.now())
 
         email_task.status = 'SUCCESS'
-        email_task.save()
-
         if email_task.error_message:
             logger.error(f'Partial success for send_user_email_task for user {user_id}. Task id: {self.request.id}. Errors: {email_task.error_message}')
+            email_task.status = 'PARTIAL_SUCCESS'
+        email_task.save()
 
     except Exception as e:
         retry_count = self.request.retries
@@ -177,32 +175,32 @@ def send_moderator_email_task(self, user_id, notification_ids, provider_content_
         notifications_qs = notifications_qs.exclude(id__in=failed_notifications)
 
         if not rendered_notifications:
+            email_task.status = 'SUCCESS'
             if email_task.error_message:
                 logger.error(f'Partial success for send_moderator_email_task for user {user_id}. Task id: {self.request.id}. Errors: {email_task.error_message}')
-            email_task.status = 'SUCCESS'
+                email_task.status = 'PARTIAL_SUCCESS'
             email_task.save()
             return
 
-        ProviderModel = ContentType.objects.get_for_id(provider_content_type_id).model_class()
         try:
-            provider = ProviderModel.objects.get(id=provider_id)
+            provider = AbstractProvider.objects.get(id=provider_id)
         except AbstractProvider.DoesNotExist:
-            log_message(f'Provider with id {provider_id} does not exist for model {ProviderModel.name}')
+            log_message(f'Provider with id {provider_id} does not exist for model {provider.type}')
             email_task.status = 'FAILURE'
-            email_task.error_message = f'Provider with id {provider_id} does not exist for model {ProviderModel.name}'
+            email_task.error_message = f'Provider with id {provider_id} does not exist for model {provider.type}'
             email_task.save()
             return
         except AttributeError as err:
-            log_message(f'Error retrieving provider with id {provider_id} for model {ProviderModel.name}: {err}')
+            log_message(f'Error retrieving provider with id {provider_id} for model {provider.type}: {err}')
             email_task.status = 'FAILURE'
-            email_task.error_message = f'Error retrieving provider with id {provider_id} for model {ProviderModel.name}: {err}'
+            email_task.error_message = f'Error retrieving provider with id {provider_id} for model {provider.type}: {err}'
             email_task.save()
             return
 
         if provider is None:
-            log_message(f'Provider with id {provider_id} does not exist for model {ProviderModel.name}')
+            log_message(f'Provider with id {provider_id} does not exist for model {provider.type}')
             email_task.status = 'FAILURE'
-            email_task.error_message = f'Provider with id {provider_id} does not exist for model {ProviderModel.name}'
+            email_task.error_message = f'Provider with id {provider_id} does not exist for model {provider.type}'
             email_task.save()
             return
 
@@ -211,10 +209,10 @@ def send_moderator_email_task(self, user_id, notification_ids, provider_content_
             current_admins = provider.get_group('admin')
             if current_admins is None or not current_admins.user_set.filter(id=user.id).exists():
                 log_message(f"User is not a moderator for provider {provider._id} - notifications will be marked as sent.")
-                email_task.status = 'FAILURE'
+                email_task.status = 'AUTO_FIXED'
                 email_task.error_message = f'User is not a moderator for provider {provider._id}'
                 email_task.save()
-                notifications_qs.update(sent=datetime(1000, 1, 1))
+                notifications_qs.update(sent=timezone.now(), fake_sent=True)
                 return
 
         additional_context = {}
@@ -274,10 +272,10 @@ def send_moderator_email_task(self, user_id, notification_ids, provider_content_
         notifications_qs.update(sent=timezone.now())
 
         email_task.status = 'SUCCESS'
-        email_task.save()
-
         if email_task.error_message:
             logger.error(f'Partial success for send_moderator_email_task for user {user_id}. Task id: {self.request.id}. Errors: {email_task.error_message}')
+            email_task.status = 'PARTIAL_SUCCESS'
+        email_task.save()
 
     except Exception as e:
         retry_count = self.request.retries
@@ -490,3 +488,22 @@ def send_no_addon_email(self, dry_run=False, **kwargs):
                     pass
             else:
                 notification.mark_sent()
+
+
+@celery_app.task(bind=True, name='notifications.tasks.notifications_cleanup_task')
+def notifications_cleanup_task(self, dry_run=False, **kwargs):
+    """Remove old notifications and email tasks from the database."""
+
+    cutoff_date = timezone.now() - settings.NOTIFICATIONS_CLEANUP_AGE
+    old_notifications = Notification.objects.filter(sent__lt=cutoff_date)
+    old_email_tasks = EmailTask.objects.filter(created_at__lt=cutoff_date)
+
+    if dry_run:
+        notifications_count = old_notifications.count()
+        email_tasks_count = old_email_tasks.count()
+        logger.info(f'[Dry Run] Notifications Cleanup Task: {notifications_count} notifications and {email_tasks_count} email tasks would be deleted.')
+        return
+
+    deleted_notifications_count, _ = old_notifications.delete()
+    deleted_email_tasks_count, _ = old_email_tasks.delete()
+    logger.info(f'Notifications Cleanup Task: Deleted {deleted_notifications_count} notifications and {deleted_email_tasks_count} email tasks older than {cutoff_date}.')

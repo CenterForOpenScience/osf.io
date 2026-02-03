@@ -18,7 +18,7 @@ def add_notification_subscription(user, notification_type, frequency, subscribed
     Create a NotificationSubscription for a user.
     If the notification type corresponds to a subscribed_object, set subscribed_object to get the provider.
     """
-    from osf.models import NotificationSubscription, AbstractProvider
+    from osf.models import NotificationSubscription
     kwargs = {
         'user': user,
         'notification_type': NotificationType.objects.get(name=notification_type),
@@ -26,10 +26,7 @@ def add_notification_subscription(user, notification_type, frequency, subscribed
     }
     if subscribed_object is not None:
         kwargs['object_id'] = subscribed_object.id
-        if isinstance(subscribed_object, AbstractProvider):
-            kwargs['content_type'] = ContentType.objects.get_for_model(subscribed_object, for_concrete_model=False) if subscribed_object else None
-        else:
-            kwargs['content_type'] = ContentType.objects.get_for_model(subscribed_object) if subscribed_object else None
+        kwargs['content_type'] = ContentType.objects.get_for_model(subscribed_object)
     if subscription is not None:
         kwargs['object_id'] = subscription.id
         kwargs['content_type'] = ContentType.objects.get_for_model(subscription)

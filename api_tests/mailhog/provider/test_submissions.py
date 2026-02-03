@@ -21,7 +21,7 @@ from tests.base import get_default_metaschema
 from osf.models import NotificationType
 
 from osf.migrations import update_provider_auth_groups
-from tests.utils import capture_notifications, get_mailhog_messages, delete_mailhog_messages
+from tests.utils import capture_notifications, get_mailhog_messages, delete_mailhog_messages, assert_emails
 
 
 @pytest.mark.django_db
@@ -85,8 +85,7 @@ class TestRegistriesModerationSubmissions:
         assert notifications['emits'][0]['type'] == NotificationType.Type.PROVIDER_NEW_PENDING_WITHDRAW_REQUESTS
         assert notifications['emits'][1]['type'] == NotificationType.Type.PROVIDER_NEW_PENDING_WITHDRAW_REQUESTS
         messages = get_mailhog_messages()
-        assert messages['count'] == 1
-        assert messages['items'][0]['Content']['Headers']['To'][0] == registration.creator.username
+        assert_emails(messages, notifications)
 
         delete_mailhog_messages()
 

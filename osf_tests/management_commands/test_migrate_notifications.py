@@ -347,7 +347,7 @@ class TestNotificationSubscriptionMigration:
         nt = NotificationSubscription.objects.get(
             user=user,
             notification_type__name=NotificationType.Type.PROVIDER_NEW_PENDING_SUBMISSIONS,
-            content_type=ContentType.objects.get_for_model(provider, for_concrete_model=False),
+            content_type=ContentType.objects.get_for_model(provider),
             object_id=provider.id,
         )
         assert nt.message_frequency == 'none'
