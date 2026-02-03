@@ -69,17 +69,6 @@ class TestSubscriptionDetail:
         )
 
     @pytest.fixture()
-    def notification_node_file_updated(self, node, user):
-        return NotificationSubscriptionFactory(
-            notification_type=NotificationType.Type.NODE_FILE_UPDATED.instance,
-            object_id=node.id,
-            content_type_id=ContentType.objects.get_for_model(AbstractNode).id,
-            user=user,
-            _is_digest=True,
-            message_frequency='daily',
-        )
-
-    @pytest.fixture()
     def url_user_global_file_updated(self, user):
         return f'/{API_BASE}subscriptions/{user._id}_global_file_updated/'
 
@@ -225,7 +214,6 @@ class TestSubscriptionDetail:
             app,
             user,
             node,
-            notification_node_file_updated,
             url_node_file_updated
     ):
         res = app.get(url_node_file_updated, auth=user.auth)
@@ -256,7 +244,6 @@ class TestSubscriptionDetail:
             app,
             user,
             node,
-            notification_node_file_updated,
             url_node_file_updated_not_found
     ):
         res = app.get(url_node_file_updated_not_found, auth=user.auth, expect_errors=True)
@@ -268,7 +255,6 @@ class TestSubscriptionDetail:
             user,
             user_no_permission,
             node,
-            notification_node_file_updated,
             url_node_file_updated
     ):
         res = app.get(url_node_file_updated, auth=user_no_permission.auth, expect_errors=True)
@@ -279,7 +265,6 @@ class TestSubscriptionDetail:
             app,
             user,
             node,
-            notification_node_file_updated,
             url_node_file_updated
     ):
         res = app.get(url_node_file_updated, expect_errors=True)
