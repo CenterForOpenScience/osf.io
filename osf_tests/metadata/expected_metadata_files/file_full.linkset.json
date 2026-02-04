@@ -1,0 +1,17 @@
+{
+  "linkset": [
+    {
+      "anchor": "http://localhost:5000/w3ibb",
+      "type": [
+        {
+          "href": "https://osf.io/vocab/2022/File"
+        }
+      ],
+      "collection": [
+        {
+          "href": "http://localhost:5000/w2ibb"
+        }
+      ]
+    }
+  ]
+}

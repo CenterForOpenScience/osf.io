@@ -64,7 +64,8 @@ BASIC_METADATA_SCENARIO = {
             'datacite-xml': 'file_basic.datacite.xml',
             'datacite-json': 'file_basic.datacite.json',
             'google-dataset-json-ld': 'file_basic.google-dataset.json',
-            # 'linkset': 'file_basic.linkset', not determined response to compare with _expected_metadata
+            'linkset': 'file_basic.linkset',
+            'linkset-json': 'file_basic.linkset.json',
         },
     },
     DCTERMS.Agent: {
@@ -132,6 +133,8 @@ FULL_METADATA_SCENARIO = {
             'datacite-xml': 'file_full.datacite.xml',
             'datacite-json': 'file_full.datacite.json',
             'google-dataset-json-ld': 'file_full.google-dataset.json',
+            'linkset': 'file_full.linkset',
+            'linkset-json': 'file_full.linkset.json',
         },
         OsfmapPartition.SUPPLEMENT: {
             'turtle': 'file_supplement.turtle',

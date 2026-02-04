@@ -25,44 +25,54 @@ class SignpostLink:
     target_uri: str
     target_attrs: Iterable[tuple(str, str)]
 
+from osf import models as osfdb
 class BaseSignpostLinkset(MetadataSerializer, abc.ABC):
     def _each_link(self) -> Iterator[SignpostLink]:
         focus_iri = self.basket.focus.iri
-        for _creator_iri in self.basket[DCTERMS.creator]:
-            yield SignpostLink(focus_iri, 'author', str(_creator_iri), ())
+        if isinstance(self.basket.focus.dbmodel, osfdb.BaseFileNode):
+            # type
+            for _type_iri in self.basket[DCTERMS.type | RDF.type]:
+                yield SignpostLink(focus_iri, 'type', str(_type_iri), ())
+            # collection
+            for _collection_uri in self.basket[OSF.isContainedBy]:
+                yield SignpostLink(focus_iri, 'collection', str(_collection_uri), ())
+        else:
+            # author
+            for _creator_iri in self.basket[DCTERMS.creator]:
+                yield SignpostLink(focus_iri, 'author', str(_creator_iri), ())
 
-        # type
-        for _type_iri in self.basket[DCTERMS.type | RDF.type]:
-            yield SignpostLink(focus_iri, 'type', str(_type_iri), ())
+            # type
+            for _type_iri in self.basket[DCTERMS.type | RDF.type]:
+                yield SignpostLink(focus_iri, 'type', str(_type_iri), ())
 
-        # cite-as
-        yield SignpostLink(focus_iri, 'cite-as', next((
-            _sameas_iri
-            for _sameas_iri in self.basket[OWL.sameAs]
-            if _sameas_iri.startswith(DOI)
-        ), focus_iri), ())
+            # cite-as
+            yield SignpostLink(focus_iri, 'cite-as', next((
+                _sameas_iri
+                for _sameas_iri in self.basket[OWL.sameAs]
+                if _sameas_iri.startswith(DOI)
+            ), focus_iri), ())
 
-        _record_uri = web_url_for('metadata_download', guid=self.basket.focus.dbmodel._id)
-        path = urljoin(DOMAIN, _record_uri)
-        from osf.metadata.serializers import METADATA_SERIALIZER_REGISTRY
-        # describedby
-        for _format_key, _serializer in METADATA_SERIALIZER_REGISTRY.items():
-            yield SignpostLink(
-                focus_iri,
-                'describedby',
-                path,
-                [('type', _serializer.mediatype)]
-            )
+            _record_uri = web_url_for('metadata_download', guid=self.basket.focus.dbmodel._id)
+            path = urljoin(DOMAIN, _record_uri)
+            from osf.metadata.serializers import METADATA_SERIALIZER_REGISTRY
+            # describedby
+            for _format_key, _serializer in METADATA_SERIALIZER_REGISTRY.items():
+                yield SignpostLink(
+                    focus_iri,
+                    'describedby',
+                    path,
+                    [('type', _serializer.mediatype)]
+                )
 
-        # license
-        for _license_uri in self.basket[DCTERMS.rights]:
-            if not isinstance(_license_uri, rdflib.BNode):
-                yield SignpostLink(focus_iri, 'license', str(_license_uri), ())
+            # license
+            for _license_uri in self.basket[DCTERMS.rights]:
+                if not isinstance(_license_uri, rdflib.BNode):
+                    yield SignpostLink(focus_iri, 'license', str(_license_uri), ())
 
-        # item
-        for _file_iri in self.basket[OSF.contains]:
-            mime_type = next(self.basket[_file_iri:DCAT.mediaType])
-            yield SignpostLink(focus_iri, 'item', str(_file_iri), [('type', mime_type)])
+            # item
+            for _file_iri in self.basket[OSF.contains]:
+                mime_type = next(self.basket[_file_iri:DCAT.mediaType])
+                yield SignpostLink(focus_iri, 'item', str(_file_iri), [('type', mime_type)])
 
 
 class SignpostLinkset(BaseSignpostLinkset):

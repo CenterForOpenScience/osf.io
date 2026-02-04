@@ -1,0 +1,2 @@
+<https://osf.io/vocab/2022/File> ; rel="type" ; anchor="http://localhost:5000/w3ibb",
+<http://localhost:5000/w2ibb> ; rel="collection" ; anchor="http://localhost:5000/w3ibb"
