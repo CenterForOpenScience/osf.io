@@ -40,10 +40,10 @@ def create_missing_notification_from_legacy_id(legacy_id, user):
         raise PermissionDenied
     # `<node_id>_files_update` should exist by default if user is a contributor of the node.
     # If not found, create them with `none` frequency and `_is_digest=True` as default.
-    elif legacy_id.endswith('_files_updated'):
+    elif legacy_id.endswith('_file_updated'):
         notification_type = node_file_updated_nt
         content_type = node_ct
-        node_guid = legacy_id[:-len('_files_updated')]
+        node_guid = legacy_id[:-len('_file_updated')]
         node = AbstractNode.objects.filter(guids___id=node_guid, is_deleted=False, type='osf.node').first()
         if not node:
             # The node in the legacy subscription ID does not exist or is invalid

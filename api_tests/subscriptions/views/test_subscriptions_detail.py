@@ -86,19 +86,19 @@ class TestSubscriptionDetail:
 
     @pytest.fixture()
     def url_node_file_updated(self, node):
-        return f'/{API_BASE}subscriptions/{node._id}_files_updated/'
+        return f'/{API_BASE}subscriptions/{node._id}_file_updated/'
 
     @pytest.fixture()
     def url_node_file_updated_not_found(self):
-        return f'/{API_BASE}subscriptions/12345_files_updated/'
+        return f'/{API_BASE}subscriptions/12345_file_updated/'
 
     @pytest.fixture()
     def url_node_file_updated_without_permission(self, node_without_permission):
-        return f'/{API_BASE}subscriptions/{node_without_permission._id}_files_updated/'
+        return f'/{API_BASE}subscriptions/{node_without_permission._id}_file_updated/'
 
     @pytest.fixture()
     def url_node_file_updated_missing(self, node_missing_subscriptions):
-        return f'/{API_BASE}subscriptions/{node_missing_subscriptions._id}_files_updated/'
+        return f'/{API_BASE}subscriptions/{node_missing_subscriptions._id}_file_updated/'
 
     @pytest.fixture()
     def url_invalid(self):
@@ -219,7 +219,7 @@ class TestSubscriptionDetail:
         res = app.get(url_node_file_updated, auth=user.auth)
         notification_id = res.json['data']['id']
         assert res.status_code == 200
-        assert notification_id == f'{node._id}_files_updated'
+        assert notification_id == f'{node._id}_file_updated'
 
     def test_node_file_updated_subscription_detail_missing_and_created(
             self,
@@ -237,7 +237,7 @@ class TestSubscriptionDetail:
         res = app.get(url_node_file_updated_missing, auth=user_missing_subscriptions.auth)
         notification_id = res.json['data']['id']
         assert res.status_code == 200
-        assert notification_id == f'{node_missing_subscriptions._id}_files_updated'
+        assert notification_id == f'{node_missing_subscriptions._id}_file_updated'
 
     def test_node_file_updated_subscription_detail_not_found(
             self,

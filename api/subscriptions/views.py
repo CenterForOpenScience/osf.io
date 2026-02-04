@@ -104,7 +104,7 @@ class SubscriptionList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin):
                 When(
                     notification_type__name__in=_node_file_updated,
                     content_type=node_ct,
-                    then=Value('files_updated'),
+                    then=Value('file_updated'),
                 ),
                 When(
                     notification_type__name__in=_global_file_updated,
@@ -167,7 +167,7 @@ class SubscriptionList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin):
             # TODO: Rework missing subscription fix after fully populating the OSF DB with all missing notifications
             # NOTE: `.exists()` errors for unknown reason, possibly due to complex annotation with `.distinct()`
             if return_qs.count() == 0:
-                utils.create_missing_notification_from_legacy_id(filter_event_names, user)
+                utils.create_missing_notifications_from_event_name(filter_event_names, user)
 
         return return_qs
 
@@ -211,7 +211,7 @@ class SubscriptionDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView):
                 When(
                     notification_type__name=NotificationType.Type.NODE_FILE_UPDATED.value,
                     content_type=node_ct,
-                    then=Concat(Subquery(node_subquery), Value('_files_updated')),
+                    then=Concat(Subquery(node_subquery), Value('_file_updated')),
                 ),
                 When(
                     notification_type__name=NotificationType.Type.USER_FILE_UPDATED.value,
@@ -234,6 +234,8 @@ class SubscriptionDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView):
         if missing_subscription_created:
             # Note: must use `annotated_obj_qs` to insert `legacy_id` so that `SubscriptionSerializer` can build data
             # properly; in addition, there should be only one result
+            # missing_subscription_created.legacy_id = subscription_id
+            # subscription = missing_subscription_created
             subscription = annotated_obj_qs.get(legacy_id=subscription_id)
         else:
             # TODO: Use `get()` and fails/warns on multiple objects after fully de-duplicating the OSF DB
@@ -248,6 +250,8 @@ class SubscriptionDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView):
         """
         Update a notification subscription
         """
+        self.get_object()
+
         if '_global_file_updated' in self.kwargs['subscription_id']:
             # Copy _global_file_updated subscription changes to all file subscriptions
             qs = NotificationSubscription.objects.filter(
@@ -292,9 +296,9 @@ class SubscriptionDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView):
                 serializer.is_valid(raise_exception=True)
                 self.perform_update(serializer)
             return Response(serializer.data)
-        elif '_files_updated' in self.kwargs['subscription_id']:
-            # Copy _files_updated subscription changes to all node file subscriptions
-            node_id = Guid.load(self.kwargs['subscription_id'].split('_files_updated')[0]).object_id
+        elif '_file_updated' in self.kwargs['subscription_id']:
+            # Copy _file_updated subscription changes to all node file subscriptions
+            node_id = Guid.load(self.kwargs['subscription_id'].split('_file_updated')[0]).object_id
 
             qs = NotificationSubscription.objects.filter(
                 user=self.request.user,
