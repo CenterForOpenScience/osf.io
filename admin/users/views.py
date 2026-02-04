@@ -49,6 +49,7 @@ from admin.users.forms import (
 from admin.nodes.views import NodeAddSystemTag, NodeRemoveSystemTag
 from admin.base.views import GuidView
 from api.users.services import send_password_reset_email
+from api.users.tasks import merge_users
 from website.settings import DOMAIN, OSF_SUPPORT_EMAIL
 from django.urls import reverse_lazy
 
@@ -417,7 +418,11 @@ class UserMergeAccounts(UserMixin, FormView):
         guid_to_be_merged = form.cleaned_data['user_guid_to_be_merged']
 
         user_to_be_merged = OSFUser.objects.get(guids___id=guid_to_be_merged, guids___id__isnull=False)
-        user.merge_user(user_to_be_merged)
+        merge_users.delay(user._id, user_to_be_merged._id)
+        messages.success(
+            self.request,
+            f'Merge of user {user_to_be_merged._id} into {user._id} has been queued and will run in the background.',
+        )
 
         return super().form_valid(form)
 
