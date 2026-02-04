@@ -256,6 +256,7 @@ class PreprintSerializer(TaxonomizableSerializerMixin, MetricsSerializerMixin, J
     why_no_prereg = ser.CharField(required=False, allow_blank=True, allow_null=True)
     prereg_links = ser.ListField(child=ser.URLField(), required=False)
     prereg_link_info = ser.ChoiceField(Preprint.PREREG_LINK_INFO_CHOICES, required=False, allow_blank=True)
+    default_license_id = ser.CharField(source='provider.default_license._id', read_only=True, default='')
 
     class Meta:
         type_ = 'preprints'
