@@ -59,6 +59,7 @@ from api.nodes.permissions import (
     AdminOrPublic,
     ExcludeWithdrawals,
     NodeLinksShowIfVersion,
+    AdminOrWriteContributor,
 )
 from api.registrations.permissions import ContributorOrModerator, ContributorOrModeratorOrPublic
 from api.registrations.serializers import (
@@ -696,7 +697,7 @@ class RegistrationInstitutionsRelationship(NodeInstitutionsRelationship, Registr
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
-        AdminOrPublic,
+        AdminOrWriteContributor,
     )
 
 
