@@ -15,7 +15,7 @@
           "href": "https://osf.io/vocab/2022/Project"
         }
       ],
-      "citeas": [
+      "cite-as": [
         {
           "href": "https://doi.org/10.70102/FK2osf.io/w2ibb"
         }
@@ -44,6 +44,11 @@
         {
           "href": "http://localhost:5000/metadata/w2ibb/",
           "type": "application/linkset+json"
+        }
+      ],
+      "license": [
+        {
+          "href": "https://creativecommons.org/licenses/by-nc-nd/4.0/legalcode"
         }
       ],
       "item": [

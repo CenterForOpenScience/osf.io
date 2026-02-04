@@ -11,6 +11,7 @@ from collections.abc import (
 from collections import defaultdict
 import dataclasses
 import json
+import rdflib
 from ._base import MetadataSerializer
 from osf.metadata.rdfutils import DOI, DCTERMS, OWL, RDF, OSF, DCAT
 from website.settings import DOMAIN
@@ -35,7 +36,7 @@ class BaseSignpostLinkset(MetadataSerializer, abc.ABC):
             yield SignpostLink(focus_iri, 'type', str(_type_iri), ())
 
         # cite-as
-        yield SignpostLink(focus_iri, 'citeas', next((
+        yield SignpostLink(focus_iri, 'cite-as', next((
             _sameas_iri
             for _sameas_iri in self.basket[OWL.sameAs]
             if _sameas_iri.startswith(DOI)
@@ -53,11 +54,10 @@ class BaseSignpostLinkset(MetadataSerializer, abc.ABC):
                 [('type', _serializer.mediatype)]
             )
 
-        # Todo: on test runs returns different data on runs so have errors on file data comparing,
-        #  maybe it is possible to mock it somehow
         # license
-        # for _license_uri in self.basket[DCTERMS.rights]:
-        #     yield SignpostLink(focus_iri, 'license', str(_license_uri), ())
+        for _license_uri in self.basket[DCTERMS.rights]:
+            if not isinstance(_license_uri, rdflib.BNode):
+                yield SignpostLink(focus_iri, 'license', str(_license_uri), ())
 
         # item
         for _file_iri in self.basket[OSF.contains]:

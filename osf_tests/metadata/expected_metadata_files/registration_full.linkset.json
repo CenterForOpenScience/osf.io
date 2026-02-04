@@ -15,7 +15,7 @@
           "href": "https://osf.io/vocab/2022/Registration"
         }
       ],
-      "citeas": [
+      "cite-as": [
         {
           "href": "http://localhost:5000/w5ibb"
         }
@@ -44,6 +44,11 @@
         {
           "href": "http://localhost:5000/metadata/w5ibb/",
           "type": "application/linkset+json"
+        }
+      ],
+      "license": [
+        {
+          "href": "https://creativecommons.org/licenses/by-nc-nd/4.0/legalcode"
         }
       ],
       "item": [
