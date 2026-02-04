@@ -17,12 +17,14 @@
     <thead>
         <tr>
             <th>Name</th>
+            <th>Service</th>
         </tr>
     </thead>
     <tbody>
-    {% for brand in brands %}
+    {% for brand in brands|dictsort:"name" %}
     <tr>
         <td><a href="{% url 'brands:detail' brand_id=brand.id %}">{{ brand.name }}</a></td>
+        <td>{{ brand.get_provider_types }}</td>
     </tr>
     {% endfor %}
     </tbody>

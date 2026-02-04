@@ -37,7 +37,7 @@ from addons.osfstorage.models import OsfStorageFile, OsfStorageFolder, OsfStorag
 from framework import sentry
 from framework.exceptions import HTTPError
 from osf import features
-from osf.models import AbstractNode, Node, NodeLog, Registration, BaseFileNode
+from osf.models import Node, NodeLog, Registration, BaseFileNode, ArchiveJob
 from osf.models.files import TrashedFileNode
 from osf.utils.requests import get_current_request
 from osf.exceptions import RegistrationStuckRecoverableException, RegistrationStuckBrokenException
@@ -290,32 +290,33 @@ def get_file_obj_from_log(log, reg):
     try:
         return BaseFileNode.objects.get(_id=log.params['urls']['view'].split('/')[4])
     except KeyError:
-        path = log.params.get('path', '').split('/')
-        if log.action in ['addon_file_moved', 'addon_file_renamed']:
+        if log.action == 'osf_storage_folder_created':
+            return OsfStorageFolder.objects.get(
+                target_object_id=reg.registered_from.id,
+                name=log.params['path'].split('/')[-2]
+            )
+        elif log.action == 'osf_storage_file_removed':
+            path = log.params['path'].split('/')
+            return TrashedFileNode.objects.get(
+                target_object_id=reg.registered_from.id,
+                name=path[-1] or path[-2]  # file name or folder name
+            )
+        elif log.action in ['addon_file_moved', 'addon_file_renamed']:
             try:
                 return BaseFileNode.objects.get(_id=log.params['source']['path'].rstrip('/').split('/')[-1])
             except (KeyError, BaseFileNode.DoesNotExist):
                 return BaseFileNode.objects.get(_id=log.params['destination']['path'].rstrip('/').split('/')[-1])
-        elif log.action == 'osf_storage_file_removed':
-            candidates = BaseFileNode.objects.filter(
-                target_object_id=reg.registered_from.id,
-                target_content_type_id=ContentType.objects.get_for_model(AbstractNode).id,
-                name=path[-1] or path[-2],
-                deleted_on__lte=log.date
-            ).order_by('-deleted_on')
         else:
             # Generic fallback
-            candidates = BaseFileNode.objects.filter(
-                target_object_id=reg.registered_from.id,
-                target_content_type_id=ContentType.objects.get_for_model(AbstractNode).id,
-                name=path[-1] or path[-2],
-                created__lte=log.date
-            ).order_by('-created')
+            path = log.params.get('path', '').split('/')
+            if len(path) >= 2:
+                name = path[-1] or path[-2]  # file name or folder name
+                return BaseFileNode.objects.get(
+                    target_object_id=reg.registered_from.id,
+                    name=name
+                )
 
-        if candidates.exists():
-            return candidates.first()
-
-        raise BaseFileNode.DoesNotExist(f"No file found for name '{path[-1] or path[-2]}' before {log.date}")
+        raise ValueError(f'Cannot determine file obj for log {log._id} [Registration id {reg._id}]: {log.action}')
 
 
 def handle_file_operation(file_tree, reg, file_obj, log, obj_cache):
@@ -432,18 +433,29 @@ def archive_registrations(*args, **kwargs):
         ARCHIVED.append(reg)
         VERIFIED.remove(reg)
 
-def verify(registration, permissible_addons=DEFAULT_PERMISSIBLE_ADDONS, raise_error=False):
+def verify(registration, permissible_addons=DEFAULT_PERMISSIBLE_ADDONS, verify_addons=True, raise_error=False):
     permissible_addons = set(permissible_addons)
     maybe_suppress_error = contextlib.suppress(ValidationError) if not raise_error else contextlib.nullcontext(enter_result=False)
 
-    for reg in registration.node_and_primary_descendants():
+    # Collect all registrations and prefetch archive_jobs to avoid N+1 queries
+    registrations = list(registration.node_and_primary_descendants())
+    registration_ids = [reg.id for reg in registrations]
+
+    archive_jobs_dict = {
+        job.dst_node_id: job
+        for job in ArchiveJob.objects.filter(dst_node_id__in=registration_ids).only('dst_node_id', 'status')
+    }
+
+    for reg in registrations:
         logger.info(f'Verifying {reg._id}')
-        if reg.archive_job.status == ARCHIVER_SUCCESS:
+        archive_job = archive_jobs_dict.get(reg.id) or getattr(reg, 'archive_job', None)
+        if archive_job and archive_job.status == ARCHIVER_SUCCESS:
             continue
+
         nonignorable_logs = get_logs_to_revert(reg)
         unacceptable_logs = nonignorable_logs.exclude(action__in=LOG_GREYLIST)
         if unacceptable_logs.exists():
-            if len(permissible_addons) == 1 or unacceptable_logs.exclude(action__in=PERMISSIBLE_BLACKLIST):
+            if len(permissible_addons) == 1 or unacceptable_logs.exclude(action__in=PERMISSIBLE_BLACKLIST).exists():
                 message = '{}: Original node {} has unacceptable logs: {}'.format(
                     registration._id,
                     reg.registered_from._id,
@@ -455,30 +467,23 @@ def verify(registration, permissible_addons=DEFAULT_PERMISSIBLE_ADDONS, raise_er
                     raise ValidationError(message)
 
                 return False
-        if nonignorable_logs.filter(action__in=VERIFY_PROVIDER).exists():
-            for log in nonignorable_logs.filter(action__in=VERIFY_PROVIDER):
-                for key in ['source', 'destination']:
-                    if key in log.params:
-                        if log.params[key]['provider'] != 'osfstorage':
-                            message = '{}: {} Only OSFS moves and renames are permissible'.format(
-                                registration._id,
-                                log._id
-                            )
-                            logger.error(message)
 
-                            with maybe_suppress_error:
-                                raise ValidationError(message)
+        verify_provider_logs = nonignorable_logs.filter(action__in=VERIFY_PROVIDER).only('params', '_id')
+        for log in verify_provider_logs:
+            for key in ['source', 'destination']:
+                if key in log.params:
+                    if log.params[key].get('provider') != 'osfstorage':
+                        message = '{}: {} Only OSFS moves and renames are permissible'.format(
+                            registration._id,
+                            log._id
+                        )
+                        logger.error(message)
 
-                            return False
-        addons = reg.registered_from.get_addon_names()
-        if set(addons) - set(permissible_addons | {'wiki'}) != set():
-            message = f'{registration._id}: Original node {reg.registered_from._id} has addons: {addons}'
-            logger.error(message)
+                        with maybe_suppress_error:
+                            raise ValidationError(message)
 
-            with maybe_suppress_error:
-                raise ValidationError(message)
+                        return False
 
-            return False
         if nonignorable_logs.exists():
             logger.info('{}: Original node {} has had revertable file operations'.format(
                 registration._id,
@@ -489,6 +494,18 @@ def verify(registration, permissible_addons=DEFAULT_PERMISSIBLE_ADDONS, raise_er
                 registration._id,
                 reg.registered_from._id
             ))
+
+        if verify_addons:
+            addons = reg.registered_from.get_addon_names()
+            if set(addons) - set(permissible_addons | {'wiki'}) != set():
+                message = f'{registration._id}: Original node {reg.registered_from._id} has addons: {addons}'
+                logger.error(message)
+
+                with maybe_suppress_error:
+                    raise ValidationError(message)
+
+                return False
+
     return True
 
 def verify_registrations(registration_ids, permissible_addons):

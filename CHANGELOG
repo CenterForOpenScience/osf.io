@@ -2,6 +2,60 @@
 
 We follow the CalVer (https://calver.org/) versioning scheme: YY.MINOR.MICRO.
 
+26.1.6 (2026-01-14)
+===================
+
+- Rework NR verification and de-duplication command
+- Fix the rest of regsitration links in moderator digest email
+- Mark fail-to-render notifications as fake sent
+
+26.1.5 (2026-01-12)
+===================
+
+- Fix authenticated ORCID is not shown on user profile page (BE part)
+- Fix some links in preprint & registration moderation digest emails
+- Enable admin/admin read/write access for NR tables
+- Handle multiple notification subscriptions gracefully in emit()
+- Remove subscription when moderators/admins are removed
+- Set proper default message frequency when adding moderator/admins
+- Add a management command to remove duplicated notifications
+- Fix subscription population script's digest option
+
+26.1.4 (2026-01-06)
+===================
+
+- Follow-up fix for preprint/registration withdrawal request
+- Added a script/task to populate default notification subscriptions that were missing before and after NR
+- Reworked PR template
+
+26.1.3 (2026-01-05)
+===================
+
+- Increase NR migration timeout and batch size
+
+26.1.2 (2026-01-05)
+===================
+
+- Notifications Refactor Phase 2 - UAT Hotfix Part 2
+  * Fix adding moderator email in admin
+  * Fix preprint/registration withdrawal request email in digest
+  * Fix subjects for schema response update emails
+  * Update defauls for triggered emails
+
+26.1.1 (2026-01-02)
+===================
+
+- Notifications Refactor Phase 2 - UAT Hotfix Part 1
+  * Fix reset password url
+  * Fix logout query for new user confirmation url
+  * Fix new user default notification subscription
+  * Clean-up / Sync settings
+
+26.1.0 (2026-01-01)
+===================
+
+- Notifications Refactor Phase 2 Project Release
+
 25.18.2 (2025-12-19)
 ====================
 

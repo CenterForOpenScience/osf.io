@@ -34,7 +34,7 @@ from api.base.versioning import get_kebab_snake_case_field
 from api.nodes.serializers import NodeSerializer, RegionRelationshipField
 from framework.auth.views import send_confirm_email_async
 from osf.exceptions import ValidationValueError, ValidationError, BlockedEmailError
-from osf.models import Email, Node, OSFUser, Preprint, Registration, UserMessage, Institution
+from osf.models import Email, Node, OSFUser, Preprint, Registration, UserMessage, Institution, NotificationType
 from osf.models.user_message import MessageTypes
 from osf.models.provider import AbstractProviderGroupObjectPermission
 from osf.utils.requests import string_type_request_headers
@@ -63,6 +63,26 @@ class SocialField(ser.DictField):
             value = social
         return super().to_representation(value)
 
+class ExternalIdentityField(ser.DictField):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+
+    def to_representation(self, value):
+        if not value or not isinstance(value, dict):
+            return value
+        result = {}
+        for provider, identities in value.items():
+            if not identities or not isinstance(identities, dict):
+                result[provider] = identities
+                continue
+            identity_id, status = next(iter(identities.items()))
+            if status != 'VERIFIED':
+                continue
+            result[provider] = {
+                'id': identity_id,
+                'status': status,
+            }
+        return result
 
 class UserSerializer(JSONAPISerializer):
     filterable_fields = frozenset([
@@ -97,6 +117,7 @@ class UserSerializer(JSONAPISerializer):
     allow_indexing = ShowIfCurrentUser(ser.BooleanField(required=False, allow_null=True))
     can_view_reviews = ShowIfCurrentUser(ser.SerializerMethodField(help_text='Whether the current user has the `view_submissions` permission to ANY reviews provider.'))
     accepted_terms_of_service = ShowIfCurrentUser(ser.SerializerMethodField())
+    external_identity = HideIfDisabled(ExternalIdentityField(required=False))
 
     links = HideIfDisabled(
         LinksField(
@@ -716,6 +737,17 @@ class UserEmailsSerializer(JSONAPISerializer):
         if primary and instance.confirmed:
             user.username = instance.address
             user.save()
+            notification_type = NotificationType.Type.USER_PRIMARY_EMAIL_CHANGED
+            notification_type.instance.emit(
+                subscribed_object=user,
+                user=user,
+                event_context={
+                    'user_fullname': user.fullname,
+                    'new_address': user.username,
+                    'can_change_preferences': False,
+                    'osf_contact_email': settings.OSF_CONTACT_EMAIL,
+                },
+            )
         elif primary and not instance.confirmed:
             raise exceptions.ValidationError('You cannot set an unconfirmed email address as your primary email address.')
 

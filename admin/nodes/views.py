@@ -21,7 +21,7 @@ from django.urls import reverse_lazy
 from admin.base.utils import change_embargo_date
 from admin.base.views import GuidView
 from admin.base.forms import GuidForm
-from admin.notifications.views import detect_duplicate_notifications, delete_selected_notifications
+from admin.notifications.views import delete_selected_notifications
 from admin.nodes.forms import AddSystemTagForm, RegistrationDateForm
 
 from api.share.utils import update_share
@@ -132,7 +132,6 @@ class NodeView(NodeMixin, GuidView):
         context = super().get_context_data(**kwargs)
         node = self.get_object()
 
-        detailed_duplicates = detect_duplicate_notifications(node_id=node.id)
         if isinstance(node, Registration):
             context['registration_date_form'] = RegistrationDateForm(initial={'registered_date': node.registered_date})
 
@@ -150,7 +149,6 @@ class NodeView(NodeMixin, GuidView):
             'children': children,
             'permissions': API_CONTRIBUTOR_PERMISSIONS,
             'has_update_permission': self.request.user.has_perm('osf.change_node'),
-            'duplicates': detailed_duplicates
         })
 
         return context
@@ -275,7 +273,7 @@ class NodeUpdatePermissionsView(NodeMixin, View):
                 auth=request,
                 user_id=contributor_user._id,
                 permissions=permission,
-                save=True
+                notification_type=None
             )
             messages.success(self.request, f'User with email {email} was successfully added.')
 
@@ -847,11 +845,12 @@ class CheckArchiveStatusRegistrationsView(NodeMixin, View):
             messages.success(request, f"Registration {registration._id} is archived.")
             return redirect(self.get_success_url())
 
-        addons = set(registration.registered_from.get_addon_names())
-        addons.update(DEFAULT_PERMISSIBLE_ADDONS)
+        addons = set(DEFAULT_PERMISSIBLE_ADDONS)
+        for reg in registration.node_and_primary_descendants():
+            addons.update(reg.registered_from.get_addon_names())
 
         try:
-            archive_status = check(registration, permissible_addons=addons)
+            archive_status = check(registration, permissible_addons=addons, verify_addons=False)
             messages.success(request, archive_status)
         except RegistrationStuckError as exc:
             messages.error(request, str(exc))
@@ -883,20 +882,25 @@ class ForceArchiveRegistrationsView(NodeMixin, View):
 
         allow_unconfigured = force_archive_params.get('allow_unconfigured', False)
 
-        addons = set(registration.registered_from.get_addon_names())
-        addons.update(DEFAULT_PERMISSIBLE_ADDONS)
+        addons = set(DEFAULT_PERMISSIBLE_ADDONS)
+        for reg in registration.node_and_primary_descendants():
+            addons.update(reg.registered_from.get_addon_names())
 
-        try:
-            verify(registration, permissible_addons=addons, raise_error=True)
-        except ValidationError as exc:
-            messages.error(request, str(exc))
-            return redirect(self.get_success_url())
+        # No need to verify addons during force archive,
+        # because we fetched all permissible addons above
+        verify_addons = False
 
-        dry_mode = force_archive_params.get('dry_mode', False)
-
-        if dry_mode:
-            messages.success(request, f"Registration {registration._id} can be archived.")
+        if force_archive_params.get('dry_mode', False):
+            # For dry mode, verify synchronously to provide immediate feedback
+            try:
+                verify(registration, permissible_addons=addons, verify_addons=verify_addons, raise_error=True)
+                messages.success(request, f"Registration {registration._id} can be archived.")
+            except ValidationError as exc:
+                messages.error(request, str(exc))
+                return redirect(self.get_success_url())
         else:
+            # For actual archiving, skip synchronous verification to avoid 502 timeouts
+            # Verification will be performed asynchronously in the task
             force_archive_task = force_archive.delay(
                 str(registration._id),
                 permissible_addons=list(addons),

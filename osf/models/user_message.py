@@ -3,8 +3,9 @@ from django.db import models
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 
+from osf.models.notification_type import NotificationType
 from .base import BaseModel, ObjectIDMixin
-from website.mails import send_mail, USER_MESSAGE_INSTITUTIONAL_ACCESS_REQUEST
+from website import settings
 
 
 class MessageTypes(models.TextChoices):
@@ -20,7 +21,7 @@ class MessageTypes(models.TextChoices):
     INSTITUTIONAL_REQUEST = ('institutional_request', 'INSTITUTIONAL_REQUEST')
 
     @classmethod
-    def get_template(cls: Type['MessageTypes'], message_type: str) -> str:
+    def get_notification_type(cls: Type['MessageTypes'], message_type: str) -> str:
         """
         Retrieve the email template associated with a specific message type.
 
@@ -31,7 +32,7 @@ class MessageTypes(models.TextChoices):
             str: The email template string for the specified message type.
         """
         return {
-            cls.INSTITUTIONAL_REQUEST: USER_MESSAGE_INSTITUTIONAL_ACCESS_REQUEST
+            cls.INSTITUTIONAL_REQUEST: NotificationType.Type.USER_INSTITUTIONAL_ACCESS_REQUEST
         }[message_type]
 
 
@@ -84,18 +85,19 @@ class UserMessage(BaseModel, ObjectIDMixin):
         """
         Sends an institutional access request email to the recipient of the message.
         """
-        send_mail(
-            mail=MessageTypes.get_template(self.message_type),
-            to_addr=self.recipient.username,
-            bcc_addr=[self.sender.username] if self.is_sender_BCCed else None,
-            reply_to=self.sender.username if self.reply_to else None,
+        MessageTypes.get_notification_type(self.message_type).instance.emit(
             user=self.recipient,
-            **{
-                'sender': self.sender,
-                'recipient': self.recipient,
+            event_context={
+                'recipient_fullname': self.recipient.fullname,
                 'message_text': self.message_text,
-                'institution': self.institution,
+                'institution_name': self.institution.name,
+                'domain': settings.DOMAIN,
+                'osf_contact_email': settings.OSF_CONTACT_EMAIL,
             },
+            email_context={
+                'bcc_addr': [self.sender.username] if self.is_sender_BCCed else None,
+                'reply_to': self.sender.username if self.reply_to else None,
+            }
         )
 
 
