@@ -382,11 +382,20 @@ def login_and_register_handler(auth, login=True, campaign=None, next_url=None, l
         elif auth.logged_in:
             # if user is already logged in, redirect to `next_url`
             data['status_code'] = http_status.HTTP_302_FOUND
-            data['next_url'] = next_url
+            data['next_url'] = (
+                next_url.replace('5000', '4200')
+                if 'localhost' in settings.DOMAIN
+                else next_url
+            )
         elif login:
             # `/login?next=next_url`: go to CAS login page with current request url as service url
             data['status_code'] = http_status.HTTP_302_FOUND
-            data['next_url'] = cas.get_login_url(request.url)
+            cas_login_url = cas.get_login_url(request.url)
+            data['next_url'] = (
+                cas_login_url.replace('5000', '4200')
+                if 'localhost' in settings.DOMAIN
+                else cas_login_url
+            )
         else:
             # `/register?next=next_url`: land on OSF register page with request url as next url
             data['status_code'] = http_status.HTTP_200_OK
