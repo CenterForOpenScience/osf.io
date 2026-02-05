@@ -582,20 +582,20 @@ class TestAuthLoginAndRegisterLogic(OsfTestCase):
         # next_url login: user with auth
         data = login_and_register_handler(self.auth, next_url=self.next_url)
         assert data.get('status_code') == http_status.HTTP_302_FOUND
-        assert data.get('next_url') == self.next_url
+        assert data.get('next_url') == self.next_url.replace('5000', '4200')
 
     def test_next_url_login_without_auth(self):
         # login: user without auth
         request.url = web_url_for('auth_login', next=self.next_url, _absolute=True)
         data = login_and_register_handler(self.no_auth, next_url=self.next_url)
         assert data.get('status_code') == http_status.HTTP_302_FOUND
-        assert data.get('next_url') == cas.get_login_url(request.url)
+        assert data.get('next_url') == cas.get_login_url(request.url).replace('5000', '4200')
 
     def test_next_url_register_with_auth(self):
         # register: user with auth
         data = login_and_register_handler(self.auth, login=False, next_url=self.next_url)
         assert data.get('status_code') == http_status.HTTP_302_FOUND
-        assert data.get('next_url') == self.next_url
+        assert data.get('next_url') == self.next_url.replace('5000', '4200')
 
     def test_next_url_register_without_auth(self):
         # register: user without auth
