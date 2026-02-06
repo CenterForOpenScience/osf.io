@@ -2,14 +2,53 @@
   "linkset": [
     {
       "anchor": "http://localhost:5000/w3ibb",
+      "collection": [
+        {
+          "href": "http://localhost:5000/w2ibb"
+        }
+      ],
       "type": [
         {
           "href": "https://osf.io/vocab/2022/File"
         }
       ],
-      "collection": [
+      "cite-as": [
         {
-          "href": "http://localhost:5000/w2ibb"
+          "href": "http://localhost:5000/w3ibb"
+        }
+      ],
+      "describedby": [
+        {
+          "href": "http://localhost:5000/metadata/w3ibb/?format=turtle",
+          "type": "text/turtle; charset=utf-8"
+        },
+        {
+          "href": "http://localhost:5000/metadata/w3ibb/?format=datacite-json",
+          "type": "application/json"
+        },
+        {
+          "href": "http://localhost:5000/metadata/w3ibb/?format=datacite-xml",
+          "type": "application/xml"
+        },
+        {
+          "href": "http://localhost:5000/metadata/w3ibb/?format=google-dataset-json-ld",
+          "type": "application/ld+json"
+        },
+        {
+          "href": "http://localhost:5000/metadata/w3ibb/?format=linkset",
+          "type": "application/linkset"
+        },
+        {
+          "href": "http://localhost:5000/metadata/w3ibb/?format=linkset-json",
+          "type": "application/linkset+json"
+        }
+      ]
+    },
+    {
+      "anchor": "http://localhost:5000/metadata/w3ibb/",
+      "describes": [
+        {
+          "href": "http://localhost:5000/w3ibb"
         }
       ]
     }

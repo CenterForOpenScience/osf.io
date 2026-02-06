@@ -22,27 +22,27 @@
       ],
       "describedby": [
         {
-          "href": "http://localhost:5000/metadata/w5ibb/",
+          "href": "http://localhost:5000/metadata/w5ibb/?format=turtle",
           "type": "text/turtle; charset=utf-8"
         },
         {
-          "href": "http://localhost:5000/metadata/w5ibb/",
+          "href": "http://localhost:5000/metadata/w5ibb/?format=datacite-json",
           "type": "application/json"
         },
         {
-          "href": "http://localhost:5000/metadata/w5ibb/",
+          "href": "http://localhost:5000/metadata/w5ibb/?format=datacite-xml",
           "type": "application/xml"
         },
         {
-          "href": "http://localhost:5000/metadata/w5ibb/",
+          "href": "http://localhost:5000/metadata/w5ibb/?format=google-dataset-json-ld",
           "type": "application/ld+json"
         },
         {
-          "href": "http://localhost:5000/metadata/w5ibb/",
+          "href": "http://localhost:5000/metadata/w5ibb/?format=linkset",
           "type": "application/linkset"
         },
         {
-          "href": "http://localhost:5000/metadata/w5ibb/",
+          "href": "http://localhost:5000/metadata/w5ibb/?format=linkset-json",
           "type": "application/linkset+json"
         }
       ],
@@ -55,6 +55,14 @@
         {
           "href": "http://localhost:5000/w6ibb",
           "type": "application/octet-stream"
+        }
+      ]
+    },
+    {
+      "anchor": "http://localhost:5000/metadata/w5ibb/",
+      "describes": [
+        {
+          "href": "http://localhost:5000/w5ibb"
         }
       ]
     }

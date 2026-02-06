@@ -22,28 +22,36 @@
       ],
       "describedby": [
         {
-          "href": "http://localhost:5000/metadata/w4ibb_v1/",
+          "href": "http://localhost:5000/metadata/w4ibb/?format=turtle",
           "type": "text/turtle; charset=utf-8"
         },
         {
-          "href": "http://localhost:5000/metadata/w4ibb_v1/",
+          "href": "http://localhost:5000/metadata/w4ibb/?format=datacite-json",
           "type": "application/json"
         },
         {
-          "href": "http://localhost:5000/metadata/w4ibb_v1/",
+          "href": "http://localhost:5000/metadata/w4ibb/?format=datacite-xml",
           "type": "application/xml"
         },
         {
-          "href": "http://localhost:5000/metadata/w4ibb_v1/",
+          "href": "http://localhost:5000/metadata/w4ibb/?format=google-dataset-json-ld",
           "type": "application/ld+json"
         },
         {
-          "href": "http://localhost:5000/metadata/w4ibb_v1/",
+          "href": "http://localhost:5000/metadata/w4ibb/?format=linkset",
           "type": "application/linkset"
         },
         {
-          "href": "http://localhost:5000/metadata/w4ibb_v1/",
+          "href": "http://localhost:5000/metadata/w4ibb/?format=linkset-json",
           "type": "application/linkset+json"
+        }
+      ]
+    },
+    {
+      "anchor": "http://localhost:5000/metadata/w4ibb/",
+      "describes": [
+        {
+          "href": "http://localhost:5000/w4ibb"
         }
       ]
     }
