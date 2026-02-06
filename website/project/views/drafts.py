@@ -13,7 +13,6 @@ import pytz
 from framework.database import autoload
 from framework.exceptions import HTTPError
 
-from osf import features
 from osf.utils.sanitize import strip_html
 from osf.utils.permissions import ADMIN
 from osf.utils.functional import rapply
@@ -25,7 +24,6 @@ from website.project.decorators import (
     must_have_permission,
 )
 from website import settings
-from website.ember_osf_web.decorators import ember_flag_is_active
 
 from website.project import utils
 from website.project.metadata.schemas import METASCHEMA_ORDERING
@@ -153,7 +151,6 @@ def get_draft_registrations(auth, node, *args, **kwargs):
 @must_have_permission(ADMIN)
 @must_be_valid_project
 @must_be_contributor_and_not_group_member
-@ember_flag_is_active(features.EMBER_CREATE_DRAFT_REGISTRATION)
 def new_draft_registration(auth, node, *args, **kwargs):
     """Create a new draft registration for the node
 
@@ -192,7 +189,6 @@ def new_draft_registration(auth, node, *args, **kwargs):
 
 @must_have_permission(ADMIN)
 @must_be_contributor_and_not_group_member
-@ember_flag_is_active(features.EMBER_EDIT_DRAFT_REGISTRATION)
 @must_be_branched_from_node
 def edit_draft_registration_page(auth, node, draft, **kwargs):
     """Draft registration editor

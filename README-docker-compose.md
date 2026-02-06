@@ -171,7 +171,7 @@
   - When starting with an empty database you will need to run migrations and populate preprint providers. See the [Running arbitrary commands](#running-arbitrary-commands) section below for instructions.
 6. Start the OSF Web, API Server, and Preprints (Detached)
     ```bash
-    docker compose up -d worker web api admin preprints ember_osf_web gv
+    docker compose up -d worker web api admin preprints gv
     ```
 7. View the OSF at [http://localhost:5000](http://localhost:5000).
 
@@ -181,7 +181,7 @@
 - Once the requirements have all been installed, you can start the OSF in the background with
 
   ```bash
-  docker compose up -d assets admin_assets mfr wb fakecas sharejs worker web api admin preprints ember_osf_web gv
+  docker compose up -d assets admin_assets mfr wb fakecas sharejs worker web api admin preprints gv
   ```
 
 - To view the logs for a given container:
@@ -270,20 +270,10 @@
       ```bash
       docker compose run --rm web python3 -m scripts.parse_citation_styles
       ```
-- Populate Notification Types
-  - Needed for notifications.
-      ```bash
-      docker compose run --rm web python3 manage.py populate_notification_types
-      ```
-  - _NOTE: The waffle switch `POPULATE_NOTIFICATION_TYPES` needs to be turned on.
-- Start ember_osf_web
-  - Needed for ember app:
-    - `docker-compose up -d ember_osf_web`
 - OPTIONAL: Register OAuth Scopes
-  - Needed for things such as the ember-osf dummy app
-      ```bash
-      docker compose run --rm web python3 -m scripts.register_oauth_scopes
-      ```
+    ```bash
+    docker compose run --rm web python3 -m scripts.register_oauth_scopes
+    ```
 - OPTIONAL: Create migrations:
   - After changing a model you will need to create migrations and apply them. Migrations are python code that changes either the structure or the data of a database. This will compare the django models on disk to the database, find the differences, and create migration code to change the database. If there are no changes this command is a noop.
       ```bash
@@ -506,4 +496,4 @@ wb:
 
 ### Running Collections
 
-To run collections, you must uncomment COLLECTIONS_ENABLED=true in docker-compose.yml under ember_osf_web, then recreate your ember and web containers.
+To run collections, you must uncomment COLLECTIONS_ENABLED=true in docker-compose.yml, then recreate web container.
