@@ -376,7 +376,7 @@ def osf_iri(guid_or_model):
     return OSFIO[guid._id]
 
 
-def osfguid_from_iri(iri):
+def osfguid_from_iri(iri: str) -> str:
     if iri.startswith(OSFIO):
         return without_namespace(iri, OSFIO)
     raise ValueError(f'expected iri starting with "{OSFIO}" (got "{iri}")')
@@ -709,6 +709,12 @@ def gather_files(focus):
 def gather_file_mediatype(focus):
     mime_type = mime.guess_type(focus.dbmodel.name)
     yield (DCAT.mediaType, 'application/octet-stream') if mime_type == (None, None) else (DCAT.mediaType, mime_type[0])
+    mime_type = mime.guess_type(focus.dbmodel.name)[0]
+    yield (DCAT.mediaType, (
+        'application/octet-stream'
+        if mime_type is None
+        else mime_type
+    ))
 
 
 @gather.er(DCTERMS.hasPart, DCTERMS.isPartOf)
