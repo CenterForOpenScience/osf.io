@@ -12,6 +12,7 @@ from osf_tests.factories import (
     PrivateLinkFactory,
 )
 from website.settings import API_DOMAIN
+from tests.utils import capture_notifications
 
 
 @pytest.mark.django_db
@@ -32,13 +33,14 @@ class TestGuidDetail:
     @pytest.fixture()
     def versioned_preprint(self, user):
         preprint = PreprintFactory(reviews_workflow='pre-moderation')
-        PreprintFactory.create_version(
-            create_from=preprint,
-            creator=user,
-            final_machine_state='accepted',
-            is_published=True,
-            set_doi=False
-        )
+        with capture_notifications():
+            PreprintFactory.create_version(
+                create_from=preprint,
+                creator=user,
+                final_machine_state='accepted',
+                is_published=True,
+                set_doi=False
+            )
         return preprint
 
     def test_redirects(self, app, project, registration, user):
