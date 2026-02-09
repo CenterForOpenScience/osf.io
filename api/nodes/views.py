@@ -1069,9 +1069,7 @@ class NodeForksList(JSONAPIBaseView, generics.ListCreateAPIView, NodeMixin, Node
                 user=user,
                 subscribed_object=node,
                 event_context={
-                    'domain': settings.DOMAIN,
                     'node_title': node.title,
-                    'can_change_preferences': False,
                 },
             )
             raise exc
@@ -1082,9 +1080,7 @@ class NodeForksList(JSONAPIBaseView, generics.ListCreateAPIView, NodeMixin, Node
             event_context={
                 'domain': settings.DOMAIN,
                 'node_title': node.title,
-                'fork_title': fork.title,
                 'fork__id': fork._id,
-                'can_change_preferences': False,
             },
         )
 

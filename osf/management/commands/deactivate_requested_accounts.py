@@ -27,7 +27,6 @@ def deactivate_requested_accounts(dry_run=True):
                         'user__id': user._id,
                         'user_absolute_url': user.absolute_url,
                         'user_username': user.username,
-                        'can_change_preferences': False,
                     }
                 )
         else:
@@ -40,7 +39,6 @@ def deactivate_requested_accounts(dry_run=True):
                     event_context={
                         'user_fullname': user.fullname,
                         'contact_email': OSF_SUPPORT_EMAIL,
-                        'can_change_preferences': False,
                     }
                 )
 

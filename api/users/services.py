@@ -22,7 +22,6 @@ def send_password_reset_email(user, email, verification_type='password', institu
         destination_address=email,
         event_context={
             'reset_link': reset_link,
-            'can_change_preferences': False,
             **mail_kwargs,
         },
     )

@@ -187,14 +187,11 @@ async def submit_to_boa_async(host, username, password, user_guid, project_guid,
         user=user,
         event_context={
             'user_fullname': user.fullname,
-            'query_file_name': query_file_name,
             'query_file_full_path': file_full_path,
             'output_file_name': output_file_name,
             'job_id': boa_job.id,
             'project_url': project_url,
             'boa_job_list_url': boa_settings.BOA_JOB_LIST_URL,
-            'boa_support_email': boa_settings.BOA_SUPPORT_EMAIL,
-            'osf_support_email': osf_settings.OSF_SUPPORT_EMAIL,
         }
     )
     return BoaErrorCode.NO_ERROR
@@ -214,7 +211,6 @@ def handle_boa_error(message, code, username, fullname, project_url, query_file_
         event_context={
             'user_fullname': fullname,
             'code': code,
-            'query_file_name': query_file_name,
             'file_size': file_size,
             'message': message,
             'max_file_size': boa_settings.MAX_SUBMISSION_SIZE,

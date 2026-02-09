@@ -2327,7 +2327,6 @@ class SpamOverrideMixin(SpamMixin):
                 event_context={
                     'user_fullname': user.fullname,
                     'osf_support_email': settings.OSF_SUPPORT_EMAIL,
-                    'can_change_preferences': False
                 }
             )
         user.save()

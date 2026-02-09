@@ -352,7 +352,6 @@ class InstitutionAuthentication(BaseAuthentication):
                 user=user,
                 event_context={
                     'domain': DOMAIN,
-                    'osf_support_email': OSF_SUPPORT_EMAIL,
                     'user_fullname': user.fullname,
                     'storage_flag_is_active': flag_is_active(request, features.STORAGE_I18N),
                 },
@@ -368,9 +367,7 @@ class InstitutionAuthentication(BaseAuthentication):
                 event_context={
                     'user_fullname': user.fullname,
                     'email_to_add': email_to_add,
-                    'domain': DOMAIN,
                     'osf_support_email': OSF_SUPPORT_EMAIL,
-                    'storage_flag_is_active': flag_is_active(request, features.STORAGE_I18N),
                 },
                 save=False,
             )
@@ -390,10 +387,8 @@ class InstitutionAuthentication(BaseAuthentication):
                     'user_fullname': user.fullname,
                     'user_username': user.username,
                     'user__id': user._id,
-                    'duplicate_user_fullname': duplicate_user.fullname,
                     'duplicate_user_username': duplicate_user.username,
                     'duplicate_user__id': duplicate_user._id,
-                    'domain': DOMAIN,
                     'osf_support_email': OSF_SUPPORT_EMAIL,
                 },
             )

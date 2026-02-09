@@ -108,8 +108,6 @@ def send_user_email_task(self, user_id, notification_ids, **kwargs):
 
         event_context = {
             'notifications': rendered_notifications,
-            'user_fullname': user.fullname,
-            'can_change_preferences': False
         }
 
         NotificationType.Type.USER_DIGEST.instance.emit(
@@ -252,7 +250,6 @@ def send_moderator_email_task(self, user_id, notification_ids, provider_content_
         event_context = {
             'notifications': rendered_notifications,
             'user_fullname': user.fullname,
-            'can_change_preferences': False,
             'notification_settings_url': notification_settings_url,
             'reviews_withdrawal_url': withdrawals_url,
             'reviews_submissions_url': submissions_url,

@@ -188,7 +188,6 @@ class UserDisableView(UserMixin, View):
                 event_context={
                     'user_fullname': user.fullname,
                     'contact_email': OSF_SUPPORT_EMAIL,
-                    'can_change_preferences': False,
                 }
             )
         else:

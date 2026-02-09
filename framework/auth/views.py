@@ -280,8 +280,6 @@ def _forgot_password_post(notificaton_type, reset_route, institutional=False):
                     user=user_obj,
                     event_context={
                         'reset_link': reset_link,
-                        'can_change_preferences': False,
-                        'osf_contact_email': settings.OSF_CONTACT_EMAIL,
                     },
                 )
 
@@ -664,7 +662,6 @@ def external_login_confirm_email_get(auth, uid, token):
             event_context={
                 'user_fullname': user.fullname,
                 'external_id_provider': provider,
-                'can_change_preferences': False,
                 'osf_contact_email': settings.OSF_CONTACT_EMAIL,
             },
         )
@@ -869,7 +866,6 @@ def send_confirm_email(user, email, renew=False, external_id_provider=None, exte
         event_context={
             'user_fullname': user.fullname,
             'confirmation_url': f'{confirmation_url}{logout_query}',
-            'can_change_preferences': False,
             'external_id_provider': external_id_provider,
             'osf_contact_email': settings.OSF_CONTACT_EMAIL,
             'osf_support_email': settings.OSF_SUPPORT_EMAIL,

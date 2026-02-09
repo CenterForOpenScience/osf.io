@@ -199,7 +199,6 @@ class NodeRequestCreateSerializer(NodeRequestSerializer):
                     'recipient_username': recipient.username if recipient else None,
                     'comment': comment,
                     'domain': settings.DOMAIN,
-                    'institution_name': institution.name if institution else None,
                 },
                 email_context={
                     'bcc_addr': [sender.username] if validated_data['bcc_sender'] else None,
