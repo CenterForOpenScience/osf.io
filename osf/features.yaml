@@ -205,6 +205,11 @@ flags:
     note: This flag controls whether users can create or interact with meetings via BE or FE.
     everyone: false
 
+  - flag_name: DISABLE_SHARE_SOCIAL_MEDIA
+    name: disable_share_social_media
+    note: This flag controls whether users can share content to social media platforms.
+    everyone: false
+
 switches:
   - flag_name: DISABLE_ENGAGEMENT_EMAILS
     name: disable_engagement_emails
