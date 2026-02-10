@@ -455,7 +455,7 @@ notification_types:
     template: 'website/templates/file_updated.html.mako'
     tests: ['tests/test_events.py']
 
-  - name: node_files_updated
+  - name: node_file_updated
     subject: 'Files Updated'
     __docs__: ...
     object_content_type_model_name: abstractnode
