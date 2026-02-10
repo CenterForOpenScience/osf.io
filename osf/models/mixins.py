@@ -1543,9 +1543,18 @@ class ContributorMixin(models.Model):
 
         return self.contributor_set.filter(user__in=users)
 
-    def add_unregistered_contributor(self, fullname, email, auth, send_email=None,
-                                     visible=True, permissions=None, save=True, existing_user=None,
-                                     log=True):
+    def add_unregistered_contributor(
+            self,
+            fullname,
+            email,
+            auth,
+            notification_type=False,
+            visible=True,
+            permissions=None,
+            existing_user=None,
+            save=True,
+            log=True,
+    ):
         """Add a non-registered contributor to the project.
 
         :param str fullname: The full name of the person.
@@ -1604,18 +1613,33 @@ class ContributorMixin(models.Model):
                 notification_type = NotificationType.Type.USER_INVITE_DRAFT_REGISTRATION
 
         self.add_contributor(
-            contributor, permissions=permissions, auth=auth,
-            visible=visible, send_email=send_email, log=log, save=False
+            contributor,
+            permissions=permissions,
+            auth=auth,
+            visible=visible,
+            notification_type=notification_type,
+            log=log,
+            save=False,
         )
         self._add_related_source_tags(contributor)
         if save:
             self.save()
         return contributor
 
-    def add_contributor_registered_or_not(self, auth, user_id=None,
-                                          full_name=None, email=None, send_email=None,
-                                          permissions=None, bibliographic=True, index=None, save=True,
-                                          user=None, log=True):
+    def add_contributor_registered_or_not(
+            self,
+            auth,
+            user_id=None,
+            full_name=None,
+            email=None,
+            notification_type=False,
+            permissions=None,
+            bibliographic=True,
+            index=None,
+            user=None,
+            save=True,
+            log=True,
+    ):
         OSFUser = apps.get_model('osf.OSFUser')
         if user_id:
             contributor = user or OSFUser.load(user_id)
@@ -1626,8 +1650,15 @@ class ContributorMixin(models.Model):
                 raise ValidationValueError(f'{contributor.fullname} is already a contributor.')
 
             if contributor.is_registered:
-                contributor = self.add_contributor(contributor=contributor, auth=auth, visible=bibliographic,
-                                                   permissions=permissions, send_email=send_email, save=save, log=log)
+                contributor = self.add_contributor(
+                    contributor=contributor,
+                    auth=auth,
+                    visible=bibliographic,
+                    permissions=permissions,
+                    notification_type=notification_type,
+                    save=save,
+                    log=log
+                )
             else:
                 if not full_name:
                     raise ValueError(
@@ -1635,9 +1666,15 @@ class ContributorMixin(models.Model):
                         .format(user_id, self._id)
                     )
                 contributor = self.add_unregistered_contributor(
-                    fullname=full_name, email=contributor.username, auth=auth,
-                    send_email=send_email, permissions=permissions,
-                    visible=bibliographic, existing_user=contributor, save=save, log=log
+                    fullname=full_name,
+                    email=contributor.username,
+                    auth=auth,
+                    notification_type=notification_type,
+                    permissions=permissions,
+                    visible=bibliographic,
+                    existing_user=contributor,
+                    save=save,
+                    log=log,
                 )
 
         else:
@@ -1650,16 +1687,21 @@ class ContributorMixin(models.Model):
                     contributor=contributor,
                     auth=auth,
                     visible=bibliographic,
-                    send_email=send_email,
+                    notification_type=notification_type,
                     permissions=permissions,
                     save=save,
                     log=log,
                 )
             else:
                 contributor = self.add_unregistered_contributor(
-                    fullname=full_name, email=email, auth=auth,
-                    send_email=send_email, permissions=permissions,
-                    visible=bibliographic, save=save, log=log
+                    fullname=full_name,
+                    email=email,
+                    auth=auth,
+                    notification_type=notification_type,
+                    permissions=permissions,
+                    visible=bibliographic,
+                    save=save,
+                    log=log,
                 )
 
         auth.user.email_last_sent = timezone.now()
@@ -1681,7 +1723,7 @@ class ContributorMixin(models.Model):
                 'user': '<OSFUser>' or None,
                 'email': '<email>' or None,
                 'full_name': '<full name>' or None,
-                'send_email': '<email preference>' or None,
+                'notification_type': '<email preference>' or None,
                 'permissions': <permission string>,
                 'bibliographic': <bool>,
                 'index': <int or None>,
@@ -1696,7 +1738,7 @@ class ContributorMixin(models.Model):
                 user=item.get('user'),
                 full_name=item.get('full_name'),
                 email=item.get('email'),
-                send_email=item.get('send_email') or getattr(self, 'contributor_email_template', None),
+                notification_type=item.get('notification_type'),
                 permissions=item.get('permissions'),
                 bibliographic=item.get('bibliographic', True),
                 index=item.get('index'),

@@ -1230,12 +1230,17 @@ class NodeContributorsBulkCreateListSerializer(JSONAPIListSerializer):
         full_name = item.get('full_name') or (user.fullname if user and not user.is_registered else None)
         if not uid and not full_name:
             raise exceptions.ValidationError(detail='A user ID or full name must be provided to add a contributor.')
+
+        email_pref = self.context['request'].GET.get('send_email') or self.context['default_email']
+        if email_pref not in self.email_preferences:
+            raise exceptions.ValidationError(f'{email_pref} is not a valid email preference.')
+
         return {
             'user_id': uid,
             'user': user,
             'email': email,
             'full_name': full_name,
-            'send_email': self.context['request'].GET.get('send_email') or self.context['default_email'],
+            'notification_type': False if email_pref == 'false' else None,
             'permissions': osf_permissions.get_contributor_proposed_permissions(item),
             'bibliographic': item.get('bibliographic'),
             'index': item.get('_order') if '_order' in item else None,
