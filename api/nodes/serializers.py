@@ -1223,6 +1223,8 @@ class NodeContributorsSerializer(JSONAPISerializer):
 
 class NodeContributorsBulkCreateListSerializer(JSONAPIListSerializer):
 
+    email_preferences = ['default', 'false']
+
     def _parse_payload_item(self, item, user_map):
         uid = item.get('_id')
         user = user_map.get(uid)
