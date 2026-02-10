@@ -542,6 +542,7 @@ def send_claim_email(
                     'user_fullname': unclaimed_record['name'],
                     'node_title': node.title,
                     'logo': logo,
+                    'node_absolute_url': node.absolute_url,
                     'osf_contact_email': settings.OSF_CONTACT_EMAIL,
                 }
             )

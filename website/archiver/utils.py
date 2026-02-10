@@ -114,6 +114,8 @@ def send_archiver_uncaught_error_mails(src, user, results, url):
             'src_title': src.title,
             'src_url': src.url,
             'url': url,
+            'src__id': src._id,
+            'results': results,
         }
     )
     NotificationType.Type.USER_ARCHIVE_JOB_UNCAUGHT_ERROR.instance.emit(
