@@ -156,7 +156,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
 
     # Overrides DirtyFieldsMixin, Foreign Keys checked by '<attribute_name>_id' rather than typical name.
     FIELDS_TO_CHECK = SEARCH_UPDATE_FIELDS.copy()
-    FIELDS_TO_CHECK.update({'password', 'last_login', 'merged_by_id', 'username'})
+    FIELDS_TO_CHECK.update({'password', 'date_last_login', 'merged_by_id', 'username'})
 
     # TODO: Add SEARCH_UPDATE_NODE_FIELDS, for fields that should trigger a
     #   search update for all nodes to which the user is a contributor.
@@ -729,6 +729,11 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         if self == user:
             raise ValueError('Cannot merge a user into itself')
 
+        # Capture content to SHARE reindex BEFORE merge transfers contributors
+        # After merge, user.contributed and user.preprints will be empty
+        nodes_to_reindex = list(user.contributed)
+        preprints_to_reindex = list(user.preprints.all())
+
         # Move over the other user's attributes
         # TODO: confirm
         for system_tag in user.system_tags.all():
@@ -858,6 +863,20 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         user.save()
         signals.user_account_merged.send(user)
 
+        from api.share.utils import update_share
+
+        for node in nodes_to_reindex:
+            try:
+                update_share(node)
+            except Exception as e:
+                logger.exception(f'Failed to SHARE reindex node {node._id} during user merge: {e}')
+
+        for preprint in preprints_to_reindex:
+            try:
+                update_share(preprint)
+            except Exception as e:
+                logger.exception(f'Failed to SHARE reindex preprint {preprint._id} during user merge: {e}')
+
     def _merge_users_preprints(self, user):
         """
         Preprints use guardian.  The PreprintContributor table stores order and bibliographic information.
@@ -949,6 +968,14 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
 
             draft_reg.remove_permission(user, user_perms)
             draft_reg.save()
+
+    @property
+    def gdpr_deleted(self):
+        if not self.is_disabled:
+            return False
+        if self.fullname != 'Deleted user':
+            return False
+        return not self.emails.exists()
 
     def deactivate_account(self):
         """
@@ -1766,6 +1793,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
                 sso_department=sso_department,
                 sso_other_attributes={}
             )
+            self.update_search()
             return affiliation
         # CASE 2: affiliation exists
         updated = False
@@ -1784,6 +1812,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
             return None
         # CASE 1.3: at least one attribute is updated -> return the affiliation
         affiliation.save()
+        self.update_search()
         return affiliation
 
     def remove_sso_identity_from_affiliation(self, institution):
@@ -1792,6 +1821,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         affiliation = InstitutionAffiliation.objects.get(user__id=self.id, institution__id=institution.id)
         affiliation.sso_identity = None
         affiliation.save()
+        self.update_search()
         return affiliation
 
     def copy_institution_affiliation_when_merging_user(self, user):
@@ -1833,6 +1863,8 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
             group = affiliation.institution.get_group('institutional_admins')
             group.user_set.remove(self)
             group.save()
+
+        self.update_search()
         return True
 
     def remove_all_affiliated_institutions(self):
@@ -2072,8 +2104,12 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
             logger.info(f'Removing {self._id} as a contributor to {resource.__class__.__name__} (pk:{resource.pk})...')
             resource.remove_contributor(self, auth=Auth(self), log=False)
 
-        # Delete all personal entities
-        for entity in personal_resources.all():
+        # Delete all personal entities (excluding public registrations)
+        personal_to_delete = personal_resources
+        if hasattr(model, 'is_public') and hasattr(model, 'type'):
+            personal_to_delete = personal_to_delete.exclude(is_public=True, type='osf.registration')
+
+        for entity in personal_to_delete.all():
             if hard_delete:
                 logger.info(f'Hard-deleting {entity.__class__.__name__} (pk: {entity.pk})...')
                 entity.delete()

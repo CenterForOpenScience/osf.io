@@ -338,7 +338,8 @@ class InstitutionNodesRelationship(JSONAPIBaseView, generics.RetrieveDestroyAPIV
                        }
         Success:       204
 
-    This requires write permissions in the nodes requested.
+    This requires write permissions in the nodes requested. If the user has admin permissions on the node,
+    the institution does not need to be affiliated in their account.
     """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
@@ -367,16 +368,19 @@ class InstitutionNodesRelationship(JSONAPIBaseView, generics.RetrieveDestroyAPIV
     def perform_destroy(self, instance):
         data = self.request.data['data']
         user = self.request.user
+        inst = instance['self']
         ids = [datum['id'] for datum in data]
         nodes = []
         for id_ in ids:
             node = Node.load(id_)
             if not node.has_permission(user, osf_permissions.WRITE):
                 raise exceptions.PermissionDenied(detail=f'Write permission on node {id_} required')
+            if not user.is_affiliated_with_institution(inst) and not node.has_permission(user, osf_permissions.ADMIN):
+                raise exceptions.PermissionDenied(detail=f'User needs to be affiliated with {inst.name}')
             nodes.append(node)
 
         for node in nodes:
-            node.remove_affiliated_institution(inst=instance['self'], user=user)
+            node.remove_affiliated_institution(inst=inst, user=user)
             node.save()
 
     def create(self, *args, **kwargs):

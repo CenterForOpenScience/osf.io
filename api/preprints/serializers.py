@@ -21,6 +21,7 @@ from api.base.serializers import (
     HideIfPreprint,
     LinkedNodesRelationshipSerializer,
 )
+from api.base.settings import BULK_SETTINGS
 from api.base.utils import absolute_reverse, get_user_auth
 from api.base.parsers import NO_DATA_ERROR
 from api.nodes.serializers import (
@@ -326,6 +327,7 @@ class PreprintSerializer(TaxonomizableSerializerMixin, MetricsSerializerMixin, J
 
         updated_has_prereg_links = validated_data.get('has_prereg_links', preprint.has_prereg_links)
         updated_why_no_prereg = validated_data.get('why_no_prereg', preprint.why_no_prereg)
+        prereg_links = validated_data.get('prereg_links', preprint.prereg_links)
 
         if updated_has_coi is False and updated_conflict_statement:
             raise exceptions.ValidationError(
@@ -342,7 +344,7 @@ class PreprintSerializer(TaxonomizableSerializerMixin, MetricsSerializerMixin, J
                 detail='Cannot provide data links when has_data_links is set to "no".',
             )
 
-        if updated_has_prereg_links != 'no' and updated_why_no_prereg:
+        if updated_has_prereg_links != 'no' and (updated_why_no_prereg and not prereg_links):
             raise exceptions.ValidationError(
                 detail='You cannot edit this statement while your prereg links availability is set to true or is unanswered.',
             )
@@ -615,6 +617,7 @@ class PreprintContributorsSerializer(NodeContributorsSerializer):
 
     class Meta:
         type_ = 'contributors'
+        bulk_limit = BULK_SETTINGS.get('PREPRINT_CONTRIBUTORS_BULK_LIMIT', BULK_SETTINGS['DEFAULT_BULK_LIMIT'])
 
     def get_absolute_url(self, obj):
         return absolute_reverse(

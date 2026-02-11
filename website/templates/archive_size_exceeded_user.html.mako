@@ -8,7 +8,7 @@
 </tr>
 <tr>
   <td style="border-collapse: collapse;">
-    We cannot archive ${src_title} at this time because the projected size of the registration exceeds our usage limits. You should receive a followup email from our support team shortly. We're sorry for any inconvenience this may have caused.
+    We cannot archive ${src_title} at this time because the projected size of the registration exceeds our usage limits. Please email our support team support@osf.io for assistance. We're sorry for any inconvenience this may have caused.
   </td>
 </tr>
 </%def>
