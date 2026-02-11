@@ -147,3 +147,46 @@ def smells_like_iri(maybe_iri: str) -> bool:
         isinstance(maybe_iri, str)
         and '://' in maybe_iri
     )
+
+def map_resource_type_general_datacite_to_scheme(_type_iri, resource_rdftype):
+    DATACITE_SCHEMA_RESOURCE_TYPE_GENERAL_MAPPING = {
+        'Audiovisual': 'MediaObject',
+        'Book': 'Book',
+        'BookChapter': 'Chapter',
+        'Collection': 'Collection',
+        'ComputationalNotebook': 'SoftwareSourceCode',
+        'ConferencePaper': 'Article',
+        'ConferenceProceeding': 'Periodical',
+        'DataPaper': 'Article',
+        'Dataset': 'Dataset',
+        'Dissertation': 'Thesis',
+        'Event': 'Event',
+        'Image': 'ImageObject',
+        'InteractiveResource': 'CreativeWork',
+        'Journal': 'Periodical',
+        'JournalArticle': 'ScholarlyArticle',
+        'Model': 'CreativeWork',
+        'OutputManagementPlan': 'HowTo',
+        'PeerReview': 'Review',
+        'PhysicalObject': 'Thing',
+        'Preprint': 'ScholarlyArticle',
+        'Report': 'Report',
+        'Service': 'Service',
+        'Software': 'SoftwareSourceCode',
+        'Sound': 'AudioObject',
+        'Standard': 'CreativeWork',
+        'Text': 'Text',
+        'Workflow': 'HowTo',
+        'Other': 'CreativeWork',
+        'Instrument': 'IndividualProduct',
+        'StudyRegistration': 'Text'
+    }
+
+    datacite_type = _type_iri[len(DATACITE):]
+    schema_type = DATACITE_SCHEMA_RESOURCE_TYPE_GENERAL_MAPPING.get(datacite_type)
+    if not schema_type:
+        RESOURCE_TYPE_MAPPING = {
+            OSF.Project: 'ResearchProject', OSF.Preprint: 'ScholarlyArticle', OSF.Registration: 'Dataset'
+        }
+        schema_type = RESOURCE_TYPE_MAPPING.get(resource_rdftype)
+    return schema_type
