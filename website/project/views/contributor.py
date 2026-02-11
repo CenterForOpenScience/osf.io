@@ -558,6 +558,7 @@ def send_claim_email(
             'referrer_fullname': referrer.fullname,
             'claim_url': claim_url,
             'domain': settings.DOMAIN,
+            'node_absolute_url': node.absolute_url,
             'node_title': node.title,
             'osf_contact_email': settings.OSF_CONTACT_EMAIL,
         }
@@ -631,6 +632,7 @@ def notify_added_contributor(resource, contributor, notification_type, auth=None
         subscribed_object=resource,
         event_context={
             'user_fullname': contributor.fullname,
+            'referrer_fullname': referrer_name,
             'referrer_text': referrer_name + ' has added you as a contributor' if referrer_name else 'You have been added',
             'registry_text': resource.provider.name if resource.provider else 'OSF Registry',
             'referrer_name': referrer_name,
