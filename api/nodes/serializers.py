@@ -1,3 +1,5 @@
+import functools
+
 from django.db import connection
 from packaging.version import Version
 
@@ -7,7 +9,7 @@ from api.base.exceptions import (
 )
 from api.base.serializers import (
     VersionedDateTimeField, HideIfRegistration, IDField,
-    JSONAPISerializer, LinksField,
+    JSONAPISerializer, JSONAPIListSerializer, LinksField,
     NodeFileHyperLinkField, RelationshipField,
     ShowIfVersion, TargetTypeField, TypeField,
     WaterbutlerLink, BaseAPISerializer,
@@ -38,7 +40,7 @@ from osf.models import (
     Comment, DraftRegistration, ExternalAccount,
     RegistrationSchema, AbstractNode, PrivateLink, Preprint,
     RegistrationProvider, NodeLicense, DraftNode,
-    Registration, Node,
+    Registration, Node, OSFUser,
 )
 from website.project import new_private_link
 from website.project.model import NodeUpdateError
@@ -1219,6 +1221,75 @@ class NodeContributorsSerializer(JSONAPISerializer):
             return unclaimed_records.get('name', None)
 
 
+class NodeContributorsBulkCreateListSerializer(JSONAPIListSerializer):
+
+    email_preferences = ['default', 'false']
+
+    def _parse_payload_item(self, item, user_map):
+        uid = item.get('_id')
+        user = user_map.get(uid)
+        email = item.get('user', {}).get('email', None)
+        full_name = item.get('full_name') or (user.fullname if user and not user.is_registered else None)
+        if not uid and not full_name:
+            raise exceptions.ValidationError(detail='A user ID or full name must be provided to add a contributor.')
+
+        email_pref = self.context['request'].GET.get('send_email') or self.context['default_email']
+        if email_pref not in self.email_preferences:
+            raise exceptions.ValidationError(f'{email_pref} is not a valid email preference.')
+
+        return {
+            'user_id': uid,
+            'user': user,
+            'email': email,
+            'full_name': full_name,
+            'notification_type': False if email_pref == 'false' else None,
+            'permissions': osf_permissions.get_contributor_proposed_permissions(item),
+            'bibliographic': item.get('bibliographic'),
+            'index': item.get('_order') if '_order' in item else None,
+        }
+
+    def _add_contributors_to_node(self, node, payload, auth):
+        try:
+            return node.add_contributors_registered_or_not(payload, auth=auth, save=True)
+        except ValidationError as e:
+            raise exceptions.ValidationError(detail=e.messages[0])
+        except ValueError as e:
+            raise exceptions.NotFound(detail=e.args[0])
+
+    def create(self, validated_data):
+        request = self.context['request']
+        node = self.context['resource']
+        auth = Auth(request.user)
+
+        # Preload users once and pass through to the bulk method (also reused for children)
+        user_ids = {item.get('_id') for item in validated_data if item.get('_id')}
+        user_map = {}
+        if user_ids:
+            for u in OSFUser.objects.filter(guids___id__in=user_ids):
+                user_map[u._id] = u
+
+        _parse_payload_item = functools.partial(self._parse_payload_item, user_map=user_map)
+
+        payload = list(map(_parse_payload_item, validated_data))
+        contribs = self._add_contributors_to_node(node, payload, auth)
+
+        child_to_items = {}
+        for item in validated_data:
+            child_nodes = item.get('child_nodes')
+            if child_nodes:
+                for child_id in child_nodes:
+                    child_to_items.setdefault(child_id, []).append(item)
+
+        for child_id, items in child_to_items.items():
+            child = AbstractNode.load(child_id)
+            if not child:
+                continue
+            child_payload = list(map(_parse_payload_item, items))
+            self._add_contributors_to_node(child, child_payload, auth)
+
+        return contribs
+
+
 class NodeContributorsCreateSerializer(NodeContributorsSerializer):
     """
     Overrides NodeContributorsSerializer to add email, full_name, send_email, and non-required index and users field.
@@ -1239,8 +1310,8 @@ class NodeContributorsCreateSerializer(NodeContributorsSerializer):
 
     email_preferences = ['default', 'false']
 
-    def get_proposed_permissions(self, validated_data):
-        return validated_data.get('permission') or osf_permissions.DEFAULT_CONTRIBUTOR_PERMISSIONS
+    class Meta(NodeContributorsSerializer.Meta):
+        list_serializer_class = NodeContributorsBulkCreateListSerializer
 
     def validate_data(self, resource, user_id=None, full_name=None, email=None, index=None, child_nodes=None):
         if not user_id and not full_name:
@@ -1263,7 +1334,7 @@ class NodeContributorsCreateSerializer(NodeContributorsSerializer):
 
         email_pref = self.context['request'].GET.get('send_email') or self.context['default_email']
         child_nodes = validated_data.get('child_nodes')
-        permissions = self.get_proposed_permissions(validated_data)
+        permissions = osf_permissions.get_contributor_proposed_permissions(validated_data)
         self.validate_data(resource, user_id=user_id, full_name=full_name, email=email, index=index, child_nodes=child_nodes)
 
         if email_pref not in self.email_preferences:
