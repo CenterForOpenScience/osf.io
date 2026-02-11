@@ -569,6 +569,7 @@ class LinkedNodesList(JSONAPIBaseView, generics.ListAPIView, CollectionMixin, No
     view_name = 'linked-nodes'
 
     ordering = ('-modified',)
+    model_class = Node
 
     def get_default_queryset(self):
         auth = get_user_auth(self.request)
@@ -589,7 +590,7 @@ class LinkedNodesList(JSONAPIBaseView, generics.ListAPIView, CollectionMixin, No
         return res
 
 
-class LinkedRegistrationsList(JSONAPIBaseView, generics.ListAPIView, CollectionMixin):
+class LinkedRegistrationsList(JSONAPIBaseView, generics.ListAPIView, CollectionMixin, ListFilterMixin):
     """List of registrations linked to this node. *Read-only*.
 
     Linked registrations are the registration nodes pointed to by node links.
@@ -667,8 +668,9 @@ class LinkedRegistrationsList(JSONAPIBaseView, generics.ListAPIView, CollectionM
     required_write_scopes = [CoreScopes.COLLECTED_META_WRITE]
 
     ordering = ('-modified',)
+    model_class = Registration
 
-    def get_queryset(self):
+    def get_default_queryset(self):
         auth = get_user_auth(self.request)
         return Registration.objects.filter(
             guids__in=self.get_collection().active_guids.all(),
@@ -679,6 +681,9 @@ class LinkedRegistrationsList(JSONAPIBaseView, generics.ListAPIView, CollectionM
         ).order_by(
             '-modified',
         )
+
+    def get_queryset(self):
+        return self.get_queryset_from_request()
 
     # overrides APIView
     def get_parser_context(self, http_request):

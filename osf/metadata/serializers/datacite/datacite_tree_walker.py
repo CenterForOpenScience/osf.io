@@ -17,6 +17,7 @@ from osf.metadata.rdfutils import (
     FOAF,
     ORCID,
     OSF,
+    PROV,
     ROR,
     SKOS,
     DATACITE,
@@ -128,23 +129,51 @@ class DataciteTreeWalker:
             })
 
     def _visit_creators(self, parent_el, focus_iri):
-        creator_iris = set(self.basket[focus_iri:DCTERMS.creator])
-        if (not creator_iris) and ((focus_iri, RDF.type, OSF.File) in self.basket):
-            creator_iris.update(self.basket[focus_iri:OSF.hasFileVersion / DCTERMS.creator])
+        creator_iris = []
+
+        ordered_contributors = []
+        attribution_refs = list(self.basket[focus_iri:PROV.qualifiedAttribution])
+        for attribution_ref in attribution_refs:
+            try:
+                order_val = next(self.basket[attribution_ref:OSF.order])
+            except StopIteration:
+                # If there is no explicit order, shove it to the end
+                order_index = float('inf')
+            else:
+                try:
+                    order_index = order_val.toPython()
+                except AttributeError:
+                    order_index = int(order_val)
+            try:
+                agent_iri = next(self.basket[attribution_ref:PROV.agent])
+            except StopIteration:
+                continue
+            ordered_contributors.append((order_index, agent_iri))
+
+        if ordered_contributors:
+            ordered_contributors.sort(key=lambda pair: pair[0])
+            creator_iris.extend(agent_iri for _, agent_iri in ordered_contributors)
+
+        # Fallbacks when there is no explicit OSF ordering
         if not creator_iris:
-            creator_iris.update(self.basket[focus_iri:OSF.isContainedBy / DCTERMS.creator])
-        if not creator_iris:
-            creator_iris.update(self.basket[focus_iri:DCTERMS.isPartOf / DCTERMS.creator])
-        if not creator_iris:
-            creator_iris.update(self.basket[focus_iri:DCTERMS.contributor])
-        if not creator_iris:
-            creator_iris.update(self.basket[focus_iri:OSF.isContainedBy / DCTERMS.contributor])
-        if not creator_iris:
-            creator_iris.update(self.basket[focus_iri:DCTERMS.isPartOf / DCTERMS.contributor])
+            creator_iris = list(self.basket[focus_iri:DCTERMS.creator])
+            if (not creator_iris) and ((focus_iri, RDF.type, OSF.File) in self.basket):
+                creator_iris.extend(self.basket[focus_iri:OSF.hasFileVersion / DCTERMS.creator])
+            if not creator_iris:
+                creator_iris.extend(self.basket[focus_iri:OSF.isContainedBy / DCTERMS.creator])
+            if not creator_iris:
+                creator_iris.extend(self.basket[focus_iri:DCTERMS.isPartOf / DCTERMS.creator])
+            if not creator_iris:
+                creator_iris.extend(self.basket[focus_iri:DCTERMS.contributor])
+            if not creator_iris:
+                creator_iris.extend(self.basket[focus_iri:OSF.isContainedBy / DCTERMS.contributor])
+            if not creator_iris:
+                creator_iris.extend(self.basket[focus_iri:DCTERMS.isPartOf / DCTERMS.contributor])
+
         if not creator_iris:
             raise ValueError(f'gathered no creators or contributors around {focus_iri}')
         creators_el = self.visit(parent_el, 'creators', is_list=True)
-        for creator_iri in creator_iris:  # TODO: "priority order"
+        for creator_iri in creator_iris:
             creator_el = self.visit(creators_el, 'creator')
             for name in self.basket[creator_iri:FOAF.name]:
                 self.visit(creator_el, 'creatorName', text=name, attrib={

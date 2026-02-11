@@ -303,6 +303,7 @@ class TestNodeReindex(AdminTestCase):
     def setUp(self):
         super().setUp()
         self.request = RequestFactory().post('/fake_path')
+        patch_messages(self.request)
 
         self.user = AuthUserFactory()
         self.node = ProjectFactory(creator=self.user)
