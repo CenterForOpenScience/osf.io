@@ -93,8 +93,8 @@ class BaseSignpostLinkset(MetadataSerializer, abc.ABC):
 
         # item
         for _file_iri in self.basket[OSF.contains]:
-            mime_type = next(self.basket[_file_iri:DCAT.mediaType])
-            yield SignpostLink(focus_iri, 'item', str(_file_iri), [('type', mime_type)])
+            for mime_type in self.basket[_file_iri:DCAT.mediaType]:
+                yield SignpostLink(focus_iri, 'item', str(_file_iri), [('type', mime_type)])
 
 
 class SignpostLinkset(BaseSignpostLinkset):
