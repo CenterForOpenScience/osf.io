@@ -31,6 +31,9 @@ BASIC_METADATA_SCENARIO = {
             'datacite-xml': 'project_basic.datacite.xml',
             'datacite-json': 'project_basic.datacite.json',
             'google-dataset-json-ld': 'project_basic.google-dataset.json',
+
+            'linkset': 'project_basic.linkset',
+            'linkset-json': 'project_basic.linkset.json',
         },
     },
     OSF.Preprint: {
@@ -39,6 +42,9 @@ BASIC_METADATA_SCENARIO = {
             'datacite-xml': 'preprint_basic.datacite.xml',
             'datacite-json': 'preprint_basic.datacite.json',
             'google-dataset-json-ld': 'preprint_basic.google-dataset.json',
+
+            'linkset': 'preprint_basic.linkset',
+            'linkset-json': 'preprint_basic.linkset.json',
         },
     },
     OSF.Registration: {
@@ -47,6 +53,9 @@ BASIC_METADATA_SCENARIO = {
             'datacite-xml': 'registration_basic.datacite.xml',
             'datacite-json': 'registration_basic.datacite.json',
             'google-dataset-json-ld': 'registration_basic.google-dataset.json',
+
+            'linkset': 'registration_basic.linkset',
+            'linkset-json': 'registration_basic.linkset.json',
         },
     },
     OSF.File: {
@@ -55,6 +64,8 @@ BASIC_METADATA_SCENARIO = {
             'datacite-xml': 'file_basic.datacite.xml',
             'datacite-json': 'file_basic.datacite.json',
             'google-dataset-json-ld': 'file_basic.google-dataset.json',
+            'linkset': 'file_basic.linkset',
+            'linkset-json': 'file_basic.linkset.json',
         },
     },
     DCTERMS.Agent: {
@@ -71,6 +82,9 @@ FULL_METADATA_SCENARIO = {
             'datacite-xml': 'project_full.datacite.xml',
             'datacite-json': 'project_full.datacite.json',
             'google-dataset-json-ld': 'project_full.google-dataset.json',
+
+            'linkset': 'project_full.linkset',
+            'linkset-json': 'project_full.linkset.json',
         },
         OsfmapPartition.SUPPLEMENT: {
             'turtle': 'project_supplement.turtle',
@@ -85,6 +99,9 @@ FULL_METADATA_SCENARIO = {
             'datacite-xml': 'preprint_full.datacite.xml',
             'datacite-json': 'preprint_full.datacite.json',
             'google-dataset-json-ld': 'preprint_full.google-dataset.json',
+
+            'linkset': 'preprint_full.linkset',
+            'linkset-json': 'preprint_full.linkset.json',
         },
         OsfmapPartition.SUPPLEMENT: {
             'turtle': 'preprint_supplement.turtle',
@@ -99,6 +116,9 @@ FULL_METADATA_SCENARIO = {
             'datacite-xml': 'registration_full.datacite.xml',
             'datacite-json': 'registration_full.datacite.json',
             'google-dataset-json-ld': 'registration_full.google-dataset.json',
+
+            'linkset': 'registration_full.linkset',
+            'linkset-json': 'registration_full.linkset.json',
         },
         OsfmapPartition.SUPPLEMENT: {
             'turtle': 'registration_supplement.turtle',
@@ -113,6 +133,8 @@ FULL_METADATA_SCENARIO = {
             'datacite-xml': 'file_full.datacite.xml',
             'datacite-json': 'file_full.datacite.json',
             'google-dataset-json-ld': 'file_full.google-dataset.json',
+            'linkset': 'file_full.linkset',
+            'linkset-json': 'file_full.linkset.json',
         },
         OsfmapPartition.SUPPLEMENT: {
             'turtle': 'file_supplement.turtle',
@@ -139,6 +161,8 @@ EXPECTED_MEDIATYPE = {
     'datacite-xml': 'application/xml',
     'datacite-json': 'application/json',
     'google-dataset-json-ld': 'application/ld+json',
+    'linkset': 'application/linkset',
+    'linkset-json': 'application/linkset+json',
 }
 
 

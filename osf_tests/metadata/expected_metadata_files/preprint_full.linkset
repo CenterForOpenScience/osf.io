@@ -1,0 +1,13 @@
+<http://localhost:5000/w1ibb> ; rel="author" ; anchor="http://localhost:5000/w4ibb",
+<https://schema.datacite.org/meta/kernel-4/#Preprint> ; rel="type" ; anchor="http://localhost:5000/w4ibb",
+<https://osf.io/vocab/2022/Preprint> ; rel="type" ; anchor="http://localhost:5000/w4ibb",
+<https://doi.org/11.pp/FK2osf.io/w4ibb_v1> ; rel="cite-as" ; anchor="http://localhost:5000/w4ibb",
+<http://localhost:5000/w4ibb> ; rel="describes" ; anchor="http://localhost:5000/metadata/w4ibb/",
+<http://localhost:5000/metadata/w4ibb/?format=turtle> ; rel="describedby" ; anchor="http://localhost:5000/w4ibb" ; type="text/turtle; charset=utf-8",
+<http://localhost:5000/metadata/w4ibb/?format=datacite-json> ; rel="describedby" ; anchor="http://localhost:5000/w4ibb" ; type="application/json",
+<http://localhost:5000/metadata/w4ibb/?format=datacite-xml> ; rel="describedby" ; anchor="http://localhost:5000/w4ibb" ; type="application/xml",
+<http://localhost:5000/metadata/w4ibb/?format=google-dataset-json-ld> ; rel="describedby" ; anchor="http://localhost:5000/w4ibb" ; type="application/ld+json",
+<http://localhost:5000/metadata/w4ibb/?format=linkset> ; rel="describedby" ; anchor="http://localhost:5000/w4ibb" ; type="application/linkset",
+<http://localhost:5000/metadata/w4ibb/?format=linkset-json> ; rel="describedby" ; anchor="http://localhost:5000/w4ibb" ; type="application/linkset+json"
+
+
