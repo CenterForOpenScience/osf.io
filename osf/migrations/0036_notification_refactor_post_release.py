@@ -3,6 +3,18 @@
 from django.db import migrations, models
 import osf.utils.fields
 
+from django.core.management import call_command
+
+
+def run_deduplication_command(apps, schema_editor):
+    call_command('remove_duplicate_notification_subscriptions_v2')
+
+
+def reverse(apps, schema_editor):
+    """
+    This is a no-op since we can't restore deleted records.
+    """
+
 
 class Migration(migrations.Migration):
 
@@ -12,6 +24,7 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
+        migrations.RunPython(run_deduplication_command, reverse),
         migrations.RemoveField(
             model_name='notification',
             name='seen',
