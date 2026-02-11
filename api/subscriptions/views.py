@@ -234,8 +234,6 @@ class SubscriptionDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView):
         if missing_subscription_created:
             # Note: must use `annotated_obj_qs` to insert `legacy_id` so that `SubscriptionSerializer` can build data
             # properly; in addition, there should be only one result
-            # missing_subscription_created.legacy_id = subscription_id
-            # subscription = missing_subscription_created
             subscription = annotated_obj_qs.get(legacy_id=subscription_id)
         else:
             # TODO: Use `get()` and fails/warns on multiple objects after fully de-duplicating the OSF DB
