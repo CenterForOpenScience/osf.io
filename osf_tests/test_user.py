@@ -2143,6 +2143,37 @@ class TestUserGdprDelete:
         project.save()
         return project
 
+    @mock.patch('osf.models.node.AbstractNode.update_search')
+    def test_gdpr_delete_triggers_share_update_for_public_shared_nodes(
+            self, mock_update_search, user, project_with_two_admins):
+        project_with_two_admins.is_public = True
+        project_with_two_admins.save()
+
+        user.gdpr_delete()
+
+        assert mock_update_search.called
+
+    @mock.patch('osf.models.node.AbstractNode.update_search')
+    def test_gdpr_delete_does_not_trigger_share_update_for_non_public_shared_nodes(
+            self, mock_update_search, user, project_with_two_admins):
+        assert project_with_two_admins.is_public is False
+
+        user.gdpr_delete()
+
+        assert not mock_update_search.called
+
+    @mock.patch('osf.models.preprint.Preprint.update_search')
+    def test_gdpr_delete_triggers_share_update_for_public_shared_preprints(
+            self, mock_update_search, user, preprint):
+        other_user = AuthUserFactory()
+        preprint.add_contributor(other_user, auth=Auth(user), permissions='admin')
+        preprint.save()
+        assert preprint.is_public is True
+
+        user.gdpr_delete()
+
+        assert mock_update_search.called
+
     def test_can_gdpr_delete(self, user):
         user.social = ['fake social']
         user.schools = ['fake schools']
@@ -2184,7 +2215,7 @@ class TestUserGdprDelete:
         assert draft_registrations.contributors.get() == other_admin
         assert user.nodes.filter(deleted__isnull=True).count() == 0
 
-    def test_cant_gdpr_delete_multiple_contributors_registrations(self, user, registration):
+    def test_gdpr_delete_removes_user_from_shared_registrations(self, user, registration):
         registration.is_public = True
         other_user = AuthUserFactory()
         registration.add_contributor(other_user, auth=Auth(user), permissions='admin')
@@ -2192,20 +2223,28 @@ class TestUserGdprDelete:
 
         assert registration.contributors.count() == 2
 
-        with pytest.raises(UserStateError) as exc_info:
-            user.gdpr_delete()
+        user.gdpr_delete()
+        registration.reload()
 
-        assert exc_info.value.args[0] == 'You cannot delete this user because they have one or more registrations.'
+        assert registration.contributors.count() == 1
+        assert registration.contributors.first() == other_user
+        assert not registration.is_deleted
+        assert user.deleted is not None
 
-    def test_cant_gdpr_delete_multiple_contributors_preprints(self, user, preprint):
+    def test_gdpr_delete_removes_user_from_shared_preprints(self, user, preprint):
         other_user = AuthUserFactory()
         preprint.add_contributor(other_user, auth=Auth(user), permissions='admin')
         preprint.save()
 
-        with pytest.raises(UserStateError) as exc_info:
-            user.gdpr_delete()
+        assert preprint.contributors.count() == 2
 
-        assert exc_info.value.args[0] == 'You cannot delete this user because they have one or more preprints.'
+        user.gdpr_delete()
+        preprint.reload()
+
+        assert preprint.contributors.count() == 1
+        assert preprint.contributors.first() == other_user
+        assert not preprint.is_deleted
+        assert user.deleted is not None
 
     def test_can_gdpr_delete_sole_contributor_registration(self, user):
         registration = RegistrationFactory(creator=user)
