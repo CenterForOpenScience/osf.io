@@ -39,6 +39,9 @@ from website.ember_osf_web.decorators import ember_flag_is_active
 from osf import features
 
 
+ANGULAR_URL = 'localhost:4200'
+
+
 @block_bing_preview
 @collect_auth
 def reset_password_get(auth, uid=None, token=None):
