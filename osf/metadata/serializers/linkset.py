@@ -52,17 +52,17 @@ class BaseSignpostLinkset(MetadataSerializer, abc.ABC):
                 # check the type differs from parent project / registry / preprint
                 if _type_iri not in parent_types:
                     schema_type = map_resource_type_general_datacite_to_scheme(_type_iri, resource_rdftype)
-                    yield SignpostLink(focus_iri, 'type', f'https://schema.org/{schema_type}')
+                    yield SignpostLink(focus_iri, 'type', schema_type)
         else:
             # get either datacite or osf type
             _type_iris = list(self.basket[DCTERMS.type]) or list(self.basket[RDF.type])
             for _type_iri in _type_iris:
                 if isinstance(_type_iri, rdflib.URIRef) and _type_iri.startswith(DATACITE):
                     schema_type = map_resource_type_general_datacite_to_scheme(_type_iri, resource_rdftype)
-                    yield SignpostLink(focus_iri, 'type', f'https://schema.org/{schema_type}')
+                    yield SignpostLink(focus_iri, 'type', schema_type)
                 else:
                     schema_type = DATACITE_SCHEMA_RESOURCE_TYPE_GENERAL_MAPPING.get(resource_rdftype)
-                    yield SignpostLink(focus_iri, 'type', f'https://schema.org/{schema_type}')
+                    yield SignpostLink(focus_iri, 'type', schema_type)
             yield SignpostLink(focus_iri, 'type', SCHEMA.AboutPage)
 
         # cite-as

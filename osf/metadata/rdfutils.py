@@ -44,41 +44,44 @@ OSF_CONTEXT = {
 
 
 DATACITE_SCHEMA_RESOURCE_TYPE_GENERAL_MAPPING = {
-    DATACITE.Audiovisual: 'MediaObject',
-    DATACITE.Book: 'Book',
-    DATACITE.BookChapter: 'Chapter',
-    DATACITE.Collection: 'Collection',
-    DATACITE.ComputationalNotebook: 'SoftwareSourceCode',
-    DATACITE.ConferencePaper: 'Article',
-    DATACITE.ConferenceProceeding: 'Periodical',
-    DATACITE.DataPaper: 'Article',
-    DATACITE.Dataset: 'Dataset',
-    DATACITE.Dissertation: 'Thesis',
-    DATACITE.Event: 'Event',
-    DATACITE.Image: 'ImageObject',
-    DATACITE.InteractiveResource: 'CreativeWork',
-    DATACITE.Journal: 'Periodical',
-    DATACITE.JournalArticle: 'ScholarlyArticle',
-    DATACITE.Model: 'CreativeWork',
-    DATACITE.OutputManagementPlan: 'HowTo',
-    DATACITE.PeerReview: 'Review',
-    DATACITE.PhysicalObject: 'Thing',
-    DATACITE.Preprint: 'ScholarlyArticle',
-    DATACITE.Report: 'Report',
-    DATACITE.Service: 'Service',
-    DATACITE.Software: 'SoftwareSourceCode',
-    DATACITE.Sound: 'AudioObject',
-    DATACITE.Standard: 'CreativeWork',
-    DATACITE.Text: 'Text',
-    DATACITE.Workflow: 'HowTo',
-    DATACITE.Other: 'CreativeWork',
-    DATACITE.Instrument: 'MeasurementMethodEnum',
-    DATACITE.StudyRegistration: 'Text',
-    OSF.Project: 'ResearchProject',
-    OSF.Preprint: 'ScholarlyArticle',
-    OSF.Registration: 'Text',
-    OSF.File: 'DigitalDocument',
+    DATACITE.Audiovisual: SCHEMA.MediaObject,
+    DATACITE.Book: SCHEMA.Book,
+    DATACITE.BookChapter: SCHEMA.Chapter,
+    DATACITE.Collection: SCHEMA.Collection,
+    DATACITE.ComputationalNotebook: SCHEMA.SoftwareSourceCode,
+    DATACITE.ConferencePaper: SCHEMA.Article,
+    DATACITE.ConferenceProceeding: SCHEMA.Periodical,
+    DATACITE.DataPaper: SCHEMA.Article,
+    DATACITE.Dataset: SCHEMA.Dataset,
+    DATACITE.Dissertation: SCHEMA.Thesis,
+    DATACITE.Event: SCHEMA.Event,
+    DATACITE.Image: SCHEMA.ImageObject,
+    DATACITE.InteractiveResource: SCHEMA.CreativeWork,
+    DATACITE.Journal: SCHEMA.Periodical,
+    DATACITE.JournalArticle: SCHEMA.ScholarlyArticle,
+    DATACITE.Model: SCHEMA.CreativeWork,
+    DATACITE.OutputManagementPlan: SCHEMA.HowTo,
+    DATACITE.PeerReview: SCHEMA.Review,
+    DATACITE.PhysicalObject: SCHEMA.Thing,
+    DATACITE.Preprint: SCHEMA.ScholarlyArticle,
+    DATACITE.Report: SCHEMA.Report,
+    DATACITE.Service: SCHEMA.Service,
+    DATACITE.Software: SCHEMA.SoftwareSourceCode,
+    DATACITE.Sound: SCHEMA.AudioObject,
+    DATACITE.Standard: SCHEMA.CreativeWork,
+    DATACITE.Text: SCHEMA.Text,
+    DATACITE.Workflow: SCHEMA.HowTo,
+    DATACITE.Other: SCHEMA.CreativeWork,
+    DATACITE.Instrument: SCHEMA.MeasurementMethodEnum,
+    DATACITE.StudyRegistration: SCHEMA.Text,
+    OSF.Project: SCHEMA.ResearchProject,
+    OSF.Preprint: SCHEMA.ScholarlyArticle,
+    OSF.Registration: SCHEMA.Text,
+    OSF.File: SCHEMA.DigitalDocument,
 }
+
+
+DEFAULT_SCHEMADOTORG_RESOURCE_TYPE = SCHEMA.CreativeWork
 
 
 def contextualized_graph(graph=None) -> rdflib.Graph:
@@ -187,4 +190,4 @@ def smells_like_iri(maybe_iri: str) -> bool:
     )
 
 def map_resource_type_general_datacite_to_scheme(_type_iri: rdflib.URIRef, resource_rdftype: rdflib.URIRef) -> str:
-    return DATACITE_SCHEMA_RESOURCE_TYPE_GENERAL_MAPPING.get(_type_iri) or DATACITE_SCHEMA_RESOURCE_TYPE_GENERAL_MAPPING.get(resource_rdftype, 'Text')
+    return DATACITE_SCHEMA_RESOURCE_TYPE_GENERAL_MAPPING.get(_type_iri) or DATACITE_SCHEMA_RESOURCE_TYPE_GENERAL_MAPPING.get(resource_rdftype, DEFAULT_SCHEMADOTORG_RESOURCE_TYPE)
