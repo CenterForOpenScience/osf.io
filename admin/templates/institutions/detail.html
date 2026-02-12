@@ -24,11 +24,12 @@
                 <a class="btn btn-danger" href={% url 'institutions:delete' institution.id %}>Delete institution</a>
                 {%  endif %}
 				{% if perms.osf.change_institution %}
-                {% if institution.deactivated is None %}
-                <a class="btn btn-danger" href={% url 'institutions:deactivate' institution.id %}>Deactivate institution</a>
-                {% else %}
-                <a class="btn btn-danger" href={% url 'institutions:reactivate' institution.id %}>Reactivate institution</a>
-                {% endif %}
+					{% if institution.deactivated is None %}
+					<a class="btn btn-danger" href={% url 'institutions:deactivate' institution.id %}>Deactivate institution</a>
+					{% else %}
+					<a class="btn btn-danger" href={% url 'institutions:reactivate' institution.id %}>Reactivate institution</a>
+					{% endif %}
+					<a class="btn btn-primary" href={% url 'institutions:affiliations' institution.id %}>Affiliations</a>
 				{% endif %}
                 {% if perms.osf.change_institution %}
                 <a class="btn btn-primary" href={% url 'institutions:list_and_add_admin' institution.id %}>Manage Admins</a>
