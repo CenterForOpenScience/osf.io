@@ -9,14 +9,14 @@ from dateutil.relativedelta import relativedelta
 from datetime import datetime
 from framework.celery_tasks import app as celery_app
 from django.contrib.contenttypes.models import ContentType
-from osf.models import OSFUser, NotificationSubscription, NotificationType
+from osf.models import OSFUser, NotificationSubscription, NotificationTypeEnum
 
 @celery_app.task(name='scripts.remove_after_use.populate_notification_subscriptions_user_global_file_updated')
 def populate_notification_subscriptions_user_global_file_updated(per_last_years: int | None= None, batch_size: int = 1000):
     print('---Starting USER_FILE_UPDATED subscriptions population script----')
     global_start = datetime.now()
 
-    user_file_updated_nt = NotificationType.Type.USER_FILE_UPDATED
+    user_file_updated_nt = NotificationTypeEnum.USER_FILE_UPDATED
     user_ct = ContentType.objects.get_for_model(OSFUser)
     if per_last_years:
         from_date = timezone.now() - relativedelta(years=per_last_years)
@@ -94,7 +94,7 @@ def populate_notification_subscriptions_user_global_file_updated(per_last_years:
 def update_notification_subscriptions_user_global_file_updated():
     print('---Starting USER_FILE_UPDATED subscriptions updating script----')
 
-    user_file_updated_nt = NotificationType.Type.USER_FILE_UPDATED
+    user_file_updated_nt = NotificationTypeEnum.USER_FILE_UPDATED
 
     update_start = datetime.now()
     updated = (
