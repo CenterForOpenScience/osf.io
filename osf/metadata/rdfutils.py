@@ -26,7 +26,7 @@ DCAT = rdflib.Namespace('http://www.w3.org/ns/dcat#')                   # "data 
 PROV = rdflib.Namespace('http://www.w3.org/ns/prov#')                   # "provenance"
 # non-standard namespace for datacite terms (resolves to datacite docs)
 DATACITE = rdflib.Namespace('https://schema.datacite.org/meta/kernel-4/#')
-
+SCHEMA = rdflib.Namespace('https://schema.org/')
 
 # namespace prefixes that will be shortened by default
 # when serialized, instead of displaying the full iri
@@ -73,13 +73,11 @@ DATACITE_SCHEMA_RESOURCE_TYPE_GENERAL_MAPPING = {
     DATACITE.Workflow: 'HowTo',
     DATACITE.Other: 'CreativeWork',
     DATACITE.Instrument: 'MeasurementMethodEnum',
-    DATACITE.StudyRegistration: 'Text'
-}
-
-
-RESOURCE_SCHEMA_RESOURCE_TYPE_GENERAL_MAPPING = {
-    OSF.Project: 'ResearchProject', OSF.Preprint: 'ScholarlyArticle',
-    OSF.Registration: 'Text', OSF.File: 'DigitalDocument',
+    DATACITE.StudyRegistration: 'Text',
+    OSF.Project: 'ResearchProject',
+    OSF.Preprint: 'ScholarlyArticle',
+    OSF.Registration: 'Text',
+    OSF.File: 'DigitalDocument',
 }
 
 
@@ -189,4 +187,4 @@ def smells_like_iri(maybe_iri: str) -> bool:
     )
 
 def map_resource_type_general_datacite_to_scheme(_type_iri: rdflib.URIRef, resource_rdftype: rdflib.URIRef) -> str:
-    return DATACITE_SCHEMA_RESOURCE_TYPE_GENERAL_MAPPING.get(_type_iri) or RESOURCE_SCHEMA_RESOURCE_TYPE_GENERAL_MAPPING.get(resource_rdftype, 'Text')
+    return DATACITE_SCHEMA_RESOURCE_TYPE_GENERAL_MAPPING.get(_type_iri) or DATACITE_SCHEMA_RESOURCE_TYPE_GENERAL_MAPPING.get(resource_rdftype, 'Text')
