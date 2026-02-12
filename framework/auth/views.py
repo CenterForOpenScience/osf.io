@@ -39,7 +39,7 @@ from website.ember_osf_web.decorators import ember_flag_is_active
 from osf import features
 
 
-ANGULAR_URL = 'localhost:4200'
+LOCAL_ANGULAR_URL = 'localhost:4200'
 
 
 @block_bing_preview
@@ -1212,7 +1212,7 @@ def validate_next_url(next_url):
 
     # disable external domain using `//`: the browser allows `//` as a shortcut for non-protocol specific requests
     # like http:// or https:// depending on the use of SSL on the page already.
-    if ANGULAR_URL in next_url:
+    if LOCAL_ANGULAR_URL in next_url:
         return True
 
     if next_url.startswith('//'):
