@@ -652,7 +652,6 @@ class UserAccountExport(JSONAPIBaseView, generics.CreateAPIView, UserMixin):
                 'user_username': user.username,
                 'user_absolute_url': user.absolute_url,
                 'user__id': user._id,
-                'can_change_preferences': False,
             },
         )
         user.email_last_sent = timezone.now()
@@ -865,7 +864,6 @@ class ResetPassword(JSONAPIBaseView, generics.ListCreateAPIView):
                     user=user_obj,
                     message_frequency='instantly',
                     event_context={
-                        'can_change_preferences': False,
                         'reset_link': reset_link,
                     },
                 )
@@ -1173,7 +1171,6 @@ class ConfirmEmailView(generics.CreateAPIView):
                 message_frequency='instantly',
                 event_context={
                     'user_fullname': user.fullname,
-                    'can_change_preferences': False,
                     'external_id_provider': provider,
                 },
             )
@@ -1494,7 +1491,6 @@ class ExternalLoginConfirmEmailView(generics.CreateAPIView):
                 user=user,
                 message_frequency='instantly',
                 event_context={
-                    'can_change_preferences': False,
                     'external_id_provider': provider.name,
                 },
             )

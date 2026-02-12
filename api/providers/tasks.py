@@ -653,13 +653,11 @@ def bulk_upload_finish_job(upload, row_count, success_count, draft_errors, appro
             user=initiator,
             event_context={
                 'user_fullname': initiator.fullname,
-                'initiator_fullname': initiator.fullname,
                 'auto_approval': auto_approval,
                 'count': row_count,
                 'total': row_count,
                 'pending_submissions_url': f'{get_registration_provider_submissions_url(provider)}?status=pending',
                 'draft_errors': draft_errors,
-                'approval_errors': approval_errors,
                 'successes': success_count,
                 'failures': len(draft_errors),
                 'osf_support_email': settings.OSF_SUPPORT_EMAIL,

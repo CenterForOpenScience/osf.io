@@ -46,7 +46,6 @@ def main(json_file, dry=False):
                         event_context={
                             'public_nodes': public_nodes,
                             'private_nodes': private_nodes,
-                            'can_change_preferences': False,
                         }
                     )
                 except Exception:

@@ -193,7 +193,6 @@ def update_user(auth):
                 event_context={
                     'user_fullname': user.fullname,
                     'new_address': username,
-                    'can_change_preferences': False,
                     'osf_contact_email': settings.OSF_CONTACT_EMAIL,
                 }
             )
@@ -804,7 +803,6 @@ def request_export(auth):
             'user_username': user.username,
             'user_absolute_url': user.absolute_url,
             'user__id': user._id,
-            'can_change_preferences': False,
         }
     )
     user.email_last_sent = timezone.now()

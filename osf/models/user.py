@@ -1104,7 +1104,6 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
                 event_context={
                     'domain': website_settings.DOMAIN,
                     'user_fullname': self.fullname,
-                    'can_change_preferences': False,
                     'osf_contact_email': website_settings.OSF_CONTACT_EMAIL
                 }
             )

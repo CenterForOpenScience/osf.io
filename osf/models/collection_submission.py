@@ -139,15 +139,12 @@ class CollectionSubmission(TaxonomizableMixin, BaseModel):
             user=user,
             subscribed_object=self.collection.provider,
             event_context={
-                'provider_id': self.collection.provider.id,
-                'submitter_fullname': self.creator.fullname,
                 'requester_fullname': event_data.kwargs.get('user').fullname,
                 'requester_contributor_names': ''.join(self.guid.referent.contributors.values_list('fullname', flat=True)),
                 'localized_timestamp': str(timezone.now()),
                 'message': f'submitted "{self.guid.referent.title}".',
                 'reviews_submission_url': f'{DOMAIN}reviews/registries/{self.guid.referent._id}/{self.guid.referent._id}',
                 'is_request_email': False,
-                'is_initiator': self.creator == user,
                 'profile_image_url': user.profile_image_url(),
                 'logo': self.collection.provider._id if
                 self.collection.provider and not self.collection.provider.is_default else settings.OSF_PREPRINTS_LOGO,
@@ -309,21 +306,14 @@ class CollectionSubmission(TaxonomizableMixin, BaseModel):
                         **event_context_base,
                         'requester_contributor_names': ''.join(
                             self.guid.referent.contributors.values_list('fullname', flat=True)),
-
                         'is_admin': node.has_permission(contributor, ADMIN),
                         'rejection_justification': event_data.kwargs.get('comment'),
-                        'collections_title': self.collection.title,
                         'collection_provider_name': self.collection.provider.name,
                         'collection_provider__id': self.collection.provider._id,
-                        'remover_absolute_url': user.get_absolute_url() if user is not None else None,
                         'node_absolute_url': node.absolute_url,
                         'collection_provider': self.collection.provider.name,
                         'collections_link': DOMAIN + 'collections/' + self.collection.provider._id,
                         'user_fullname': contributor.fullname,
-                        'is_request_email': False,
-                        'message': '',
-                        'localized_timestamp': str(timezone.now()),
-                        'reviews_submission_url': f'{DOMAIN}reviews/registries/{self.guid.referent._id}/{self.guid.referent._id}',
                     },
                 )
         elif is_admin and self.collection.provider:
@@ -332,21 +322,12 @@ class CollectionSubmission(TaxonomizableMixin, BaseModel):
                     user=contributor,
                     event_context={
                         **event_context_base,
-                        'requester_contributor_names': ''.join(
-                            self.guid.referent.contributors.values_list('fullname', flat=True)),
-                        'localized_timestamp': str(timezone.now()),
                         'user_fullname': contributor.fullname,
-                        'collections_title': self.collection.title,
                         'collection_provider_name': self.collection.provider.name,
-                        'collection_provider__id': self.collection.provider._id,
                         'collection_provider': self.collection.provider.name,
                         'collections_link': DOMAIN + 'collections/' + self.collection.provider._id,
                         'node_absolute_url': node.get_absolute_url(),
-                        'is_request_email': False,
-                        'message': '',
                         'is_admin': node.has_permission(contributor, ADMIN),
-                        'reviews_submission_url': f'{DOMAIN}reviews/registries/{self.guid.referent._id}/{self.guid.referent._id}',
-
                     },
                 )
 
@@ -392,29 +373,18 @@ class CollectionSubmission(TaxonomizableMixin, BaseModel):
                 user=contributor,
                 subscribed_object=self.collection,
                 event_context={
-                    'requester_contributor_names': ''.join(
-                        node.contributors.values_list('fullname', flat=True)),
-                    'profile_image_url': user.profile_image_url(),
                     'user_fullname': contributor.fullname,
-                    'requester_fullname': self.creator.fullname,
                     'is_admin': node.has_permission(contributor, ADMIN),
                     'node_title': node.title,
                     'node_absolute_url': node.get_absolute_url(),
                     'remover_fullname': user.fullname if user else '',
                     'remover_absolute_url': user.get_absolute_url() if user else '',
-                    'localized_timestamp': str(timezone.now()),
                     'collections_link': collections_link,
-                    'collection_title': self.collection.title,
                     'collection_provider_name': collection_provider_name,
                     'node_absolute_url"': node.get_absolute_url(),
                     'collection_provider': collection_provider_name,
                     'domain': settings.DOMAIN,
-                    'is_request_email': False,
-                    'message': '',
                     'osf_contact_email': settings.OSF_CONTACT_EMAIL,
-                    'reviews_submission_url': f'{DOMAIN}reviews/registries/{self.guid.referent._id}/{self.guid.referent._id}',
-                    'logo': self.collection.provider._id if
-                    self.collection.provider and not self.collection.provider.is_default else settings.OSF_PREPRINTS_LOGO,
                 },
             )
 

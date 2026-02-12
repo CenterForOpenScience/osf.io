@@ -582,7 +582,6 @@ def create_waterbutler_log(payload, **kwargs):
                     user=user,
                     subscribed_object=node,
                     event_context={
-                        'user_fullname': user.fullname,
                         'action': payload['action'],
                         'source_node': source_node._id,
                         'source_node_title': source_node.title,

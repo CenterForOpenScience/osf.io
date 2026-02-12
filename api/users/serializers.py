@@ -744,7 +744,6 @@ class UserEmailsSerializer(JSONAPISerializer):
                 event_context={
                     'user_fullname': user.fullname,
                     'new_address': user.username,
-                    'can_change_preferences': False,
                     'osf_contact_email': settings.OSF_CONTACT_EMAIL,
                 },
             )

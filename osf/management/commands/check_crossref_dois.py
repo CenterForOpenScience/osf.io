@@ -126,7 +126,6 @@ def report_stuck_dois(dry_run=True):
             NotificationType.Type.USER_CROSSREF_DOI_PENDING.instance.emit(
                 destination_address=settings.OSF_SUPPORT_EMAIL,
                 event_context={
-                    'pending_doi_count': preprints_with_pending_dois.count(),
                     'time_since_published': time_since_published.days,
                     'guids': guids,
                 }

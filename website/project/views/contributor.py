@@ -454,7 +454,6 @@ def send_claim_registered_email(claimer, unclaimed_user, node, throttle=24 * 360
             'referrer_fullname': referrer.fullname,
             'user_fullname': unclaimed_record['name'],
             'node_title': node.title,
-            'can_change_preferences': False,
             'osf_contact_email': settings.OSF_CONTACT_EMAIL,
         }
     )
@@ -463,13 +462,9 @@ def send_claim_registered_email(claimer, unclaimed_user, node, throttle=24 * 360
         subscribed_object=claimer,
         user=claimer,
         event_context={
-            'claim_url': claim_url,
             'user_fullname': unclaimed_record['name'],
-            'referrer_username': referrer.username,
             'referrer_fullname': referrer.fullname,
             'node_title': node.title,
-            'can_change_preferences': False,
-            'osf_contact_email': settings.OSF_CONTACT_EMAIL,
         }
     )
 
@@ -547,7 +542,7 @@ def send_claim_email(
                     'user_fullname': unclaimed_record['name'],
                     'node_title': node.title,
                     'logo': logo,
-                    'can_change_preferences': False,
+                    'node_absolute_url': node.absolute_url,
                     'osf_contact_email': settings.OSF_CONTACT_EMAIL,
                 }
             )
@@ -559,14 +554,9 @@ def send_claim_email(
         user=referrer,
         destination_address=email,
         event_context={
-            'user_fullname': referrer.id,
-            'referrer_name': referrer.fullname,
+            'user_fullname': unclaimed_record['name'],
             'referrer_fullname': referrer.fullname,
-            'fullname': unclaimed_record['name'],
-            'node_url': node.url,
-            'logo': logo,
             'claim_url': claim_url,
-            'can_change_preferences': False,
             'domain': settings.DOMAIN,
             'node_absolute_url': node.absolute_url,
             'node_title': node.title,
@@ -642,6 +632,7 @@ def notify_added_contributor(resource, contributor, notification_type, auth=None
         subscribed_object=resource,
         event_context={
             'user_fullname': contributor.fullname,
+            'referrer_fullname': referrer_name,
             'referrer_text': referrer_name + ' has added you as a contributor' if referrer_name else 'You have been added',
             'registry_text': resource.provider.name if resource.provider else 'OSF Registry',
             'referrer_name': referrer_name,
@@ -655,7 +646,6 @@ def notify_added_contributor(resource, contributor, notification_type, auth=None
             'node_provider__id': getattr(resource.provider, '_id', None),
             'node_absolute_url': resource.absolute_url,
             'node_has_permission_admin': resource.has_permission(user=contributor, permission='admin'),
-            'can_change_preferences': False,
             'logo': logo,
             'osf_contact_email': settings.OSF_CONTACT_EMAIL,
             'preprint_list': ''.join(f"- {p['absolute_url']}\n" for p in serialize_preprints(resource, user=None)) if isinstance(resource, Node) else '- (none)\n',
