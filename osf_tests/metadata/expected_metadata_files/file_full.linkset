@@ -1,5 +1,5 @@
 <http://localhost:5000/w2ibb> ; rel="collection" ; anchor="http://localhost:5000/w3ibb",
-<https://osf.io/vocab/2022/File> ; rel="type" ; anchor="http://localhost:5000/w3ibb",
+<https://schema.org/DigitalDocument> ; rel="type" ; anchor="http://localhost:5000/w3ibb",
 <http://localhost:5000/w3ibb> ; rel="cite-as" ; anchor="http://localhost:5000/w3ibb",
 <http://localhost:5000/w3ibb> ; rel="describes" ; anchor="http://localhost:5000/metadata/w3ibb/",
 <http://localhost:5000/metadata/w3ibb/?format=turtle> ; rel="describedby" ; anchor="http://localhost:5000/w3ibb" ; type="text/turtle; charset=utf-8",

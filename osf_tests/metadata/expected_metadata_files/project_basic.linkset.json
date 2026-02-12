@@ -9,7 +9,10 @@
       ],
       "type": [
         {
-          "href": "https://osf.io/vocab/2022/Project"
+          "href": "https://schema.org/ResearchProject"
+        },
+        {
+          "href": "https://schema.org/AboutPage"
         }
       ],
       "cite-as": [

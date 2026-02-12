@@ -9,10 +9,10 @@
       ],
       "type": [
         {
-          "href": "https://schema.datacite.org/meta/kernel-4/#Dataset"
+          "href": "https://schema.org/Dataset"
         },
         {
-          "href": "https://osf.io/vocab/2022/Project"
+          "href": "https://schema.org/AboutPage"
         }
       ],
       "cite-as": [
