@@ -575,6 +575,7 @@ class CeleryConfig:
         'osf.management.commands.approve_pending_schema_responses',
         'osf.management.commands.sync_doi_metadata',
         'api.providers.tasks',
+        'api.users.tasks',
         'osf.management.commands.daily_reporters_go',
         'osf.management.commands.monthly_reporters_go',
         'osf.external.spam.tasks',

@@ -672,9 +672,10 @@ class TestUserMerge(AdminTestCase):
     def setUp(self):
         super().setUp()
         self.request = RequestFactory().post('/fake_path')
+        patch_messages(self.request)
 
-    @mock.patch('osf.models.user.OSFUser.merge_user')
-    def test_merge_user(self, mock_merge_user):
+    @mock.patch('api.users.tasks.merge_users.delay')
+    def test_merge_user(self, mock_merge_users_delay):
         user = UserFactory()
         user_merged = UserFactory()
 
@@ -688,4 +689,4 @@ class TestUserMerge(AdminTestCase):
         assert valid_form.is_valid()
 
         view.form_valid(valid_form)
-        mock_merge_user.assert_called_with(user_merged)
+        mock_merge_users_delay.assert_called_with(user._id, user_merged._id)
