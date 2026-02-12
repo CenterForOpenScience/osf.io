@@ -420,7 +420,8 @@ class TestExternalAuthViews(OsfTestCase):
         self.user.save()
         assert not self.user.is_registered
         url = self.user.get_confirmation_url(self.user.username, external_id_provider='orcid', destination='my_projects')
-        res = self.app.get(url)
+        with capture_notifications():
+            res = self.app.get(url)
         assert res.status_code == 302, 'redirects to cas login'
         assert 'You should be redirected automatically' in str(res.html)
         assert '/login?service=' in res.location
