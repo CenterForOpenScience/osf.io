@@ -20,9 +20,9 @@ def create_missing_notification_from_legacy_id(legacy_id, user):
     node_ct = ContentType.objects.get_for_model(AbstractNode)
     user_ct = ContentType.objects.get_for_model(OSFUser)
 
-    user_file_updated_nt = NotificationTypeEnum.USER_FILE_UPDATED
-    reviews_submission_status_nt = NotificationTypeEnum.REVIEWS_SUBMISSION_STATUS
-    node_file_updated_nt = NotificationTypeEnum.NODE_FILE_UPDATED
+    user_file_updated_nt = NotificationTypeEnum.USER_FILE_UPDATED.instance
+    reviews_submission_status_nt = NotificationTypeEnum.REVIEWS_SUBMISSION_STATUS.instance
+    node_file_updated_nt = NotificationTypeEnum.NODE_FILE_UPDATED.instance
 
     node_guid = 'n/a'
 
