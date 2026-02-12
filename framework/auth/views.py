@@ -39,7 +39,7 @@ from website.ember_osf_web.decorators import ember_flag_is_active
 from osf import features
 
 
-ANGULAR_URL = 'localhost:4200'
+LOCAL_ANGULAR_URL = 'localhost:4200'
 
 
 @block_bing_preview
