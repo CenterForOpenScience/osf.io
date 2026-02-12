@@ -91,10 +91,10 @@ class TestSubscriptionList:
         assert delete_res.status_code == 405
 
     def test_multiple_values_filter(self, app, url, user):
-        res = app.get(url + '?filter[event_name]=global_file_updated,files_updated', auth=user.auth)
+        res = app.get(url + '?filter[event_name]=global_file_updated,file_updated', auth=user.auth)
         assert len(res.json['data']) == 2
         for subscription in res.json['data']:
-            subscription['attributes']['event_name'] in ['global', 'comments']
+            assert subscription['attributes']['event_name'] in ['global_file_updated', 'file_updated']
 
     def test_value_filter_id(
         self,
@@ -122,5 +122,5 @@ class TestSubscriptionList:
 
         # Confirm it’s the expected subscription object
         attributes = data[0]['attributes']
-        assert attributes['event_name'] == 'files_updated'  # event names are legacy
+        assert attributes['event_name'] == 'file_updated'  # event names are legacy
         assert attributes['frequency'] in ['instantly', 'daily', 'none']
