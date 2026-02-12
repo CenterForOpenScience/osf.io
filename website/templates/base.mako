@@ -203,7 +203,7 @@
                                 <h1>Start managing your projects on the OSF today.</h1>
                                 <p>Free and easy to use, the Open Science Framework supports the entire research lifecycle: planning, execution, reporting, archiving, and discovery.</p>
                                 <div>
-                                    <a data-bind="click: trackClick.bind($data, 'Create Account')" class="btn btn-primary" href="${web_url_for('index')}#signUp">Create an Account</a>
+                                    <a data-bind="click: trackClick.bind($data, 'Create Account')" class="btn btn-primary" href="${web_url_for('auth_register')}#signUp">Create an Account</a>
 
                                     <a data-bind="click: trackClick.bind($data, 'Learn More')" class="btn btn-primary" href="https://help.osf.io/article/384-managing-projects" target="_blank" rel="noreferrer">Learn More</a>
                                     <a data-bind="click: dismiss">Hide this message</a>
