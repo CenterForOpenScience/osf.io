@@ -6,7 +6,6 @@ from api.base.settings.defaults import API_BASE
 from osf.models import (
     AbstractNode,
     NotificationSubscription,
-    NotificationType,
     NotificationTypeEnum,
     OSFUser
 )
@@ -184,7 +183,7 @@ class TestSubscriptionDetail:
     ):
         assert not NotificationSubscription.objects.filter(
             user=user_missing_subscriptions,
-            notification_type__name=NotificationType.Type.USER_FILE_UPDATED.value,
+            notification_type__name=NotificationTypeEnum.USER_FILE_UPDATED.value,
             object_id=user_missing_subscriptions.id,
             content_type=ContentType.objects.get_for_model(OSFUser)
         ).exists()
@@ -201,7 +200,7 @@ class TestSubscriptionDetail:
     ):
         assert not NotificationSubscription.objects.filter(
             user=user_missing_subscriptions,
-            notification_type__name=NotificationType.Type.REVIEWS_SUBMISSION_STATUS.value,
+            notification_type__name=NotificationTypeEnum.REVIEWS_SUBMISSION_STATUS.value,
             object_id=user_missing_subscriptions.id,
             content_type=ContentType.objects.get_for_model(OSFUser)
         ).exists()
@@ -231,7 +230,7 @@ class TestSubscriptionDetail:
     ):
         assert not NotificationSubscription.objects.filter(
             user=user_missing_subscriptions,
-            notification_type__name=NotificationType.Type.NODE_FILE_UPDATED.value,
+            notification_type__name=NotificationTypeEnum.NODE_FILE_UPDATED.value,
             object_id=node_missing_subscriptions.id,
             content_type=ContentType.objects.get_for_model(AbstractNode)
         ).exists()

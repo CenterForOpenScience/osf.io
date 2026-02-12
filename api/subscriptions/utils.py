@@ -6,7 +6,7 @@ from rest_framework.exceptions import NotFound
 from framework import sentry
 
 from osf.models import AbstractNode, OSFUser
-from osf.models.notification_type import NotificationType
+from osf.models.notification_type import NotificationTypeEnum
 from osf.models.notification_subscription import NotificationSubscription
 
 
@@ -20,9 +20,9 @@ def create_missing_notification_from_legacy_id(legacy_id, user):
     node_ct = ContentType.objects.get_for_model(AbstractNode)
     user_ct = ContentType.objects.get_for_model(OSFUser)
 
-    user_file_updated_nt = NotificationType.Type.USER_FILE_UPDATED.instance
-    reviews_submission_status_nt = NotificationType.Type.REVIEWS_SUBMISSION_STATUS.instance
-    node_file_updated_nt = NotificationType.Type.NODE_FILE_UPDATED.instance
+    user_file_updated_nt = NotificationTypeEnum.USER_FILE_UPDATED
+    reviews_submission_status_nt = NotificationTypeEnum.REVIEWS_SUBMISSION_STATUS
+    node_file_updated_nt = NotificationTypeEnum.NODE_FILE_UPDATED
 
     node_guid = 'n/a'
 
