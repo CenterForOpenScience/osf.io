@@ -17,7 +17,8 @@ import rdflib
 
 from ._base import MetadataSerializer
 from osf.metadata.osf_gathering import osfguid_from_iri
-from osf.metadata.rdfutils import DOI, DATACITE, DCTERMS, OWL, RDF, OSF, DCAT, map_resource_type_general_datacite_to_scheme
+from osf.metadata.rdfutils import (DOI, DATACITE, DCTERMS, OWL, RDF, OSF, DCAT,
+                                   RESOURCE_SCHEMA_RESOURCE_TYPE_GENERAL_MAPPING, map_resource_type_general_datacite_to_scheme)
 from website.settings import DOMAIN
 from website.util import web_url_for
 
@@ -46,18 +47,27 @@ class BaseSignpostLinkset(MetadataSerializer, abc.ABC):
         # type
         if resource_rdftype == OSF.File:
             parent_types = set(self.basket[OSF.isContainedBy / (DCTERMS.type | RDF.type)])
-            for _type_iri in self.basket[DCTERMS.type | RDF.type]:
+            # get either datacite or osf type
+            _type_iris = list(self.basket[DCTERMS.type]) or list(self.basket[RDF.type])
+            for _type_iri in _type_iris:
                 # check the type differs from parent project / registry / preprint
                 if _type_iri not in parent_types:
-                    yield SignpostLink(focus_iri, 'type', str(_type_iri))
+                    schema_type = map_resource_type_general_datacite_to_scheme(_type_iri, resource_rdftype)
+                    if schema_type:
+                        yield SignpostLink(focus_iri, 'type', f'https://schema.org/{schema_type}')
         else:
-            yield SignpostLink(focus_iri, 'type', 'https://schema.org/AboutPage')
-            for _type_iri in self.basket[DCTERMS.type | RDF.type]:
-                yield SignpostLink(focus_iri, 'type', str(_type_iri))
+            # get either datacite or osf type
+            _type_iris = list(self.basket[DCTERMS.type]) or list(self.basket[RDF.type])
+            for _type_iri in _type_iris:
                 if isinstance(_type_iri, rdflib.URIRef) and _type_iri.startswith(DATACITE):
-                    map_resource_type_general_datacite_to_scheme(_type_iri, resource_rdftype)
+                    schema_type = map_resource_type_general_datacite_to_scheme(_type_iri, resource_rdftype)
+                    if schema_type:
+                        yield SignpostLink(focus_iri, 'type', f'https://schema.org/{schema_type}')
                 else:
-                    yield SignpostLink(focus_iri, 'type', 'https://schema.org/Text')
+                    schema_type = RESOURCE_SCHEMA_RESOURCE_TYPE_GENERAL_MAPPING.get(resource_rdftype)
+                    if schema_type:
+                        yield SignpostLink(focus_iri, 'type', f'https://schema.org/{schema_type}')
+            yield SignpostLink(focus_iri, 'type', 'https://schema.org/AboutPage')
 
         # cite-as
         yield SignpostLink(focus_iri, 'cite-as', next((
@@ -99,8 +109,8 @@ class BaseSignpostLinkset(MetadataSerializer, abc.ABC):
 
         # item
         for _file_iri in self.basket[OSF.contains]:
-            mime_type = next(self.basket[_file_iri:DCAT.mediaType])
-            yield SignpostLink(focus_iri, 'item', str(_file_iri), [('type', mime_type)])
+            for mime_type in self.basket[_file_iri:DCAT.mediaType]:
+                yield SignpostLink(focus_iri, 'item', str(_file_iri), [('type', mime_type)])
 
 
 class SignpostLinkset(BaseSignpostLinkset):

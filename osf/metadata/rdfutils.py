@@ -43,6 +43,46 @@ OSF_CONTEXT = {
 }
 
 
+DATACITE_SCHEMA_RESOURCE_TYPE_GENERAL_MAPPING = {
+    DATACITE.Audiovisual: 'MediaObject',
+    DATACITE.Book: 'Book',
+    DATACITE.BookChapter: 'Chapter',
+    DATACITE.Collection: 'Collection',
+    DATACITE.ComputationalNotebook: 'SoftwareSourceCode',
+    DATACITE.ConferencePaper: 'Article',
+    DATACITE.ConferenceProceeding: 'Periodical',
+    DATACITE.DataPaper: 'Article',
+    DATACITE.Dataset: 'Dataset',
+    DATACITE.Dissertation: 'Thesis',
+    DATACITE.Event: 'Event',
+    DATACITE.Image: 'ImageObject',
+    DATACITE.InteractiveResource: 'CreativeWork',
+    DATACITE.Journal: 'Periodical',
+    DATACITE.JournalArticle: 'ScholarlyArticle',
+    DATACITE.Model: 'CreativeWork',
+    DATACITE.OutputManagementPlan: 'HowTo',
+    DATACITE.PeerReview: 'Review',
+    DATACITE.PhysicalObject: 'Thing',
+    DATACITE.Preprint: 'ScholarlyArticle',
+    DATACITE.Report: 'Report',
+    DATACITE.Service: 'Service',
+    DATACITE.Software: 'SoftwareSourceCode',
+    DATACITE.Sound: 'AudioObject',
+    DATACITE.Standard: 'CreativeWork',
+    DATACITE.Text: 'Text',
+    DATACITE.Workflow: 'HowTo',
+    DATACITE.Other: 'CreativeWork',
+    DATACITE.Instrument: 'MeasurementMethodEnum',
+    DATACITE.StudyRegistration: 'Text'
+}
+
+
+RESOURCE_SCHEMA_RESOURCE_TYPE_GENERAL_MAPPING = {
+    OSF.Project: 'ResearchProject', OSF.Preprint: 'ScholarlyArticle',
+    OSF.Registration: 'Text', OSF.File: 'DigitalDocument',
+}
+
+
 def contextualized_graph(graph=None) -> rdflib.Graph:
     '''bind default namespace prefixes to a new (or given) rdf graph
     '''
@@ -148,45 +188,5 @@ def smells_like_iri(maybe_iri: str) -> bool:
         and '://' in maybe_iri
     )
 
-def map_resource_type_general_datacite_to_scheme(_type_iri, resource_rdftype):
-    DATACITE_SCHEMA_RESOURCE_TYPE_GENERAL_MAPPING = {
-        'Audiovisual': 'MediaObject',
-        'Book': 'Book',
-        'BookChapter': 'Chapter',
-        'Collection': 'Collection',
-        'ComputationalNotebook': 'SoftwareSourceCode',
-        'ConferencePaper': 'Article',
-        'ConferenceProceeding': 'Periodical',
-        'DataPaper': 'Article',
-        'Dataset': 'Dataset',
-        'Dissertation': 'Thesis',
-        'Event': 'Event',
-        'Image': 'ImageObject',
-        'InteractiveResource': 'CreativeWork',
-        'Journal': 'Periodical',
-        'JournalArticle': 'ScholarlyArticle',
-        'Model': 'CreativeWork',
-        'OutputManagementPlan': 'HowTo',
-        'PeerReview': 'Review',
-        'PhysicalObject': 'Thing',
-        'Preprint': 'ScholarlyArticle',
-        'Report': 'Report',
-        'Service': 'Service',
-        'Software': 'SoftwareSourceCode',
-        'Sound': 'AudioObject',
-        'Standard': 'CreativeWork',
-        'Text': 'Text',
-        'Workflow': 'HowTo',
-        'Other': 'CreativeWork',
-        'Instrument': 'IndividualProduct',
-        'StudyRegistration': 'Text'
-    }
-
-    datacite_type = _type_iri[len(DATACITE):]
-    schema_type = DATACITE_SCHEMA_RESOURCE_TYPE_GENERAL_MAPPING.get(datacite_type)
-    if not schema_type:
-        RESOURCE_TYPE_MAPPING = {
-            OSF.Project: 'ResearchProject', OSF.Preprint: 'ScholarlyArticle', OSF.Registration: 'Dataset'
-        }
-        schema_type = RESOURCE_TYPE_MAPPING.get(resource_rdftype)
-    return schema_type
+def map_resource_type_general_datacite_to_scheme(_type_iri: rdflib.URIRef, resource_rdftype: rdflib.URIRef) -> str:
+    return DATACITE_SCHEMA_RESOURCE_TYPE_GENERAL_MAPPING.get(_type_iri) or RESOURCE_SCHEMA_RESOURCE_TYPE_GENERAL_MAPPING.get(resource_rdftype, 'Text')
