@@ -8,13 +8,10 @@ from framework.auth import get_or_create_user
 from framework.exceptions import HTTPError
 from framework.flask import redirect
 from framework.transactions.handlers import no_auto_transaction
-from osf import features
 from osf.models import AbstractNode, Node, Conference, OSFUser
 from website import settings
 from website.conferences import utils
 from website.conferences.message import ConferenceMessage, ConferenceError
-from website.mails import CONFERENCE_SUBMITTED, CONFERENCE_INACTIVE, CONFERENCE_FAILED, CONFERENCE_DEPRECATION
-from website.mails import send_mail
 from website.util import web_url_for
 from website.util.metrics import CampaignSourceTags
 

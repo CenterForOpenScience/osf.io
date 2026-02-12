@@ -96,7 +96,7 @@ def get_campaigns():
                 'agu_conference_2023': {
                     'system_tag': CampaignSourceTags.AguConference2023.value,
                     'redirect_url': furl(DOMAIN).add(path='my_projects/').url,
-                    'confirmation_email_template': mails.CONFIRM_EMAIL_AGU_CONFERENCE_2023,
+                    'confirmation_email_template': NotificationType.Type.USER_CAMPAIGN_CONFIRM_EMAIL_AGU_CONFERENCE_2023,
                     'login_type': 'native',
                 }
             })
@@ -105,7 +105,7 @@ def get_campaigns():
                 'agu_conference': {
                     'system_tag': CampaignSourceTags.AguConference.value,
                     'redirect_url': furl(DOMAIN).add(path='my_projects/').url,
-                    'confirmation_email_template': mails.CONFIRM_EMAIL_AGU_CONFERENCE,
+                    'confirmation_email_template': NotificationType.Type.USER_CAMPAIGN_CONFIRM_EMAIL_AGU_CONFERENCE,
                     'login_type': 'native',
                 }
             })
