@@ -11,7 +11,7 @@ from django.apps import apps
 from flask import request, send_from_directory, Response, stream_with_context
 
 from framework.auth import Auth
-from framework.auth.decorators import must_be_logged_in
+from framework.auth.decorators import must_be_logged_in, is_contributor_or_public_resource
 from framework.auth.forms import SignInForm, ForgotPasswordForm
 from framework.exceptions import HTTPError
 from framework.flask import redirect  # VOL-aware redirect
@@ -401,6 +401,7 @@ def get_storage_region_list(user, node=False):
     return available_regions
 
 
+@is_contributor_or_public_resource
 def guid_metadata_download(guid, resource, metadata_format):
     try:
         result = pls_gather_metadata_file(resource, metadata_format)
