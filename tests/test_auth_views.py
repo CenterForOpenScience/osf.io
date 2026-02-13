@@ -827,6 +827,22 @@ class TestAuthLogout(OsfTestCase):
         assert resp.status_code == http_status.HTTP_302_FOUND
         assert cas.get_logout_url(self.goodbye_url) == resp.headers['Location']
 
+    @mock.patch('framework.auth.views.settings.LOCAL_ANGULAR_URL', 'http://localhost:4200')
+    def test_logout_with_angular_next_url_logged_in(self):
+        angular_url = 'http://localhost:4200/'
+        logout_url = web_url_for('auth_logout', _absolute=True, next=angular_url)
+        resp = self.app.get(logout_url, auth=self.auth_user.auth)
+        assert resp.status_code == http_status.HTTP_302_FOUND
+        assert cas.get_logout_url(logout_url) == resp.headers['Location']
+
+    @mock.patch('framework.auth.views.settings.LOCAL_ANGULAR_URL', 'http://localhost:4200')
+    def test_logout_with_angular_next_url_logged_out(self):
+        angular_url = 'http://localhost:4200/'
+        logout_url = web_url_for('auth_logout', _absolute=True, next=angular_url)
+        resp = self.app.get(logout_url, auth=None)
+        assert resp.status_code == http_status.HTTP_302_FOUND
+        assert angular_url == resp.headers['Location']
+
 
 class TestResetPassword(OsfTestCase):
 
