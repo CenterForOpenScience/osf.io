@@ -22,7 +22,7 @@ from admin.base.forms import GuidForm
 from admin.base.utils import change_embargo_date
 from admin.base.views import GuidView
 from admin.nodes.forms import AddSystemTagForm, RegistrationDateForm
-from admin.notifications.views import detect_duplicate_notifications, delete_selected_notifications
+from admin.notifications.views import delete_selected_notifications
 from api.caching.tasks import update_storage_usage_cache
 from api.share.utils import update_share
 from framework import status
