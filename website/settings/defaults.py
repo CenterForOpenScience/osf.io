@@ -186,8 +186,9 @@ WAIT_BETWEEN_MAILS = timedelta(days=7)  # Deprecated setting, used by deprecated
 NO_ADDON_WAIT_TIME = timedelta(weeks=8)  # 2 months for "Link an add-on to your OSF project" email
 NO_LOGIN_WAIT_TIME = timedelta(weeks=52)   # 1 year for "We miss you at OSF" email
 NO_LOGIN_OSF4M_WAIT_TIME = timedelta(weeks=52)  # 1 year for "We miss you at OSF" email to users created from OSF4M
+NOTIFICATIONS_CLEANUP_AGE = timedelta(weeks=52)  # 1 month to clean up old notifications and email tasks
 
-# Configuration for "We miss you at OSF" email (`NotificationType.Type.USER_NO_LOGIN`)
+# Configuration for "We miss you at OSF" email (`NotificationTypeEnum.USER_NO_LOGIN`)
 # Note: 1) we can gradually increase `MAX_DAILY_NO_LOGIN_EMAILS` to 10000, 100000, etc. or set it to `None` after we
 # have verified that users are not spammed by this email after NR release. 2) If we want to clean up database for those
 # already sent `USER_NO_LOGIN` emails, we need to adjust the cut-off time to the day we clean the DB.
@@ -435,6 +436,12 @@ class CeleryConfig:
         'scripts.populate_new_and_noteworthy_projects',
         'website.search.elastic_search',
         'scripts.generate_sitemap',
+        'scripts.remove_after_use.populate_notification_subscriptions_node_file_updated',
+        'scripts.remove_after_use.update_notification_subscriptions_node_file_updated',
+        'scripts.remove_after_use.populate_notification_subscriptions_user_global_file_updated',
+        'scripts.remove_after_use.update_notification_subscriptions_user_global_file_updated',
+        'scripts.remove_after_use.populate_notification_subscriptions_user_global_reviews',
+        'scripts.remove_after_use.update_notification_subscriptions_user_global_reviews',
         'osf.management.commands.clear_expired_sessions',
         'osf.management.commands.delete_withdrawn_or_failed_registration_files',
         'osf.management.commands.migrate_pagecounter_data',
@@ -450,7 +457,7 @@ class CeleryConfig:
         'osf.management.commands.monthly_reporters_go',
         'osf.management.commands.ingest_cedar_metadata_templates',
         'osf.metrics.reporters',
-        'scripts.populate_notification_subscriptions',
+        'scripts.remove_after_use.merge_notification_subscription_provider_ct',
     }
 
     med_pri_modules = {
@@ -564,6 +571,12 @@ class CeleryConfig:
         'scripts.approve_embargo_terminations',
         'scripts.triggered_mails',
         'scripts.generate_sitemap',
+        'scripts.remove_after_use.populate_notification_subscriptions_node_file_updated',
+        'scripts.remove_after_use.update_notification_subscriptions_node_file_updated',
+        'scripts.remove_after_use.populate_notification_subscriptions_user_global_file_updated',
+        'scripts.remove_after_use.update_notification_subscriptions_user_global_file_updated',
+        'scripts.remove_after_use.populate_notification_subscriptions_user_global_reviews',
+        'scripts.remove_after_use.update_notification_subscriptions_user_global_reviews',
         'scripts.premigrate_created_modified',
         'scripts.add_missing_identifiers_to_preprints',
         'osf.management.commands.clear_expired_sessions',
@@ -579,7 +592,7 @@ class CeleryConfig:
         'osf.management.commands.monthly_reporters_go',
         'osf.external.spam.tasks',
         'api.share.utils',
-        'scripts.populate_notification_subscriptions',
+        'scripts.remove_after_use.merge_notification_subscription_provider_ct',
     )
 
     # Modules that need metrics and release requirements
@@ -646,6 +659,11 @@ class CeleryConfig:
         'send_users_digest_email': {
             'task': 'notifications.tasks.send_users_digest_email',
             'schedule': crontab(minute=0, hour=5),  # Daily 12 a.m
+            'kwargs': {'dry_run': False},
+        },
+        'notifications_cleanup_task': {
+            'task': 'notifications.tasks.notifications_cleanup_task',
+            'schedule': crontab(minute=0, hour=7),  # Daily 2 a.m
             'kwargs': {'dry_run': False},
         },
         'clear_expired_sessions': {

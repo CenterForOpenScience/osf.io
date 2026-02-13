@@ -6,7 +6,7 @@ from django.db.models import Q, Exists, OuterRef
 from django.utils import timezone
 
 from framework.celery_tasks import app as celery_app
-from osf.models import OSFUser, NotificationType
+from osf.models import OSFUser, NotificationTypeEnum
 from website.app import init_app
 from website import settings
 from osf import features
@@ -60,31 +60,29 @@ def find_inactive_users_without_enqueued_or_sent_no_login():
     Match your original inactivity rules, but exclude users who already have a no_login EmailTask
     either pending, started, retrying, or already sent successfully.
     """
+    now = timezone.now()
 
-    # Subquery: Is there already a not-yet-failed/aborted EmailTask for this user with our prefix?
-    existing_no_login = EmailTask.objects.filter(
-        user_id=OuterRef('pk'),
-        task_id__startswith=NO_LOGIN_PREFIX,
-        status__in=['PENDING', 'STARTED', 'RETRY', 'SUCCESS'],
-    )
     cutoff_query = Q(date_last_login__gte=settings.NO_LOGIN_EMAIL_CUTOFF - settings.NO_LOGIN_WAIT_TIME) if settings.NO_LOGIN_EMAIL_CUTOFF else Q()
     base_q = OSFUser.objects.filter(
         cutoff_query,
         is_active=True,
     ).filter(
         Q(
-            date_last_login__lt=timezone.now() - settings.NO_LOGIN_WAIT_TIME,
+            date_last_login__lt=now - settings.NO_LOGIN_WAIT_TIME,
             # NOT tagged osf4m
         ) & ~Q(tags__name='osf4m')
         |
         Q(
-            date_last_login__lt=timezone.now() - settings.NO_LOGIN_OSF4M_WAIT_TIME,
+            date_last_login__lt=now - settings.NO_LOGIN_OSF4M_WAIT_TIME,
             tags__name='osf4m'
         )
     ).distinct()
 
-    # Exclude users who already have a task for this email type
-    return base_q.annotate(_has_task=Exists(existing_no_login)).filter(_has_task=False)
+    # Exclude users who have already received a no-login email recently
+    return base_q.filter(
+        Q(no_login_email_last_sent__isnull=True) |
+        Q(no_login_email_last_sent__lt=now - settings.NO_LOGIN_WAIT_TIME)
+    )
 
 
 @celery_app.task(name='scripts.triggered_no_login_email')
@@ -124,7 +122,7 @@ def send_no_login_email(email_task_id: int):
             email_task.save()
             logger.warning(f'EmailTask {email_task.id}: user {user.id} is not active')
             return
-        NotificationType.Type.USER_NO_LOGIN.instance.emit(
+        NotificationTypeEnum.USER_NO_LOGIN.instance.emit(
             user=user,
             event_context={
                 'user_fullname': user.fullname,
@@ -133,6 +131,8 @@ def send_no_login_email(email_task_id: int):
         )
         email_task.status = 'SUCCESS'
         email_task.save()
+        user.no_login_email_last_sent = timezone.now()
+        user.save()
 
     except Exception as exc:  # noqa: BLE001
         logger.exception(f'EmailTask {email_task.id}: error while sending')

@@ -1,7 +1,7 @@
 import pytest
 from django.contrib.contenttypes.models import ContentType
 
-from osf.models import Notification, NotificationType, EmailTask, Email
+from osf.models import Notification, NotificationType, NotificationTypeEnum, EmailTask, Email
 from notifications.tasks import (
     send_user_email_task,
     send_moderator_email_task,
@@ -18,7 +18,7 @@ def add_notification_subscription(user, notification_type, frequency, subscribed
     Create a NotificationSubscription for a user.
     If the notification type corresponds to a subscribed_object, set subscribed_object to get the provider.
     """
-    from osf.models import NotificationSubscription, AbstractProvider
+    from osf.models import NotificationSubscription
     kwargs = {
         'user': user,
         'notification_type': NotificationType.objects.get(name=notification_type),
@@ -26,10 +26,7 @@ def add_notification_subscription(user, notification_type, frequency, subscribed
     }
     if subscribed_object is not None:
         kwargs['object_id'] = subscribed_object.id
-        if isinstance(subscribed_object, AbstractProvider):
-            kwargs['content_type'] = ContentType.objects.get_for_model(subscribed_object, for_concrete_model=False) if subscribed_object else None
-        else:
-            kwargs['content_type'] = ContentType.objects.get_for_model(subscribed_object) if subscribed_object else None
+        kwargs['content_type'] = ContentType.objects.get_for_model(subscribed_object)
     if subscription is not None:
         kwargs['object_id'] = subscription.id
         kwargs['content_type'] = ContentType.objects.get_for_model(subscription)
@@ -41,14 +38,14 @@ class TestNotificationDigestTasks:
 
     def test_send_user_email_task_success(self):
         user = AuthUserFactory()
-        notification_type = NotificationType.objects.get(name=NotificationType.Type.USER_FILE_UPDATED)
+        notification_type = NotificationType.objects.get(name=NotificationTypeEnum.USER_FILE_UPDATED)
         subscription_type = add_notification_subscription(
             user,
             notification_type,
             'daily',
             subscription=add_notification_subscription(
                 user,
-                NotificationType.objects.get(name=NotificationType.Type.FILE_UPDATED),
+                NotificationType.objects.get(name=NotificationTypeEnum.FILE_UPDATED),
                 'daily'
             )
         )
@@ -74,7 +71,7 @@ class TestNotificationDigestTasks:
         with capture_notifications() as notifications:
             send_user_email_task.apply(args=(user._id, notification_ids)).get()
         assert len(notifications['emits']) == 1
-        assert notifications['emits'][0]['type'] == NotificationType.Type.USER_DIGEST
+        assert notifications['emits'][0]['type'] == NotificationTypeEnum.USER_DIGEST
         assert notifications['emits'][0]['kwargs']['user'] == user
         email_task = EmailTask.objects.get(user_id=user.id)
         assert email_task.status == 'SUCCESS'
@@ -94,9 +91,9 @@ class TestNotificationDigestTasks:
         user = AuthUserFactory()
         user.deactivate_account()
         user.save()
-        notification_type = NotificationType.objects.get(name=NotificationType.Type.USER_DIGEST)
+        notification_type = NotificationType.objects.get(name=NotificationTypeEnum.USER_DIGEST)
         notification = Notification.objects.create(
-            subscription=add_notification_subscription(user, NotificationType.Type.USER_FILE_UPDATED, notification_type),
+            subscription=add_notification_subscription(user, NotificationTypeEnum.USER_FILE_UPDATED, notification_type),
             sent=None,
             event_context={},
         )
@@ -120,7 +117,7 @@ class TestNotificationDigestTasks:
         RegistrationFactory(provider=reg_provider)
         moderator_group = reg_provider.get_group('moderator')
         moderator_group.user_set.add(user)
-        notification_type = NotificationType.objects.get(name=NotificationType.Type.PROVIDER_NEW_PENDING_SUBMISSIONS)
+        notification_type = NotificationType.objects.get(name=NotificationTypeEnum.PROVIDER_NEW_PENDING_SUBMISSIONS)
         notification = Notification.objects.create(
             subscription=add_notification_subscription(
                 user,
@@ -143,7 +140,7 @@ class TestNotificationDigestTasks:
         with capture_notifications() as notifications:
             send_moderator_email_task.apply(args=(user._id, notification_ids, reg_provider_content_type.id, reg_provider.id)).get()
         assert len(notifications['emits']) == 1
-        assert notifications['emits'][0]['type'] == NotificationType.Type.DIGEST_REVIEWS_MODERATORS
+        assert notifications['emits'][0]['type'] == NotificationTypeEnum.DIGEST_REVIEWS_MODERATORS
         assert notifications['emits'][0]['kwargs']['user'] == user
 
         email_task = EmailTask.objects.filter(user_id=user.id).first()
@@ -158,7 +155,7 @@ class TestNotificationDigestTasks:
         RegistrationFactory(provider=provider)
 
         notification_ids = []
-        notification_type = NotificationType.objects.get(name=NotificationType.Type.PROVIDER_NEW_PENDING_SUBMISSIONS)
+        notification_type = NotificationType.objects.get(name=NotificationTypeEnum.PROVIDER_NEW_PENDING_SUBMISSIONS)
         add_notification_subscription(
             user,
             notification_type,
@@ -177,7 +174,7 @@ class TestNotificationDigestTasks:
 
     def test_get_users_emails(self):
         user = AuthUserFactory()
-        notification_type = NotificationType.objects.get(name=NotificationType.Type.USER_FILE_UPDATED)
+        notification_type = NotificationType.objects.get(name=NotificationTypeEnum.USER_FILE_UPDATED)
         notification1 = Notification.objects.create(
             subscription=add_notification_subscription(user, notification_type, 'daily'),
             sent=None,
@@ -193,7 +190,7 @@ class TestNotificationDigestTasks:
         user = AuthUserFactory()
         provider = RegistrationProviderFactory()
         reg = RegistrationFactory(provider=provider)
-        notification_type = NotificationType.objects.get(name=NotificationType.Type.PROVIDER_NEW_PENDING_SUBMISSIONS)
+        notification_type = NotificationType.objects.get(name=NotificationTypeEnum.PROVIDER_NEW_PENDING_SUBMISSIONS)
         subscription = add_notification_subscription(user, notification_type, 'daily', subscribed_object=reg)
         Notification.objects.create(
             subscription=subscription,
@@ -209,14 +206,14 @@ class TestNotificationDigestTasks:
 
     def test_send_users_digest_email_end_to_end(self):
         user = AuthUserFactory()
-        notification_type = NotificationType.objects.get(name=NotificationType.Type.USER_FILE_UPDATED)
+        notification_type = NotificationType.objects.get(name=NotificationTypeEnum.USER_FILE_UPDATED)
         subscription_type = add_notification_subscription(
             user,
             notification_type,
             'daily',
             subscription=add_notification_subscription(
                 user,
-                NotificationType.objects.get(name=NotificationType.Type.FILE_UPDATED),
+                NotificationType.objects.get(name=NotificationTypeEnum.FILE_UPDATED),
                 'daily'
             )
         )
@@ -246,7 +243,7 @@ class TestNotificationDigestTasks:
         with capture_notifications() as notifications:
             send_users_digest_email.delay()
         assert len(notifications['emits']) == 1
-        assert notifications['emits'][0]['type'] == NotificationType.Type.USER_DIGEST
+        assert notifications['emits'][0]['type'] == NotificationTypeEnum.USER_DIGEST
         email_task = EmailTask.objects.get(user_id=user.id)
         assert email_task.status == 'SUCCESS'
 
@@ -256,7 +253,7 @@ class TestNotificationDigestTasks:
         RegistrationFactory(provider=provider)
         moderator_group = provider.get_group('moderator')
         moderator_group.user_set.add(user)
-        notification_type = NotificationType.objects.get(name=NotificationType.Type.PROVIDER_NEW_PENDING_SUBMISSIONS)
+        notification_type = NotificationType.objects.get(name=NotificationTypeEnum.PROVIDER_NEW_PENDING_SUBMISSIONS)
         Notification.objects.create(
             subscription=add_notification_subscription(user, notification_type, 'daily', subscribed_object=provider),
             sent=None,
@@ -275,7 +272,7 @@ class TestNotificationDigestTasks:
         with capture_notifications() as notifications:
             send_moderators_digest_email.delay()
         assert len(notifications['emits']) == 1
-        assert notifications['emits'][0]['type'] == NotificationType.Type.DIGEST_REVIEWS_MODERATORS
+        assert notifications['emits'][0]['type'] == NotificationTypeEnum.DIGEST_REVIEWS_MODERATORS
         email_task = EmailTask.objects.filter(user_id=user.id).first()
         assert email_task.status == 'SUCCESS'
 
@@ -288,7 +285,7 @@ class TestNotificationDigestTasks:
         RegistrationFactory(provider=provider)
 
         notification_ids = []
-        notification_type = NotificationType.objects.get(name=NotificationType.Type.PROVIDER_NEW_PENDING_SUBMISSIONS)
+        notification_type = NotificationType.objects.get(name=NotificationTypeEnum.PROVIDER_NEW_PENDING_SUBMISSIONS)
         add_notification_subscription(
             user,
             notification_type,
@@ -309,7 +306,7 @@ class TestNotificationDigestTasks:
         RegistrationFactory(provider=provider)
 
         notification_ids = []
-        notification_type = NotificationType.objects.get(name=NotificationType.Type.PROVIDER_NEW_PENDING_SUBMISSIONS)
+        notification_type = NotificationType.objects.get(name=NotificationTypeEnum.PROVIDER_NEW_PENDING_SUBMISSIONS)
         add_notification_subscription(
             user,
             notification_type,

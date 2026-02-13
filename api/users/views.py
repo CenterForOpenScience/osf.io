@@ -99,7 +99,7 @@ from osf.models import (
     OSFUser,
     Email,
     Tag,
-    NotificationType,
+    NotificationTypeEnum,
     PreprintProvider,
 )
 from osf.utils.tokens import TokenHandler
@@ -645,14 +645,13 @@ class UserAccountExport(JSONAPIBaseView, generics.CreateAPIView, UserMixin):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         user = self.get_user()
-        NotificationType.Type.DESK_REQUEST_EXPORT.instance.emit(
+        NotificationTypeEnum.DESK_REQUEST_EXPORT.instance.emit(
             user=user,
             destination_address=settings.OSF_SUPPORT_EMAIL,
             event_context={
                 'user_username': user.username,
                 'user_absolute_url': user.absolute_url,
                 'user__id': user._id,
-                'can_change_preferences': False,
             },
         )
         user.email_last_sent = timezone.now()
@@ -857,15 +856,14 @@ class ResetPassword(JSONAPIBaseView, generics.ListCreateAPIView):
                 user_obj.save()
                 reset_link = f'{settings.DOMAIN}resetpassword/{user_obj._id}/{user_obj.verification_key_v2["token"]}/'
                 if institutional:
-                    notification_type = NotificationType.Type.USER_FORGOT_PASSWORD_INSTITUTION
+                    notification_type = NotificationTypeEnum.USER_FORGOT_PASSWORD_INSTITUTION
                 else:
-                    notification_type = NotificationType.Type.USER_FORGOT_PASSWORD
+                    notification_type = NotificationTypeEnum.USER_FORGOT_PASSWORD
 
                 notification_type.instance.emit(
                     user=user_obj,
                     message_frequency='instantly',
                     event_context={
-                        'can_change_preferences': False,
                         'reset_link': reset_link,
                     },
                 )
@@ -1168,12 +1166,11 @@ class ConfirmEmailView(generics.CreateAPIView):
         if external_status == 'CREATE':
             service_url += '&' + urlencode({'new': 'true'})
         elif external_status == 'LINK':
-            NotificationType.Type.USER_EXTERNAL_LOGIN_LINK_SUCCESS.instance.emit(
+            NotificationTypeEnum.USER_EXTERNAL_LOGIN_LINK_SUCCESS.instance.emit(
                 user=user,
                 message_frequency='instantly',
                 event_context={
                     'user_fullname': user.fullname,
-                    'can_change_preferences': False,
                     'external_id_provider': provider,
                 },
             )
@@ -1490,11 +1487,10 @@ class ExternalLoginConfirmEmailView(generics.CreateAPIView):
         if external_status == 'CREATE':
             service_url += '&{}'.format(urlencode({'new': 'true'}))
         elif external_status == 'LINK':
-            NotificationType.Type.USER_EXTERNAL_LOGIN_CONFIRM_EMAIL_LINK.instance.emit(
+            NotificationTypeEnum.USER_EXTERNAL_LOGIN_CONFIRM_EMAIL_LINK.instance.emit(
                 user=user,
                 message_frequency='instantly',
                 event_context={
-                    'can_change_preferences': False,
                     'external_id_provider': provider.name,
                 },
             )

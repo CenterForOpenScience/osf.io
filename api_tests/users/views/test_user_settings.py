@@ -7,7 +7,7 @@ from osf_tests.factories import (
     AuthUserFactory,
     UserFactory,
 )
-from osf.models import Email, NotableDomain, NotificationType
+from osf.models import Email, NotableDomain, NotificationTypeEnum
 from framework.auth.views import auth_email_logout
 from tests.utils import capture_notifications
 
@@ -59,7 +59,7 @@ class TestUserRequestExport:
         with capture_notifications() as notifications:
             res = app.post_json_api(url, payload, auth=user_one.auth)
         assert len(notifications['emits']) == 1
-        assert notifications['emits'][0]['type'] == NotificationType.Type.DESK_REQUEST_EXPORT
+        assert notifications['emits'][0]['type'] == NotificationTypeEnum.DESK_REQUEST_EXPORT
         assert res.status_code == 204
         user_one.reload()
         assert user_one.email_last_sent is not None

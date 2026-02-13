@@ -20,7 +20,7 @@ from osf.exceptions import UserStateError
 from osf.models.base import Guid
 from osf.models.user import OSFUser
 from osf.models.spam import SpamStatus
-from osf.models.notification_type import NotificationType
+from osf.models.notification_type import NotificationTypeEnum
 from framework.auth import get_user
 from framework.auth.core import generate_verification_key
 
@@ -184,12 +184,11 @@ class UserDisableView(UserMixin, View):
                 message=f'User account {user.pk} disabled',
                 action_flag=USER_REMOVED
             )
-            NotificationType.Type.USER_REQUEST_DEACTIVATION_COMPLETE.instance.emit(
+            NotificationTypeEnum.USER_REQUEST_DEACTIVATION_COMPLETE.instance.emit(
                 user=user,
                 event_context={
                     'user_fullname': user.fullname,
                     'contact_email': OSF_SUPPORT_EMAIL,
-                    'can_change_preferences': False,
                 }
             )
         else:

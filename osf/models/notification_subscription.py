@@ -1,10 +1,10 @@
 import logging
-from datetime import datetime
+from django.utils import timezone
 from django.db import models
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError
-from osf.models.notification_type import get_default_frequency_choices, NotificationType
+from osf.models.notification_type import get_default_frequency_choices, NotificationTypeEnum
 from osf.models.notification import Notification
 from api.base import settings
 from api.base.utils import absolute_reverse
@@ -59,6 +59,7 @@ class NotificationSubscription(BaseModel):
         verbose_name = 'Notification Subscription'
         verbose_name_plural = 'Notification Subscriptions'
         db_table = 'osf_notificationsubscription_v2'
+        unique_together = ('notification_type', 'user', 'content_type', 'object_id', '_is_digest')
 
     def emit(
             self,
@@ -126,7 +127,8 @@ class NotificationSubscription(BaseModel):
             Notification.objects.create(
                 subscription=self,
                 event_context=event_context,
-                sent=None if self.message_frequency != 'none' else datetime(1000, 1, 1),
+                sent=timezone.now() if self.message_frequency == 'none' else None,
+                fake_sent=True if self.message_frequency == 'none' else False,
             )
 
     @property
@@ -144,32 +146,32 @@ class NotificationSubscription(BaseModel):
         Legacy subscription id for API compatibility.
         """
         _global_file_updated = [
-            NotificationType.Type.USER_FILE_UPDATED.value,
-            NotificationType.Type.FILE_UPDATED.value,
-            NotificationType.Type.FILE_ADDED.value,
-            NotificationType.Type.FILE_REMOVED.value,
-            NotificationType.Type.ADDON_FILE_COPIED.value,
-            NotificationType.Type.ADDON_FILE_RENAMED.value,
-            NotificationType.Type.ADDON_FILE_MOVED.value,
-            NotificationType.Type.ADDON_FILE_REMOVED.value,
-            NotificationType.Type.FOLDER_CREATED.value,
+            NotificationTypeEnum.USER_FILE_UPDATED.value,
+            NotificationTypeEnum.FILE_UPDATED.value,
+            NotificationTypeEnum.FILE_ADDED.value,
+            NotificationTypeEnum.FILE_REMOVED.value,
+            NotificationTypeEnum.ADDON_FILE_COPIED.value,
+            NotificationTypeEnum.ADDON_FILE_RENAMED.value,
+            NotificationTypeEnum.ADDON_FILE_MOVED.value,
+            NotificationTypeEnum.ADDON_FILE_REMOVED.value,
+            NotificationTypeEnum.FOLDER_CREATED.value,
         ]
         _global_reviews = [
-            NotificationType.Type.PROVIDER_NEW_PENDING_SUBMISSIONS.value,
-            NotificationType.Type.PROVIDER_REVIEWS_SUBMISSION_CONFIRMATION.value,
-            NotificationType.Type.PROVIDER_REVIEWS_RESUBMISSION_CONFIRMATION.value,
-            NotificationType.Type.PROVIDER_NEW_PENDING_WITHDRAW_REQUESTS.value,
-            NotificationType.Type.REVIEWS_SUBMISSION_STATUS.value,
+            NotificationTypeEnum.PROVIDER_NEW_PENDING_SUBMISSIONS.value,
+            NotificationTypeEnum.PROVIDER_REVIEWS_SUBMISSION_CONFIRMATION.value,
+            NotificationTypeEnum.PROVIDER_REVIEWS_RESUBMISSION_CONFIRMATION.value,
+            NotificationTypeEnum.PROVIDER_NEW_PENDING_WITHDRAW_REQUESTS.value,
+            NotificationTypeEnum.REVIEWS_SUBMISSION_STATUS.value,
         ]
         _node_file_updated = [
-            NotificationType.Type.NODE_FILE_UPDATED.value,
-            NotificationType.Type.FILE_ADDED.value,
-            NotificationType.Type.FILE_REMOVED.value,
-            NotificationType.Type.ADDON_FILE_COPIED.value,
-            NotificationType.Type.ADDON_FILE_RENAMED.value,
-            NotificationType.Type.ADDON_FILE_MOVED.value,
-            NotificationType.Type.ADDON_FILE_REMOVED.value,
-            NotificationType.Type.FOLDER_CREATED.value,
+            NotificationTypeEnum.NODE_FILE_UPDATED.value,
+            NotificationTypeEnum.FILE_ADDED.value,
+            NotificationTypeEnum.FILE_REMOVED.value,
+            NotificationTypeEnum.ADDON_FILE_COPIED.value,
+            NotificationTypeEnum.ADDON_FILE_RENAMED.value,
+            NotificationTypeEnum.ADDON_FILE_MOVED.value,
+            NotificationTypeEnum.ADDON_FILE_REMOVED.value,
+            NotificationTypeEnum.FOLDER_CREATED.value,
         ]
         if self.notification_type.name in _global_file_updated:
             return f'{self.user._id}_file_updated'

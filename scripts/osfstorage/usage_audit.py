@@ -19,7 +19,7 @@ from tqdm import tqdm
 
 
 from framework.celery_tasks import app as celery_app
-from osf.models import TrashedFile, Node, NotificationType
+from osf.models import TrashedFile, Node, NotificationTypeEnum
 
 from website.app import init_app
 from website.settings.defaults import GBs
@@ -110,7 +110,7 @@ def main(send_email=False):
     if lines:
         if send_email:
             logger.info('Sending email...')
-            NotificationType.Type.EMPTY.instance.emit(
+            NotificationTypeEnum.EMPTY.instance.emit(
                 destination_address='support+scripts@osf.io',
                 event_context={
                     'body': '\n'.join(lines),

@@ -6,7 +6,7 @@ from django.utils import timezone
 from notifications.tasks import send_users_digest_email
 from osf.management.commands.populate_notification_types import populate_notification_types
 from osf.migrations import update_provider_auth_groups
-from osf.models import Brand, NotificationSubscription, NotificationType
+from osf.models import Brand, NotificationSubscription, NotificationTypeEnum
 from osf.models.action import RegistrationAction
 from osf.utils.notifications import (
     notify_submit,
@@ -135,11 +135,11 @@ class TestRegistrationMachineNotification:
             notify_submit(registration, admin)
 
         assert len(notification['emits']) == 3
-        assert notification['emits'][0]['type'] == NotificationType.Type.PROVIDER_REVIEWS_SUBMISSION_CONFIRMATION
+        assert notification['emits'][0]['type'] == NotificationTypeEnum.PROVIDER_REVIEWS_SUBMISSION_CONFIRMATION
         assert notification['emits'][0]['kwargs']['user'] == admin
-        assert notification['emits'][1]['type'] == NotificationType.Type.PROVIDER_REVIEWS_SUBMISSION_CONFIRMATION
+        assert notification['emits'][1]['type'] == NotificationTypeEnum.PROVIDER_REVIEWS_SUBMISSION_CONFIRMATION
         assert notification['emits'][1]['kwargs']['user'] == contrib
-        assert notification['emits'][2]['type'] == NotificationType.Type.PROVIDER_NEW_PENDING_SUBMISSIONS
+        assert notification['emits'][2]['type'] == NotificationTypeEnum.PROVIDER_NEW_PENDING_SUBMISSIONS
         assert NotificationSubscription.objects.count() == 7
         digest = NotificationSubscription.objects.last()
         assert digest.user == moderator

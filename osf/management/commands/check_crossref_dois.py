@@ -9,7 +9,7 @@ django.setup()
 
 from framework import sentry
 from framework.celery_tasks import app as celery_app
-from osf.models import Guid, Preprint, NotificationType
+from osf.models import Guid, Preprint, NotificationTypeEnum
 from website import settings
 
 
@@ -123,10 +123,9 @@ def report_stuck_dois(dry_run=True):
     if preprints_with_pending_dois:
         guids = ', '.join(preprints_with_pending_dois.values_list('guids___id', flat=True))
         if not dry_run:
-            NotificationType.Type.USER_CROSSREF_DOI_PENDING.instance.emit(
+            NotificationTypeEnum.USER_CROSSREF_DOI_PENDING.instance.emit(
                 destination_address=settings.OSF_SUPPORT_EMAIL,
                 event_context={
-                    'pending_doi_count': preprints_with_pending_dois.count(),
                     'time_since_published': time_since_published.days,
                     'guids': guids,
                 }

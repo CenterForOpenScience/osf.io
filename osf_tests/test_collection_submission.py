@@ -8,7 +8,7 @@ from transitions import MachineError
 
 from osf_tests.factories import NodeFactory, CollectionFactory, CollectionProviderFactory
 
-from osf.models import CollectionSubmission, NotificationType
+from osf.models import CollectionSubmission, NotificationTypeEnum
 from osf.utils.workflows import CollectionSubmissionStates
 from framework.exceptions import PermissionsError
 from api_tests.utils import UserRoles
@@ -165,8 +165,8 @@ class TestModeratedCollectionSubmission:
             )
             collection_submission.save()
         assert len(notifications['emits']) == 2
-        assert notifications['emits'][0]['type'] == NotificationType.Type.COLLECTION_SUBMISSION_SUBMITTED
-        assert notifications['emits'][1]['type'] == NotificationType.Type.PROVIDER_NEW_PENDING_SUBMISSIONS
+        assert notifications['emits'][0]['type'] == NotificationTypeEnum.COLLECTION_SUBMISSION_SUBMITTED
+        assert notifications['emits'][1]['type'] == NotificationTypeEnum.PROVIDER_NEW_PENDING_SUBMISSIONS
         assert collection_submission.state == CollectionSubmissionStates.PENDING
 
     def test_notify_moderators_pending(self, node, moderated_collection):
@@ -179,8 +179,8 @@ class TestModeratedCollectionSubmission:
             )
             collection_submission.save()
         assert len(notifications['emits']) == 2
-        assert notifications['emits'][0]['type'] == NotificationType.Type.COLLECTION_SUBMISSION_SUBMITTED
-        assert notifications['emits'][1]['type'] == NotificationType.Type.PROVIDER_NEW_PENDING_SUBMISSIONS
+        assert notifications['emits'][0]['type'] == NotificationTypeEnum.COLLECTION_SUBMISSION_SUBMITTED
+        assert notifications['emits'][1]['type'] == NotificationTypeEnum.PROVIDER_NEW_PENDING_SUBMISSIONS
         assert collection_submission.state == CollectionSubmissionStates.PENDING
 
     @pytest.mark.parametrize('user_role', [UserRoles.UNAUTHENTICATED, UserRoles.NONCONTRIB])
@@ -201,7 +201,7 @@ class TestModeratedCollectionSubmission:
         with capture_notifications() as notifications:
             moderated_collection_submission.accept(user=moderator, comment='Test Comment')
         assert len(notifications['emits']) == 1
-        assert notifications['emits'][0]['type'] == NotificationType.Type.COLLECTION_SUBMISSION_ACCEPTED
+        assert notifications['emits'][0]['type'] == NotificationTypeEnum.COLLECTION_SUBMISSION_ACCEPTED
 
         assert moderated_collection_submission.state == CollectionSubmissionStates.ACCEPTED
 
@@ -224,7 +224,7 @@ class TestModeratedCollectionSubmission:
         with capture_notifications() as notifications:
             moderated_collection_submission.reject(user=moderator, comment='Test Comment')
         assert len(notifications['emits']) == 1
-        assert notifications['emits'][0]['type'] == NotificationType.Type.COLLECTION_SUBMISSION_REJECTED
+        assert notifications['emits'][0]['type'] == NotificationTypeEnum.COLLECTION_SUBMISSION_REJECTED
 
         assert moderated_collection_submission.state == CollectionSubmissionStates.REJECTED
 
@@ -253,7 +253,7 @@ class TestModeratedCollectionSubmission:
         with capture_notifications() as notifications:
             moderated_collection_submission.remove(user=moderator, comment='Test Comment')
         assert len(notifications['emits']) == 1
-        assert notifications['emits'][0]['type'] == NotificationType.Type.COLLECTION_SUBMISSION_REMOVED_MODERATOR
+        assert notifications['emits'][0]['type'] == NotificationTypeEnum.COLLECTION_SUBMISSION_REMOVED_MODERATOR
 
         assert moderated_collection_submission.state == CollectionSubmissionStates.REMOVED
 
@@ -264,8 +264,8 @@ class TestModeratedCollectionSubmission:
         with capture_notifications() as notifications:
             moderated_collection_submission.remove(user=moderator, comment='Test Comment')
         assert len(notifications['emits']) == 2
-        assert notifications['emits'][1]['type'] == NotificationType.Type.COLLECTION_SUBMISSION_REMOVED_ADMIN
-        assert notifications['emits'][0]['type'] == NotificationType.Type.COLLECTION_SUBMISSION_REMOVED_ADMIN
+        assert notifications['emits'][1]['type'] == NotificationTypeEnum.COLLECTION_SUBMISSION_REMOVED_ADMIN
+        assert notifications['emits'][0]['type'] == NotificationTypeEnum.COLLECTION_SUBMISSION_REMOVED_ADMIN
 
         assert moderated_collection_submission.state == CollectionSubmissionStates.REMOVED
 
@@ -350,8 +350,8 @@ class TestUnmoderatedCollectionSubmission:
         with capture_notifications() as notifications:
             unmoderated_collection_submission.remove(user=moderator, comment='Test Comment')
         assert len(notifications['emits']) == 2
-        assert notifications['emits'][0]['type'] == NotificationType.Type.COLLECTION_SUBMISSION_REMOVED_ADMIN
-        assert notifications['emits'][1]['type'] == NotificationType.Type.COLLECTION_SUBMISSION_REMOVED_ADMIN
+        assert notifications['emits'][0]['type'] == NotificationTypeEnum.COLLECTION_SUBMISSION_REMOVED_ADMIN
+        assert notifications['emits'][1]['type'] == NotificationTypeEnum.COLLECTION_SUBMISSION_REMOVED_ADMIN
         assert unmoderated_collection_submission.state == CollectionSubmissionStates.REMOVED
 
     def test_resubmit_success(self, node, unmoderated_collection_submission):
@@ -454,7 +454,7 @@ class TestHybridModeratedCollectionSubmission:
         with capture_notifications() as notifications:
             hybrid_moderated_collection_submission.accept(user=moderator, comment='Test Comment')
         assert len(notifications['emits']) == 1
-        assert notifications['emits'][0]['type'] == NotificationType.Type.COLLECTION_SUBMISSION_ACCEPTED
+        assert notifications['emits'][0]['type'] == NotificationTypeEnum.COLLECTION_SUBMISSION_ACCEPTED
         assert hybrid_moderated_collection_submission.state == CollectionSubmissionStates.ACCEPTED
 
     @pytest.mark.parametrize('user_role', [UserRoles.UNAUTHENTICATED, UserRoles.NONCONTRIB])
@@ -476,7 +476,7 @@ class TestHybridModeratedCollectionSubmission:
         with capture_notifications() as notifications:
             hybrid_moderated_collection_submission.reject(user=moderator, comment='Test Comment')
         assert len(notifications['emits']) == 1
-        assert notifications['emits'][0]['type'] == NotificationType.Type.COLLECTION_SUBMISSION_REJECTED
+        assert notifications['emits'][0]['type'] == NotificationTypeEnum.COLLECTION_SUBMISSION_REJECTED
         assert hybrid_moderated_collection_submission.state == CollectionSubmissionStates.REJECTED
 
     @pytest.mark.parametrize('user_role', UserRoles.excluding(*[UserRoles.ADMIN_USER, UserRoles.MODERATOR]))
@@ -504,7 +504,7 @@ class TestHybridModeratedCollectionSubmission:
         with capture_notifications() as notifications:
             hybrid_moderated_collection_submission.remove(user=moderator, comment='Test Comment')
         assert len(notifications['emits']) == 1
-        assert notifications['emits'][0]['type'] == NotificationType.Type.COLLECTION_SUBMISSION_REMOVED_MODERATOR
+        assert notifications['emits'][0]['type'] == NotificationTypeEnum.COLLECTION_SUBMISSION_REMOVED_MODERATOR
         assert hybrid_moderated_collection_submission.state == CollectionSubmissionStates.REMOVED
 
     def test_notify_moderated_removed_admin(self, node, hybrid_moderated_collection_submission):
@@ -514,8 +514,8 @@ class TestHybridModeratedCollectionSubmission:
         with capture_notifications() as notifications:
             hybrid_moderated_collection_submission.remove(user=moderator, comment='Test Comment')
         assert len(notifications['emits']) == 2
-        assert notifications['emits'][0]['type'] == NotificationType.Type.COLLECTION_SUBMISSION_REMOVED_ADMIN
-        assert notifications['emits'][1]['type'] == NotificationType.Type.COLLECTION_SUBMISSION_REMOVED_ADMIN
+        assert notifications['emits'][0]['type'] == NotificationTypeEnum.COLLECTION_SUBMISSION_REMOVED_ADMIN
+        assert notifications['emits'][1]['type'] == NotificationTypeEnum.COLLECTION_SUBMISSION_REMOVED_ADMIN
 
         assert hybrid_moderated_collection_submission.state == CollectionSubmissionStates.REMOVED
 
