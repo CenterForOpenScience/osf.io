@@ -17,7 +17,7 @@ import rdflib
 
 from ._base import MetadataSerializer
 from osf.metadata.osf_gathering import osfguid_from_iri
-from osf.metadata.rdfutils import DOI, DCTERMS, OWL, RDF, OSF, DCAT
+from osf.metadata.rdfutils import (DOI, DATACITE, DCTERMS, OWL, RDF, OSF, DCAT, SCHEMA, DATACITE_SCHEMA_RESOURCE_TYPE_GENERAL_MAPPING, map_resource_type_general_datacite_to_scheme)
 from website.settings import DOMAIN
 from website.util import web_url_for
 
@@ -33,7 +33,8 @@ class SignpostLink:
 class BaseSignpostLinkset(MetadataSerializer, abc.ABC):
     def _each_link(self) -> Iterator[SignpostLink]:
         focus_iri = self.basket.focus.iri
-        if self.basket.focus.rdftype == OSF.File:
+        resource_rdftype = self.basket.focus.rdftype
+        if resource_rdftype == OSF.File:
             # collection (file's containing obj)
             for _collection_uri in self.basket[OSF.isContainedBy]:
                 yield SignpostLink(focus_iri, 'collection', str(_collection_uri))
@@ -43,15 +44,26 @@ class BaseSignpostLinkset(MetadataSerializer, abc.ABC):
             yield SignpostLink(focus_iri, 'author', str(_creator_iri))
 
         # type
-        if self.basket.focus.rdftype == OSF.File:
+        if resource_rdftype == OSF.File:
             parent_types = set(self.basket[OSF.isContainedBy / (DCTERMS.type | RDF.type)])
-            for _type_iri in self.basket[DCTERMS.type | RDF.type]:
+            # get either datacite or osf type
+            _type_iris = list(self.basket[DCTERMS.type]) or list(self.basket[RDF.type])
+            for _type_iri in _type_iris:
                 # check the type differs from parent project / registry / preprint
                 if _type_iri not in parent_types:
-                    yield SignpostLink(focus_iri, 'type', str(_type_iri))
+                    schema_type = map_resource_type_general_datacite_to_scheme(_type_iri, resource_rdftype)
+                    yield SignpostLink(focus_iri, 'type', schema_type)
         else:
-            for _type_iri in self.basket[DCTERMS.type | RDF.type]:
-                yield SignpostLink(focus_iri, 'type', str(_type_iri))
+            # get either datacite or osf type
+            _type_iris = list(self.basket[DCTERMS.type]) or list(self.basket[RDF.type])
+            for _type_iri in _type_iris:
+                if isinstance(_type_iri, rdflib.URIRef) and _type_iri.startswith(DATACITE):
+                    schema_type = map_resource_type_general_datacite_to_scheme(_type_iri, resource_rdftype)
+                    yield SignpostLink(focus_iri, 'type', schema_type)
+                else:
+                    schema_type = DATACITE_SCHEMA_RESOURCE_TYPE_GENERAL_MAPPING.get(resource_rdftype)
+                    yield SignpostLink(focus_iri, 'type', schema_type)
+            yield SignpostLink(focus_iri, 'type', SCHEMA.AboutPage)
 
         # cite-as
         yield SignpostLink(focus_iri, 'cite-as', next((

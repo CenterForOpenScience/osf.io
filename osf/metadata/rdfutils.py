@@ -26,7 +26,7 @@ DCAT = rdflib.Namespace('http://www.w3.org/ns/dcat#')                   # "data 
 PROV = rdflib.Namespace('http://www.w3.org/ns/prov#')                   # "provenance"
 # non-standard namespace for datacite terms (resolves to datacite docs)
 DATACITE = rdflib.Namespace('https://schema.datacite.org/meta/kernel-4/#')
-
+SCHEMA = rdflib.Namespace('https://schema.org/')
 
 # namespace prefixes that will be shortened by default
 # when serialized, instead of displaying the full iri
@@ -41,6 +41,47 @@ OSF_CONTEXT = {
     'dcat': DCAT,
     'prov': PROV,
 }
+
+
+DATACITE_SCHEMA_RESOURCE_TYPE_GENERAL_MAPPING = {
+    DATACITE.Audiovisual: SCHEMA.MediaObject,
+    DATACITE.Book: SCHEMA.Book,
+    DATACITE.BookChapter: SCHEMA.Chapter,
+    DATACITE.Collection: SCHEMA.Collection,
+    DATACITE.ComputationalNotebook: SCHEMA.SoftwareSourceCode,
+    DATACITE.ConferencePaper: SCHEMA.Article,
+    DATACITE.ConferenceProceeding: SCHEMA.Periodical,
+    DATACITE.DataPaper: SCHEMA.Article,
+    DATACITE.Dataset: SCHEMA.Dataset,
+    DATACITE.Dissertation: SCHEMA.Thesis,
+    DATACITE.Event: SCHEMA.Event,
+    DATACITE.Image: SCHEMA.ImageObject,
+    DATACITE.InteractiveResource: SCHEMA.CreativeWork,
+    DATACITE.Journal: SCHEMA.Periodical,
+    DATACITE.JournalArticle: SCHEMA.ScholarlyArticle,
+    DATACITE.Model: SCHEMA.CreativeWork,
+    DATACITE.OutputManagementPlan: SCHEMA.HowTo,
+    DATACITE.PeerReview: SCHEMA.Review,
+    DATACITE.PhysicalObject: SCHEMA.Thing,
+    DATACITE.Preprint: SCHEMA.ScholarlyArticle,
+    DATACITE.Report: SCHEMA.Report,
+    DATACITE.Service: SCHEMA.Service,
+    DATACITE.Software: SCHEMA.SoftwareSourceCode,
+    DATACITE.Sound: SCHEMA.AudioObject,
+    DATACITE.Standard: SCHEMA.CreativeWork,
+    DATACITE.Text: SCHEMA.Text,
+    DATACITE.Workflow: SCHEMA.HowTo,
+    DATACITE.Other: SCHEMA.CreativeWork,
+    DATACITE.Instrument: SCHEMA.MeasurementMethodEnum,
+    DATACITE.StudyRegistration: SCHEMA.Text,
+    OSF.Project: SCHEMA.ResearchProject,
+    OSF.Preprint: SCHEMA.ScholarlyArticle,
+    OSF.Registration: SCHEMA.Text,
+    OSF.File: SCHEMA.DigitalDocument,
+}
+
+
+DEFAULT_SCHEMADOTORG_RESOURCE_TYPE = SCHEMA.CreativeWork
 
 
 def contextualized_graph(graph=None) -> rdflib.Graph:
@@ -147,3 +188,6 @@ def smells_like_iri(maybe_iri: str) -> bool:
         isinstance(maybe_iri, str)
         and '://' in maybe_iri
     )
+
+def map_resource_type_general_datacite_to_scheme(_type_iri: rdflib.URIRef, resource_rdftype: rdflib.URIRef) -> str:
+    return DATACITE_SCHEMA_RESOURCE_TYPE_GENERAL_MAPPING.get(_type_iri) or DATACITE_SCHEMA_RESOURCE_TYPE_GENERAL_MAPPING.get(resource_rdftype, DEFAULT_SCHEMADOTORG_RESOURCE_TYPE)

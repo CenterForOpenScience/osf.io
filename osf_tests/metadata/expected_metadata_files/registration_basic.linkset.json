@@ -9,10 +9,10 @@
       ],
       "type": [
         {
-          "href": "https://schema.datacite.org/meta/kernel-4/#StudyRegistration"
+          "href": "https://schema.org/Text"
         },
         {
-          "href": "https://osf.io/vocab/2022/Registration"
+          "href": "https://schema.org/AboutPage"
         }
       ],
       "cite-as": [

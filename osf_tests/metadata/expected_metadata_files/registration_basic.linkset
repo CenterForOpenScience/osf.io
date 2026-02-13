@@ -1,6 +1,6 @@
 <http://localhost:5000/w1ibb> ; rel="author" ; anchor="http://localhost:5000/w5ibb",
-<https://schema.datacite.org/meta/kernel-4/#StudyRegistration> ; rel="type" ; anchor="http://localhost:5000/w5ibb",
-<https://osf.io/vocab/2022/Registration> ; rel="type" ; anchor="http://localhost:5000/w5ibb",
+<https://schema.org/Text> ; rel="type" ; anchor="http://localhost:5000/w5ibb",
+<https://schema.org/AboutPage> ; rel="type" ; anchor="http://localhost:5000/w5ibb",
 <http://localhost:5000/w5ibb> ; rel="cite-as" ; anchor="http://localhost:5000/w5ibb",
 <http://localhost:5000/w5ibb> ; rel="describes" ; anchor="http://localhost:5000/metadata/w5ibb/",
 <http://localhost:5000/metadata/w5ibb/?format=turtle> ; rel="describedby" ; anchor="http://localhost:5000/w5ibb" ; type="text/turtle; charset=utf-8",
