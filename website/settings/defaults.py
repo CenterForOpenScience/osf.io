@@ -90,6 +90,7 @@ DOMAIN = PROTOCOL + 'localhost:5000/'
 INTERNAL_DOMAIN = DOMAIN
 API_DOMAIN = PROTOCOL + 'localhost:8000/'
 RESET_PASSWORD_URL = PROTOCOL + 'localhost:5000/resetpassword/' # TODO set angular reset password url
+LOCAL_ANGULAR_URL = 'localhost:4200'
 
 PREPRINT_PROVIDER_DOMAINS = {
     'enabled': False,
