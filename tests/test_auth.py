@@ -24,7 +24,7 @@ from osf_tests.factories import (
 from framework.auth import Auth
 from framework.auth.decorators import must_be_logged_in
 from framework.sessions import get_session
-from osf.models import OSFUser, NotificationType
+from osf.models import OSFUser, NotificationTypeEnum
 from osf.utils import permissions
 from tests.utils import capture_notifications
 from website import settings
@@ -165,7 +165,7 @@ class TestAuthUtils(OsfTestCase):
             user.set_password('killerqueen')
             user.save()
         assert len(notifications['emits']) == 1
-        assert notifications['emits'][0]['type'] == NotificationType.Type.USER_PASSWORD_RESET
+        assert notifications['emits'][0]['type'] == NotificationTypeEnum.USER_PASSWORD_RESET
 
     @mock.patch('framework.auth.utils.requests.post')
     def test_validate_recaptcha_success(self, req_post):
@@ -210,13 +210,13 @@ class TestAuthUtils(OsfTestCase):
         with capture_notifications() as notifications:
             self.app.post(url, json=sign_up_data)
         assert len(notifications['emits']) == 2
-        assert notifications['emits'][0]['type'] == NotificationType.Type.USER_NO_ADDON
-        assert notifications['emits'][1]['type'] == NotificationType.Type.USER_INITIAL_CONFIRM_EMAIL
+        assert notifications['emits'][0]['type'] == NotificationTypeEnum.USER_NO_ADDON
+        assert notifications['emits'][1]['type'] == NotificationTypeEnum.USER_INITIAL_CONFIRM_EMAIL
 
         with capture_notifications() as notifications:
             self.app.post(url, json=sign_up_data)
         assert len(notifications['emits']) == 1
-        assert notifications['emits'][0]['type'] == NotificationType.Type.USER_INITIAL_CONFIRM_EMAIL
+        assert notifications['emits'][0]['type'] == NotificationTypeEnum.USER_INITIAL_CONFIRM_EMAIL
 
 
 class TestAuthObject(OsfTestCase):

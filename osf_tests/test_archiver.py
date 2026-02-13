@@ -20,7 +20,7 @@ from website.app import *  # noqa: F403
 from website.archiver import listeners
 from website.archiver.tasks import *   # noqa: F403
 
-from osf.models import Guid, RegistrationSchema, Registration, NotificationType
+from osf.models import Guid, RegistrationSchema, Registration, NotificationTypeEnum
 from osf.models.archive import ArchiveTarget, ArchiveJob
 from osf.models.base import generate_object_id
 from osf.utils.migrations import map_schema_to_schemablocks
@@ -735,8 +735,8 @@ class TestArchiverUtils(ArchiverTestCase):
                 {}
             )
         assert len(notifications['emits']) == 2
-        assert notifications['emits'][0]['type'] == NotificationType.Type.DESK_ARCHIVE_JOB_COPY_ERROR
-        assert notifications['emits'][1]['type'] == NotificationType.Type.USER_ARCHIVE_JOB_COPY_ERROR
+        assert notifications['emits'][0]['type'] == NotificationTypeEnum.DESK_ARCHIVE_JOB_COPY_ERROR
+        assert notifications['emits'][1]['type'] == NotificationTypeEnum.USER_ARCHIVE_JOB_COPY_ERROR
         assert notifications['emits'][0]['kwargs']['destination_address'] == settings.OSF_SUPPORT_EMAIL
         assert notifications['emits'][1]['kwargs']['user'] == self.user
         self.dst.reload()
@@ -752,8 +752,8 @@ class TestArchiverUtils(ArchiverTestCase):
                 {}
             )
         assert len(notifications['emits']) == 2
-        assert notifications['emits'][0]['type'] == NotificationType.Type.DESK_ARCHIVE_JOB_COPY_ERROR
-        assert notifications['emits'][1]['type'] == NotificationType.Type.USER_ARCHIVE_JOB_COPY_ERROR
+        assert notifications['emits'][0]['type'] == NotificationTypeEnum.DESK_ARCHIVE_JOB_COPY_ERROR
+        assert notifications['emits'][1]['type'] == NotificationTypeEnum.USER_ARCHIVE_JOB_COPY_ERROR
         assert notifications['emits'][0]['kwargs']['destination_address'] == settings.OSF_SUPPORT_EMAIL
         assert notifications['emits'][1]['kwargs']['user'] == self.user
 
@@ -767,8 +767,8 @@ class TestArchiverUtils(ArchiverTestCase):
                 {}
             )
         assert len(notifications['emits']) == 2
-        assert notifications['emits'][0]['type'] == NotificationType.Type.DESK_ARCHIVE_JOB_EXCEEDED
-        assert notifications['emits'][1]['type'] == NotificationType.Type.USER_ARCHIVE_JOB_EXCEEDED
+        assert notifications['emits'][0]['type'] == NotificationTypeEnum.DESK_ARCHIVE_JOB_EXCEEDED
+        assert notifications['emits'][1]['type'] == NotificationTypeEnum.USER_ARCHIVE_JOB_EXCEEDED
         assert notifications['emits'][0]['kwargs']['destination_address'] == settings.OSF_SUPPORT_EMAIL
         assert notifications['emits'][1]['kwargs']['user'] == self.user
 
@@ -782,8 +782,8 @@ class TestArchiverUtils(ArchiverTestCase):
                 {}
             )
         assert len(notifications['emits']) == 2
-        assert notifications['emits'][0]['type'] == NotificationType.Type.DESK_ARCHIVE_JOB_UNCAUGHT_ERROR
-        assert notifications['emits'][1]['type'] == NotificationType.Type.USER_ARCHIVE_JOB_UNCAUGHT_ERROR
+        assert notifications['emits'][0]['type'] == NotificationTypeEnum.DESK_ARCHIVE_JOB_UNCAUGHT_ERROR
+        assert notifications['emits'][1]['type'] == NotificationTypeEnum.USER_ARCHIVE_JOB_UNCAUGHT_ERROR
         assert notifications['emits'][0]['kwargs']['destination_address'] == settings.OSF_SUPPORT_EMAIL
         assert notifications['emits'][1]['kwargs']['user'] == self.user
 

@@ -14,7 +14,7 @@ from dirtyfields import DirtyFieldsMixin
 from guardian.models import GroupObjectPermissionBase, UserObjectPermissionBase
 
 from framework import sentry
-from osf.models.notification_type import NotificationType
+from osf.models.notification_type import NotificationTypeEnum
 from .base import BaseModel, TypedObjectIDMixin
 from .mixins import ReviewProviderMixin
 from .brand import Brand
@@ -253,7 +253,7 @@ class AbstractProvider(TypedModel, TypedObjectIDMixin, ReviewProviderMixin, Dirt
 
 class CollectionProvider(AbstractProvider):
     DEFAULT_SUBSCRIPTIONS = [
-        NotificationType.Type.PROVIDER_NEW_PENDING_SUBMISSIONS
+        NotificationTypeEnum.PROVIDER_NEW_PENDING_SUBMISSIONS
     ]
 
     class Meta:
@@ -295,8 +295,8 @@ class RegistrationProvider(AbstractProvider):
     STATE_FIELD_NAME = 'moderation_state'
 
     DEFAULT_SUBSCRIPTIONS = [
-        NotificationType.Type.PROVIDER_NEW_PENDING_SUBMISSIONS,
-        NotificationType.Type.PROVIDER_NEW_PENDING_WITHDRAW_REQUESTS,
+        NotificationTypeEnum.PROVIDER_NEW_PENDING_SUBMISSIONS,
+        NotificationTypeEnum.PROVIDER_NEW_PENDING_WITHDRAW_REQUESTS,
 
     ]
 

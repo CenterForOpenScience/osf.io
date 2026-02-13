@@ -1,6 +1,6 @@
 from django.utils import timezone
 
-from osf.models.notification_type import NotificationType
+from osf.models.notification_type import NotificationTypeEnum
 from website.reviews import signals as reviews_signals
 from website.settings import DOMAIN, OSF_SUPPORT_EMAIL, OSF_CONTACT_EMAIL
 from osf.utils.workflows import RegistrationModerationTriggers
@@ -50,7 +50,7 @@ def notify_submit(resource, user, *args, **kwargs):
         context=context,
         recipients=recipients,
         resource=resource,
-        notification_type=NotificationType.Type.PROVIDER_REVIEWS_SUBMISSION_CONFIRMATION
+        notification_type=NotificationTypeEnum.PROVIDER_REVIEWS_SUBMISSION_CONFIRMATION
     )
     reviews_signals.reviews_email_submit_moderators_notifications.send(
         timestamp=timezone.now(),
@@ -71,7 +71,7 @@ def notify_resubmit(resource, user, *args, **kwargs):
     reviews_signals.reviews_email_submit.send(
         recipients=recipients,
         context=context,
-        notification_type=NotificationType.Type.PROVIDER_REVIEWS_RESUBMISSION_CONFIRMATION,
+        notification_type=NotificationTypeEnum.PROVIDER_REVIEWS_RESUBMISSION_CONFIRMATION,
         resource=resource,
     )
     reviews_signals.reviews_email_submit_moderators_notifications.send(
@@ -94,7 +94,7 @@ def notify_accept_reject(resource, user, action, states, *args, **kwargs):
     reviews_signals.reviews_email.send(
         creator=user,
         context=context,
-        template=NotificationType.Type.REVIEWS_SUBMISSION_STATUS,
+        template=NotificationTypeEnum.REVIEWS_SUBMISSION_STATUS,
         action=action
     )
 
@@ -110,7 +110,7 @@ def notify_edit_comment(resource, user, action, states, *args, **kwargs):
         reviews_signals.reviews_email.send(
             creator=user,
             context=context,
-            template=NotificationType.Type.REVIEWS_SUBMISSION_STATUS,
+            template=NotificationTypeEnum.REVIEWS_SUBMISSION_STATUS,
             action=action
         )
 
@@ -123,7 +123,7 @@ def notify_reject_withdraw_request(resource, action, *args, **kwargs):
     for contributor in resource.contributors.all():
         context['contributor_fullname'] = contributor.fullname
         context['comment'] = action.comment
-        NotificationType.Type.NODE_WITHDRAWAl_REQUEST_REJECTED.instance.emit(
+        NotificationTypeEnum.NODE_WITHDRAWAl_REQUEST_REJECTED.instance.emit(
             user=contributor,
             event_context={
                 **context
@@ -156,7 +156,7 @@ def notify_withdraw_registration(resource, action, *args, **kwargs):
         context['user_fullname'] = contributor.fullname
         context['is_requester'] = resource.retraction.initiated_by == contributor
 
-        NotificationType.Type.NODE_WITHDRAWAl_REQUEST_APPROVED.instance.emit(
+        NotificationTypeEnum.NODE_WITHDRAWAl_REQUEST_APPROVED.instance.emit(
             user=contributor,
             event_context=context
         )

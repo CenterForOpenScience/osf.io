@@ -9,7 +9,7 @@ from framework.celery_tasks import app as celery_app
 from django.contrib.contenttypes.models import ContentType
 from django.db.models import Count, F, OuterRef, Subquery, IntegerField, CharField
 from django.db.models.functions import Cast, Coalesce
-from osf.models import  Node, NotificationSubscription, NotificationType
+from osf.models import  Node, NotificationSubscription, NotificationTypeEnum
 
 
 @celery_app.task(name='scripts.remove_after_use.populate_notification_subscriptions_node_file_updated')
@@ -17,7 +17,7 @@ def populate_notification_subscriptions_node_file_updated(batch_size: int = 1000
     print('---Starting NODE_FILE_UPDATED subscriptions population script----')
     global_start = datetime.now()
 
-    node_file_nt = NotificationType.Type.NODE_FILE_UPDATED
+    node_file_nt = NotificationTypeEnum.NODE_FILE_UPDATED
 
     node_ct = ContentType.objects.get_for_model(Node)
 
@@ -113,7 +113,7 @@ def populate_notification_subscriptions_node_file_updated(batch_size: int = 1000
 def update_notification_subscriptions_node_file_updated():
     print('---Starting NODE_FILE_UPDATED subscriptions update script----')
 
-    node_file_nt = NotificationType.Type.NODE_FILE_UPDATED
+    node_file_nt = NotificationTypeEnum.NODE_FILE_UPDATED
 
     updated_start = datetime.now()
     updated = (

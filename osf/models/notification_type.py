@@ -12,165 +12,164 @@ def get_default_frequency_choices():
     DEFAULT_FREQUENCY_CHOICES = ['none', 'instantly', 'daily', 'weekly', 'monthly']
     return DEFAULT_FREQUENCY_CHOICES.copy()
 
+class NotificationTypeEnum(str, Enum):
+    EMPTY = 'empty'
+    # Desk notifications
+    REVIEWS_SUBMISSION_STATUS = 'reviews_submission_status'
+    ADDONS_BOA_JOB_FAILURE = 'addon_boa_job_failure'
+    ADDONS_BOA_JOB_COMPLETE = 'addon_boa_job_complete'
+
+    DESK_ARCHIVE_REGISTRATION_STUCK = 'desk_archive_registration_stuck'
+    DESK_REQUEST_EXPORT = 'desk_request_export'
+    DESK_REQUEST_DEACTIVATION = 'desk_request_deactivation'
+    DESK_REGISTRATION_BULK_UPLOAD_PRODUCT_OWNER = 'desk_registration_bulk_upload_product_owner'
+    DESK_USER_REGISTRATION_BULK_UPLOAD_UNEXPECTED_FAILURE = 'desk_user_registration_bulk_upload_unexpected_failure'
+    DESK_ARCHIVE_JOB_EXCEEDED = 'desk_archive_job_exceeded'
+    DESK_ARCHIVE_JOB_COPY_ERROR = 'desk_archive_job_copy_error'
+    DESK_ARCHIVE_JOB_FILE_NOT_FOUND = 'desk_archive_job_file_not_found'
+    DESK_ARCHIVE_JOB_UNCAUGHT_ERROR = 'desk_archive_job_uncaught_error'
+    DESK_CROSSREF_ERROR = 'desk_crossref_error'
+
+    # User notifications
+    USER_PENDING_VERIFICATION = 'user_pending_verification'
+    USER_PENDING_VERIFICATION_REGISTERED = 'user_pending_verification_registered'
+    USER_STORAGE_CAP_EXCEEDED_ANNOUNCEMENT = 'user_storage_cap_exceeded_announcement'
+    USER_SPAM_BANNED = 'user_spam_banned'
+    USER_REQUEST_DEACTIVATION_COMPLETE = 'user_request_deactivation_complete'
+    USER_PRIMARY_EMAIL_CHANGED = 'user_primary_email_changed'
+    USER_INSTITUTION_DEACTIVATION = 'user_institution_deactivation'
+    USER_FORGOT_PASSWORD = 'user_forgot_password'
+    USER_FORGOT_PASSWORD_INSTITUTION = 'user_forgot_password_institution'
+    USER_DUPLICATE_ACCOUNTS_OSF4I = 'user_duplicate_accounts_osf4i'
+    USER_EXTERNAL_LOGIN_LINK_SUCCESS = 'user_external_login_link_success'
+    USER_REGISTRATION_BULK_UPLOAD_FAILURE_ALL = 'user_registration_bulk_upload_failure_all'
+    USER_REGISTRATION_BULK_UPLOAD_SUCCESS_PARTIAL = 'user_registration_bulk_upload_success_partial'
+    USER_REGISTRATION_BULK_UPLOAD_SUCCESS_ALL = 'user_registration_bulk_upload_success_all'
+    USER_ADD_SSO_EMAIL_OSF4I = 'user_add_sso_email_osf4i'
+    USER_WELCOME_OSF4I = 'user_welcome_osf4i'
+    USER_ARCHIVE_JOB_EXCEEDED = 'user_archive_job_exceeded'
+    USER_ARCHIVE_JOB_COPY_ERROR = 'user_archive_job_copy_error'
+    USER_ARCHIVE_JOB_FILE_NOT_FOUND = 'user_archive_job_file_not_found'
+    USER_FILE_UPDATED = 'user_file_updated'
+    USER_FILE_OPERATION_SUCCESS = 'user_file_operation_success'
+    USER_FILE_OPERATION_FAILED = 'user_file_operation_failed'
+    USER_PASSWORD_RESET = 'user_password_reset'
+    USER_EXTERNAL_LOGIN_CONFIRM_EMAIL_CREATE = 'user_external_login_confirm_email_create'
+    USER_EXTERNAL_LOGIN_CONFIRM_EMAIL_LINK = 'user_external_login_email_confirm_link'
+    USER_CONFIRM_MERGE = 'user_confirm_merge'
+    USER_CONFIRM_EMAIL = 'user_confirm_email'
+    USER_INITIAL_CONFIRM_EMAIL = 'user_initial_confirm_email'
+    USER_INVITE_DEFAULT = 'user_invite_default'
+    USER_FORWARD_INVITE = 'user_forward_invite'
+    USER_FORWARD_INVITE_REGISTERED = 'user_forward_invite_registered'
+    USER_INVITE_DRAFT_REGISTRATION = 'user_invite_draft_registration'
+    USER_INVITE_OSF_PREPRINT = 'user_invite_osf_preprint'
+    USER_ARCHIVE_JOB_UNCAUGHT_ERROR = 'user_archive_job_uncaught_error'
+    USER_INSTITUTIONAL_ACCESS_REQUEST = 'user_institutional_access_request'
+    USER_CAMPAIGN_CONFIRM_PREPRINTS_BRANDED = 'user_campaign_confirm_preprint_branded'
+    USER_CAMPAIGN_CONFIRM_PREPRINTS_OSF = 'user_campaign_confirm_preprint_osf'
+    USER_CAMPAIGN_CONFIRM_EMAIL_AGU_CONFERENCE = 'user_campaign_confirm_email_agu_conference'
+    USER_CAMPAIGN_CONFIRM_EMAIL_AGU_CONFERENCE_2023 = 'user_campaign_confirm_email_agu_conference_2023'
+    USER_CAMPAIGN_CONFIRM_EMAIL_REGISTRIES_OSF = 'user_campaign_confirm_email_registries_osf'
+    USER_CAMPAIGN_CONFIRM_EMAIL_ERPC = 'user_campaign_confirm_email_erpc'
+    USER_DIGEST = 'user_digest'
+    USER_NO_LOGIN = 'user_no_login'
+    DIGEST_REVIEWS_MODERATORS = 'digest_reviews_moderators'
+    USER_NO_ADDON = 'user_no_addon'
+    USER_SPAM_FILES_DETECTED = 'user_spam_files_detected'
+    USER_CROSSREF_DOI_PENDING = 'user_crossref_doi_pending'
+
+    # Node notifications
+    NODE_FILE_UPDATED = 'node_file_updated'
+    NODE_AFFILIATION_CHANGED = 'node_affiliation_changed'
+    NODE_REQUEST_ACCESS_SUBMITTED = 'node_request_access_submitted'
+    NODE_REQUEST_ACCESS_DENIED = 'node_request_access_denied'
+    NODE_FORK_COMPLETED = 'node_fork_completed'
+    NODE_FORK_FAILED = 'node_fork_failed'
+    NODE_INSTITUTIONAL_ACCESS_REQUEST = 'node_institutional_access_request'
+    NODE_CONTRIBUTOR_ADDED_ACCESS_REQUEST = 'node_contributor_added_access_request'
+    NODE_CONTRIBUTOR_ADDED_DEFAULT = 'node_contributor_added_default'
+    NODE_PENDING_EMBARGO_ADMIN = 'node_pending_embargo_admin'
+    NODE_PENDING_EMBARGO_NON_ADMIN = 'node_pending_embargo_non_admin'
+    NODE_PENDING_RETRACTION_NON_ADMIN = 'node_pending_retraction_non_admin'
+    NODE_PENDING_RETRACTION_ADMIN = 'node_pending_retraction_admin'
+    NODE_PENDING_REGISTRATION_NON_ADMIN = 'node_pending_registration_non_admin'
+    NODE_PENDING_REGISTRATION_ADMIN = 'node_pending_registration_admin'
+    NODE_PENDING_EMBARGO_TERMINATION_NON_ADMIN = 'node_pending_embargo_termination_non_admin'
+    NODE_PENDING_EMBARGO_TERMINATION_ADMIN = 'node_pending_embargo_termination_admin'
+    NODE_SCHEMA_RESPONSE_REJECTED = 'node_schema_response_rejected'
+    NODE_SCHEMA_RESPONSE_APPROVED = 'node_schema_response_approved'
+    NODE_SCHEMA_RESPONSE_SUBMITTED = 'node_schema_response_submitted'
+    NODE_SCHEMA_RESPONSE_INITIATED = 'node_schema_response_initiated'
+    NODE_WITHDRAWAl_REQUEST_APPROVED = 'node_withdrawal_request_approved'
+    NODE_WITHDRAWAl_REQUEST_REJECTED = 'node_withdrawal_request_rejected'
+    NODE_NEW_PUBLIC_PROJECT = 'node_new_public_project'
+
+    FILE_UPDATED = 'file_updated'
+    FILE_ADDED = 'file_added'
+    FILE_REMOVED = 'file_removed'
+    ADDON_FILE_COPIED = 'addon_file_copied'
+    ADDON_FILE_RENAMED = 'addon_file_renamed'
+    ADDON_FILE_MOVED = 'addon_file_moved'
+    ADDON_FILE_REMOVED = 'addon_file_removed'
+    FOLDER_CREATED = 'folder_created'
+
+    # Provider notifications
+    PROVIDER_NEW_PENDING_SUBMISSIONS = 'provider_new_pending_submissions'
+    PROVIDER_NEW_PENDING_WITHDRAW_REQUESTS = 'provider_new_pending_withdraw_requests'
+    PROVIDER_REVIEWS_SUBMISSION_CONFIRMATION = 'provider_reviews_submission_confirmation'
+    PROVIDER_REVIEWS_RESUBMISSION_CONFIRMATION = 'provider_reviews_resubmission_confirmation'
+    PROVIDER_CONFIRM_EMAIL_MODERATION = 'provider_confirm_email_moderation'
+    PROVIDER_MODERATOR_ADDED = 'provider_moderator_added'
+    PROVIDER_USER_INVITE_PREPRINT = 'provider_user_invite_preprint'
+
+    # Preprint notifications
+    PREPRINT_REQUEST_WITHDRAWAL_APPROVED = 'preprint_request_withdrawal_approved'
+    PREPRINT_REQUEST_WITHDRAWAL_DECLINED = 'preprint_request_withdrawal_declined'
+    PREPRINT_CONTRIBUTOR_ADDED_PREPRINT_NODE_FROM_OSF = 'preprint_contributor_added_preprint_node_from_osf'
+    PREPRINT_CONTRIBUTOR_ADDED_DEFAULT = 'preprint_contributor_added_default'
+
+    # Collections Submission notifications
+    COLLECTION_SUBMISSION_REMOVED_ADMIN = 'collection_submission_removed_admin'
+    COLLECTION_SUBMISSION_REMOVED_MODERATOR = 'collection_submission_removed_moderator'
+    COLLECTION_SUBMISSION_REMOVED_PRIVATE = 'collection_submission_removed_private'
+    COLLECTION_SUBMISSION_SUBMITTED = 'collection_submission_submitted'
+    COLLECTION_SUBMISSION_ACCEPTED = 'collection_submission_accepted'
+    COLLECTION_SUBMISSION_REJECTED = 'collection_submission_rejected'
+    COLLECTION_SUBMISSION_CANCEL = 'collection_submission_cancel'
+
+    REGISTRATION_BULK_UPLOAD_FAILURE_DUPLICATES = 'registration_bulk_upload_failure_duplicates'
+
+    DRAFT_REGISTRATION_CONTRIBUTOR_ADDED_DEFAULT = 'draft_registration_contributor_added_default'
+
+    @ttl_cached_property(ttl=settings.TTL_CACHE_LIFETIME)
+    def instance(self):
+        obj, created = NotificationType.objects.get_or_create(name=self.value)
+        return obj
 
 class NotificationType(models.Model):
-
-    class Type(str, Enum):
-        EMPTY = 'empty'
-        # Desk notifications
-        REVIEWS_SUBMISSION_STATUS = 'reviews_submission_status'
-        ADDONS_BOA_JOB_FAILURE = 'addon_boa_job_failure'
-        ADDONS_BOA_JOB_COMPLETE = 'addon_boa_job_complete'
-
-        DESK_ARCHIVE_REGISTRATION_STUCK = 'desk_archive_registration_stuck'
-        DESK_REQUEST_EXPORT = 'desk_request_export'
-        DESK_REQUEST_DEACTIVATION = 'desk_request_deactivation'
-        DESK_REGISTRATION_BULK_UPLOAD_PRODUCT_OWNER = 'desk_registration_bulk_upload_product_owner'
-        DESK_USER_REGISTRATION_BULK_UPLOAD_UNEXPECTED_FAILURE = 'desk_user_registration_bulk_upload_unexpected_failure'
-        DESK_ARCHIVE_JOB_EXCEEDED = 'desk_archive_job_exceeded'
-        DESK_ARCHIVE_JOB_COPY_ERROR = 'desk_archive_job_copy_error'
-        DESK_ARCHIVE_JOB_FILE_NOT_FOUND = 'desk_archive_job_file_not_found'
-        DESK_ARCHIVE_JOB_UNCAUGHT_ERROR = 'desk_archive_job_uncaught_error'
-        DESK_CROSSREF_ERROR = 'desk_crossref_error'
-
-        # User notifications
-        USER_PENDING_VERIFICATION = 'user_pending_verification'
-        USER_PENDING_VERIFICATION_REGISTERED = 'user_pending_verification_registered'
-        USER_STORAGE_CAP_EXCEEDED_ANNOUNCEMENT = 'user_storage_cap_exceeded_announcement'
-        USER_SPAM_BANNED = 'user_spam_banned'
-        USER_REQUEST_DEACTIVATION_COMPLETE = 'user_request_deactivation_complete'
-        USER_PRIMARY_EMAIL_CHANGED = 'user_primary_email_changed'
-        USER_INSTITUTION_DEACTIVATION = 'user_institution_deactivation'
-        USER_FORGOT_PASSWORD = 'user_forgot_password'
-        USER_FORGOT_PASSWORD_INSTITUTION = 'user_forgot_password_institution'
-        USER_DUPLICATE_ACCOUNTS_OSF4I = 'user_duplicate_accounts_osf4i'
-        USER_EXTERNAL_LOGIN_LINK_SUCCESS = 'user_external_login_link_success'
-        USER_REGISTRATION_BULK_UPLOAD_FAILURE_ALL = 'user_registration_bulk_upload_failure_all'
-        USER_REGISTRATION_BULK_UPLOAD_SUCCESS_PARTIAL = 'user_registration_bulk_upload_success_partial'
-        USER_REGISTRATION_BULK_UPLOAD_SUCCESS_ALL = 'user_registration_bulk_upload_success_all'
-        USER_ADD_SSO_EMAIL_OSF4I = 'user_add_sso_email_osf4i'
-        USER_WELCOME_OSF4I = 'user_welcome_osf4i'
-        USER_ARCHIVE_JOB_EXCEEDED = 'user_archive_job_exceeded'
-        USER_ARCHIVE_JOB_COPY_ERROR = 'user_archive_job_copy_error'
-        USER_ARCHIVE_JOB_FILE_NOT_FOUND = 'user_archive_job_file_not_found'
-        USER_FILE_UPDATED = 'user_file_updated'
-        USER_FILE_OPERATION_SUCCESS = 'user_file_operation_success'
-        USER_FILE_OPERATION_FAILED = 'user_file_operation_failed'
-        USER_PASSWORD_RESET = 'user_password_reset'
-        USER_EXTERNAL_LOGIN_CONFIRM_EMAIL_CREATE = 'user_external_login_confirm_email_create'
-        USER_EXTERNAL_LOGIN_CONFIRM_EMAIL_LINK = 'user_external_login_email_confirm_link'
-        USER_CONFIRM_MERGE = 'user_confirm_merge'
-        USER_CONFIRM_EMAIL = 'user_confirm_email'
-        USER_INITIAL_CONFIRM_EMAIL = 'user_initial_confirm_email'
-        USER_INVITE_DEFAULT = 'user_invite_default'
-        USER_FORWARD_INVITE = 'user_forward_invite'
-        USER_FORWARD_INVITE_REGISTERED = 'user_forward_invite_registered'
-        USER_INVITE_DRAFT_REGISTRATION = 'user_invite_draft_registration'
-        USER_INVITE_OSF_PREPRINT = 'user_invite_osf_preprint'
-        USER_ARCHIVE_JOB_UNCAUGHT_ERROR = 'user_archive_job_uncaught_error'
-        USER_INSTITUTIONAL_ACCESS_REQUEST = 'user_institutional_access_request'
-        USER_CAMPAIGN_CONFIRM_PREPRINTS_BRANDED = 'user_campaign_confirm_preprint_branded'
-        USER_CAMPAIGN_CONFIRM_PREPRINTS_OSF = 'user_campaign_confirm_preprint_osf'
-        USER_CAMPAIGN_CONFIRM_EMAIL_AGU_CONFERENCE = 'user_campaign_confirm_email_agu_conference'
-        USER_CAMPAIGN_CONFIRM_EMAIL_AGU_CONFERENCE_2023 = 'user_campaign_confirm_email_agu_conference_2023'
-        USER_CAMPAIGN_CONFIRM_EMAIL_REGISTRIES_OSF = 'user_campaign_confirm_email_registries_osf'
-        USER_CAMPAIGN_CONFIRM_EMAIL_ERPC = 'user_campaign_confirm_email_erpc'
-        USER_DIGEST = 'user_digest'
-        USER_NO_LOGIN = 'user_no_login'
-        DIGEST_REVIEWS_MODERATORS = 'digest_reviews_moderators'
-        USER_NO_ADDON = 'user_no_addon'
-        USER_SPAM_FILES_DETECTED = 'user_spam_files_detected'
-        USER_CROSSREF_DOI_PENDING = 'user_crossref_doi_pending'
-
-        # Node notifications
-        NODE_FILE_UPDATED = 'node_file_updated'
-        NODE_AFFILIATION_CHANGED = 'node_affiliation_changed'
-        NODE_REQUEST_ACCESS_SUBMITTED = 'node_request_access_submitted'
-        NODE_REQUEST_ACCESS_DENIED = 'node_request_access_denied'
-        NODE_FORK_COMPLETED = 'node_fork_completed'
-        NODE_FORK_FAILED = 'node_fork_failed'
-        NODE_INSTITUTIONAL_ACCESS_REQUEST = 'node_institutional_access_request'
-        NODE_CONTRIBUTOR_ADDED_ACCESS_REQUEST = 'node_contributor_added_access_request'
-        NODE_CONTRIBUTOR_ADDED_DEFAULT = 'node_contributor_added_default'
-        NODE_PENDING_EMBARGO_ADMIN = 'node_pending_embargo_admin'
-        NODE_PENDING_EMBARGO_NON_ADMIN = 'node_pending_embargo_non_admin'
-        NODE_PENDING_RETRACTION_NON_ADMIN = 'node_pending_retraction_non_admin'
-        NODE_PENDING_RETRACTION_ADMIN = 'node_pending_retraction_admin'
-        NODE_PENDING_REGISTRATION_NON_ADMIN = 'node_pending_registration_non_admin'
-        NODE_PENDING_REGISTRATION_ADMIN = 'node_pending_registration_admin'
-        NODE_PENDING_EMBARGO_TERMINATION_NON_ADMIN = 'node_pending_embargo_termination_non_admin'
-        NODE_PENDING_EMBARGO_TERMINATION_ADMIN = 'node_pending_embargo_termination_admin'
-        NODE_SCHEMA_RESPONSE_REJECTED = 'node_schema_response_rejected'
-        NODE_SCHEMA_RESPONSE_APPROVED = 'node_schema_response_approved'
-        NODE_SCHEMA_RESPONSE_SUBMITTED = 'node_schema_response_submitted'
-        NODE_SCHEMA_RESPONSE_INITIATED = 'node_schema_response_initiated'
-        NODE_WITHDRAWAl_REQUEST_APPROVED = 'node_withdrawal_request_approved'
-        NODE_WITHDRAWAl_REQUEST_REJECTED = 'node_withdrawal_request_rejected'
-        NODE_NEW_PUBLIC_PROJECT = 'node_new_public_project'
-
-        FILE_UPDATED = 'file_updated'
-        FILE_ADDED = 'file_added'
-        FILE_REMOVED = 'file_removed'
-        ADDON_FILE_COPIED = 'addon_file_copied'
-        ADDON_FILE_RENAMED = 'addon_file_renamed'
-        ADDON_FILE_MOVED = 'addon_file_moved'
-        ADDON_FILE_REMOVED = 'addon_file_removed'
-        FOLDER_CREATED = 'folder_created'
-
-        # Provider notifications
-        PROVIDER_NEW_PENDING_SUBMISSIONS = 'provider_new_pending_submissions'
-        PROVIDER_NEW_PENDING_WITHDRAW_REQUESTS = 'provider_new_pending_withdraw_requests'
-        PROVIDER_REVIEWS_SUBMISSION_CONFIRMATION = 'provider_reviews_submission_confirmation'
-        PROVIDER_REVIEWS_RESUBMISSION_CONFIRMATION = 'provider_reviews_resubmission_confirmation'
-        PROVIDER_CONFIRM_EMAIL_MODERATION = 'provider_confirm_email_moderation'
-        PROVIDER_MODERATOR_ADDED = 'provider_moderator_added'
-        PROVIDER_USER_INVITE_PREPRINT = 'provider_user_invite_preprint'
-
-        # Preprint notifications
-        PREPRINT_REQUEST_WITHDRAWAL_APPROVED = 'preprint_request_withdrawal_approved'
-        PREPRINT_REQUEST_WITHDRAWAL_DECLINED = 'preprint_request_withdrawal_declined'
-        PREPRINT_CONTRIBUTOR_ADDED_PREPRINT_NODE_FROM_OSF = 'preprint_contributor_added_preprint_node_from_osf'
-        PREPRINT_CONTRIBUTOR_ADDED_DEFAULT = 'preprint_contributor_added_default'
-
-        # Collections Submission notifications
-        COLLECTION_SUBMISSION_REMOVED_ADMIN = 'collection_submission_removed_admin'
-        COLLECTION_SUBMISSION_REMOVED_MODERATOR = 'collection_submission_removed_moderator'
-        COLLECTION_SUBMISSION_REMOVED_PRIVATE = 'collection_submission_removed_private'
-        COLLECTION_SUBMISSION_SUBMITTED = 'collection_submission_submitted'
-        COLLECTION_SUBMISSION_ACCEPTED = 'collection_submission_accepted'
-        COLLECTION_SUBMISSION_REJECTED = 'collection_submission_rejected'
-        COLLECTION_SUBMISSION_CANCEL = 'collection_submission_cancel'
-
-        REGISTRATION_BULK_UPLOAD_FAILURE_DUPLICATES = 'registration_bulk_upload_failure_duplicates'
-
-        DRAFT_REGISTRATION_CONTRIBUTOR_ADDED_DEFAULT = 'draft_registration_contributor_added_default'
-
-        @ttl_cached_property(ttl=settings.TTL_CACHE_LIFETIME)
-        def instance(self):
-            obj, created = NotificationType.objects.get_or_create(name=self.value)
-            return obj
 
     @property
     def is_digest_type(self):
         digest_types = {
             # User types
-            NotificationType.Type.USER_NO_ADDON.value,
+            NotificationTypeEnum.USER_NO_ADDON.value,
             # File types
-            NotificationType.Type.ADDON_FILE_COPIED.value,
-            NotificationType.Type.ADDON_FILE_MOVED.value,
-            NotificationType.Type.ADDON_FILE_RENAMED.value,
-            NotificationType.Type.FILE_ADDED.value,
-            NotificationType.Type.FILE_REMOVED.value,
-            NotificationType.Type.FILE_UPDATED.value,
-            NotificationType.Type.FOLDER_CREATED.value,
-            NotificationType.Type.NODE_FILE_UPDATED.value,
-            NotificationType.Type.USER_FILE_UPDATED.value,
+            NotificationTypeEnum.ADDON_FILE_COPIED.value,
+            NotificationTypeEnum.ADDON_FILE_MOVED.value,
+            NotificationTypeEnum.ADDON_FILE_RENAMED.value,
+            NotificationTypeEnum.FILE_ADDED.value,
+            NotificationTypeEnum.FILE_REMOVED.value,
+            NotificationTypeEnum.FILE_UPDATED.value,
+            NotificationTypeEnum.FOLDER_CREATED.value,
+            NotificationTypeEnum.NODE_FILE_UPDATED.value,
+            NotificationTypeEnum.USER_FILE_UPDATED.value,
 
             # Review types
-            NotificationType.Type.COLLECTION_SUBMISSION_SUBMITTED.value,
-            NotificationType.Type.PROVIDER_NEW_PENDING_SUBMISSIONS.value,
-            NotificationType.Type.PROVIDER_NEW_PENDING_WITHDRAW_REQUESTS.value,
-            NotificationType.Type.REVIEWS_SUBMISSION_STATUS.value,
+            NotificationTypeEnum.COLLECTION_SUBMISSION_SUBMITTED.value,
+            NotificationTypeEnum.PROVIDER_NEW_PENDING_SUBMISSIONS.value,
+            NotificationTypeEnum.PROVIDER_NEW_PENDING_WITHDRAW_REQUESTS.value,
+            NotificationTypeEnum.REVIEWS_SUBMISSION_STATUS.value,
         }
         return self.name in digest_types
 
@@ -290,33 +289,33 @@ class NotificationType(models.Model):
         from osf.models import NotificationSubscription, AbstractNode
 
         _global_file_updated = [
-            NotificationType.Type.USER_FILE_UPDATED.value,
-            NotificationType.Type.FILE_UPDATED.value,
-            NotificationType.Type.FILE_ADDED.value,
-            NotificationType.Type.FILE_REMOVED.value,
-            NotificationType.Type.ADDON_FILE_COPIED.value,
-            NotificationType.Type.ADDON_FILE_RENAMED.value,
-            NotificationType.Type.ADDON_FILE_MOVED.value,
-            NotificationType.Type.ADDON_FILE_REMOVED.value,
-            NotificationType.Type.FOLDER_CREATED.value,
+            NotificationTypeEnum.USER_FILE_UPDATED.value,
+            NotificationTypeEnum.FILE_UPDATED.value,
+            NotificationTypeEnum.FILE_ADDED.value,
+            NotificationTypeEnum.FILE_REMOVED.value,
+            NotificationTypeEnum.ADDON_FILE_COPIED.value,
+            NotificationTypeEnum.ADDON_FILE_RENAMED.value,
+            NotificationTypeEnum.ADDON_FILE_MOVED.value,
+            NotificationTypeEnum.ADDON_FILE_REMOVED.value,
+            NotificationTypeEnum.FOLDER_CREATED.value,
         ]
         _global_reviews = [
-            NotificationType.Type.PROVIDER_NEW_PENDING_SUBMISSIONS.value,
-            NotificationType.Type.PROVIDER_REVIEWS_SUBMISSION_CONFIRMATION.value,
-            NotificationType.Type.PROVIDER_REVIEWS_RESUBMISSION_CONFIRMATION.value,
-            NotificationType.Type.PROVIDER_NEW_PENDING_WITHDRAW_REQUESTS.value,
-            NotificationType.Type.REVIEWS_SUBMISSION_STATUS.value,
+            NotificationTypeEnum.PROVIDER_NEW_PENDING_SUBMISSIONS.value,
+            NotificationTypeEnum.PROVIDER_REVIEWS_SUBMISSION_CONFIRMATION.value,
+            NotificationTypeEnum.PROVIDER_REVIEWS_RESUBMISSION_CONFIRMATION.value,
+            NotificationTypeEnum.PROVIDER_NEW_PENDING_WITHDRAW_REQUESTS.value,
+            NotificationTypeEnum.REVIEWS_SUBMISSION_STATUS.value,
         ]
         _node_file_updated = [
-            NotificationType.Type.NODE_FILE_UPDATED.value,
-            NotificationType.Type.FILE_UPDATED.value,
-            NotificationType.Type.FILE_ADDED.value,
-            NotificationType.Type.FILE_REMOVED.value,
-            NotificationType.Type.ADDON_FILE_COPIED.value,
-            NotificationType.Type.ADDON_FILE_RENAMED.value,
-            NotificationType.Type.ADDON_FILE_MOVED.value,
-            NotificationType.Type.ADDON_FILE_REMOVED.value,
-            NotificationType.Type.FOLDER_CREATED.value,
+            NotificationTypeEnum.NODE_FILE_UPDATED.value,
+            NotificationTypeEnum.FILE_UPDATED.value,
+            NotificationTypeEnum.FILE_ADDED.value,
+            NotificationTypeEnum.FILE_REMOVED.value,
+            NotificationTypeEnum.ADDON_FILE_COPIED.value,
+            NotificationTypeEnum.ADDON_FILE_RENAMED.value,
+            NotificationTypeEnum.ADDON_FILE_MOVED.value,
+            NotificationTypeEnum.ADDON_FILE_REMOVED.value,
+            NotificationTypeEnum.FOLDER_CREATED.value,
         ]
 
         if self.name in _global_file_updated and content_type != ContentType.objects.get_for_model(AbstractNode):

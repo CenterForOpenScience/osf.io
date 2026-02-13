@@ -26,7 +26,7 @@ from osf.models import (
     Preprint,
     PreprintProvider,
     RecentlyAddedContributor,
-    NotificationType
+    NotificationTypeEnum
 )
 from osf.utils import sanitize
 from osf.utils.permissions import ADMIN
@@ -214,7 +214,7 @@ def finalize_invitation(
         node,
         contributor,
         auth,
-        notification_type=NotificationType.Type.NODE_CONTRIBUTOR_ADDED_DEFAULT
+        notification_type=NotificationTypeEnum.NODE_CONTRIBUTOR_ADDED_DEFAULT
 ):
     try:
         record = contributor.get_unclaimed_record(node._primary_key)
@@ -436,7 +436,7 @@ def send_claim_registered_email(claimer, unclaimed_user, node, throttle=24 * 360
     )
     if check_email_throttle(
             referrer,
-            notification_type=NotificationType.Type.USER_FORWARD_INVITE_REGISTERED,
+            notification_type=NotificationTypeEnum.USER_FORWARD_INVITE_REGISTERED,
             throttle=throttle
     ):
         raise HTTPError(
@@ -447,7 +447,7 @@ def send_claim_registered_email(claimer, unclaimed_user, node, throttle=24 * 360
         )
 
     # Send mail to referrer, telling them to forward verification link to claimer
-    NotificationType.Type.USER_FORWARD_INVITE_REGISTERED.instance.emit(
+    NotificationTypeEnum.USER_FORWARD_INVITE_REGISTERED.instance.emit(
         user=referrer,
         event_context={
             'claim_url': claim_url,
@@ -458,7 +458,7 @@ def send_claim_registered_email(claimer, unclaimed_user, node, throttle=24 * 360
         }
     )
     # Send mail to claimer, telling them to wait for referrer
-    NotificationType.Type.USER_PENDING_VERIFICATION_REGISTERED.instance.emit(
+    NotificationTypeEnum.USER_PENDING_VERIFICATION_REGISTERED.instance.emit(
         subscribed_object=claimer,
         user=claimer,
         event_context={
@@ -474,7 +474,7 @@ def send_claim_email(
     node,
     notify=True,
     throttle=24 * 3600,
-    notification_type=NotificationType.Type.NODE_CONTRIBUTOR_ADDED_DEFAULT
+    notification_type=NotificationTypeEnum.NODE_CONTRIBUTOR_ADDED_DEFAULT
 ):
     """
     Send a claim email to an unregistered contributor or the referrer, depending on the scenario.
@@ -503,15 +503,15 @@ def send_claim_email(
         match notification_type:
             case 'preprint':
                 if getattr(node.provider, 'is_default', False):
-                    notification_type = NotificationType.Type.USER_INVITE_OSF_PREPRINT
+                    notification_type = NotificationTypeEnum.USER_INVITE_OSF_PREPRINT
                     logo = settings.OSF_PREPRINTS_LOGO
                 else:
-                    notification_type = NotificationType.Type.PROVIDER_USER_INVITE_PREPRINT
+                    notification_type = NotificationTypeEnum.PROVIDER_USER_INVITE_PREPRINT
                     logo = getattr(node.provider, '_id', None)
             case 'draft_registration':
-                notification_type = NotificationType.Type.DRAFT_REGISTRATION_CONTRIBUTOR_ADDED_DEFAULT
+                notification_type = NotificationTypeEnum.DRAFT_REGISTRATION_CONTRIBUTOR_ADDED_DEFAULT
             case _:
-                notification_type = NotificationType.Type.USER_INVITE_DEFAULT
+                notification_type = NotificationTypeEnum.USER_INVITE_DEFAULT
 
         unclaimed_record['claimer_email'] = claimer_email
         unclaimed_user.save()
@@ -534,7 +534,7 @@ def send_claim_email(
         unclaimed_user.save()
 
         if notify:
-            NotificationType.Type.USER_PENDING_VERIFICATION.instance.emit(
+            NotificationTypeEnum.USER_PENDING_VERIFICATION.instance.emit(
                 subscribed_object=unclaimed_user,
                 user=unclaimed_user,
                 event_context={
@@ -547,7 +547,7 @@ def send_claim_email(
                 }
             )
 
-        notification_type = NotificationType.Type.USER_FORWARD_INVITE
+        notification_type = NotificationTypeEnum.USER_FORWARD_INVITE
     claim_url = unclaimed_user.get_claim_url(node._primary_key, external=True)
 
     notification_type.instance.emit(
@@ -616,7 +616,7 @@ def notify_added_contributor(resource, contributor, notification_type, auth=None
 
     logo = settings.OSF_LOGO
     if getattr(resource, 'has_linked_published_preprints', None):
-        notification_type = NotificationType.Type.PREPRINT_CONTRIBUTOR_ADDED_PREPRINT_NODE_FROM_OSF
+        notification_type = NotificationTypeEnum.PREPRINT_CONTRIBUTOR_ADDED_PREPRINT_NODE_FROM_OSF
         logo = settings.OSF_PREPRINTS_LOGO
 
     throttle = kwargs.get('throttle', settings.CONTRIBUTOR_ADDED_EMAIL_THROTTLE)

@@ -14,7 +14,7 @@ from addons.boa import settings as boa_settings
 from addons.boa.boa_error_code import BoaErrorCode
 from framework import sentry
 from framework.celery_tasks import app as celery_app
-from osf.models import OSFUser, NotificationType
+from osf.models import OSFUser, NotificationTypeEnum
 from osf.utils.fields import ensure_str, ensure_bytes
 from website import settings as osf_settings
 
@@ -183,7 +183,7 @@ async def submit_to_boa_async(host, username, password, user_guid, project_guid,
 
     logger.info('Successfully uploaded query output to OSF.')
     logger.debug('Task ends <<<<<<<<')
-    NotificationType.Type.ADDONS_BOA_JOB_COMPLETE.instance.emit(
+    NotificationTypeEnum.ADDONS_BOA_JOB_COMPLETE.instance.emit(
         user=user,
         event_context={
             'user_fullname': user.fullname,
@@ -206,7 +206,7 @@ def handle_boa_error(message, code, username, fullname, project_url, query_file_
         sentry.log_message(message, skip_session=True)
     except Exception:
         pass
-    NotificationType.Type.ADDONS_BOA_JOB_FAILURE.instance.emit(
+    NotificationTypeEnum.ADDONS_BOA_JOB_FAILURE.instance.emit(
         destination_address=username,
         event_context={
             'user_fullname': fullname,

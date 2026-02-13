@@ -10,7 +10,7 @@ from framework.celery_tasks import app as celery_app
 from celery.utils.log import get_task_logger
 
 from framework.postcommit_tasks.handlers import run_postcommit
-from osf.models import OSFUser, Notification, NotificationType, EmailTask, RegistrationProvider, \
+from osf.models import OSFUser, Notification, NotificationTypeEnum, EmailTask, RegistrationProvider, \
     CollectionProvider, AbstractProvider
 from framework.sentry import log_message
 from osf.registrations.utils import get_registration_provider_submissions_url
@@ -110,7 +110,7 @@ def send_user_email_task(self, user_id, notification_ids, **kwargs):
             'notifications': rendered_notifications,
         }
 
-        NotificationType.Type.USER_DIGEST.instance.emit(
+        NotificationTypeEnum.USER_DIGEST.instance.emit(
             user=user,
             event_context=event_context,
             save=False
@@ -259,7 +259,7 @@ def send_moderator_email_task(self, user_id, notification_ids, provider_content_
             **additional_context,
         }
 
-        NotificationType.Type.DIGEST_REVIEWS_MODERATORS.instance.emit(
+        NotificationTypeEnum.DIGEST_REVIEWS_MODERATORS.instance.emit(
             user=user,
             subscribed_object=user,
             event_context=event_context,
@@ -364,11 +364,11 @@ def get_moderators_emails(message_freq: str):
         cursor.execute(sql,
             [
                 message_freq,
-                NotificationType.Type.PROVIDER_NEW_PENDING_SUBMISSIONS.value,
-                NotificationType.Type.PROVIDER_NEW_PENDING_WITHDRAW_REQUESTS.value,
-                NotificationType.Type.DIGEST_REVIEWS_MODERATORS.value,
-                NotificationType.Type.USER_DIGEST.value,
-                NotificationType.Type.USER_NO_ADDON.value,
+                NotificationTypeEnum.PROVIDER_NEW_PENDING_SUBMISSIONS.value,
+                NotificationTypeEnum.PROVIDER_NEW_PENDING_WITHDRAW_REQUESTS.value,
+                NotificationTypeEnum.DIGEST_REVIEWS_MODERATORS.value,
+                NotificationTypeEnum.USER_DIGEST.value,
+                NotificationTypeEnum.USER_NO_ADDON.value,
             ]
         )
         return itertools.chain.from_iterable(cursor.fetchall())
@@ -406,11 +406,11 @@ def get_users_emails(message_freq):
         cursor.execute(sql,
             [
                 message_freq,
-                NotificationType.Type.PROVIDER_NEW_PENDING_SUBMISSIONS.value,
-                NotificationType.Type.PROVIDER_NEW_PENDING_WITHDRAW_REQUESTS.value,
-                NotificationType.Type.DIGEST_REVIEWS_MODERATORS.value,
-                NotificationType.Type.USER_DIGEST.value,
-                NotificationType.Type.USER_NO_ADDON.value,
+                NotificationTypeEnum.PROVIDER_NEW_PENDING_SUBMISSIONS.value,
+                NotificationTypeEnum.PROVIDER_NEW_PENDING_WITHDRAW_REQUESTS.value,
+                NotificationTypeEnum.DIGEST_REVIEWS_MODERATORS.value,
+                NotificationTypeEnum.USER_DIGEST.value,
+                NotificationTypeEnum.USER_NO_ADDON.value,
             ]
         )
         return itertools.chain.from_iterable(cursor.fetchall())
@@ -471,7 +471,7 @@ def send_no_addon_email(self, dry_run=False, **kwargs):
     """
     notification_qs = Notification.objects.filter(
         sent__isnull=True,
-        subscription__notification_type__name=NotificationType.Type.USER_NO_ADDON.value,
+        subscription__notification_type__name=NotificationTypeEnum.USER_NO_ADDON.value,
         created__lte=timezone.now() - settings.NO_ADDON_WAIT_TIME
     )
     for notification in notification_qs:

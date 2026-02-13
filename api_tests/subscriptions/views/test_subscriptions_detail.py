@@ -6,7 +6,7 @@ from api.base.settings.defaults import API_BASE
 from osf.models import (
     AbstractNode,
     NotificationSubscription,
-    NotificationType,
+    NotificationTypeEnum,
     OSFUser
 )
 from osf_tests.factories import (
@@ -39,7 +39,7 @@ class TestSubscriptionDetail:
         node = NodeFactory(creator=user_missing_subscriptions)
         subscription = NotificationSubscription.objects.get(
             user=user_missing_subscriptions,
-            notification_type__name=NotificationType.Type.NODE_FILE_UPDATED.value,
+            notification_type__name=NotificationTypeEnum.NODE_FILE_UPDATED.value,
             object_id=node.id,
             content_type=ContentType.objects.get_for_model(AbstractNode)
         )
@@ -49,7 +49,7 @@ class TestSubscriptionDetail:
     @pytest.fixture()
     def notification_user_global_file_updated(self, user):
         return NotificationSubscriptionFactory(
-            notification_type=NotificationType.Type.USER_FILE_UPDATED.instance,
+            notification_type=NotificationTypeEnum.USER_FILE_UPDATED.instance,
             object_id=user.id,
             content_type_id=ContentType.objects.get_for_model(OSFUser).id,
             user=user,
@@ -60,7 +60,7 @@ class TestSubscriptionDetail:
     @pytest.fixture()
     def notification_user_global_reviews(self, user):
         return NotificationSubscriptionFactory(
-            notification_type=NotificationType.Type.REVIEWS_SUBMISSION_STATUS.instance,
+            notification_type=NotificationTypeEnum.REVIEWS_SUBMISSION_STATUS.instance,
             object_id=user.id,
             content_type_id=ContentType.objects.get_for_model(OSFUser).id,
             user=user,
@@ -183,7 +183,7 @@ class TestSubscriptionDetail:
     ):
         assert not NotificationSubscription.objects.filter(
             user=user_missing_subscriptions,
-            notification_type__name=NotificationType.Type.USER_FILE_UPDATED.value,
+            notification_type__name=NotificationTypeEnum.USER_FILE_UPDATED.value,
             object_id=user_missing_subscriptions.id,
             content_type=ContentType.objects.get_for_model(OSFUser)
         ).exists()
@@ -200,7 +200,7 @@ class TestSubscriptionDetail:
     ):
         assert not NotificationSubscription.objects.filter(
             user=user_missing_subscriptions,
-            notification_type__name=NotificationType.Type.REVIEWS_SUBMISSION_STATUS.value,
+            notification_type__name=NotificationTypeEnum.REVIEWS_SUBMISSION_STATUS.value,
             object_id=user_missing_subscriptions.id,
             content_type=ContentType.objects.get_for_model(OSFUser)
         ).exists()
@@ -230,7 +230,7 @@ class TestSubscriptionDetail:
     ):
         assert not NotificationSubscription.objects.filter(
             user=user_missing_subscriptions,
-            notification_type__name=NotificationType.Type.NODE_FILE_UPDATED.value,
+            notification_type__name=NotificationTypeEnum.NODE_FILE_UPDATED.value,
             object_id=node_missing_subscriptions.id,
             content_type=ContentType.objects.get_for_model(AbstractNode)
         ).exists()

@@ -27,7 +27,7 @@ from osf.exceptions import (
     InvalidTagError,
     BlockedEmailError,
 )
-from osf.models.notification_type import NotificationType
+from osf.models.notification_type import NotificationTypeEnum
 from osf.models.notification_subscription import NotificationSubscription
 from .node_relation import NodeRelation
 from .nodelog import NodeLog
@@ -312,7 +312,7 @@ class AffiliatedInstitutionMixin(models.Model):
 
             if notify and getattr(self, 'type', False) == 'osf.node':
                 for user, _ in self.get_admin_contributors_recursive(unique_users=True):
-                    NotificationType.Type.NODE_AFFILIATION_CHANGED.instance.emit(
+                    NotificationTypeEnum.NODE_AFFILIATION_CHANGED.instance.emit(
                         user=user,
                         subscribed_object=self,
                         event_context={
@@ -354,7 +354,7 @@ class AffiliatedInstitutionMixin(models.Model):
             self.update_search()
             if notify and getattr(self, 'type', False) == 'osf.node':
                 for user, _ in self.get_admin_contributors_recursive(unique_users=True):
-                    NotificationType.Type.NODE_AFFILIATION_CHANGED.instance.emit(
+                    NotificationTypeEnum.NODE_AFFILIATION_CHANGED.instance.emit(
                         user=user,
                         subscribed_object=self,
                         event_context={
@@ -1035,7 +1035,7 @@ class ReviewProviderMixin(GuardianMixin):
     reviews_comments_anonymous = models.BooleanField(null=True, blank=True)
 
     DEFAULT_SUBSCRIPTIONS = [
-        NotificationType.Type.PROVIDER_NEW_PENDING_SUBMISSIONS
+        NotificationTypeEnum.PROVIDER_NEW_PENDING_SUBMISSIONS
     ]
 
     @property
@@ -1422,14 +1422,14 @@ class ContributorMixin(models.Model):
             from osf.models import AbstractNode, Preprint, DraftRegistration
 
             if isinstance(self, AbstractNode):
-                notification_type = NotificationType.Type.NODE_CONTRIBUTOR_ADDED_DEFAULT
+                notification_type = NotificationTypeEnum.NODE_CONTRIBUTOR_ADDED_DEFAULT
             elif isinstance(self, Preprint):
                 if self.is_published:
-                    notification_type = NotificationType.Type.PREPRINT_CONTRIBUTOR_ADDED_DEFAULT
+                    notification_type = NotificationTypeEnum.PREPRINT_CONTRIBUTOR_ADDED_DEFAULT
                 else:
                     notification_type = False
             elif isinstance(self, DraftRegistration):
-                notification_type = NotificationType.Type.DRAFT_REGISTRATION_CONTRIBUTOR_ADDED_DEFAULT
+                notification_type = NotificationTypeEnum.DRAFT_REGISTRATION_CONTRIBUTOR_ADDED_DEFAULT
 
         if contrib_to_add.is_disabled:
             raise ValidationValueError('Deactivated users cannot be added as contributors.')
@@ -1597,14 +1597,14 @@ class ContributorMixin(models.Model):
             from osf.models import AbstractNode, Preprint, DraftRegistration
 
             if isinstance(self, AbstractNode):
-                notification_type = NotificationType.Type.USER_INVITE_DEFAULT
+                notification_type = NotificationTypeEnum.USER_INVITE_DEFAULT
             elif isinstance(self, Preprint):
                 if self.provider.is_default:
-                    notification_type = NotificationType.Type.USER_INVITE_OSF_PREPRINT
+                    notification_type = NotificationTypeEnum.USER_INVITE_OSF_PREPRINT
                 else:
-                    notification_type = NotificationType.Type.PROVIDER_USER_INVITE_PREPRINT
+                    notification_type = NotificationTypeEnum.PROVIDER_USER_INVITE_PREPRINT
             elif isinstance(self, DraftRegistration):
-                notification_type = NotificationType.Type.USER_INVITE_DRAFT_REGISTRATION
+                notification_type = NotificationTypeEnum.USER_INVITE_DRAFT_REGISTRATION
 
         self.add_contributor(
             contributor,
@@ -2322,7 +2322,7 @@ class SpamOverrideMixin(SpamMixin):
         user.flag_spam()
         if not user.is_disabled:
             user.deactivate_account()
-            NotificationType.Type.USER_SPAM_BANNED.instance.emit(
+            NotificationTypeEnum.USER_SPAM_BANNED.instance.emit(
                 user,
                 event_context={
                     'user_fullname': user.fullname,

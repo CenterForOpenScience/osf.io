@@ -9,7 +9,7 @@ from dateutil.relativedelta import relativedelta
 from datetime import datetime
 from framework.celery_tasks import app as celery_app
 from django.contrib.contenttypes.models import ContentType
-from osf.models import OSFUser, NotificationSubscription, NotificationType
+from osf.models import OSFUser, NotificationSubscription, NotificationTypeEnum
 
 
 @celery_app.task(name='scripts.remove_after_use.populate_notification_subscriptions_user_global_reviews')
@@ -17,7 +17,7 @@ def populate_notification_subscriptions_user_global_reviews(per_last_years: int 
     print('---Starting REVIEWS_SUBMISSION_STATUS subscriptions population script----')
     global_start = datetime.now()
 
-    review_nt = NotificationType.Type.REVIEWS_SUBMISSION_STATUS
+    review_nt = NotificationTypeEnum.REVIEWS_SUBMISSION_STATUS
     user_ct = ContentType.objects.get_for_model(OSFUser)
     if per_last_years:
         from_date = timezone.now() - relativedelta(years=per_last_years)
@@ -88,7 +88,7 @@ def populate_notification_subscriptions_user_global_reviews(per_last_years: int 
 def update_notification_subscriptions_user_global_reviews():
     print('---Starting REVIEWS_SUBMISSION_STATUS subscriptions updating script----')
 
-    review_nt = NotificationType.Type.REVIEWS_SUBMISSION_STATUS
+    review_nt = NotificationTypeEnum.REVIEWS_SUBMISSION_STATUS
 
     updated_start = datetime.now()
     updated = (

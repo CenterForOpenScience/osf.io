@@ -51,7 +51,7 @@ from osf.models import (
     DraftRegistration,
     Guid,
     FileVersionUserMetadata,
-    FileVersion, NotificationType
+    FileVersion, NotificationTypeEnum
 )
 from osf.metrics import PreprintView, PreprintDownload
 from osf.utils import permissions
@@ -575,9 +575,9 @@ def create_waterbutler_log(payload, **kwargs):
 
             if payload.get('email') or payload.get('errors'):
                 if payload.get('email'):
-                    notification_type = NotificationType.Type.USER_FILE_OPERATION_SUCCESS.instance
+                    notification_type = NotificationTypeEnum.USER_FILE_OPERATION_SUCCESS.instance
                 if payload.get('errors'):
-                    notification_type = NotificationType.Type.USER_FILE_OPERATION_FAILED.instance
+                    notification_type = NotificationTypeEnum.USER_FILE_OPERATION_FAILED.instance
                 notification_type.emit(
                     user=user,
                     subscribed_object=node,
