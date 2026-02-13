@@ -91,7 +91,6 @@ def is_contributor_or_public_resource(func):
         if is_public_target_resource:
             return func(*args, **kwargs)
         else:
-            from osf.models import BaseFileNode
             auth = Auth.from_kwargs(request.args.to_dict(), {})
             if auth.logged_in and target_resource.is_contributor(auth.user):
                 return func(*args, **kwargs)
