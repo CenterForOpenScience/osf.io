@@ -2,7 +2,6 @@
 <https://schema.org/Dataset> ; rel="type" ; anchor="http://localhost:5000/w2ibb",
 <https://schema.org/AboutPage> ; rel="type" ; anchor="http://localhost:5000/w2ibb",
 <https://doi.org/10.70102/FK2osf.io/w2ibb> ; rel="cite-as" ; anchor="http://localhost:5000/w2ibb",
-<http://localhost:5000/w2ibb> ; rel="describes" ; anchor="http://localhost:5000/metadata/w2ibb/",
 <http://localhost:5000/metadata/w2ibb/?format=turtle> ; rel="describedby" ; anchor="http://localhost:5000/w2ibb" ; type="text/turtle; charset=utf-8",
 <http://localhost:5000/metadata/w2ibb/?format=datacite-json> ; rel="describedby" ; anchor="http://localhost:5000/w2ibb" ; type="application/json",
 <http://localhost:5000/metadata/w2ibb/?format=datacite-xml> ; rel="describedby" ; anchor="http://localhost:5000/w2ibb" ; type="application/xml",

@@ -46,14 +46,6 @@
           "type": "application/linkset+json"
         }
       ]
-    },
-    {
-      "anchor": "http://localhost:5000/metadata/w4ibb/",
-      "describes": [
-        {
-          "href": "http://localhost:5000/w4ibb"
-        }
-      ]
     }
   ]
 }

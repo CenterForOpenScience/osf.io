@@ -57,14 +57,6 @@
           "type": "application/octet-stream"
         }
       ]
-    },
-    {
-      "anchor": "http://localhost:5000/metadata/w5ibb/",
-      "describes": [
-        {
-          "href": "http://localhost:5000/w5ibb"
-        }
-      ]
     }
   ]
 }

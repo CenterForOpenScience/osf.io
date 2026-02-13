@@ -78,13 +78,6 @@ class BaseSignpostLinkset(MetadataSerializer, abc.ABC):
         ))
         split_base_metadata_url = urlsplit(base_metadata_url)
 
-        # describes
-        yield SignpostLink(
-            base_metadata_url,
-            'describes',
-            focus_iri,
-        )
-
         from osf.metadata.serializers import METADATA_SERIALIZER_REGISTRY
         # describedby
         for _format_key, _serializer in METADATA_SERIALIZER_REGISTRY.items():
