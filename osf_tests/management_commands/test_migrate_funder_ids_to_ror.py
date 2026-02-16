@@ -388,3 +388,32 @@ European Research Council\thttps://ror.org/0472cxd90\tEuropean Research Council\
         # Re-indexing should have been triggered for both updated records
         assert mock_update_search.call_count == 2
         assert mock_request_identifier_update.call_count == 2
+
+    def test_crossref_funder_uri_type_also_migrated(self, user, csv_mapping_file):
+        """Test that legacy 'Crossref Funder URI' type is also migrated (found in staging data)."""
+        project = factories.ProjectFactory(creator=user)
+        record = GuidMetadataRecord.objects.for_guid(project._id)
+        record.funding_info = [{
+            'funder_name': 'National Institutes of Health',
+            'funder_identifier': 'http://dx.doi.org/10.13039/100000002',
+            'funder_identifier_type': 'Crossref Funder URI',
+            'award_number': '',
+            'award_title': '',
+        }]
+        record.save()
+
+        command = Command()
+        command.stdout = type('MockStdout', (), {'write': lambda self, x: None})()
+
+        mapping = command.load_mapping(csv_mapping_file)
+        updated, stats = command.migrate_record(
+            record, mapping, dry_run=False, update_funder_name=False
+        )
+
+        assert updated is True
+        assert stats['migrated'] == 1
+
+        record.refresh_from_db()
+        funder = record.funding_info[0]
+        assert funder['funder_identifier'] == 'https://ror.org/01cwqze88'
+        assert funder['funder_identifier_type'] == 'ROR'

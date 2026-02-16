@@ -271,8 +271,8 @@ class Command(BaseCommand):
             funder_type = funder.get('funder_identifier_type', '')
             funder_identifier = funder.get('funder_identifier', '')
 
-            # Only migrate Crossref Funder IDs
-            if funder_type != 'Crossref Funder ID':
+            # Only migrate Crossref Funder IDs (includes legacy 'Crossref Funder URI' type)
+            if funder_type not in ('Crossref Funder ID', 'Crossref Funder URI'):
                 updated_funding_info.append(funder)
                 continue
 
