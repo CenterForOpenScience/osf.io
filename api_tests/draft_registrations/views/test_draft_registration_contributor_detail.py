@@ -8,12 +8,14 @@ from api_tests.nodes.views.test_node_contributors_detail import (
 )
 from api_tests.nodes.views.test_node_contributors_detail_ordering import TestNodeContributorOrdering
 from api_tests.nodes.views.test_node_contributors_detail_update import TestNodeContributorUpdate
+from api_tests.utils import disconnected_from_listeners
 from osf_tests.factories import (
     DraftRegistrationFactory,
     ProjectFactory,
     AuthUserFactory
 )
 from osf.utils import permissions
+from website.project.signals import contributor_removed
 
 
 @pytest.fixture()
@@ -250,6 +252,30 @@ class TestDraftContributorDelete(TestNodeContributorDelete):
         # Overrides TestNodeContributorDelete
         return '/{}draft_registrations/{}/contributors/{}/'.format(
             API_BASE, project._id, user_non_contrib._id)
+
+    def test_remove_contributor_include_children_removes_descendants(self, app, user, user_write_contrib, project):
+        assert user_write_contrib in project.contributors
+
+        url = f'/{API_BASE}draft_registrations/{project._id}/contributors/{user_write_contrib._id}/?include_children=true'
+        with disconnected_from_listeners(contributor_removed):
+            res = app.delete(url, auth=user.auth)
+        assert res.status_code == 204
+
+        project.reload()
+        assert user_write_contrib not in project.contributors
+
+    def test_remove_contributor_include_children_is_atomic_on_violation(self, app, user, user_write_contrib, project):
+        assert user_write_contrib in project.contributors
+
+        # Draft registrations don't have children, so include_children parameter is ignored
+        # The contributor should be removed successfully since there are no children to cause violations
+        url = f'/{API_BASE}draft_registrations/{project._id}/contributors/{user_write_contrib._id}/?include_children=true'
+        with disconnected_from_listeners(contributor_removed):
+            res = app.delete(url, auth=user.auth)
+        assert res.status_code == 204
+
+        project.reload()
+        assert user_write_contrib not in project.contributors
 
 
 @pytest.mark.django_db

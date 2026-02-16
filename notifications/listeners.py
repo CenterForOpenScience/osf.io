@@ -97,7 +97,7 @@ def reviews_withdraw_requests_notification_moderators(self, timestamp, context, 
     # Set message
     context['message'] = f'has requested withdrawal of "{resource.title}".'
     # Set submission url
-    context['reviews_submission_url'] = f'{DOMAIN}reviews/registries/{provider._id}/{resource._id}'
+    context['reviews_submission_url'] = f'{DOMAIN}{resource._id}?mode=moderator'
     context['localized_timestamp'] = str(timestamp)
     NotificationType.Type.PROVIDER_NEW_PENDING_WITHDRAW_REQUESTS.instance.emit(
         subscribed_object=provider,

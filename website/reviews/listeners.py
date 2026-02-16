@@ -32,7 +32,7 @@ def reviews_withdraw_requests_notification_moderators(self, timestamp, context, 
     from osf.models import NotificationType
 
     context['message'] = f'has requested withdrawal of "{resource.title}".'
-    context['reviews_submission_url'] = f'{DOMAIN}reviews/registries/{provider._id}/{resource._id}'
+    context['reviews_submission_url'] = f'{DOMAIN}{resource._id}?mode=moderator'
 
     context['provider_id'] = provider.id
     for group_name in ['moderator', 'admin']:
@@ -60,7 +60,7 @@ def reviews_withdrawal_requests_notification(self, timestamp, context):
 
     preprint_word = preprint.provider.preprint_word
     context['message'] = f'has requested withdrawal of the {preprint_word} "{preprint.title}".'
-    context['reviews_submission_url'] = f'{DOMAIN}reviews/preprints/{preprint.provider._id}/{preprint._id}'
+    context['reviews_submission_url'] = f'{DOMAIN}preprints/{preprint.provider._id}/{preprint._id}?mode=moderator'
 
     context['provider_id'] = preprint.provider.id
     for group_name in ['moderator', 'admin']:
@@ -85,16 +85,13 @@ def reviews_submit_notification_moderators(self, timestamp, resource, context):
 
     provider = resource.provider
     context['provider_id'] = provider.id
-    context['reviews_submission_url'] = (
-        f'{DOMAIN}reviews/preprints/{provider._id}/{resource._id}'
-    )
+    context['reviews_submission_url'] = f'{DOMAIN}preprints/{provider._id}/{resource._id}?mode=moderator'
+
     # Set submission url
     if provider.type == 'osf.preprintprovider':
-        context['reviews_submission_url'] = (
-            f'{DOMAIN}reviews/preprints/{provider._id}/{resource._id}'
-        )
+        context['reviews_submission_url'] = f'{DOMAIN}preprints/{provider._id}/{resource._id}?mode=moderator'
     elif provider.type == 'osf.registrationprovider':
-        context['reviews_submission_url'] = f'{DOMAIN}{resource._id}?mode=moderator'
+        context['reviews_submission_url'] = f'{DOMAIN}/{resource._id}?mode=moderator'
     else:
         raise NotImplementedError(f'unsupported provider type {provider.type}')
 

@@ -21,6 +21,7 @@ from api.base.serializers import (
     HideIfPreprint,
     LinkedNodesRelationshipSerializer,
 )
+from api.base.settings import BULK_SETTINGS
 from api.base.utils import absolute_reverse, get_user_auth
 from api.base.parsers import NO_DATA_ERROR
 from api.nodes.serializers import (
@@ -255,6 +256,7 @@ class PreprintSerializer(TaxonomizableSerializerMixin, MetricsSerializerMixin, J
     why_no_prereg = ser.CharField(required=False, allow_blank=True, allow_null=True)
     prereg_links = ser.ListField(child=ser.URLField(), required=False)
     prereg_link_info = ser.ChoiceField(Preprint.PREREG_LINK_INFO_CHOICES, required=False, allow_blank=True)
+    default_license_id = ser.CharField(source='provider.default_license._id', read_only=True, default='')
 
     class Meta:
         type_ = 'preprints'
@@ -616,6 +618,7 @@ class PreprintContributorsSerializer(NodeContributorsSerializer):
 
     class Meta:
         type_ = 'contributors'
+        bulk_limit = BULK_SETTINGS.get('PREPRINT_CONTRIBUTORS_BULK_LIMIT', BULK_SETTINGS['DEFAULT_BULK_LIMIT'])
 
     def get_absolute_url(self, obj):
         return absolute_reverse(
