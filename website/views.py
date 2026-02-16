@@ -426,5 +426,5 @@ def metadata_download(guid):
     is_resource_project_or_registration = isinstance(resource.referent, (Node, Registration))
     response = guid_metadata_download(guid, resource=resource, metadata_format=format_arg)
     if is_resource_project_or_registration:
-        response.headers['link'] = f'{settings.DOMAIN}{guid}/>; rel="describes"; type="text/html"'
+        response.headers['link'] = f'<{settings.DOMAIN}{guid}/>; rel="describes"; type="text/html"'
     return response
