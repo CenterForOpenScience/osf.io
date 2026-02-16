@@ -997,7 +997,7 @@ class RegistrationSchemaResponseList(JSONAPIBaseView, generics.ListAPIView, List
                 schema_response_annotations.is_pending_current_user_approval(user)
             ),
             is_original_response=schema_response_annotations.IS_ORIGINAL_RESPONSE,
-        )
+        ).order_by('-created')
 
         is_contributor = registration.has_permission(user, 'read') if user else False
         if is_contributor:
