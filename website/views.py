@@ -297,7 +297,7 @@ def resolve_guid(guid, suffix=None):
     if clean_suffix == 'metadata':
         format_arg = request.args.get('format')
         if format_arg:
-            return guid_metadata_download(guid, resource, format_arg)
+            return guid_metadata_download(guid, resource=resource, metadata_format=format_arg)
         else:
             return use_ember_app()
 
@@ -401,7 +401,7 @@ def get_storage_region_list(user, node=False):
     return available_regions
 
 
-@is_contributor_or_public_resource
+@is_contributor_or_public_resource('resource')
 def guid_metadata_download(guid, resource, metadata_format):
     try:
         result = pls_gather_metadata_file(resource, metadata_format)
@@ -423,4 +423,4 @@ def guid_metadata_download(guid, resource, metadata_format):
 def metadata_download(guid):
     format_arg = request.args.get('format', 'datacite-json')
     resource = Guid.load(guid)
-    return guid_metadata_download(guid, resource, format_arg)
+    return guid_metadata_download(guid, resource=resource, metadata_format=format_arg)
