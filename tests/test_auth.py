@@ -722,8 +722,7 @@ class TestPermissionDecorators(AuthAppTestCase):
             thriller(node=project)
         assert ctx.value.code == http_status.HTTP_401_UNAUTHORIZED
 
-    @staticmethod
-    def decorated_view():
+    def decorated_view(self, *args, **kwargs):
         return 'Success'
 
     ## 1. Public Access
