@@ -584,6 +584,17 @@ class TestAuthLoginAndRegisterLogic(OsfTestCase):
         assert data.get('status_code') == http_status.HTTP_302_FOUND
         assert data.get('next_url') == self.next_url
 
+    def test_next_url_angular_login_with_auth(self):
+        data = login_and_register_handler(self.auth, next_url=settings.LOCAL_ANGULAR_URL)
+        assert data.get('status_code') == http_status.HTTP_302_FOUND
+        assert data.get('next_url') == settings.LOCAL_ANGULAR_URL
+
+    def test_next_url_angular_login_without_auth(self):
+        request.url = web_url_for('auth_login', next=settings.LOCAL_ANGULAR_URL, _absolute=True)
+        data = login_and_register_handler(self.no_auth, next_url=settings.LOCAL_ANGULAR_URL)
+        assert data.get('status_code') == http_status.HTTP_302_FOUND
+        assert data.get('next_url') == cas.get_login_url(request.url)
+
     def test_next_url_login_without_auth(self):
         # login: user without auth
         request.url = web_url_for('auth_login', next=self.next_url, _absolute=True)
