@@ -125,6 +125,7 @@ class Institution(DirtyFieldsMixin, Loggable, ObjectIDMixin, BaseModel, Guardian
         default='',
         help_text='Full URL where institutional admins can access archived metrics reports.',
     )
+    sso_in_progress = models.BooleanField(default=False)
 
     class Meta:
         # custom permissions for use in the OSF Admin App
