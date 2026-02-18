@@ -25,6 +25,10 @@ class Brand(BaseModel):
     secondary_color = models.CharField(max_length=7)
     background_color = models.CharField(max_length=7, blank=True, null=True)
 
+    @property
+    def name_lower(self):
+        return self.name.lower() if self.name else ''
+
     def get_provider_types(self):
         unique_types = self.providers.values_list('type', flat=True).distinct()
         results = []
