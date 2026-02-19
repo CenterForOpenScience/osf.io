@@ -55,8 +55,8 @@
     dcterms:title "this is a project title!"@en ;
     dcterms:type <https://schema.datacite.org/meta/kernel-4/#Dataset> ;
     owl:sameAs <https://doi.org/10.70102/FK2osf.io/w2ibb> ;
-    osf:funder <https://doi.org/10.$>,
-        <https://doi.org/10.$$$$> ;
+    osf:funder <https://doi.org/10.$$$$>,
+        <https://ror.org/0example> ;
     osf:hasFunding <https://moneypockets.example/millions>,
         <https://moneypockets.example/millions-more> .
 
@@ -121,8 +121,8 @@
     dcterms:identifier "https://doi.org/10.$$$$" ;
     foaf:name "Mx. Moneypockets" .
 
-<https://doi.org/10.$> a dcterms:Agent ;
-    dcterms:identifier "https://doi.org/10.$" ;
+<https://ror.org/0example> a dcterms:Agent ;
+    dcterms:identifier "https://ror.org/0example" ;
     foaf:name "Caring Fan" .
 
 <http://localhost:8000/v2/subjects/subjwibbb> a skos:Concept ;
