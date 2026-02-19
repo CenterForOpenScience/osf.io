@@ -78,6 +78,8 @@ DATACITE_SCHEMA_RESOURCE_TYPE_GENERAL_MAPPING = {
     OSF.Preprint: SCHEMA.ScholarlyArticle,
     OSF.Registration: SCHEMA.Text,
     OSF.File: SCHEMA.DigitalDocument,
+    OSF.ProjectComponent: SCHEMA.ResearchProject,
+    OSF.RegistrationComponent: SCHEMA.Text,
 }
 
 
