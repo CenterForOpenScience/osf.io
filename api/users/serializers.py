@@ -124,6 +124,7 @@ class UserSerializer(JSONAPISerializer):
             {
                 'html': 'absolute_url',
                 'profile_image': 'profile_image_url',
+                'merged_by': 'get_merged_by_absolute_url',
             },
         ),
     )
@@ -260,6 +261,10 @@ class UserSerializer(JSONAPISerializer):
 
     def get_accepted_terms_of_service(self, obj):
         return bool(obj.accepted_terms_of_service)
+
+    def get_merged_by_absolute_url(self, obj):
+        if obj.merged_by:
+            return obj.merged_by.absolute_url
 
     def profile_image_url(self, user):
         size = self.context['request'].query_params.get('profile_image_size')

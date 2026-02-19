@@ -53,6 +53,7 @@ from osf.utils.permissions import ADMIN, API_CONTRIBUTOR_PERMISSIONS
 from scripts.approve_registrations import approve_past_pendings
 
 from website import settings, search
+from website.archiver.tasks import force_archive
 
 
 class NodeMixin(PermissionRequiredMixin):
@@ -705,6 +706,12 @@ class NodeReindexShare(NodeMixin, View):
     def post(self, request, *args, **kwargs):
         node = self.get_object()
         update_share(node)
+        messages.success(
+            request,
+            'Reindex request has been sent to SHARE. '
+            'Changes typically appear in OSF Search within about 5 minutes, '
+            'subject to background queue load and SHARE availability.'
+        )
         update_admin_log(
             user_id=self.request.user.id,
             object_id=node._id,
@@ -830,7 +837,7 @@ class CheckArchiveStatusRegistrationsView(NodeMixin, View):
 
     def get(self, request, *args, **kwargs):
         # Prevents circular imports that cause admin app to hang at startup
-        from osf.management.commands.force_archive import check
+        from osf.management.commands.force_archive import check, DEFAULT_PERMISSIBLE_ADDONS
 
         registration = self.get_object()
 
@@ -838,8 +845,12 @@ class CheckArchiveStatusRegistrationsView(NodeMixin, View):
             messages.success(request, f"Registration {registration._id} is archived.")
             return redirect(self.get_success_url())
 
+        addons = set(DEFAULT_PERMISSIBLE_ADDONS)
+        for reg in registration.node_and_primary_descendants():
+            addons.update(reg.registered_from.get_addon_names())
+
         try:
-            archive_status = check(registration)
+            archive_status = check(registration, permissible_addons=addons, verify_addons=False)
             messages.success(request, archive_status)
         except RegistrationStuckError as exc:
             messages.error(request, str(exc))
@@ -860,7 +871,7 @@ class ForceArchiveRegistrationsView(NodeMixin, View):
 
     def post(self, request, *args, **kwargs):
         # Prevents circular imports that cause admin app to hang at startup
-        from osf.management.commands.force_archive import verify, archive, DEFAULT_PERMISSIBLE_ADDONS
+        from osf.management.commands.force_archive import verify, DEFAULT_PERMISSIBLE_ADDONS
 
         registration = self.get_object()
         force_archive_params = request.POST
@@ -871,32 +882,33 @@ class ForceArchiveRegistrationsView(NodeMixin, View):
 
         allow_unconfigured = force_archive_params.get('allow_unconfigured', False)
 
-        addons = set(registration.registered_from.get_addon_names())
-        addons.update(DEFAULT_PERMISSIBLE_ADDONS)
+        addons = set(DEFAULT_PERMISSIBLE_ADDONS)
+        for reg in registration.node_and_primary_descendants():
+            addons.update(reg.registered_from.get_addon_names())
 
-        try:
-            verify(registration, permissible_addons=addons, raise_error=True)
-        except ValidationError as exc:
-            messages.error(request, str(exc))
-            return redirect(self.get_success_url())
+        # No need to verify addons during force archive,
+        # because we fetched all permissible addons above
+        verify_addons = False
 
-        dry_mode = force_archive_params.get('dry_mode', False)
-
-        if dry_mode:
-            messages.success(request, f"Registration {registration._id} can be archived.")
-        else:
+        if force_archive_params.get('dry_mode', False):
+            # For dry mode, verify synchronously to provide immediate feedback
             try:
-                archive(
-                    registration,
-                    permissible_addons=addons,
-                    allow_unconfigured=allow_unconfigured,
-                    skip_collisions=skip_collision,
-                    delete_collisions=delete_collision,
-                )
-                messages.success(request, 'Registration archive process has finished.')
-            except Exception as exc:
-                messages.error(request, f'This registration cannot be archived due to {exc.__class__.__name__}: {str(exc)}. '
-                                        f'If the problem persists get a developer to fix it.')
+                verify(registration, permissible_addons=addons, verify_addons=verify_addons, raise_error=True)
+                messages.success(request, f"Registration {registration._id} can be archived.")
+            except ValidationError as exc:
+                messages.error(request, str(exc))
+                return redirect(self.get_success_url())
+        else:
+            # For actual archiving, skip synchronous verification to avoid 502 timeouts
+            # Verification will be performed asynchronously in the task
+            force_archive_task = force_archive.delay(
+                str(registration._id),
+                permissible_addons=list(addons),
+                allow_unconfigured=allow_unconfigured,
+                skip_collisions=skip_collision,
+                delete_collisions=delete_collision,
+            )
+            messages.success(request, f'Registration archive process has started. Task id: {force_archive_task.id}.')
 
         return redirect(self.get_success_url())
 

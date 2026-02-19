@@ -78,6 +78,7 @@ from osf.models import (
     WhitelistedSHAREPreprintProvider,
 )
 from osf.models.action import RegistrationAction, CollectionSubmissionAction
+from osf.models.spam import SpamStatus
 from osf.registrations.utils import (
     BulkRegistrationUpload,
     InvalidHeadersError,
@@ -778,6 +779,9 @@ class RegistrationProviderRegistrationList(JSONAPIBaseView, generics.ListAPIView
 
         return Registration.objects.filter(
             provider=provider,
+            deleted__isnull=True,
+        ).exclude(
+            spam_status__in=[SpamStatus.FLAGGED, SpamStatus.SPAM],
         ).annotate(
             revision_state=registration_annotations.REVISION_STATE,
             **resource_annotations.make_open_practice_badge_annotations(),

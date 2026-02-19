@@ -102,7 +102,8 @@ def reviews_withdraw_requests_notification_moderators(self, timestamp, context, 
     NotificationType.Type.PROVIDER_NEW_PENDING_WITHDRAW_REQUESTS.instance.emit(
         subscribed_object=provider,
         user=user,
-        event_context=context
+        event_context=context,
+        is_digest=True,
     )
 
 

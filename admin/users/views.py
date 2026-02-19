@@ -38,6 +38,7 @@ from osf.models.admin_log_entry import (
     CONFIRM_HAM,
     UNFLAG_SPAM,
     REINDEX_ELASTIC,
+    REINDEX_SHARE,
 )
 
 from admin.users.forms import (
@@ -557,6 +558,44 @@ class UserReindexElastic(UserMixin, View):
             message=f'User Reindexed (Elastic): {user._id}',
             action_flag=REINDEX_ELASTIC
         )
+        return redirect(self.get_success_url())
+
+
+class UserShareReindex(UserMixin, View):
+    permission_required = 'osf.change_osfuser'
+
+    def post(self, request, *args, **kwargs):
+        from api.share.utils import update_share
+        user = self.get_object()
+
+        nodes_count = user.contributed.count()
+        preprints_count = user.preprints.filter(deleted=None).count()
+
+        for node in user.contributed:
+            try:
+                update_share(node)
+            except Exception as e:
+                messages.error(request, f'Failed to SHARE reindex node {node._id}: {e}')
+
+        for preprint in user.preprints.filter(deleted=None):
+            try:
+                update_share(preprint)
+            except Exception as e:
+                messages.error(request, f'Failed to SHARE reindex preprint {preprint._id}: {e}')
+
+        messages.success(
+            request,
+            f'Triggered SHARE reindexing for {nodes_count} nodes and {preprints_count} preprints'
+        )
+
+        update_admin_log(
+            user_id=self.request.user.id,
+            object_id=user._id,
+            object_repr='User',
+            message=f'SHARE reindexed all content for user {user._id}',
+            action_flag=REINDEX_SHARE
+        )
+
         return redirect(self.get_success_url())
 
 

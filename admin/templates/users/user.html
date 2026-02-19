@@ -37,6 +37,7 @@
                 {% include "users/disable_user.html" with user=user %}
                 {% include "users/mark_spam.html" with user=user %}
                 {% include "users/reindex_user_elastic.html" with user=user %}
+                {% include "users/reindex_user_share.html" with user=user %}
             </div>
         </div>
     </div>

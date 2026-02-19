@@ -151,6 +151,30 @@ class NotificationType(models.Model):
             obj, created = NotificationType.objects.get_or_create(name=self.value)
             return obj
 
+    @property
+    def is_digest_type(self):
+        digest_types = {
+            # User types
+            NotificationType.Type.USER_NO_ADDON.value,
+            # File types
+            NotificationType.Type.ADDON_FILE_COPIED.value,
+            NotificationType.Type.ADDON_FILE_MOVED.value,
+            NotificationType.Type.ADDON_FILE_RENAMED.value,
+            NotificationType.Type.FILE_ADDED.value,
+            NotificationType.Type.FILE_REMOVED.value,
+            NotificationType.Type.FILE_UPDATED.value,
+            NotificationType.Type.FOLDER_CREATED.value,
+            NotificationType.Type.NODE_FILE_UPDATED.value,
+            NotificationType.Type.USER_FILE_UPDATED.value,
+
+            # Review types
+            NotificationType.Type.COLLECTION_SUBMISSION_SUBMITTED.value,
+            NotificationType.Type.PROVIDER_NEW_PENDING_SUBMISSIONS.value,
+            NotificationType.Type.PROVIDER_NEW_PENDING_WITHDRAW_REQUESTS.value,
+            NotificationType.Type.REVIEWS_SUBMISSION_STATUS.value,
+        }
+        return self.name in digest_types
+
     notification_interval_choices = ArrayField(
         base_field=models.CharField(max_length=32),
         default=get_default_frequency_choices,
@@ -203,6 +227,12 @@ class NotificationType(models.Model):
         """
         from osf.models.notification_subscription import NotificationSubscription
         from osf.models.provider import AbstractProvider
+
+        if is_digest != self.is_digest_type:
+            sentry.log_message(f'NotificationType.emit called with is_digest={is_digest} for '
+                f'NotificationType {self.name} which has is_digest_type={self.is_digest_type}'
+                'is_digest value will be overridden.')
+            is_digest = self.is_digest_type
 
         # use concrete model for AbstractProvider to specifically get the provider content type
         if isinstance(subscribed_object, AbstractProvider):

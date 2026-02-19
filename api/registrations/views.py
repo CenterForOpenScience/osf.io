@@ -9,6 +9,7 @@ from website.archiver import signals, ARCHIVER_NETWORK_ERROR, ARCHIVER_SUCCESS, 
 from website.project import signals as project_signals
 
 from osf.models import Registration, OSFUser, RegistrationProvider, OutcomeArtifact, CedarMetadataRecord
+from osf.models.spam import SpamStatus
 from osf.utils.permissions import WRITE_NODE
 from osf.utils.workflows import ApprovalStates
 
@@ -922,7 +923,10 @@ class RegistrationActionList(JSONAPIBaseView, ListFilterMixin, generics.ListCrea
         return registration
 
     def get_default_queryset(self):
-        return self.get_registration().actions.all()
+        registration = self.get_registration()
+        if registration.deleted or registration.spam_status in [SpamStatus.FLAGGED, SpamStatus.SPAM]:
+            return registration.actions.none()
+        return registration.actions.all()
 
     def get_queryset(self):
         return self.get_queryset_from_request()

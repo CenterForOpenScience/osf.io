@@ -2,6 +2,18 @@
 
 We follow the CalVer (https://calver.org/) versioning scheme: YY.MINOR.MICRO.
 
+26.2.1 (2026-02-09)
+===================
+
+- Permanently update two notification types
+- Link digest to types and fix/log incorrect usage
+- Update notifiction dedupe command
+
+26.2.0
+======
+
+- TODO: add date and log
+
 26.1.6 (2026-01-14)
 ===================
 

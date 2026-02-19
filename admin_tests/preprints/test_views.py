@@ -364,6 +364,7 @@ class TestPreprintReindex:
         preprint.provider.save()
 
         count = AdminLogEntry.objects.count()
+        patch_messages(req)
         view = views.PreprintReindexShare()
         view = setup_log_view(view, req, guid=preprint._id)
         mock_update_share.reset_mock()
