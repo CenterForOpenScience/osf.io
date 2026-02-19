@@ -74,8 +74,8 @@
     },
     {
       "funderIdentifier": {
-        "funderIdentifier": "https://doi.org/10.$",
-        "funderIdentifierType": "Crossref Funder ID"
+        "funderIdentifier": "https://ror.org/0example",
+        "funderIdentifierType": "ROR"
       },
       "funderName": "Caring Fan"
     }
