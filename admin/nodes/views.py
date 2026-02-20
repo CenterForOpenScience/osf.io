@@ -1,33 +1,31 @@
-import pytz
-from enum import Enum
 from datetime import datetime
-from framework import status
+from enum import Enum
 
-from django.utils import timezone
-from django.core.exceptions import PermissionDenied, ValidationError
-from django.urls import NoReverseMatch
+import pytz
 from django.db import transaction
-from django.db.models import F, Case, When, IntegerField
 from django.contrib import messages
 from django.contrib.auth.mixins import PermissionRequiredMixin
+from django.core.exceptions import PermissionDenied, ValidationError
+from django.db.models import F, Case, When, IntegerField
 from django.http import HttpResponse
+from django.shortcuts import redirect, reverse, get_object_or_404
+from django.urls import NoReverseMatch
+from django.urls import reverse_lazy
+from django.utils import timezone
 from django.views.generic import (
     View,
     FormView,
     ListView,
 )
-from django.shortcuts import redirect, reverse, get_object_or_404
-from django.urls import reverse_lazy
 
+from admin.base.forms import GuidForm
 from admin.base.utils import change_embargo_date
 from admin.base.views import GuidView
-from admin.base.forms import GuidForm
-from admin.notifications.views import delete_selected_notifications
 from admin.nodes.forms import AddSystemTagForm, RegistrationDateForm
-
-from api.share.utils import update_share
+from admin.notifications.views import delete_selected_notifications
 from api.caching.tasks import update_storage_usage_cache
-
+from api.share.utils import update_share
+from framework import status
 from osf.exceptions import NodeStateError, RegistrationStuckError
 from osf.management.commands.change_node_region import _update_schema_meta
 from osf.models import (
@@ -53,9 +51,7 @@ from osf.models.admin_log_entry import (
     REINDEX_ELASTIC,
 )
 from osf.utils.permissions import ADMIN, API_CONTRIBUTOR_PERMISSIONS
-
 from scripts.approve_registrations import approve_past_pendings
-
 from website import settings, search
 from website.archiver.tasks import force_archive
 
@@ -149,7 +145,8 @@ class NodeView(NodeMixin, GuidView):
             'STORAGE_LIMITS': settings.StorageLimits,
             'node': node,
             # to edit contributors we should have guid as django prohibits _id usage as it starts with an underscore
-            'annotated_contributors': node.contributor_set.prefetch_related('user__guids').annotate(guid=F('user__guids___id')),
+            'annotated_contributors': node.contributor_set.prefetch_related('user__guids').annotate(
+                guid=F('user__guids___id')),
             'children': children,
             'permissions': API_CONTRIBUTOR_PERMISSIONS,
             'has_update_permission': self.request.user.has_perm('osf.change_node'),
@@ -209,7 +206,9 @@ class NodeRemoveContributorView(NodeMixin, View):
     def post(self, request, *args, **kwargs):
         node = self.get_object()
         user = OSFUser.objects.get(id=self.kwargs.get('user_id'))
-        if node.has_permission(user, ADMIN) and not node._get_admin_contributors_query(node._contributors.all(), require_active=False).exclude(user=user).exists():
+        if node.has_permission(user, ADMIN) and not node._get_admin_contributors_query(node._contributors.all(),
+                                                                                       require_active=False).exclude(
+                user=user).exists():
             messages.error(self.request, 'Must be at least one admin on this node.')
             return redirect(self.get_success_url())
 
@@ -906,6 +905,7 @@ class ForceArchiveRegistrationsView(NodeMixin, View):
     def post(self, request, *args, **kwargs):
         # Prevents circular imports that cause admin app to hang at startup
         from osf.management.commands.force_archive import verify, DEFAULT_PERMISSIBLE_ADDONS
+        from osf.models.admin_log_entry import update_admin_log, MANUAL_ARCHIVE_RESTART
 
         registration = self.get_object()
         force_archive_params = request.POST
@@ -933,16 +933,31 @@ class ForceArchiveRegistrationsView(NodeMixin, View):
                 messages.error(request, str(exc))
                 return redirect(self.get_success_url())
         else:
-            # For actual archiving, skip synchronous verification to avoid 502 timeouts
-            # Verification will be performed asynchronously in the task
-            force_archive_task = force_archive.delay(
-                str(registration._id),
-                permissible_addons=list(addons),
-                allow_unconfigured=allow_unconfigured,
-                skip_collisions=skip_collision,
-                delete_collisions=delete_collision,
-            )
-            messages.success(request, f'Registration archive process has started. Task id: {force_archive_task.id}.')
+            try:
+                update_admin_log(
+                    user_id=request.user.id,
+                    object_id=registration.pk,
+                    object_repr=str(registration),
+                    message=f'Manual archive restart initiated for registration {registration._id}',
+                    action_flag=MANUAL_ARCHIVE_RESTART
+                )
+                # For actual archiving, skip synchronous verification to avoid 502 timeouts
+                # Verification will be performed asynchronously in the task
+                force_archive_task = force_archive.delay(
+                    str(registration._id),
+                    permissible_addons=list(addons),
+                    allow_unconfigured=allow_unconfigured,
+                    skip_collisions=skip_collision,
+                    delete_collisions=delete_collision,
+                )
+                messages.success(
+                    request,
+                    f'Registration archive process has started. Task id: {force_archive_task.id}.'
+                )
+            except Exception as exc:
+                messages.error(request,
+                               f'This registration cannot be archived due to {exc.__class__.__name__}: {str(exc)}. '
+                               f'If the problem persists get a developer to fix it.')
 
         return redirect(self.get_success_url())
 
