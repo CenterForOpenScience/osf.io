@@ -74,11 +74,11 @@ DATACITE_SCHEMA_RESOURCE_TYPE_GENERAL_MAPPING = {
     DATACITE.Other: SCHEMA.CreativeWork,
     DATACITE.Instrument: SCHEMA.MeasurementMethodEnum,
     DATACITE.StudyRegistration: SCHEMA.Text,
-    OSF.Project: SCHEMA.ResearchProject,
+    OSF.Project: SCHEMA.CreativeWork,
     OSF.Preprint: SCHEMA.ScholarlyArticle,
     OSF.Registration: SCHEMA.Text,
     OSF.File: SCHEMA.DigitalDocument,
-    OSF.ProjectComponent: SCHEMA.ResearchProject,
+    OSF.ProjectComponent: SCHEMA.CreativeWork,
     OSF.RegistrationComponent: SCHEMA.Text,
 }
 
