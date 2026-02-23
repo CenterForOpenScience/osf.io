@@ -1551,11 +1551,14 @@ class TestPreprintFileViews(StorageTestCase):
         # Test download works with path
         url = base_url.format(file._id)
         redirect = self.app.get(url, auth=self.user.auth)
+        assert file._id in redirect.headers['Link']
         assert redirect.status_code == 302
 
         # Test download works with guid
-        url = base_url.format(file.get_guid(create=True)._id)
+        guid = file.get_guid(create=True)._id
+        url = base_url.format(guid)
         redirect = self.app.get(url, auth=self.user.auth)
+        assert guid in redirect.headers['Link']
         assert redirect.status_code == 302
 
         # Test nonexistent file 404's
