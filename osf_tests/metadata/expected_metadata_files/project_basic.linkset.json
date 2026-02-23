@@ -9,7 +9,7 @@
       ],
       "type": [
         {
-          "href": "https://schema.org/ResearchProject"
+          "href": "https://schema.org/CreativeWork"
         },
         {
           "href": "https://schema.org/AboutPage"
