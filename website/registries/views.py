@@ -19,10 +19,6 @@ def draft_registrations(auth, **kwargs):
                 'initiator': {
                     'name': draft.initiator.fullname,
                 },
-                'url': draft.branched_from.web_url_for(
-                    'edit_draft_registration_page',
-                    draft_id=draft._id,
-                ),
             }
             for draft in drafts
         ],

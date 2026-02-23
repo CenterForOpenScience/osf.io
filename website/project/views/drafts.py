@@ -7,7 +7,7 @@ from operator import itemgetter
 
 from dateutil.parser import parse as parse_date
 from django.utils import timezone
-from flask import request, redirect
+from flask import request
 import pytz
 
 from framework.database import autoload
@@ -25,7 +25,6 @@ from website.project.decorators import (
 )
 from website import settings
 
-from website.project import utils
 from website.project.metadata.schemas import METASCHEMA_ORDERING
 from website.project.metadata.utils import serialize_meta_schema, serialize_draft_registration
 from website.project.utils import serialize_node
@@ -148,58 +147,6 @@ def get_draft_registrations(auth, node, *args, **kwargs):
         'drafts': sorted_serialized_drafts
     }, http_status.HTTP_200_OK
 
-@must_have_permission(ADMIN)
-@must_be_valid_project
-@must_be_contributor_and_not_group_member
-def new_draft_registration(auth, node, *args, **kwargs):
-    """Create a new draft registration for the node
-
-    :return: Redirect to the new draft's edit page
-    :rtype: flask.redirect
-    :raises: HTTPError
-    """
-    if node.is_registration:
-        raise HTTPError(http_status.HTTP_403_FORBIDDEN, data={
-            'message_short': "Can't create draft",
-            'message_long': 'Creating draft registrations on registered projects is not allowed.'
-        })
-    data = request.values
-
-    schema_name = data.get('schema_name')
-    if not schema_name:
-        raise HTTPError(
-            http_status.HTTP_400_BAD_REQUEST,
-            data={
-                'message_short': 'Must specify a schema_name',
-                'message_long': 'Please specify a schema_name'
-            }
-        )
-
-    schema_version = data.get('schema_version', 2)
-
-    meta_schema = get_schema_or_fail(schema_name, int(schema_version))
-    draft = DraftRegistration.create_from_node(
-        node=node,
-        user=auth.user,
-        schema=meta_schema,
-        data={}
-    )
-    return redirect(node.web_url_for('edit_draft_registration_page', draft_id=draft._id, _guid=True))
-
-
-@must_have_permission(ADMIN)
-@must_be_contributor_and_not_group_member
-@must_be_branched_from_node
-def edit_draft_registration_page(auth, node, draft, **kwargs):
-    """Draft registration editor
-
-    :return: serialized DraftRegistration
-    :rtype: dict
-    """
-    check_draft_state(draft)
-    ret = utils.serialize_node(node, auth, primary=True)
-    ret['draft'] = serialize_draft_registration(draft, auth)
-    return ret
 
 @must_have_permission(ADMIN)
 @must_be_contributor_and_not_group_member
