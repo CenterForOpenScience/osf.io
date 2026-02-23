@@ -1038,7 +1038,8 @@ def persistent_file_download(auth, **kwargs):
     return make_response(
         '', http_status.HTTP_302_FOUND, {
             'Location': file.generate_waterbutler_url(**query_params),
-            'Link': f'{settings.DOMAIN}metadata/{id_or_guid}/?format=linkset; {settings.DOMAIN}metadata/{id_or_guid}/?format=linkset-json'
+            'Link': f'<{settings.DOMAIN}metadata/{id_or_guid}/?format=linkset> ; rel="linkset" ; type="application/linkset",'
+                    f' <{settings.DOMAIN}metadata/{id_or_guid}/?format=linkset-json"> ; rel="linkset-json" ; type="application/linkset+json"',
         }
     )
 
