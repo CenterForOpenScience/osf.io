@@ -128,6 +128,7 @@ def report_stuck_dois(dry_run=True):
                 event_context={
                     'time_since_published': time_since_published.days,
                     'guids': guids,
+                    'pending_doi_count': preprints_with_pending_dois.count(),
                 }
             )
         else:
