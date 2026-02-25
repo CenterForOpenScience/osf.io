@@ -119,7 +119,12 @@ class PreprintSerializer(TaxonomizableSerializerMixin, MetricsSerializerMixin, J
     meta = ser.SerializerMethodField(read_only=True)
 
     def get_meta(self, obj):
-        return {'flagged_content': obj.is_spammy}
+        base_meta = super().get_meta(obj)
+        if isinstance(base_meta, dict):
+            base_meta['flagged_content'] = obj.is_spammy
+            return base_meta
+        else:
+            return {'flagged_content': obj.is_spammy}
 
     date_created = VersionedDateTimeField(source='created', read_only=True)
     date_modified = VersionedDateTimeField(source='modified', read_only=True)
