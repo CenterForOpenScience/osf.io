@@ -29,29 +29,6 @@ PREPRINT_PROVIDER_DOMAINS = {
     'prefix': 'http://local.',
     'suffix': ':4201/'
 }
-USE_EXTERNAL_EMBER = True
-PROXY_EMBER_APPS = True
-EMBER_DOMAIN = environ.get('EMBER_DOMAIN', 'localhost')
-LIVE_RELOAD_DOMAIN = f'http://{EMBER_DOMAIN}:4200'  # Change port for the current app
-EXTERNAL_EMBER_APPS = {
-    'ember_osf_web': {
-        'server': f'http://{EMBER_DOMAIN}:4200/',
-        'path': '/ember_osf_web/',
-        'routes': [
-            'collections',
-            'registries',
-            'handbook',
-        ],
-    },
-    'preprints': {
-        'server': f'http://{EMBER_DOMAIN}:4201/',
-        'path': '/preprints/'
-    },
-    'reviews': {
-        'server': f'http://{EMBER_DOMAIN}:4203/',
-        'path': '/reviews/'
-    },
-}
 
 SEARCH_ENGINE = 'elastic'
 ELASTIC_TIMEOUT = 10
