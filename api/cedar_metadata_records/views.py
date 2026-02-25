@@ -19,8 +19,8 @@ from api.cedar_metadata_records.serializers import (
     CedarMetadataRecordsDetailSerializer,
 )
 from framework.auth.oauth_scopes import CoreScopes
-
-from osf.models import CedarMetadataRecord
+from osf.models import CedarMetadataRecord, Node, Registration
+from website import settings
 
 logger = logging.getLogger(__name__)
 
@@ -99,5 +99,10 @@ class CedarMetadataRecordMetadataDownload(JSONAPIBaseView, RetrieveAPIView):
 
     def get(self, request, *args, **kwargs):
         record = self.get_object()
+        is_referent_project_or_registration = isinstance(record.guid.referent, (Node, Registration))
         file_name = f'{record._id}-{record.get_template_name()}-v{record.get_template_version()}.json'
-        return Response(record.metadata, headers={'Content-Disposition': f'attachment; filename={file_name}'})
+        headers = {'Content-Disposition': f'attachment; filename={file_name}'}
+        if is_referent_project_or_registration:
+            guid_id = record.guid._id
+            headers['link'] = f'<{settings.DOMAIN}{guid_id}/>; rel="describes"; type="text/html"'
+        return Response(record.metadata, headers=headers)
