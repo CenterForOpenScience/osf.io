@@ -201,8 +201,8 @@ European Research Council\thttps://ror.org/0472cxd90\tEuropean Research Council\
         assert funders[2]['funder_identifier'] == 'https://ror.org/021nxhr62'
         assert funders[2]['funder_identifier_type'] == 'ROR'
 
-    def test_unmapped_funder_preserved(self, record_with_unmapped_funder, csv_mapping_file):
-        """Test that funders not in mapping are preserved unchanged."""
+    def test_unmapped_funder_removed(self, record_with_unmapped_funder, csv_mapping_file):
+        """Test that funders not in mapping are removed."""
         command = Command()
         command.stdout = type('MockStdout', (), {'write': lambda self, x: None})()
 
@@ -214,17 +214,13 @@ European Research Council\thttps://ror.org/0472cxd90\tEuropean Research Council\
             update_funder_name=False
         )
 
-        assert updated is False
+        assert updated is True
         assert stats['migrated'] == 0
         assert stats['not_found'] == 1
         assert 'http://dx.doi.org/10.13039/999999999' in stats['unmapped_ids']
 
         record_with_unmapped_funder.refresh_from_db()
-        funder = record_with_unmapped_funder.funding_info[0]
-
-        # Should be unchanged
-        assert funder['funder_identifier'] == 'http://dx.doi.org/10.13039/999999999'
-        assert funder['funder_identifier_type'] == 'Crossref Funder ID'
+        assert record_with_unmapped_funder.funding_info == []
 
     def test_load_mapping_various_id_formats(self, csv_mapping_file):
         """Test that mapping handles various ID formats."""
@@ -347,8 +343,8 @@ European Research Council\thttps://ror.org/0472cxd90\tEuropean Research Council\
         assert funder['funder_identifier'] == 'https://ror.org/01cwqze88'
         assert funder['funder_identifier_type'] == 'ROR'
 
-    def test_reindex_not_triggered_for_unmapped_records(self, record_with_unmapped_funder, csv_mapping_file, mock_reindex):
-        """Test that re-indexing is NOT triggered for records that weren't updated."""
+    def test_reindex_triggered_for_unmapped_records(self, record_with_unmapped_funder, csv_mapping_file, mock_reindex):
+        """Test that re-indexing IS triggered when unmapped funders are removed."""
         mock_update_search, mock_request_identifier_update = mock_reindex
 
         call_command(
@@ -356,8 +352,8 @@ European Research Council\thttps://ror.org/0472cxd90\tEuropean Research Council\
             '--csv-file', csv_mapping_file,
         )
 
-        mock_update_search.assert_not_called()
-        mock_request_identifier_update.assert_not_called()
+        mock_update_search.assert_called()
+        mock_request_identifier_update.assert_called_with('doi')
 
     def test_end_to_end_call_command(self, record_with_crossref_funder, record_with_multiple_funders, csv_mapping_file, mock_reindex):
         """Test the full management command end-to-end via call_command."""
