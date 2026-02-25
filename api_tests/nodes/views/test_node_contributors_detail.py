@@ -493,7 +493,7 @@ class TestNodeContributorDelete:
         with disconnected_from_listeners(contributor_removed):
             res = app.delete(url, auth=user.auth, expect_errors=True)
 
-        assert res.status_code == 400
+        assert res.status_code == 403
 
         project.reload()
         child.reload()

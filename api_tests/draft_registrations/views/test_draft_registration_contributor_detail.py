@@ -277,6 +277,19 @@ class TestDraftContributorDelete(TestNodeContributorDelete):
         project.reload()
         assert user_write_contrib not in project.contributors
 
+    def test_remove_contributor_include_children_forbidden_if_unauthorized_child(self, app, user, user_write_contrib, project):
+        # Draft registrations have no child components, so include_children does not
+        # trigger any descendant permission checks; the contributor is simply removed.
+        assert user_write_contrib in project.contributors
+
+        url = f'/{API_BASE}draft_registrations/{project._id}/contributors/{user_write_contrib._id}/?include_children=true'
+        with disconnected_from_listeners(contributor_removed):
+            res = app.delete(url, auth=user.auth)
+        assert res.status_code == 204
+
+        project.reload()
+        assert user_write_contrib not in project.contributors
+
 
 @pytest.mark.django_db
 class TestDraftBibliographicContributorDetail():
