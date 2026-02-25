@@ -97,7 +97,8 @@ class Command(BaseCommand):
         self.stdout.write(f"  Records updated: {stats['updated']}")
         self.stdout.write(f"  Records re-indexed: {stats['reindexed']}")
         self.stdout.write(f"  Funders migrated: {stats['funders_migrated']}")
-        self.stdout.write(f"  Funders not in mapping: {stats['not_in_mapping']}")
+        self.stdout.write(f"  Unmapped funders removed: {stats['not_in_mapping']}")
+        self.stdout.write(f"  Unique funders not in mapping: {len(stats['unmapped_ids'])}")
         if stats['errors']:
             self.stdout.write(self.style.ERROR(f"  Errors: {stats['errors']}"))
 
@@ -307,14 +308,15 @@ class Command(BaseCommand):
                     f'{funder_identifier} -> {ror_info["ror_id"]}'
                 )
             else:
-                # No mapping found, keep original
-                updated_funding_info.append(funder)
+                # No mapping found, remove unmapped Crossref funder
+                record_modified = True
                 funder_stats['not_found'] += 1
                 funder_stats['unmapped_ids'].add(funder_identifier)
 
                 logger.warning(
-                    f'No ROR mapping found for Crossref Funder ID: {funder_identifier} '
-                    f'in record {record.guid._id}'
+                    f'{"[DRY RUN] " if dry_run else ""}'
+                    f'Removing unmapped Crossref Funder ID: {funder_identifier} '
+                    f'from record {record.guid._id}'
                 )
 
         # Warn about duplicate ROR IDs that would result from migration
