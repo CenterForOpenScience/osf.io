@@ -200,9 +200,7 @@ class Sitemap:
             progress.increment()
         progress.stop()
         objs = Preprint.objects.filter(
-            date_published__isnull=False,
-            spam_status__in=[SpamStatus.SPAM, SpamStatus.FLAGGED]
-        ).annotate(
+            date_published__isnull=False).exclude(spam_status__in=[SpamStatus.SPAM, SpamStatus.FLAGGED]).annotate(
             most_recent_non_withdrawn=Subquery(
                 Preprint.objects.filter(
                     guids=OuterRef('guids')

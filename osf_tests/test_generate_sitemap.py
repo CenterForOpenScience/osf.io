@@ -139,13 +139,13 @@ class TestGenerateSitemap:
             project_preprint_osf.url + 'overview',
             project_preprint_other.url + 'overview',
             registration_active.url + 'overview',
-            # f'/preprints/{provider_osf._id}/{preprint_osf._id}',
-            # f'/preprints/{provider_osf._id}/{preprint_osf_version._id}',
-            # f'/preprints/{provider_other._id}/{preprint_other._id}',
-            # f'/preprints/{provider_osf._id}/{preprint_withdrawn._id}',
-            # f'/download/{preprint_osf._id}/?format=pdf',
-            # f'/download/{preprint_osf_version._id}/?format=pdf',
-            # f'/download/{preprint_other._id}/?format=pdf'
+            f'/preprints/{provider_osf._id}/{preprint_osf._id}',
+            f'/preprints/{provider_osf._id}/{preprint_osf_version._id}',
+            f'/preprints/{provider_other._id}/{preprint_other._id}',
+            f'/preprints/{provider_osf._id}/{preprint_withdrawn._id}',
+            f'/download/{preprint_osf._id}/?format=pdf',
+            f'/download/{preprint_osf_version._id}/?format=pdf',
+            f'/download/{preprint_other._id}/?format=pdf'
         ])
         urls_to_include = [urljoin(settings.DOMAIN, item) for item in urls_to_include]
 
