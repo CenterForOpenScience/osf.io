@@ -98,6 +98,7 @@ from api.nodes.permissions import (
     NodeLinksShowIfVersion,
     ReadOnlyIfWithdrawn,
 )
+from osf.utils import permissions as osf_permissions
 from api.nodes.serializers import (
     NodeSerializer,
     ForwardNodeAddonSettingsSerializer,
@@ -568,6 +569,8 @@ class NodeContributorDetail(BaseContributorDetail, generics.RetrieveUpdateDestro
             )
             with transaction.atomic():
                 for descendant in targets:
+                    if not descendant.has_permission(auth.user, osf_permissions.ADMIN):
+                        raise PermissionDenied(f'Must have admin permission on {descendant._id} to remove contributor.')
                     removed = descendant.remove_contributor(instance, auth)
                     if not removed:
                         raise ValidationError(f'{descendant._id} must have at least one registered admin contributor')
