@@ -98,6 +98,7 @@ class Command(BaseCommand):
         self.stdout.write(f"  Records re-indexed: {stats['reindexed']}")
         self.stdout.write(f"  Funders migrated: {stats['funders_migrated']}")
         self.stdout.write(f"  Unmapped funders removed: {stats['not_in_mapping']}")
+        self.stdout.write(f"  Unique funders not in mapping: {len(stats['unmapped_ids'])}")
         if stats['errors']:
             self.stdout.write(self.style.ERROR(f"  Errors: {stats['errors']}"))
 
