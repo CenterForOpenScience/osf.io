@@ -116,8 +116,6 @@ class PreprintSerializer(TaxonomizableSerializerMixin, MetricsSerializerMixin, J
     id = IDField(source='_id', read_only=True)
     type = TypeField()
 
-    meta = ser.SerializerMethodField(read_only=True)
-
     date_created = VersionedDateTimeField(source='created', read_only=True)
     date_modified = VersionedDateTimeField(source='modified', read_only=True)
     date_published = VersionedDateTimeField(read_only=True)

@@ -155,8 +155,8 @@ def get_object_or_error(model_or_qs, query_or_pk=None, request=None, display_nam
         if display_name is None:
             raise Gone
         else:
-            Node = apps.get_model('osf', 'Node')
-            meta = {'flagged_content': obj.is_spammy, 'source': display_name} if model_cls is Node else {}
+            AbstractNode = apps.get_model('osf', 'AbstractNode')
+            meta = {'flagged_content': obj.is_spammy, 'source': display_name} if isinstance(obj, AbstractNode)else {}
             raise Gone(detail=f'The requested {display_name} is no longer available.', meta=meta)
     return obj
 
