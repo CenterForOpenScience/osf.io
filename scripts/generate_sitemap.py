@@ -186,7 +186,7 @@ class Sitemap:
         # AbstractNode urls (Nodes and Registrations, no Collections)
         objs = (AbstractNode.objects
             .filter(is_public=True, is_deleted=False, retraction_id__isnull=True)
-            .exclude(type__in=['osf.collection'])
+            .exclude(type__in=['osf.collection'], spam_status__in=[SpamStatus.SPAM, SpamStatus.FLAGGED])
             .values('guids___id', 'modified'))
         progress.start(objs.count(), 'NODE: ')
         for obj in objs:
