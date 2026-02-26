@@ -35,7 +35,7 @@ class NotificationTypeEnum(str, Enum):
     USER_PENDING_VERIFICATION_REGISTERED = 'user_pending_verification_registered'
     USER_STORAGE_CAP_EXCEEDED_ANNOUNCEMENT = 'user_storage_cap_exceeded_announcement'
     USER_SPAM_BANNED = 'user_spam_banned'
-    USER_REQUEST_DEACTIVATION = 'user_request_deactivation'
+    USER_REQUEST_DEACTIVATION = 'user_request_deactivation'  # added as a placeholder
     USER_REQUEST_DEACTIVATION_COMPLETE = 'user_request_deactivation_complete'
     USER_PRIMARY_EMAIL_CHANGED = 'user_primary_email_changed'
     USER_INSTITUTION_DEACTIVATION = 'user_institution_deactivation'
@@ -77,12 +77,12 @@ class NotificationTypeEnum(str, Enum):
     USER_NO_ADDON = 'user_no_addon'
     USER_SPAM_FILES_DETECTED = 'user_spam_files_detected'
     USER_CROSSREF_DOI_PENDING = 'user_crossref_doi_pending'
-    USER_TERMS_OF_USE_UPDATED = 'user_terms_of_use_updated'
+    USER_TERMS_OF_USE_UPDATED = 'user_terms_of_use_updated'  # added as a placeholder
 
     # Node notifications
     NODE_FILE_UPDATED = 'node_file_updated'
     NODE_AFFILIATION_CHANGED = 'node_affiliation_changed'
-    NODE_ARCHIVE_SUCCESS = 'node_archive_success'
+    NODE_ARCHIVE_SUCCESS = 'node_archive_success'  # added as a placeholder
     NODE_REQUEST_ACCESS_SUBMITTED = 'node_request_access_submitted'
     NODE_REQUEST_ACCESS_DENIED = 'node_request_access_denied'
     NODE_FORK_COMPLETED = 'node_fork_completed'
