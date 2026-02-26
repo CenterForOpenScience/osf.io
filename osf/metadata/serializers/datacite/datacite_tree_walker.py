@@ -195,12 +195,12 @@ class DataciteTreeWalker:
             return ('URL', identifier)
         logger.warning('skipping non-IRI-shaped identifier "%s"', identifier)
 
-    def _funder_identifier_type(self, identifier: str):
+    def _funder_identifier_type_and_scheme(self, identifier: str):
         if identifier.startswith(DxDOI) or identifier.startswith(DOI):
-            return 'Crossref Funder ID'
+            return ('Crossref Funder ID', 'https://www.crossref.org/services/funder-registry/')
         if identifier.startswith(ROR):
-            return 'ROR'
-        return 'Other'
+            return ('ROR', str(ROR))
+        return ('Other', '')
 
     def _get_name_type(self, agent_iri):
         if (agent_iri, RDF.type, FOAF.Person) in self.basket:
@@ -312,13 +312,15 @@ class DataciteTreeWalker:
         _fundref_el = self.visit(fundrefs_el, 'fundingReference')
         self.visit(_fundref_el, 'funderName', text=next(self.basket[funder:FOAF.name], ''))
         _funder_identifier = next(self.basket[funder:DCTERMS.identifier], '')
+        _funder_id_type, _funder_scheme_uri = self._funder_identifier_type_and_scheme(_funder_identifier)
+        _funder_id_attrib = {'funderIdentifierType': _funder_id_type}
+        if _funder_scheme_uri:
+            _funder_id_attrib['schemeURI'] = _funder_scheme_uri
         self.visit(
             _fundref_el,
             'funderIdentifier',
             text=_funder_identifier,
-            attrib={
-                'funderIdentifierType': self._funder_identifier_type(_funder_identifier),
-            },
+            attrib=_funder_id_attrib,
         )
         if funding_award is not None:
             self.visit(

@@ -352,10 +352,10 @@ class TestSerializers(OsfTestCase):
                     'award_number': '2000000',
                     'award_uri': 'https://moneypockets.example/millions-more',
                     'award_title': 'because reasons!',
-                }, {  # no award info, just a funder:
+                }, {  # no award info, just a funder with ROR identifier:
                     'funder_name': 'Caring Fan',
-                    'funder_identifier': 'https://doi.org/10.$',
-                    'funder_identifier_type': 'Crossref Funder ID',
+                    'funder_identifier': 'https://ror.org/0example',
+                    'funder_identifier_type': 'ROR',
                     'award_number': '',
                     'award_uri': '',
                     'award_title': '',

@@ -610,10 +610,16 @@ class TestOsfGathering(TestCase):
                 'award_uri': 'https://nih.example/award',
                 'award_number': '27',
             },
+            {
+                'funder_name': 'NSF',
+                'funder_identifier': 'https://ror.org/021nxhr62',
+                'funder_identifier_type': 'ROR',
+            },
         ]
         _bnode1 = rdflib.BNode()
         _award_uri = URIRef('https://nih.example/award')
         _funder_uri = URIRef('https://doi.org/10.fake/NIH')
+        _ror_funder_uri = URIRef('https://ror.org/021nxhr62')
         assert_triples(osf_gathering.gather_funding(self.projectfocus), {
             (self.projectfocus.iri, OSF.funder, _bnode1),
             (_bnode1, RDF.type, DCTERMS.Agent),
@@ -628,6 +634,10 @@ class TestOsfGathering(TestCase):
             (_award_uri, DCTERMS.title, Literal('big fun')),
             (_award_uri, OSF.awardNumber, Literal('27')),
             (_award_uri, DCTERMS.contributor, _funder_uri),
+            (self.projectfocus.iri, OSF.funder, _ror_funder_uri),
+            (_ror_funder_uri, RDF.type, DCTERMS.Agent),
+            (_ror_funder_uri, DCTERMS.identifier, Literal(_ror_funder_uri)),
+            (_ror_funder_uri, FOAF.name, Literal('NSF')),
         })
         # focus: registration
         assert_triples(osf_gathering.gather_funding(self.registrationfocus), set())
