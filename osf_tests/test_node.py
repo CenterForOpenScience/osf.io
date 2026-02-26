@@ -2494,7 +2494,7 @@ class TestCheckResourceForSpamPostcommit:
             with mock.patch('osf.external.spam.tasks.OOPSpamClient.check_content') as mock_oops_check_content:
                 mock_akismet_check_content.return_value = (bool(akismet_spam_data), akismet_spam_data)
                 mock_oops_check_content.return_value = (bool(oops_spam_data), oops_spam_data)
-                with capture_notifications():
+                with capture_notifications(allow_none=True):
                     spam_tasks.check_resource_for_spam_postcommit(
                         guid=spam_object._id,
                         content=content,
