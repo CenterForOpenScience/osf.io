@@ -22,7 +22,7 @@ from api.actions.permissions import ReviewActionPermission
 from api.actions.serializers import ReviewActionSerializer
 from api.actions.views import get_review_actions_queryset
 from api.base.pagination import PreprintContributorPagination
-from api.base.exceptions import Conflict
+from api.base.exceptions import Conflict, Gone
 from api.base.views import JSONAPIBaseView, WaterButlerMixin
 from api.base.filters import ListFilterMixin, PreprintAsTargetFilterMixin, PreprintFilterMixin
 from api.base.parsers import (
@@ -166,6 +166,9 @@ class PreprintMixin(NodeMixin):
         # May raise a permission denied
         if check_object_permissions:
             self.check_object_permissions(self.request, preprint)
+
+        if preprint.is_spammy:
+            raise Gone(detail='The requested preprint is no longer available.', meta={'flagged_content': True, 'source': 'preprint'})
 
         return preprint
 

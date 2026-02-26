@@ -155,7 +155,7 @@ def get_object_or_error(model_or_qs, query_or_pk=None, request=None, display_nam
         if display_name is None:
             raise Gone
         else:
-            raise Gone(detail=f'The requested {display_name} is no longer available.')
+            raise Gone(detail=f'The requested {display_name} is no longer available.', meta={'flagged_content': obj.is_spammy, 'source': display_name})
     return obj
 
 
