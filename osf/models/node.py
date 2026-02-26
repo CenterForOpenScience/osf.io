@@ -4,6 +4,7 @@ import logging
 import re
 from urllib.parse import urljoin
 import warnings
+
 from rest_framework import status as http_status
 
 import bson
@@ -34,6 +35,7 @@ from framework.celery_tasks.handlers import enqueue_task, get_task_from_queue
 from framework.exceptions import PermissionsError, HTTPError
 from framework.sentry import log_exception
 from osf.exceptions import InvalidTagError, NodeStateError, TagNotFoundError, ValidationError
+from osf.models.notification_type import NotificationType
 from .contributor import Contributor
 from .collection_submission import CollectionSubmission
 
@@ -320,10 +322,6 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
     ) SELECT {fields} FROM "{nodelicenserecord}"
     WHERE id = (SELECT node_license_id FROM ascendants WHERE node_license_id IS NOT NULL) LIMIT 1;""")
 
-    # Dictionary field mapping user id to a list of nodes in node.nodes which the user has subscriptions for
-    # {<User.id>: [<Node._id>, <Node2._id>, ...] }
-    # TODO: Can this be a reference instead of data?
-    child_node_subscriptions = DateTimeAwareJSONField(default=dict, blank=True)
     _contributors = models.ManyToManyField(OSFUser,
                                            through=Contributor,
                                            related_name='nodes')
@@ -942,10 +940,6 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         return self.get_users_with_perm(READ)
 
     @property
-    def contributor_email_template(self):
-        return 'default'
-
-    @property
     def registrations_all(self):
         """For v1 compat."""
         return self.registrations.all()
@@ -992,12 +986,16 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         return Tag.all_tags.filter(abstractnode_tagged=self)
 
     @property
+    def system_tags_objects(self):
+        return self.all_tags.filter(system=True)
+
+    @property
     def system_tags(self):
         """The system tags associated with this node. This currently returns a list of string
         names for the tags, for compatibility with v1. Eventually, we can just return the
         QuerySet.
         """
-        return self.all_tags.filter(system=True).values_list('name', flat=True)
+        return self.system_tags_objects.values_list('name', flat=True)
 
     # Override Taggable
     def add_tag_log(self, tag, auth):
@@ -1019,10 +1017,15 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
     def remove_tag(self, tag, auth, save=True):
         if not tag:
             raise InvalidTagError
-        elif not self.tags.filter(name=tag).exists():
+
+        tag_obj = self.tags.filter(name=tag).first() or self.all_tags.filter(name=tag).first()
+        if not tag_obj:
             raise TagNotFoundError
+
+        if tag_obj.system:
+            # because system tags are hidden by default TagManager
+            tag_obj.delete()
         else:
-            tag_obj = Tag.objects.get(name=tag)
             self.tags.remove(tag_obj)
             self.add_log(
                 action=NodeLog.TAG_REMOVED,
@@ -1034,10 +1037,12 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
                 auth=auth,
                 save=False,
             )
-            if save:
-                self.save()
-            self.update_search()
-            return True
+
+        if save:
+            self.save()
+
+        self.update_search()
+        return True
 
     def remove_tags(self, tags, auth, save=True):
         """
@@ -1214,6 +1219,30 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
                     # Embargoed registrations can be made public early
                     self.request_embargo_termination(auth.user)
                     return False
+
+                if not self.get_identifier_value('doi'):
+                    try:
+                        doi = self.request_identifier('doi')['doi']
+                        self.set_identifier_value('doi', doi)
+                    except Exception as e:
+                        from osf.models.admin_log_entry import update_admin_log, DOI_CREATION_FAILED
+                        logger.exception(
+                            f'Failed to create DOI for registration {self._id} during set_privacy. '
+                            f'Registration cannot be made public without a DOI.'
+                        )
+                        if auth and auth.user:
+                            update_admin_log(
+                                user_id=auth.user.id,
+                                object_id=self._id,
+                                object_repr=f'Registration {self.title}',
+                                message=f'DOI creation failed during make public: {str(e)}. DataCite may be unavailable.',
+                                action_flag=DOI_CREATION_FAILED
+                            )
+                        raise NodeStateError(
+                            'Unable to make registration public: DOI creation failed. '
+                            'This may be due to a temporary DataCite service outage. '
+                            'Please try again later or contact support if the issue persists.'
+                        )
             self.is_public = True
         elif permissions == 'private' and self.is_public:
             if self.is_registration and not self.is_pending_embargo and not force:
@@ -1233,12 +1262,24 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
                 if message:
                     status.push_status_message(message, kind='info', trust=False)
 
-        # Update existing identifiers
+        # Update existing identifiers metadata
         if self.get_identifier_value('doi'):
-            update_doi_metadata_on_change(self._id)
-        elif self.is_registration:
-            doi = self.request_identifier('doi')['doi']
-            self.set_identifier_value('doi', doi)
+            try:
+                update_doi_metadata_on_change(self._id)
+            except Exception as e:
+                from osf.models.admin_log_entry import update_admin_log, DOI_UPDATE_FAILED
+                logger.exception(
+                    f'Failed to update DOI metadata for {self._id} during set_privacy. '
+                )
+                # Log DOI metadata update failures for tracking
+                if auth and auth.user and self.is_registration:
+                    update_admin_log(
+                        user_id=auth.user.id,
+                        object_id=self._id,
+                        object_repr=f'Registration {self.title}',
+                        message=f'DOI metadata update failed: {str(e)}. DataCite may be unavailable.',
+                        action_flag=DOI_UPDATE_FAILED
+                    )
 
         if log:
             action = NodeLog.MADE_PUBLIC if permissions == 'public' else NodeLog.MADE_PRIVATE
@@ -1255,7 +1296,19 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         if save:
             self.save()
         if auth and permissions == 'public':
-            project_signals.privacy_set_public.send(auth.user, node=self, meeting_creation=meeting_creation)
+            for contributor in self.contributors:
+                NotificationType.Type.NODE_NEW_PUBLIC_PROJECT.instance.emit(
+                    user=contributor,
+                    subscribed_object=self,
+                    event_context={
+                        'user_fullname': contributor.fullname,
+                        'domain': settings.DOMAIN,
+                        'nid': self._id,
+                        'project_title': self.title,
+                        'node_absolute_url': self.absolute_url,
+                    },
+                    save=False
+                )
         return True
 
     @property
@@ -1310,7 +1363,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             return self
 
     def find_readable_antecedent(self, auth):
-        """ Returns first antecendant node readable by <user>.
+        """ Returns first antecedent node readable by <user>.
         """
         next_parent = self.parent_node
         while next_parent:
@@ -1319,7 +1372,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             next_parent = next_parent.parent_node
 
     def copy_contributors_from(self, resource):
-        """Copies the contibutors from node (including permissions and visibility) into this node."""
+        """Copies the contributors from node (including permissions and visibility) into this node."""
         contribs = []
         current_contributors = self.contributor_set.values_list('user_id', flat=True)
         for contrib in resource.contributor_set.all():
@@ -1334,18 +1387,6 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
                 contribs.append(node_contrib)
                 self.add_permission(contrib.user, permission, save=True)
         Contributor.objects.bulk_create(contribs)
-
-    def subscribe_contributors_to_node(self):
-        """
-        Upon registering a DraftNode, subscribe all registered contributors to notifications -
-        and send emails to users that they have been added to the project.
-        (DraftNodes are hidden until registration).
-        """
-        for user in self.contributors.filter(is_registered=True):
-            perm = self.contributor_set.get(user=user).permission
-            project_signals.contributor_added.send(self,
-                                                   contributor=user,
-                                                   auth=None, email_template='default', permissions=perm)
 
     def register_node(self, schema, auth, draft_registration, parent=None, child_ids=None, provider=None, manual_guid=None):
         """Make a frozen copy of a node.
@@ -1555,8 +1596,13 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         for affiliation in user.get_affiliated_institutions():
             new.affiliated_institutions.add(affiliation)
 
-    # TODO: Optimize me (e.g. use bulk create)
-    def fork_node(self, auth, title=None, parent=None):
+    def fork_node(
+            self,
+            auth,
+            title=None,
+            parent=None,
+            notification_type=None
+    ):
         """Recursively fork a node.
 
         :param Auth auth: Consolidated authorization
@@ -1564,6 +1610,8 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         :param Node parent: Sets parent, should only be non-null when recursing
         :return: Forked node
         """
+        if notification_type is None:
+            notification_type = NotificationType.Type.NODE_CONTRIBUTOR_ADDED_DEFAULT
         Registration = apps.get_model('osf.Registration')
         PREFIX = 'Fork of '
         user = auth.user
@@ -1673,7 +1721,12 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         forked.save()
 
         # Need to call this after save for the notifications to be created with the _primary_key
-        project_signals.contributor_added.send(forked, contributor=user, auth=auth, email_template='false')
+        project_signals.contributor_added.send(
+            forked,
+            contributor=user,
+            auth=auth,
+            notification_type=notification_type
+        )
 
         return forked
 
@@ -1782,7 +1835,12 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         new.save(suppress_log=True)
 
         # Need to call this after save for the notifications to be created with the _primary_key
-        project_signals.contributor_added.send(new, contributor=auth.user, auth=auth, email_template='false')
+        project_signals.contributor_added.send(
+            new,
+            contributor=auth.user,
+            auth=auth,
+            notification_type=NotificationType.Type.NODE_CONTRIBUTOR_ADDED_ACCESS_REQUEST
+        )
 
         # Log the creation
         new.add_log(
@@ -1821,7 +1879,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
 
     def next_descendants(self, auth, condition=lambda auth, node: True):
         """
-        Recursively find the first set of descedants under a given node that meet a given condition
+        Recursively find the first set of descendents under a given node that meet a given condition
 
         returns a list of [(node, [children]), ...]
         """
@@ -1997,7 +2055,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
 
         original_title = self.title
         new_title = sanitize.strip_html(title)
-        # Title hasn't changed after sanitzation, bail out
+        # Title hasn't changed after sanitization, bail out
         if original_title == new_title:
             return False
         self.title = new_title
@@ -2020,7 +2078,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         """Set the description and log the event.
 
         :param str description: The new description
-        :param auth: All the auth informtion including user, API key.
+        :param auth: All the auth information including user, API key.
         :param bool save: Save self after updating.
         """
         original = self.description
@@ -2047,7 +2105,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         """Set the category and log the event.
 
         :param str category: The new category
-        :param auth: All the auth informtion including user, API key.
+        :param auth: All the auth information including user, API key.
         :param bool save: Save self after updating.
         """
         original = self.category
@@ -2074,7 +2132,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         """Set the article_doi and log the event.
 
         :param str article_doi: The new article doi
-        :param auth: All the auth informtion including user, API key.
+        :param auth: All the auth information including user, API key.
         :param bool save: Save self after updating.
         """
         original = self.article_doi
@@ -2152,8 +2210,8 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
                         # This is in place because historically projects and components
                         # live on different ElasticSearch indexes, and at the time of Node.save
                         # there is no reliable way to check what the old Node.category
-                        # value was. When the cateogory changes it is possible to have duplicate/dead
-                        # search entries, so always delete the ES doc on categoryt change
+                        # value was. When the category changes it is possible to have duplicate/dead
+                        # search entries, so always delete the ES doc on category change
                         # TODO: consolidate Node indexes into a single index, refactor search
                         if key == 'category':
                             self.delete_search_entry()

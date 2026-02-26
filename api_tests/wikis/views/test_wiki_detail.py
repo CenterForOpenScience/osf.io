@@ -27,7 +27,7 @@ from tests.base import ApiWikiTestCase
 
 
 def make_rename_payload(wiki_page):
-    new_page_name = 'any acsii string, except "home" sdaww\n\neq'
+    new_page_name = 'any ascii string, except "home" sdaww\n\neq'
     payload = {
         'data': {
             'id': wiki_page._id,
@@ -74,8 +74,15 @@ class WikiCRUDTestCase:
     @pytest.fixture()
     def user_write_contributor(self, project_public, project_private):
         user = AuthUserFactory()
-        project_public.add_contributor(user, permissions=permissions.WRITE)
-        project_private.add_contributor(user, permissions=permissions.WRITE)
+        project_public.add_contributor(
+            user,
+            permissions=permissions.WRITE,
+            notification_type=False
+        )
+        project_private.add_contributor(
+            user,
+            permissions=permissions.WRITE
+        )
         return user
 
     @pytest.fixture()

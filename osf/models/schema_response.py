@@ -9,6 +9,7 @@ from django.utils import timezone
 from framework.exceptions import PermissionsError
 
 from osf.exceptions import PreviousSchemaResponseError, SchemaResponseStateError, SchemaResponseUpdateError
+from osf.models.notification_type import NotificationType
 from .base import BaseModel, ObjectIDMixin
 from .metaschema import RegistrationSchemaBlock
 from .schema_response_block import SchemaResponseBlock
@@ -17,17 +18,13 @@ from osf.utils.fields import NonNaiveDateTimeField
 from osf.utils.machines import ApprovalsMachine
 from osf.utils.workflows import ApprovalStates, SchemaResponseTriggers
 
-from website.mails import mails
 from website.reviews.signals import reviews_email_submit_moderators_notifications
-from website.settings import DOMAIN
+from website.settings import (
+    DOMAIN,
+    REGISTRATION_UPDATE_APPROVAL_TIME,
+    REGISTRATION_APPROVAL_TIME,
+)
 
-
-EMAIL_TEMPLATES_PER_EVENT = {
-    'create': mails.SCHEMA_RESPONSE_INITIATED,
-    'submit': mails.SCHEMA_RESPONSE_SUBMITTED,
-    'accept': mails.SCHEMA_RESPONSE_APPROVED,
-    'reject': mails.SCHEMA_RESPONSE_REJECTED,
-}
 
 class SchemaResponse(ObjectIDMixin, BaseModel):
     '''Collects responses for a schema associated with a parent object.
@@ -185,7 +182,7 @@ class SchemaResponse(ObjectIDMixin, BaseModel):
 
         On creation, the new SchemaResponses will share all of its response_blocks with the
         previous_version (as no responses have changed). As responses are updated via
-        response.update_responses, new SchemaResponseBlocks will be created/updated as apporpriate.
+        response.update_responses, new SchemaResponseBlocks will be created/updated as appropriate.
 
         A new SchemaResponse cannot be created for a given parent object if it already has another
         SchemaResponse in a non-APPROVED state.
@@ -207,6 +204,7 @@ class SchemaResponse(ObjectIDMixin, BaseModel):
         )
         new_response.save()
         new_response.response_blocks.add(*previous_response.response_blocks.all())
+
         new_response._notify_users(event='create', event_initiator=initiator)
         return new_response
 
@@ -220,7 +218,7 @@ class SchemaResponse(ObjectIDMixin, BaseModel):
         answer and added to response_blocks, and the outdated response_block entry for that key
         (inherited from the previous_response) will be removed from response_blocks.
 
-        If a previously updated response is udpated again, the existing entry in response_blocks
+        If a previously updated response is updated again, the existing entry in response_blocks
         for that key will have its "response" field updated to the new value.
 
         If a previously updated response has its answer reverted to the previous_response's answer,
@@ -301,7 +299,7 @@ class SchemaResponse(ObjectIDMixin, BaseModel):
             )
         super().delete(*args, **kwargs)
 
-# *** Callbcks in support of ApprovalsMachine ***
+# *** Callbacks in support of ApprovalsMachine ***
 
     def _validate_trigger(self, event_data):
         '''Any additional validation to confirm that a trigger is being used correctly.
@@ -337,7 +335,7 @@ class SchemaResponse(ObjectIDMixin, BaseModel):
                 f'and does not have permission to "submit" SchemaResponse with id [{self._id}]'
             )
 
-        # Only check newly udpated keys, as old keys have previously passed validation
+        # Only check newly updated keys, as old keys have previously passed validation
         invalid_response_keys = [
             block.schema_key for block in self.updated_response_blocks.all() if not block.is_valid()
         ]
@@ -389,7 +387,7 @@ class SchemaResponse(ObjectIDMixin, BaseModel):
 
         if not user.has_perm('accept_submissions', self.parent.provider):
             raise PermissionsError(
-                f'User {user} is not a modrator on {self.parent.provider} and does not '
+                f'User {user} is not a moderator on {self.parent.provider} and does not '
                 f'have permission to "accept" SchemaResponse with id [{self._id}]'
             )
 
@@ -410,7 +408,7 @@ class SchemaResponse(ObjectIDMixin, BaseModel):
 
         if not user.has_perm('reject_submissions', self.parent.provider):
             raise PermissionsError(
-                f'User {user} is not a modrator on {self.parent.provider} and does not '
+                f'User {user} is not a moderator on {self.parent.provider} and does not '
                 f'have permission to "reject" SchemaResponse with id [{self._id}]'
             )
 
@@ -480,31 +478,51 @@ class SchemaResponse(ObjectIDMixin, BaseModel):
         if self.state is ApprovalStates.PENDING_MODERATION:
             email_context = notifications.get_email_template_context(resource=self.parent)
             email_context['revision_id'] = self._id
-            email_context['referrer'] = self.initiator
+
+            email_context['requester_contributor_names'] = ''.join(
+                self.parent.contributors.values_list('fullname', flat=True)),
             reviews_email_submit_moderators_notifications.send(
-                timestamp=timezone.now(), context=email_context
+                timestamp=timezone.now(),
+                context=email_context,
+                resource=self.parent
             )
 
-        template = EMAIL_TEMPLATES_PER_EVENT.get(event)
-        if not template:
+        notification_type = {
+            'create': NotificationType.Type.NODE_SCHEMA_RESPONSE_INITIATED.instance,
+            'submit': NotificationType.Type.NODE_SCHEMA_RESPONSE_SUBMITTED.instance,
+            'accept': NotificationType.Type.NODE_SCHEMA_RESPONSE_APPROVED.instance,
+            'reject': NotificationType.Type.NODE_SCHEMA_RESPONSE_REJECTED.instance,
+        }.get(event)
+        if not notification_type:
             return
 
-        email_context = {
+        event_context = {
             'resource_type': self.parent.__class__.__name__.lower(),
             'title': self.parent.title,
+            'registration_approval_time': int(REGISTRATION_APPROVAL_TIME.total_seconds() / 3600),
+            'registration_update_approval_time': int(REGISTRATION_UPDATE_APPROVAL_TIME.total_seconds() / 3600),
             'parent_url': self.parent.absolute_url,
             'update_url': self.absolute_url,
-            'initiator': event_initiator.fullname if event_initiator else None,
+            'initiator_fullname': event_initiator.fullname if event_initiator else None,
             'pending_moderation': self.state is ApprovalStates.PENDING_MODERATION,
+            'domain': DOMAIN,
             'provider': self.parent.provider.name if self.parent.provider else '',
+            'requester_contributor_names': ''.join(
+                self.parent.contributors.values_list('fullname', flat=True)),
         }
-
         for contributor, _ in self.parent.get_active_contributors_recursive(unique_users=True):
-            email_context['user'] = contributor
-            email_context['can_write'] = self.parent.has_permission(contributor, 'write')
-            email_context['is_approver'] = contributor in self.pending_approvers.all(),
-            email_context['is_initiator'] = contributor == event_initiator
-            mails.send_mail(to_addr=contributor.username, mail=template, **email_context)
+            event_context.update(
+                {
+                    'can_write': self.parent.has_permission(contributor, 'write'),
+                    'is_approver': contributor in self.pending_approvers.all(),
+                    'user_fullname': contributor.fullname,
+                    'is_initiator': contributor == event_initiator,
+                }
+            )
+            notification_type.emit(
+                user=contributor,
+                event_context=event_context
+            )
 
 
 def _is_updated_response(response_block, new_response):
@@ -517,7 +535,7 @@ def _is_updated_response(response_block, new_response):
     if response_block.source_schema_block.block_type != 'file-input':
         return current_response != new_response
 
-    # `files-input` blocks contain a list of dictinoaries containinf file information in the form
+    # `files-input` blocks contain a list of dictionaries containing file information in the form
     current_file_ids = {entry['file_id'] for entry in current_response}
     new_file_ids = {entry['file_id'] for entry in new_response}
     return current_file_ids != new_file_ids

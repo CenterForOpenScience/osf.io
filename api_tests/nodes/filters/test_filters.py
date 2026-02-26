@@ -378,7 +378,7 @@ class NodesListDateFilteringMixin:
         actual = [node['id'] for node in res.json['data']]
         assert set(expected) == set(actual)
 
-    #   test_date_fitler_lt
+    #   test_date_filter_lt
         res_url = f'{url}filter[date_created][lt]='
 
         expected = []

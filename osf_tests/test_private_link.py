@@ -4,6 +4,7 @@ from website.project import new_private_link
 
 from .factories import PrivateLinkFactory, NodeFactory
 from osf.models import RegistrationSchema, DraftRegistration, NodeLog
+from tests.utils import capture_notifications
 
 @pytest.mark.django_db
 def test_factory():
@@ -50,12 +51,13 @@ class TestPrivateLink:
         user = proj.creator
         schema = RegistrationSchema.objects.first()
         data = {'some': 'data'}
-        draft = DraftRegistration.create_from_node(
-            node=proj,
-            user=user,
-            schema=schema,
-            data=data,
-        )
+        with capture_notifications():
+            draft = DraftRegistration.create_from_node(
+                node=proj,
+                user=user,
+                schema=schema,
+                data=data,
+            )
         assert user == draft.initiator
         assert schema == draft.registration_schema
         assert data == draft.registration_metadata

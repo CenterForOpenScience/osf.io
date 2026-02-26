@@ -46,7 +46,7 @@ class GitHubClient:
         return self.gh3.user(user)
 
     def repo(self, user, repo):
-        """Get a single Github repo's info.
+        """Get a single GitHub repo's info.
 
         :param str user: GitHub user name
         :param str repo: GitHub repo name
@@ -157,7 +157,7 @@ class GitHubClient:
 
         OAuth applications can use this method to check token validity
         without hitting normal rate limits because of failed login attempts.
-        If the token is valid, it will return True, otherwise it will return
+        If the token is valid, it will return True; otherwise, it will return
         False.
 
         :returns:

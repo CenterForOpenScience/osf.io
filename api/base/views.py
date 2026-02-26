@@ -38,7 +38,7 @@ from api.nodes.permissions import ReadOnlyIfRegistration
 from api.nodes.permissions import ExcludeWithdrawals
 from api.users.serializers import UserSerializer
 from framework.auth.oauth_scopes import CoreScopes
-from osf.models import Contributor, MaintenanceState, BaseFileNode
+from osf.models import Contributor, MaintenanceState, BaseFileNode, AbstractNode
 from osf.utils.permissions import API_CONTRIBUTOR_PERMISSIONS, READ, WRITE, ADMIN
 from waffle.models import Flag, Switch, Sample
 from waffle import sample_is_active
@@ -82,7 +82,7 @@ class JSONAPIBaseView(generics.GenericAPIView):
                 'is_embedded': True,
             })
 
-            # Setup a view ourselves to avoid all the junk DRF throws in
+            # Set up a view ourselves to avoid all the junk DRF throws in
             # v is a function that hides everything v.cls is the actual view class
             view = v.cls()
             view.args = view_args
@@ -226,7 +226,7 @@ class LinkedNodesRelationship(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPI
     node identifiers. This will replace the contents of the node_links for this collection with
     the contents of the request. It will delete all node links that don't have a node_id in the data
     array, create node links for the node_ids that don't currently have a node id, and do nothing
-    for node_ids that already have a corresponding node_link. This means a update request with
+    for node_ids that already have a corresponding node_link. This means an update request with
     {"data": []} will remove all node_links in this collection
 
     ###Destroy
@@ -332,7 +332,7 @@ class LinkedRegistrationsRelationship(JSONAPIBaseView, generics.RetrieveUpdateDe
     node identifiers. This will replace the contents of the node_links for this collection with
     the contents of the request. It will delete all node links that don't have a node_id in the data
     array, create node links for the node_ids that don't currently have a node id, and do nothing
-    for node_ids that already have a corresponding node_link. This means a update request with
+    for node_ids that already have a corresponding node_link. This means an update request with
     {"data": []} will remove all node_links in this collection
 
     ###Destroy
@@ -600,7 +600,7 @@ class BaseNodeLinksList(JSONAPIBaseView, generics.ListAPIView):
         )
 
 
-class BaseLinkedList(JSONAPIBaseView, generics.ListAPIView):
+class BaseLinkedList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin):
 
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
@@ -618,11 +618,9 @@ class BaseLinkedList(JSONAPIBaseView, generics.ListAPIView):
     view_name = None
 
     ordering = ('-modified',)
+    model_class = AbstractNode
 
-    # TODO: This class no longer exists
-    # model_class = Pointer
-
-    def get_queryset(self):
+    def get_default_queryset(self):
         auth = get_user_auth(self.request)
         from api.resources import annotations as resource_annotations
 
@@ -638,6 +636,9 @@ class BaseLinkedList(JSONAPIBaseView, generics.ListAPIView):
             .can_view(user=auth.user, private_link=auth.private_link)
             .order_by('-modified')
         )
+
+    def get_queryset(self):
+        return self.get_queryset_from_request()
 
 
 class WaterButlerMixin:
@@ -674,7 +675,7 @@ class WaterButlerMixin:
             }
 
             # Dataverse provides us two sets of files with the same path, so we disambiguate the paths, this
-            # preserves legacy behavior by distingishing them by version (Draft/Published).
+            # preserves legacy behavior by distinguishing them by version (Draft/Published).
             if attrs['provider'] == 'dataverse':
                 query.update({'_history__0__extra__datasetVersion': attrs['extra']['datasetVersion']})
 

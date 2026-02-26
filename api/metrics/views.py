@@ -582,7 +582,7 @@ class UserVisitsQuery(JSONAPIBaseView):
             tsEnd = request.GET.get('timeframeEnd')
             report_date = {'gte': tsStart, 'lt': tsEnd}
         else:
-            pass  # just fallback to days_back for now
+            pass  # just fall back to days_back for now
 
         timespan = report_date
         analytics_result = self._run_query(timespan)

@@ -21,6 +21,7 @@ from osf_tests.factories import (
     ProjectFactory,
     get_default_metaschema,
 )
+from tests.utils import capture_notifications
 from website.project.signals import after_create_registration
 from website import settings
 
@@ -81,12 +82,13 @@ def license():
 def make_complex_draft_registration(title, institution, description, category,
         write_contrib, license, subject, user):
     def make_draft_registration(node=None):
-        draft_registration = DraftRegistration.create_from_node(
-            user=user,
-            schema=get_default_metaschema(),
-            data={},
-            node=node if node else None
-        )
+        with capture_notifications():
+            draft_registration = DraftRegistration.create_from_node(
+                user=user,
+                schema=get_default_metaschema(),
+                data={},
+                node=node if node else None
+            )
         user.add_or_update_affiliated_institution(institution)
         draft_registration.set_title(title, Auth(user))
         draft_registration.set_description(description, Auth(user))
@@ -119,11 +121,12 @@ class TestDraftNode:
 
     def test_create_draft_registration_without_node(self, user):
         data = {'some': 'data'}
-        draft = DraftRegistration.create_from_node(
-            user=user,
-            schema=get_default_metaschema(),
-            data=data,
-        )
+        with capture_notifications():
+            draft = DraftRegistration.create_from_node(
+                user=user,
+                schema=get_default_metaschema(),
+                data=data,
+            )
         assert draft.title == ''
         assert draft.branched_from.title == settings.DEFAULT_DRAFT_NODE_TITLE
         assert draft.branched_from.type == 'osf.draftnode'

@@ -1,0 +1,59 @@
+{% load node_extras %}
+<tr>
+    <td>System tags</td>
+    <td>
+        <div style="display: flex; justify-content: start;">
+            {% for system_tag in resource.system_tags_objects %}
+                {% if resource|get_class_name == 'node' or resource|get_class_name == 'registration' %}
+                    <form method="post" action="{% url 'nodes:remove-system-tag' guid=resource.guid tag_id=system_tag.id %}">
+                {% elif resource|get_class_name == 'preprint' %}
+                    <form method="post" action="{% url 'preprints:remove-system-tag' guid=resource.guid tag_id=system_tag.id %}">
+                {% else %}
+                    <form method="post" action="{% url 'users:remove-system-tag' guid=resource.guid tag_id=system_tag.id %}">
+                {% endif %}
+                    <div>
+                        {% csrf_token %}
+                        <div class="modal-footer">
+                            <span>{{ system_tag.name }}</span>
+                            <input class="btn btn-danger" type="submit" value="Remove" />
+                        </div>
+                    </div>
+                </form>
+            {% endfor %}
+        </div>
+        <br>
+        <a class="btn btn-default" data-toggle="modal" data-target="#systemTagModal">
+            Add system tag
+         </a>
+         <div class="modal" id="systemTagModal">
+             <div class="modal-dialog">
+                 <div class="modal-content">
+                    {% if resource|get_class_name == 'node' or resource|get_class_name == 'registration' %}
+                        <form class="well" method="post" action="{% url 'nodes:add-system-tag' guid=resource.guid %}">
+                    {% elif resource|get_class_name == 'preprint' %}
+                        <form class="well" method="post" action="{% url 'preprints:add-system-tag' guid=resource.guid %}">
+                    {% else %}
+                        <form class="well" method="post" action="{% url 'users:add-system-tag' guid=resource.guid %}">
+                    {% endif%}
+                        <div class="modal-header">
+                            <button type="button" class="close" data-dismiss="modal">x</button>
+                            <h3>Add a system tag to this resource</h3>
+                        </div>
+                        <div class="modal-body">
+                            {% csrf_token %}
+                            <input placeholder="Enter system tag" name="system_tag_to_add">
+                        </div>
+                        <div class="modal-footer">
+                            <input class="btn btn-danger" type="submit" value="Confirm" />
+                            <button type="button" class="btn btn-default"
+                                    data-dismiss="modal">
+                                Cancel
+                            </button>
+                        </div>
+                    </form>
+                 </div>
+             </div>
+         </div>
+    </td>
+</tr>
+

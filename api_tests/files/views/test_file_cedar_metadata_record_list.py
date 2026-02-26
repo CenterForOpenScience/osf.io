@@ -1,6 +1,6 @@
 import pytest
 
-from .test_file_cedar_metdata_record import TestFileCedarMetadataRecord
+from .test_file_cedar_metadata_record import TestFileCedarMetadataRecord
 from osf.utils.permissions import ADMIN, READ, WRITE
 from osf_tests.factories import AuthUserFactory
 

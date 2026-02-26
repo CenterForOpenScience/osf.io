@@ -46,7 +46,7 @@ var CACHED_EXTENSIONS = ['osf-author-import'];
  * @class Comment
  * Model for storing/editing/deleting comments on form fields
  *
- * @param {Object} data: optional data to instatiate model with
+ * @param {Object} data: optional data to instantiate model with
  * @param {User} data.user
  * @param {Date string} data.lastModified
  * @param {Date string} data.created
@@ -461,7 +461,7 @@ var MetaSchema = function(params, schemaData) {
     self.schema = params.schema || {};
     self.id = params.id;
 
-    // Used for initally selecting a schema
+    // Used for initially selecting a schema
     self._selected = ko.observable(false);
 
     self.requiresApproval = params.requires_approval || false;
@@ -785,7 +785,7 @@ Draft.prototype.reject = function() {
  * @property {ko.observable[Boolean]} readonly
  * @property {ko.observable[Draft]} draft
  * @property {ko.observable[Question]} currentQuestion
- * @property {Object} extensions: mapping of extenstion names to their view models
+ * @property {Object} extensions: mapping of extension names to their view models
  **/
 var RegistrationEditor = function(urls, editorId, preview) {
     var self = this;
@@ -835,7 +835,7 @@ var RegistrationEditor = function(urls, editorId, preview) {
     });
     self.currentPage.subscribe(function(page) {
         // lazily apply subscriptions to question values
-        // TODO: dispose subscriptions to last page? Probably unncessary.
+        // TODO: dispose subscriptions to last page? Probably unnecessary.
         $.each(page.questions, function(_, question) {
             question.value.subscribe(function() {
                 self.dirtyCount(self.dirtyCount() + 1);

@@ -123,7 +123,7 @@
       {
          "block_type":"question-label",
          "display_text":"Outliers",
-         "help_text":"If you plan to remove outliers, how will you define what a statistical outlier is in your data? Please also provide a new expected sample size, if appropriate.\n",
+         "help_text":"If you plan to remove outliers, how will you define what a statistical outlier is in your data? Please provide a new expected sample size, if appropriate.\n",
          "registration_response_key":""
       },
       {

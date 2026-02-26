@@ -18,7 +18,7 @@ from osf.models import PrivateLink
 from osf.utils.permissions import ADMIN
 
 class ViewOnlyLinkDetail(JSONAPIBaseView, generics.RetrieveAPIView):
-    """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/view_only_links_read).
+    """See [documentation for this endpoint](https://developer.osf.io/#operation/view_only_links_read).
     """
     permission_classes = (
         base_permissions.TokenHasScope,
@@ -49,7 +49,7 @@ class ViewOnlyLinkDetail(JSONAPIBaseView, generics.RetrieveAPIView):
 
 
 class ViewOnlyLinkNodes(JSONAPIBaseView, generics.ListAPIView):
-    """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/view_only_links_node_list).
+    """See [documentation for this endpoint](https://developer.osf.io/#operation/view_only_links_node_list).
         """
     permission_classes = (
         base_permissions.TokenHasScope,

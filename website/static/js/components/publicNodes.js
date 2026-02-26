@@ -190,7 +190,7 @@ var PublicNodes = {
                 ' if the problem persists.'
             ]) :
 
-            // Show laoding icon while there is a pending request
+            // Show loading icon while there is a pending request
             ctrl.requestPending() ?  m('.ball-pulse.ball-scale-blue.text-center', [m(''), m(''), m('')]) :
 
             // Display each project

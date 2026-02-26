@@ -1,5 +1,5 @@
 from datetime import timedelta
-
+import pytest
 from django.utils import timezone
 
 from tests.base import OsfTestCase
@@ -65,6 +65,7 @@ class TestRetractRegistrations(OsfTestCase):
         assert not self.registration.is_pending_embargo
         assert self.registration.embargo_end_date
 
+    @pytest.mark.usefixtures('mock_gravy_valet_get_verified_links')
     def test_embargo_past_end_date_should_be_completed(self):
         self.registration.embargo.accept()
         assert self.registration.embargo_end_date
@@ -110,6 +111,7 @@ class TestRetractRegistrations(OsfTestCase):
                 action=NodeLog.EMBARGO_APPROVED
             ).exists()
 
+    @pytest.mark.usefixtures('mock_gravy_valet_get_verified_links')
     def test_embargo_completion_adds_to_parent_projects_log(self):
         assert not self.registration.registered_from.logs.filter(
                 action=NodeLog.EMBARGO_COMPLETED

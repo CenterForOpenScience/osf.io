@@ -16,7 +16,7 @@ class TestExceptionFormatting:
             family_name='King',
             suffix='Jr.',
             social=dict(
-                github='userOneGithub',
+                github='userOneGitHub',
                 scholar='userOneScholar',
                 profileWebsites=['http://www.useronepersonalwebsite.com'],
                 twitter='userOneTwitter',

@@ -40,7 +40,13 @@ from osf.external.gravy_valet import (
     translations as gv_translations,
 )
 from osf.utils.requests import get_current_request
-from osf.exceptions import reraise_django_validation_errors, UserStateError
+from osf.exceptions import (
+    reraise_django_validation_errors,
+    UserStateError,
+    InvalidTagError,
+    TagNotFoundError
+)
+
 from .base import BaseModel, GuidMixin, GuidMixinQuerySet
 from .notable_domain import NotableDomain
 from .contributor import Contributor, RecentlyAddedContributor
@@ -57,11 +63,13 @@ from osf.utils.names import impute_names
 from osf.utils.requests import check_select_for_update
 from osf.utils.permissions import API_CONTRIBUTOR_PERMISSIONS, MANAGER, MEMBER, ADMIN
 from website import settings as website_settings
-from website import filters, mails
+from website import filters
 from website.project import new_bookmark_collection
 from website.util.metrics import OsfSourceTags, unregistered_created_source_tag
 from importlib import import_module
+from osf.models.notification_type import NotificationType
 from osf.utils.requests import string_type_request_headers
+
 
 SessionStore = import_module(settings.SESSION_ENGINE).SessionStore
 
@@ -148,7 +156,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
 
     # Overrides DirtyFieldsMixin, Foreign Keys checked by '<attribute_name>_id' rather than typical name.
     FIELDS_TO_CHECK = SEARCH_UPDATE_FIELDS.copy()
-    FIELDS_TO_CHECK.update({'password', 'last_login', 'merged_by_id', 'username'})
+    FIELDS_TO_CHECK.update({'password', 'date_last_login', 'merged_by_id', 'username'})
 
     # TODO: Add SEARCH_UPDATE_NODE_FIELDS, for fields that should trigger a
     #   search update for all nodes to which the user is a contributor.
@@ -224,20 +232,6 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
     #   }
     #   ...
     # }
-
-    # Time of last sent notification email to newly added contributors
-    # Format : {
-    #   <project_id>: {
-    #       'last_sent': time.time()
-    #   }
-    #   ...
-    # }
-    contributor_added_email_records = DateTimeAwareJSONField(default=dict, blank=True)
-
-    # Tracks last email sent where user was added to an OSF Group
-    member_added_email_records = DateTimeAwareJSONField(default=dict, blank=True)
-    # Tracks last email sent where an OSF Group was connected to a node
-    group_connected_email_records = DateTimeAwareJSONField(default=dict, blank=True)
 
     # The user into which this account was merged
     merged_by = models.ForeignKey('self', null=True, blank=True, related_name='merger', on_delete=models.CASCADE)
@@ -356,7 +350,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
     #     'scholar': <google scholar identifier>,
     #     'ssrn': <SSRN username>,
     #     'researchGate': <researchGate username>,
-    #     'baiduScholar': <bauduScholar username>,
+    #     'baiduScholar': <baiduScholar username>,
     #     'academiaProfileID': <profile identifier for academia.edu>
     # }
 
@@ -531,12 +525,16 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         return Tag.all_tags.filter(osfuser=self)
 
     @property
+    def system_tags_objects(self):
+        return self.all_tags.filter(system=True)
+
+    @property
     def system_tags(self):
         """The system tags associated with this node. This currently returns a list of string
         names for the tags, for compatibility with v1. Eventually, we can just return the
         QuerySet.
         """
-        return self.all_tags.filter(system=True).values_list('name', flat=True)
+        return self.system_tags_objects.values_list('name', flat=True)
 
     @property
     def csl_given_name(self):
@@ -730,6 +728,11 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         if self == user:
             raise ValueError('Cannot merge a user into itself')
 
+        # Capture content to SHARE reindex BEFORE merge transfers contributors
+        # After merge, user.contributed and user.preprints will be empty
+        nodes_to_reindex = list(user.contributed)
+        preprints_to_reindex = list(user.preprints.all())
+
         # Move over the other user's attributes
         # TODO: confirm
         for system_tag in user.system_tags.all():
@@ -859,6 +862,20 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         user.save()
         signals.user_account_merged.send(user)
 
+        from api.share.utils import update_share
+
+        for node in nodes_to_reindex:
+            try:
+                update_share(node)
+            except Exception as e:
+                logger.exception(f'Failed to SHARE reindex node {node._id} during user merge: {e}')
+
+        for preprint in preprints_to_reindex:
+            try:
+                update_share(preprint)
+            except Exception as e:
+                logger.exception(f'Failed to SHARE reindex preprint {preprint._id} during user merge: {e}')
+
     def _merge_users_preprints(self, user):
         """
         Preprints use guardian.  The PreprintContributor table stores order and bibliographic information.
@@ -950,6 +967,14 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
 
             draft_reg.remove_permission(user, user_perms)
             draft_reg.save()
+
+    @property
+    def gdpr_deleted(self):
+        if not self.is_disabled:
+            return False
+        if self.fullname != 'Deleted user':
+            return False
+        return not self.emails.exists()
 
     def deactivate_account(self):
         """
@@ -1071,12 +1096,16 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
             raise ChangePasswordError(['Password cannot be the same as your email address'])
         super().set_password(raw_password)
         if had_existing_password and notify:
-            mails.send_mail(
-                to_addr=self.username,
-                mail=mails.PASSWORD_RESET,
+            NotificationType.Type.USER_PASSWORD_RESET.instance.emit(
+                subscribed_object=self,
                 user=self,
-                can_change_preferences=False,
-                osf_contact_email=website_settings.OSF_CONTACT_EMAIL
+                message_frequency='instantly',
+                event_context={
+                    'domain': website_settings.DOMAIN,
+                    'user_fullname': self.fullname,
+                    'can_change_preferences': False,
+                    'osf_contact_email': website_settings.OSF_CONTACT_EMAIL
+                }
             )
             remove_sessions_for_user(self)
 
@@ -1092,7 +1121,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         if external_identity:
             user.external_identity.update(external_identity)
         if campaign:
-            # needed to prevent cirular import
+            # needed to prevent circular import
             from framework.auth.campaigns import system_tag_for_campaign  # skipci
             # User needs to be saved before adding system tags (due to m2m relationship)
             user.save()
@@ -1178,7 +1207,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         Verify that the password reset token for this user is valid.
 
         :param token: the token in verification key
-        :return `True` if valid, otherwise `False`
+        :return `True` if valid; otherwise, `False`
         """
 
         if token and self.verification_key_v2:
@@ -1191,7 +1220,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
 
     def verify_claim_token(self, token, project_id):
         """Return whether or not a claim token is valid for this user for
-        a given node which they were added as a unregistered contributor for.
+        a given node which they were added as an unregistered contributor for.
         """
         try:
             record = self.get_unclaimed_record(project_id)
@@ -1217,7 +1246,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         return user
 
     def update_guessed_names(self):
-        """Updates the CSL name fields inferred from the the full name.
+        """Updates the CSL name fields inferred from the full name.
         """
         parsed = impute_names(self.fullname)
         self.given_name = parsed['given']
@@ -1603,6 +1632,25 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
             self.tags.add(tag_instance)
         return tag_instance
 
+    def remove_tag(self, tag, auth, save=True):
+        if not tag:
+            raise InvalidTagError
+
+        tag_instance = self.all_tags.filter(name=tag).first()
+        if not tag_instance:
+            raise TagNotFoundError
+
+        if not tag_instance.system:
+            raise ValueError('Non-system tag passed to add_system_tag')
+
+        # because system tags are hidden by default TagManager
+        tag_instance.delete()
+        if save:
+            self.save()
+
+        self.update_search()
+        return True
+
     def get_recently_added(self):
         return (
             each.contributor
@@ -1747,6 +1795,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
                 sso_department=sso_department,
                 sso_other_attributes={}
             )
+            self.update_search()
             return affiliation
         # CASE 2: affiliation exists
         updated = False
@@ -1765,6 +1814,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
             return None
         # CASE 1.3: at least one attribute is updated -> return the affiliation
         affiliation.save()
+        self.update_search()
         return affiliation
 
     def remove_sso_identity_from_affiliation(self, institution):
@@ -1773,6 +1823,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         affiliation = InstitutionAffiliation.objects.get(user__id=self.id, institution__id=institution.id)
         affiliation.sso_identity = None
         affiliation.save()
+        self.update_search()
         return affiliation
 
     def copy_institution_affiliation_when_merging_user(self, user):
@@ -1814,6 +1865,8 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
             group = affiliation.institution.get_group('institutional_admins')
             group.user_set.remove(self)
             group.save()
+
+        self.update_search()
         return True
 
     def remove_all_affiliated_institutions(self):
@@ -1991,13 +2044,34 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
     def _validate_no_public_entities(self):
         """
         Ensure that the user doesn't have any public facing resources like Registrations or Preprints
-        """
-        from osf.models import Preprint
+        that would be left with other contributors after this deletion.
 
-        if self.nodes.filter(deleted__isnull=True, type='osf.registration').exists():
+        Allow GDPR deletion if the user is the sole contributor on a public Registration or Preprint.
+        """
+        from osf.models import Preprint, AbstractNode
+
+        registrations_with_others = AbstractNode.objects.annotate(
+            contrib_count=Count('_contributors', distinct=True),
+        ).filter(
+            _contributors=self,
+            deleted__isnull=True,
+            type='osf.registration',
+            contrib_count__gt=1
+        ).exists()
+
+        if registrations_with_others:
             raise UserStateError('You cannot delete this user because they have one or more registrations.')
 
-        if Preprint.objects.filter(_contributors=self, ever_public=True, deleted__isnull=True).exists():
+        preprints_with_others = Preprint.objects.annotate(
+            contrib_count=Count('_contributors', distinct=True),
+        ).filter(
+            _contributors=self,
+            ever_public=True,
+            deleted__isnull=True,
+            contrib_count__gt=1
+        ).exists()
+
+        if preprints_with_others:
             raise UserStateError('You cannot delete this user because they have one or more preprints.')
 
     def _validate_and_remove_resource_for_gdpr_delete(self, resources, hard_delete):
@@ -2006,7 +2080,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
 
         Args:
         - resources: A queryset of resources probably of AbstractNode or DraftRegistration.
-        - hard_delete: A boolean indicating whether the resource should be permentently deleted or just marked as such.
+        - hard_delete: A boolean indicating whether the resource should be permanently deleted or just marked as such.
         """
         model = resources.query.model
 
@@ -2032,8 +2106,12 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
             logger.info(f'Removing {self._id} as a contributor to {resource.__class__.__name__} (pk:{resource.pk})...')
             resource.remove_contributor(self, auth=Auth(self), log=False)
 
-        # Delete all personal entities
-        for entity in personal_resources.all():
+        # Delete all personal entities (excluding public registrations)
+        personal_to_delete = personal_resources
+        if hasattr(model, 'is_public') and hasattr(model, 'type'):
+            personal_to_delete = personal_to_delete.exclude(is_public=True, type='osf.registration')
+
+        for entity in personal_to_delete.all():
             if hard_delete:
                 logger.info(f'Hard-deleting {entity.__class__.__name__} (pk: {entity.pk})...')
                 entity.delete()

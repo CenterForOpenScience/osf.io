@@ -38,7 +38,7 @@ class DataverseSerializer(OAuthAddonSerializer):
         addon_urls = self.addon_serialized_urls
         # Make sure developer returns set of needed urls
         for url in self.REQUIRED_URLS:
-            assert url in addon_urls, f"addon_serilized_urls must include key '{url}'"
+            assert url in addon_urls, f"addon_serialized_urls must include key '{url}'"
         ret.update(addon_urls)
         return ret
 

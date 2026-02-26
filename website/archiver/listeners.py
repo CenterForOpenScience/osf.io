@@ -12,7 +12,7 @@ from website.project import signals as project_signals
 
 @project_signals.after_create_registration.connect
 def after_register(src, dst, user):
-    """Blinker listener for registration initiations. Enqueqes a chain
+    """Blinker listener for registration initiations. Enqueues a chain
     of archive tasks for the current node and its descendants
 
     :param src: Node being registered

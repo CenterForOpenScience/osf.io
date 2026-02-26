@@ -52,7 +52,7 @@ class TestReindexingMetrics:
             preprint,
             user,
             version=1,
-            path='/MalcolmJenkinsKnockedBrandinCooksOutColdInTheSuperbowl',
+            path='/MalcolmJenkinsKnockedBrandinCooksOutColdInTheSuperBowl',
             random_new_field='Hi!'  # Here's our unmapped field! It's a text field by default.
         )
         preprint_download.save()

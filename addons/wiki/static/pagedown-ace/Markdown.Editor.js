@@ -237,7 +237,7 @@ $(function(){
     function Chunks() { }
 
     // startRegex: a regular expression to find the start tag
-    // endRegex: a regular expresssion to find the end tag
+    // endRegex: a regular expression to find the end tag
     Chunks.prototype.findTags = function (startRegex, endRegex) {
 
         var chunkObj = this;
@@ -370,7 +370,7 @@ $(function(){
     // this issue:
     // Internet explorer has problems with CSS sprite buttons that use HTML
     // lists.  When you click on the background image "button", IE will
-    // select the non-existent link text and discard the selection in the
+    // select the nonexistent link text and discard the selection in the
     // textarea.  The solution to this is to cache the textarea selection
     // on the button's mousedown event and set a flag.  In the part of the
     // code where we need to grab the selection, we check for the flag
@@ -946,7 +946,7 @@ $(function(){
             */
         };
 
-        // Gets a collection of HTML chunks from the inptut textarea.
+        // Gets a collection of HTML chunks from the input textarea.
         this.getChunks = function () {
 
             var chunk = new Chunks();
@@ -1535,7 +1535,7 @@ $(function(){
 
                 var chunks = state.getChunks();
 
-                // Some commands launch a "modal" prompt dialog.  Javascript
+                // Some commands launch a "modal" prompt dialog.  JavaScript
                 // can't really make a modal dialog box and the WMD code
                 // will continue to execute while the dialog is displayed.
                 // This prevents the dialog pattern I'm used to and means
@@ -1944,13 +1944,13 @@ $(function(){
     };
 
     // takes the line as entered into the add link/as image dialog and makes
-    // sure the URL and the optinal title are "nice".
+    // sure the URL and the optional title are "nice".
     function properlyEncoded(linkdef) {
         return linkdef.replace(/^\s*(.*?)(?:\s+"(.+)")?\s*$/, function (wholematch, link, title) {
             link = link.replace(/\?.*$/, function (querypart) {
                 return querypart.replace(/\+/g, " "); // in the query string, a plus and a space are identical
             });
-            link = decodeURIComponent(link); // unencode first, to prevent double encoding
+            link = decodeURIComponent(link); // decode first, to prevent double encoding
             link = encodeURI(link).replace(/'/g, '%27').replace(/\(/g, '%28').replace(/\)/g, '%29');
             link = link.replace(/\?.*$/, function (querypart) {
                 return querypart.replace(/\+/g, "%2b"); // since we replaced plus with spaces in the query part, all pluses that now appear where originally encoded
@@ -2145,13 +2145,13 @@ $(function(){
         // Go backwards as many lines a possible, such that each line
         //  a) starts with ">", or
         //  b) is almost empty, except for whitespace, or
-        //  c) is preceeded by an unbroken chain of non-empty lines
+        //  c) is preceded by an unbroken chain of non-empty lines
         //     leading up to a line that starts with ">" and at least one more character
         // and in addition
         //  d) at least one line fulfills a)
         //
         // Since this is essentially a backwards-moving regex, it's susceptible to
-        // catstrophic backtracking and can cause the browser to hang;
+        // catastrophic backtracking and can cause the browser to hang;
         // see e.g. http://meta.stackoverflow.com/questions/9807.
         //
         // Hence we replaced this by a simple state machine that just goes through the

@@ -48,7 +48,7 @@ def send_email(
     Email is sent from the email specified in FROM_EMAIL settings in the
     settings module.
 
-    Uses the Sendgrid API if ``settings.SENDGRID_API_KEY`` is set.
+    Uses the SendGrid API if ``settings.SENDGRID_API_KEY`` is set.
 
     :param from_addr: A string, the sender email
     :param to_addr: A string, the recipient
@@ -57,7 +57,7 @@ def send_email(
     :param categories: Categories to add to the email using SendGrid's
         SMTPAPI. Used for email analytics.
         See https://sendgrid.com/docs/User_Guide/Statistics/categories.html
-        This parameter is only respected if using the Sendgrid API.
+        This parameter is only respected if using the SendGrid API.
         ``settings.SENDGRID_API_KEY`` must be set.
 
     :return: True if successful

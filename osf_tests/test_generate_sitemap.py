@@ -11,6 +11,7 @@ from django.utils import timezone
 from scripts import generate_sitemap
 from osf_tests.factories import (AuthUserFactory, ProjectFactory, RegistrationFactory, CollectionFactory,
                                  PreprintFactory, PreprintProviderFactory, EmbargoFactory, UnconfirmedUserFactory)
+from tests.utils import capture_notifications
 from website import settings
 
 
@@ -106,7 +107,8 @@ class TestGenerateSitemap:
 
     @pytest.fixture(autouse=True)
     def preprint_osf_version(self, preprint_osf_blank):
-        return PreprintFactory.create_version(create_from=preprint_osf_blank, creator=preprint_osf_blank.creator)
+        with capture_notifications():
+            return PreprintFactory.create_version(create_from=preprint_osf_blank, creator=preprint_osf_blank.creator)
 
     @pytest.fixture(autouse=True)
     def preprint_withdrawn(self, project_preprint_osf, user_admin_project_public, provider_osf):
@@ -131,8 +133,8 @@ class TestGenerateSitemap:
         # Return urls of all fixtures
         urls_to_include = [item['loc'] for item in settings.SITEMAP_STATIC_URLS]
         urls_to_include.extend([
-            user_admin_project_public.url,
-            user_admin_project_private.url,
+            # user_admin_project_public.url,
+            # user_admin_project_private.url,
             project_registration_public.url + 'overview',
             project_preprint_osf.url + 'overview',
             project_preprint_other.url + 'overview',

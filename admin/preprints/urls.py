@@ -20,6 +20,7 @@ urlpatterns = [
     re_path(r'^(?P<guid>\w+)/make_public/$', views.PreprintMakePublic.as_view(), name='make-public'),
     re_path(r'^(?P<guid>\w+)/remove/$', views.PreprintDeleteView.as_view(), name='remove'),
     re_path(r'^(?P<guid>\w+)/restore/$', views.PreprintDeleteView.as_view(), name='restore'),
+    re_path(r'^(?P<guid>[\w_]+)/hard_delete/$', views.PreprintHardDeleteView.as_view(), name='hard-delete'),
     re_path(r'^(?P<guid>\w+)/confirm_unflag/$', views.PreprintConfirmUnflagView.as_view(), name='confirm-unflag'),
     re_path(r'^(?P<guid>\w+)/confirm_spam/$', views.PreprintConfirmSpamView.as_view(), name='confirm-spam'),
     re_path(r'^(?P<guid>\w+)/confirm_ham/$', views.PreprintConfirmHamView.as_view(), name='confirm-ham'),
@@ -29,4 +30,7 @@ urlpatterns = [
     re_path(r'^(?P<guid>\w+)/resync_crossref/$', views.PreprintResyncCrossRefView.as_view(), name='resync-crossref'),
     re_path(r'^(?P<guid>\w+)/make_published/$', views.PreprintMakePublishedView.as_view(), name='make-published'),
     re_path(r'^(?P<guid>\w+)/unwithdraw/$', views.PreprintUnwithdrawView.as_view(), name='unwithdraw'),
+    re_path(r'^(?P<guid>\w+)/system_tags/add/$', views.PreprintAddSystemTag.as_view(), name='add-system-tag'),
+    re_path(r'^(?P<guid>\w+)/system_tags/(?P<tag_id>[a-z0-9]+)/remove/$', views.PreprintRemoveSystemTag.as_view(), name='remove-system-tag'),
+    re_path(r'^(?P<guid>\w+)/update_permissions/$', views.PreprintUpdatePermissionsView.as_view(), name='update-permissions'),
 ]

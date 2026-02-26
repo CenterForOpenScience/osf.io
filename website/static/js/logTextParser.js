@@ -223,7 +223,7 @@ var LogPieces = {
             else if (userObject && userObject.errors[0].meta) {
                 return m('span', userObject.errors[0].meta.full_name);
             }
-            else if (githubUser){ //paramIsReturned skipped b/c this is applicable in only a few situtations
+            else if (githubUser){ //paramIsReturned skipped b/c this is applicable in only a few situations
                 return m('span', githubUser);
             }
             else {

@@ -68,7 +68,7 @@ class IdentifierMixin(models.Model):
 
     @property
     def should_request_identifiers(self):
-        """Determines if a identifier should be requested, Bool.
+        """Determines if an identifier should be requested, Bool.
         """
         raise NotImplementedError()
 

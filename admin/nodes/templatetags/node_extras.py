@@ -88,3 +88,8 @@ def get_spam_status(resource):
         return mark_safe('<span class="label label-danger">Spam</span>')
     elif resource.spam_status == SpamStatus.HAM:
         return mark_safe('<span class="label label-success">Ham</span>')
+
+
+@register.filter
+def get_class_name(resource):
+    return resource.__class__.__name__.lower()

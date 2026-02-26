@@ -12,6 +12,7 @@ from osf_tests.factories import (
 from tests.base import (
     OsfTestCase,
 )
+from tests.utils import capture_notifications
 from website.project.views.node import abbrev_authors
 from website.util import web_url_for
 
@@ -154,7 +155,7 @@ class TestPointerViews(OsfTestCase):
         )
         assert res.status_code == 400
 
-    def test_add_pointers_no_user_logg_in(self):
+    def test_add_pointers_no_user_log_in(self):
 
         url = self.project.api_url_for('add_pointers')
         node_ids = [
@@ -255,7 +256,8 @@ class TestPointerViews(OsfTestCase):
         linked_node = NodeFactory(creator=self.user)
         pointer = self.project.add_pointer(linked_node, auth=self.consolidate_auth)
         assert linked_node.id == pointer.child.id
-        res = self.app.post(url, json={'nodeId': pointer.child._id}, auth=self.user.auth)
+        with capture_notifications():
+            res = self.app.post(url, json={'nodeId': pointer.child._id}, auth=self.user.auth)
         assert res.status_code == 201
         assert 'node' in res.json['data']
         fork = res.json['data']['node']
@@ -361,7 +363,8 @@ class TestPointerViews(OsfTestCase):
     def test_can_template_project_linked_to_each_other(self):
         project2 = ProjectFactory(creator=self.user)
         self.project.add_pointer(project2, auth=Auth(user=self.user))
-        template = self.project.use_as_template(auth=Auth(user=self.user))
+        with capture_notifications():
+            template = self.project.use_as_template(auth=Auth(user=self.user))
 
         assert template
         assert template.title == 'Templated from ' + self.project.title

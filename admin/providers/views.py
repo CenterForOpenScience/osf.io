@@ -1,7 +1,8 @@
 from django.shortcuts import redirect
 from django.views.generic import TemplateView
 from django.contrib import messages
-from osf.models import RegistrationProvider, OSFUser
+from osf.models import RegistrationProvider, OSFUser, CollectionProvider, NotificationType
+from website.settings import DOMAIN
 
 
 class AddAdminOrModerator(TemplateView):
@@ -32,16 +33,41 @@ class AddAdminOrModerator(TemplateView):
         if target_user.has_groups(provider.group_names):
             messages.error(request, f'User with guid: {data["add-moderators-form"][0]} is already a moderator or admin')
             return redirect(f'{self.url_namespace}:add_admin_or_moderator', provider_id=provider.id)
+        context = {}
+        context['user_fullname'] = target_user.fullname
+        context['referrer_fullname'] = self.request.user.username
+        context['provider_name'] = provider.name
 
         if 'admin' in data:
             provider.add_to_group(target_user, 'admin')
             target_type = 'admin'
+            context['is_admin'] = True
         else:
             provider.add_to_group(target_user, 'moderator')
             target_type = 'moderator'
+            context['is_admin'] = False
 
+        context['provider_name'] = provider.name
+        context['provider__id'] = provider._id
+        context['is_reviews_moderator_notification'] = True
+
+        if isinstance(provider, RegistrationProvider):
+            provider_type_word = 'registries'
+            context['notification_settings_url'] = f'{DOMAIN}registries/{provider._id}/moderation/settings'
+        elif isinstance(provider, CollectionProvider):
+            provider_type_word = 'collections'
+            context['notification_settings_url'] = f'{DOMAIN}registries/{provider._id}/moderation/settings'
+        else:
+            provider_type_word = 'preprints'
+            context['notification_settings_url'] = f'{DOMAIN}preprints/{provider._id}/moderation/notifications'
+
+        context['provider_url'] = f'{provider.domain or DOMAIN}{provider_type_word}/{(provider._id if not provider.domain else '').strip('/')}'
         messages.success(request, f'The following {target_type} was successfully added: {target_user.fullname} ({target_user.username})')
-
+        notification_type = NotificationType.Type.PROVIDER_MODERATOR_ADDED
+        notification_type.instance.emit(
+            user=target_user,
+            event_context=context,
+        )
         return redirect(f'{self.url_namespace}:add_admin_or_moderator', provider_id=provider.id)
 
 

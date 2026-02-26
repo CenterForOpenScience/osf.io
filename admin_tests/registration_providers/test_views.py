@@ -26,6 +26,7 @@ from website import settings
 
 from django.contrib.messages.storage.fallback import FallbackStorage
 from osf.migrations import update_provider_auth_groups
+from tests.utils import capture_notifications
 
 pytestmark = pytest.mark.django_db
 
@@ -233,7 +234,7 @@ class TestChangeSchemas:
     def test_post(self, view, req, schema, provider):
         schema_id = schema.id
         req.POST = {
-            'csrfmiddlewaretoken': 'fake csfr',
+            'csrfmiddlewaretoken': 'fake csrf',
             str(schema_id): ['on']
         }
 
@@ -291,7 +292,7 @@ class TestEditModerators:
     def test_post_remove(self, remove_moderator_view, req, moderator, provider):
         moderator_id = f'Moderator-{moderator.id}'
         req.POST = {
-            'csrfmiddlewaretoken': 'fake csfr',
+            'csrfmiddlewaretoken': 'fake csrf',
             moderator_id: ['on']
         }
 
@@ -307,7 +308,7 @@ class TestEditModerators:
 
     def test_post_add(self, add_moderator_view, req, user, provider):
         req.POST = {
-            'csrfmiddlewaretoken': 'fake csfr',
+            'csrfmiddlewaretoken': 'fake csrf',
             'add-moderators-form': [user._id],
             'moderator': ['Add Moderator']
         }
@@ -318,13 +319,14 @@ class TestEditModerators:
         messages = FallbackStorage(req)
         setattr(req, '_messages', messages)
 
-        res = add_moderator_view.post(req)
+        with capture_notifications():
+            res = add_moderator_view.post(req)
         assert res.status_code == 302
         assert user in provider.get_group('moderator').user_set.all()
 
         # try to add the same user, but another group
         req.POST = {
-            'csrfmiddlewaretoken': 'fake csfr',
+            'csrfmiddlewaretoken': 'fake csrf',
             'add-moderators-form': [user._id],
             'admin': ['Add Admin']
         }

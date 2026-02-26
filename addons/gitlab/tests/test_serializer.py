@@ -33,7 +33,7 @@ class TestGitLabSerializer(StorageAddonSerializerTestSuiteMixin, OsfTestCase):
         self.mock_api_user.stop()
         super().tearDown()
 
-    def test_serialize_acccount(self):
+    def test_serialize_account(self):
         ea = self.ExternalAccountFactory()
         expected = {
             'id': ea._id,

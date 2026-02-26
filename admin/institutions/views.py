@@ -223,7 +223,7 @@ class InstitutionAdminAndModeratorBaseView(PermissionRequiredMixin, ListView):
     def get_context_data(self, **kwargs):
         institution = Institution.objects.get(id=self.kwargs['institution_id'])
         context = super().get_context_data(**kwargs)
-        admin_group = Group.objects.filter(name__startswith=f'institution_{institution._id}').first()
+        admin_group = Group.objects.filter(name=f'institution_{institution._id}_institutional_admins').first()
         context['institution'] = institution
         context['admins'] = admin_group.user_set.all()
         return context
@@ -246,7 +246,7 @@ class InstitutionListAndAddAdmin(InstitutionAdminAndModeratorBaseView):
             messages.error(request, f'User for guid: {data["add-admins-form"][0]} could not be found')
             return redirect('institutions:list_and_add_admin', institution_id=institution.id)
 
-        admin_group = Group.objects.filter(name__startswith=f'institution_{institution._id}').first()
+        admin_group = Group.objects.filter(name=f'institution_{institution._id}_institutional_admins').first()
         admin_group.user_set.add(target_user)
 
         messages.success(request, f'The following admin was successfully added: {target_user.fullname} ({target_user.username})')
@@ -263,7 +263,7 @@ class InstitutionRemoveAdmin(InstitutionAdminAndModeratorBaseView):
         to_be_removed = list(data.keys())
         removed_admins = [admin.replace('Admin-', '') for admin in to_be_removed if 'Admin-' in admin]
         admins = OSFUser.objects.filter(id__in=removed_admins)
-        admin_group = Group.objects.filter(name__startswith=f'institution_{institution._id}').first()
+        admin_group = Group.objects.filter(name=f'institution_{institution._id}_institutional_admins').first()
         admin_group.user_set.remove(*admins)
 
         if admins:
@@ -362,7 +362,7 @@ class InstitutionalMetricsAdminRegister(PermissionRequiredMixin, FormView):
         if not osf_user:
             raise Http404(f'OSF user with id "{user_id}" not found. Please double check.')
 
-        group = Group.objects.filter(name__startswith=f'institution_{target_institution._id}').first()
+        group = Group.objects.filter(name=f'institution_{target_institution._id}_institutional_admins').first()
 
         group.user_set.add(osf_user)
         group.save()

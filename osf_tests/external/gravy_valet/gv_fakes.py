@@ -339,7 +339,7 @@ class FakeGravyValet:
         self._validate_headers = value
 
     def _clear_mappings(self, include_providers: bool = True):
-        """Reset all configured users/resources/acounts/addons and, optionally, providers."""
+        """Reset all configured users/resources/accounts/addons and, optionally, providers."""
         if include_providers:
             # Mapping from _FakeAddonProvider name to _FakeAddonProvider
             self._known_providers = {}

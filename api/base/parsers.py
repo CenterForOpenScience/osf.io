@@ -20,7 +20,7 @@ NO_ID_ERROR = 'Request must include /data/id.'
 
 class JSONSchemaParser(JSONParser):
     """
-    Parses JSON-serialized data and validates it against a jsonscehma on the view.
+    Parses JSON-serialized data and validates it against a jsonschema on the view.
     """
     media_type = 'application/vnd.api+json'
     renderer_class = JSONAPIRenderer

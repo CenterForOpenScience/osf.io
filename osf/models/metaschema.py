@@ -31,7 +31,7 @@ SCHEMABLOCK_TYPES = [
 
 def allow_egap_admins(queryset, request):
     """
-    Allows egap admins to see EGAP registrations as visible, should be deleted when when the EGAP registry goes
+    Allows egap admins to see EGAP registrations as visible, should be deleted when the EGAP registry goes
     live.
     """
     if hasattr(request, 'user') and not flag_is_active(request, EGAP_ADMINS):

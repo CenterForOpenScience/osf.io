@@ -3,6 +3,8 @@ import pytest
 from .test_record import TestCedarMetadataRecord
 from osf.utils.permissions import READ, WRITE
 from osf_tests.factories import AuthUserFactory
+from website import settings
+
 
 @pytest.mark.django_db
 class TestCedarMetadataRecordMetadataDownloadPrivateProjectPublishedMetadata(TestCedarMetadataRecord):
@@ -13,6 +15,7 @@ class TestCedarMetadataRecordMetadataDownloadPrivateProjectPublishedMetadata(Tes
         resp = app.get(f'/_/cedar_metadata_records/{cedar_record_for_node._id}/metadata_download/', auth=admin.auth)
         assert resp.status_code == 200
         assert resp.headers['Content-Disposition'] == f'attachment; filename={self.get_record_metadata_download_file_name(cedar_record_for_node)}'
+        assert resp.headers.get('Link') == f'<{settings.DOMAIN}{node._id}/>; rel="describes"; type="text/html"'
         assert resp.json == cedar_record_metadata_json
 
     def test_record_metadata_download_for_node_with_write_auth(self, app, node, cedar_record_for_node, cedar_record_metadata_json):
@@ -179,6 +182,7 @@ class TestCedarMetadataRecordMetadataDownloadRegistrationPublishedMetadata(TestC
         resp = app.get(f'/_/cedar_metadata_records/{cedar_record_for_registration._id}/metadata_download/', auth=admin.auth)
         assert resp.status_code == 200
         assert resp.headers['Content-Disposition'] == f'attachment; filename={self.get_record_metadata_download_file_name(cedar_record_for_registration)}'
+        assert resp.headers.get('Link') == f'<{settings.DOMAIN}{cedar_record_for_registration.guid._id}/>; rel="describes"; type="text/html"'
         assert resp.json == cedar_record_metadata_json
 
     def test_record_metadata_download_for_registration_with_write_auth(self, app, registration, cedar_record_for_registration, cedar_record_metadata_json):
@@ -307,6 +311,7 @@ class TestCedarMetadataRecordMetadataDownloadPrivateFileDraftMetadata(TestCedarM
         resp = app.get(f'/_/cedar_metadata_records/{cedar_draft_record_for_file_alt._id}/metadata_download/', auth=admin.auth)
         assert resp.status_code == 200
         assert resp.headers['Content-Disposition'] == f'attachment; filename={self.get_record_metadata_download_file_name(cedar_draft_record_for_file_alt)}'
+        assert not resp.headers.get('Link')
         assert resp.json == cedar_record_metadata_json
 
     def test_record_metadata_download_for_node_with_write_auth(self, app, node_alt, cedar_draft_record_for_file_alt, cedar_record_metadata_json):

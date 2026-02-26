@@ -73,7 +73,7 @@ class SchemaResponseList(JSONAPIBaseView, ListFilterMixin, generics.ListCreateAP
 
     def get_parser_context(self, http_request):
         """
-        Tells parser what json schema we are checking againest.
+        Tells parser what json schema we are checking against.
         """
         res = super().get_parser_context(http_request)
         res['json_schema'] = self.create_payload_schema

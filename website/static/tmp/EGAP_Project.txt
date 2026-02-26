@@ -89,7 +89,7 @@
     </div>
 
     <div class="control-group">
-  <label class="control-label">Has this research received Insitutional Review Board (IRB) or ethics committee approval?</label>
+  <label class="control-label">Has this research received Institutional Review Board (IRB) or ethics committee approval?</label>
   <div class="controls">
     {{view Ember.Select
        contentBinding="Template.yesnoother.content"

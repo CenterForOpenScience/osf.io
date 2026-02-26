@@ -76,6 +76,29 @@ def must_be_logged_in(func):
 
     return wrapped
 
+
+def is_contributor_or_public_resource(resource_kw='resource'):
+    """
+    Require that user be contributor or resource be public.
+    """
+    def decorator(func):
+        @wraps(func)
+        def wrapped(*args, **kwargs):
+            from osf.models import BaseFileNode, Guid
+            referent = kwargs.get(resource_kw)
+            if isinstance(referent, Guid):
+                referent = referent.referent
+            target_resource = referent.target if isinstance(referent, BaseFileNode) else referent
+            if target_resource.is_public:
+                return func(*args, **kwargs)
+            auth = Auth.from_kwargs(request.args.to_dict(), {})
+            if auth.logged_in and target_resource.is_contributor(auth.user):
+                return func(*args, **kwargs)
+            raise HTTPError(http_status.HTTP_403_FORBIDDEN)
+        return wrapped
+    return decorator
+
+
 # TODO Can remove after Waterbutler is sending requests to V2 endpoints.
 # This decorator has been adapted for use in an APIv2 parser - HMACSignedParser
 def must_be_signed(func):

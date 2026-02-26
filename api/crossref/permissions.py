@@ -11,7 +11,7 @@ from website import settings
 class RequestComesFromMailgun(permissions.BasePermission):
     """Verify that request comes from Mailgun.
     Adapted here from conferences/message.py
-    Signature comparisons as recomended from mailgun docs:
+    Signature comparisons as recommended from mailgun docs:
     https://documentation.mailgun.com/en/latest/user_manual.html#webhooks
     """
     def has_permission(self, request, view):

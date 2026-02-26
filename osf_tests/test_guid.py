@@ -20,6 +20,7 @@ from osf_tests.factories import (
 )
 from tests.base import OsfTestCase
 from tests.test_websitefiles import TestFile
+from tests.utils import capture_notifications
 from website.settings import MFR_SERVER_URL, WATERBUTLER_URL
 
 
@@ -212,7 +213,7 @@ class TestResolveGuid(OsfTestCase):
 
     def test_resolve_guid_private_request_access_or_redirect_to_cas(self):
         """
-        Authenticated users are sent to the request access page when it is set to true on the node, otherwise they get a
+        Authenticated users are sent to the request access page when it is set to true on the node; otherwise, they get a
         legacy Forbidden page.
         """
         non_contrib = AuthUserFactory()
@@ -312,9 +313,11 @@ class TestResolveGuid(OsfTestCase):
         # test_provider_submitter_can_download_unpublished
         submitter = AuthUserFactory()
         pp = PreprintFactory(finish=True, provider=provider, is_published=False, creator=submitter)
-        pp.run_submit(submitter)
+        with capture_notifications():
+            pp.run_submit(submitter)
         pp_branded = PreprintFactory(finish=True, provider=branded_provider, is_published=False, filename='preprint_file_two.txt', creator=submitter)
-        pp_branded.run_submit(submitter)
+        with capture_notifications():
+            pp_branded.run_submit(submitter)
 
         res = self.app.get(f'{pp.url}download', auth=submitter.auth)
         assert res.status_code == 302

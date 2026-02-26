@@ -1,9 +1,12 @@
 from unittest import mock
 
 from api.base.settings.defaults import API_BASE
+from osf.models import NotificationType
 
 from tests.base import ApiTestCase
 from osf_tests.factories import AuthUserFactory, ProjectFactory
+from tests.utils import capture_notifications
+
 
 class TestDefaultThrottleClasses(ApiTestCase):
 
@@ -121,10 +124,14 @@ class TestAddContributorEmailThrottle(ApiTestCase):
 
     @mock.patch('api.base.throttling.AddContributorThrottle.allow_request')
     def test_add_contrib_throttle_rate_allow_request_called(self, mock_allow):
-        res = self.app.post_json_api(
-            self.public_url,
-            self.data_user_two,
-            auth=self.user.auth)
+        with capture_notifications() as notifications:
+            res = self.app.post_json_api(
+                self.public_url,
+                self.data_user_two,
+                auth=self.user.auth
+            )
+        assert len(notifications['emits']) == 1
+        assert notifications['emits'][0]['type'] == NotificationType.Type.NODE_CONTRIBUTOR_ADDED_DEFAULT
         assert res.status_code == 201
         assert mock_allow.call_count == 1
 

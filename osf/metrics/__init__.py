@@ -5,11 +5,6 @@ from .preprint_metrics import (
     PreprintDownload,
 )
 
-from .institution_metrics import (
-    InstitutionProjectCounts,
-    UserInstitutionProjectCounts,
-)
-
 from .registry_metrics import RegistriesModerationMetrics
 
 from .reports import (
@@ -38,9 +33,7 @@ DAILY_REPORTS = (
 __all__ = (
     'CountedAuthUsage',
     'DAILY_REPORTS',
-    'InstitutionProjectCounts',
     'PreprintView',
     'PreprintDownload',
     'RegistriesModerationMetrics',
-    'UserInstitutionProjectCounts',
 )

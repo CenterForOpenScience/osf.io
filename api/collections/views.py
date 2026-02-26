@@ -471,7 +471,7 @@ class LegacyCollectionSubmissionDetail(JSONAPIBaseView, generics.RetrieveUpdateD
 
 
 class CollectionSubmissionSubjectsList(BaseResourceSubjectsList, CollectionMixin):
-    """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/collected_meta_subjects).
+    """See [documentation for this endpoint](https://developer.osf.io/#operation/collected_meta_subjects).
     """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
@@ -489,7 +489,7 @@ class CollectionSubmissionSubjectsList(BaseResourceSubjectsList, CollectionMixin
 
 
 class CollectionSubmissionSubjectsRelationshipList(SubjectRelationshipBaseView, CollectionMixin):
-    """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/collected_meta_subjects_relationship).
+    """See [documentation for this endpoint](https://developer.osf.io/#operation/collected_meta_subjects_relationship).
     """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
@@ -569,6 +569,7 @@ class LinkedNodesList(JSONAPIBaseView, generics.ListAPIView, CollectionMixin, No
     view_name = 'linked-nodes'
 
     ordering = ('-modified',)
+    model_class = Node
 
     def get_default_queryset(self):
         auth = get_user_auth(self.request)
@@ -589,7 +590,7 @@ class LinkedNodesList(JSONAPIBaseView, generics.ListAPIView, CollectionMixin, No
         return res
 
 
-class LinkedRegistrationsList(JSONAPIBaseView, generics.ListAPIView, CollectionMixin):
+class LinkedRegistrationsList(JSONAPIBaseView, generics.ListAPIView, CollectionMixin, ListFilterMixin):
     """List of registrations linked to this node. *Read-only*.
 
     Linked registrations are the registration nodes pointed to by node links.
@@ -667,8 +668,9 @@ class LinkedRegistrationsList(JSONAPIBaseView, generics.ListAPIView, CollectionM
     required_write_scopes = [CoreScopes.COLLECTED_META_WRITE]
 
     ordering = ('-modified',)
+    model_class = Registration
 
-    def get_queryset(self):
+    def get_default_queryset(self):
         auth = get_user_auth(self.request)
         return Registration.objects.filter(
             guids__in=self.get_collection().active_guids.all(),
@@ -679,6 +681,9 @@ class LinkedRegistrationsList(JSONAPIBaseView, generics.ListAPIView, CollectionM
         ).order_by(
             '-modified',
         )
+
+    def get_queryset(self):
+        return self.get_queryset_from_request()
 
     # overrides APIView
     def get_parser_context(self, http_request):
@@ -942,7 +947,7 @@ class CollectionLinkedNodesRelationship(LinkedNodesRelationship, CollectionMixin
     node identifiers. This will replace the contents of the node_links for this collection with
     the contents of the request. It will delete all node links that don't have a node_id in the data
     array, create node links for the node_ids that don't currently have a node id, and do nothing
-    for node_ids that already have a corresponding node_link. This means a update request with
+    for node_ids that already have a corresponding node_link. This means an update request with
     {"data": []} will remove all node_links in this collection
 
     ###Destroy
@@ -1068,7 +1073,7 @@ class CollectionLinkedRegistrationsRelationship(CollectionLinkedNodesRelationshi
     node identifiers. This will replace the contents of the node_links for this collection with
     the contents of the request. It will delete all node links that don't have a node_id in the data
     array, create node links for the node_ids that don't currently have a node id, and do nothing
-    for node_ids that already have a corresponding node_link. This means a update request with
+    for node_ids that already have a corresponding node_link. This means an update request with
     {"data": []} will remove all node_links in this collection
 
     ###Destroy

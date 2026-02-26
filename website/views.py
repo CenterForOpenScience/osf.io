@@ -11,7 +11,7 @@ from django.apps import apps
 from flask import request, send_from_directory, Response, stream_with_context
 
 from framework.auth import Auth
-from framework.auth.decorators import must_be_logged_in
+from framework.auth.decorators import must_be_logged_in, is_contributor_or_public_resource
 from framework.auth.forms import SignInForm, ForgotPasswordForm
 from framework.exceptions import HTTPError
 from framework.flask import redirect  # VOL-aware redirect
@@ -254,7 +254,7 @@ def resolve_guid(guid, suffix=None):
     Preprints for example are served from the external emberapp and streamed into Django and on to the user, while Wikis
     are served via a `/v1` endpoint, the `deep_url` for that resource.
 
-    There are also additional routes in this fintion that lead to legacies views that serve bytes for that files guid,
+    There are also additional routes in this function that lead to legacies views that serve bytes for that files guid,
     for example the url `/<file-guid>/?action=download` a response for file data is served.
     '''
 
@@ -297,7 +297,7 @@ def resolve_guid(guid, suffix=None):
     if clean_suffix == 'metadata':
         format_arg = request.args.get('format')
         if format_arg:
-            return guid_metadata_download(guid, resource, format_arg)
+            return guid_metadata_download(guid, resource=resource, metadata_format=format_arg)
         else:
             return use_ember_app()
 
@@ -401,6 +401,7 @@ def get_storage_region_list(user, node=False):
     return available_regions
 
 
+@is_contributor_or_public_resource('resource')
 def guid_metadata_download(guid, resource, metadata_format):
     try:
         result = pls_gather_metadata_file(resource, metadata_format)
@@ -422,4 +423,8 @@ def guid_metadata_download(guid, resource, metadata_format):
 def metadata_download(guid):
     format_arg = request.args.get('format', 'datacite-json')
     resource = Guid.load(guid)
-    return guid_metadata_download(guid, resource, format_arg)
+    is_resource_project_or_registration = isinstance(resource.referent, (Node, Registration))
+    response = guid_metadata_download(guid, resource=resource, metadata_format=format_arg)
+    if is_resource_project_or_registration:
+        response.headers['link'] = f'<{settings.DOMAIN}{guid}/>; rel="describes"; type="text/html"'
+    return response

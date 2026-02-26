@@ -40,6 +40,7 @@ from admin.nodes.views import (
 )
 from admin_tests.utilities import setup_log_view, setup_view, handle_post_view_request
 from api_tests.share._utils import mock_update_share
+from tests.utils import capture_notifications
 from website import settings
 from framework.auth.core import Auth
 
@@ -102,6 +103,7 @@ class TestNodeView(AdminTestCase):
         node = ProjectFactory()
         guid = node._id
         request = RequestFactory().get('/fake_path')
+        request.user = AuthUserFactory()
         view = NodeView()
         view = setup_view(view, request, guid=guid)
         temp_object = view.get_object()
@@ -301,6 +303,7 @@ class TestNodeReindex(AdminTestCase):
     def setUp(self):
         super().setUp()
         self.request = RequestFactory().post('/fake_path')
+        patch_messages(self.request)
 
         self.user = AuthUserFactory()
         self.node = ProjectFactory(creator=self.user)
@@ -658,7 +661,8 @@ class TestRegistrationRevertToDraft(AdminTestCase):
 
     def test_cannot_revert_updated_and_approved_registration_new_version(self):
         self.approve_version(self.get_current_version(self.registration))
-        self.create_new_version(self.registration)
+        with capture_notifications():
+            self.create_new_version(self.registration)
         self.approve_version(self.get_current_version(self.registration))
 
         # registration has a few versions including the root
@@ -696,7 +700,8 @@ class TestRegistrationRevertToDraft(AdminTestCase):
         assert self.registration.provider.allow_updates
 
         self.approve_version(self.get_current_version(self.registration))
-        self.create_new_version(self.registration)
+        with capture_notifications():
+            self.create_new_version(self.registration)
         self.approve_version(self.get_current_version(self.registration))
 
         self.registration.provider.allow_updates = False
@@ -737,7 +742,8 @@ class TestRegistrationRevertToDraft(AdminTestCase):
 
     def test_can_revert_registration_with_unapproved_update_to_draft(self):
         self.approve_version(self.get_current_version(self.registration))
-        self.create_new_version(self.registration)
+        with capture_notifications():
+            self.create_new_version(self.registration)
         from_draft = self.registration.draft
 
         latest_version = self.registration.schema_responses.first()
@@ -749,7 +755,7 @@ class TestRegistrationRevertToDraft(AdminTestCase):
         assert from_draft.deleted is None
         assert from_draft.registered_node is None
 
-    def test_all_previous_data_is_restored_after_revertion(self):
+    def test_all_previous_data_is_restored_after_reversion(self):
         self.approve_version(self.get_current_version(self.registration))
 
         draft = DraftRegistration.objects.get(registered_node=self.registration)
@@ -775,19 +781,19 @@ class TestRegistrationRevertToDraft(AdminTestCase):
         assert draft.contributors.count() == 4
         assert draft.tags.count() == 2
 
-    def test_contributors_approvals_are_reset_after_revertion(self):
+    def test_contributors_approvals_are_reset_after_reversion(self):
         contributors = self.pre_moderation_registration.contributors.all()
         for contributor in contributors:
             self.pre_moderation_registration.require_approval(contributor)
 
         assert self.pre_moderation_registration.sanction.approval_stage is ApprovalStates.UNAPPROVED
-
-        for contributor in contributors:
-            self.pre_moderation_registration.sanction.approve(
-                user=contributor,
-                token=self.pre_moderation_registration.sanction.approval_state[contributor._id]['approval_token']
-            )
-            assert self.pre_moderation_registration.sanction.approval_state[contributor._id]['has_approved'] is True
+        with capture_notifications():
+            for contributor in contributors:
+                self.pre_moderation_registration.sanction.approve(
+                    user=contributor,
+                    token=self.pre_moderation_registration.sanction.approval_state[contributor._id]['approval_token']
+                )
+                assert self.pre_moderation_registration.sanction.approval_state[contributor._id]['has_approved'] is True
 
         self.approve_version(self.get_current_version(self.pre_moderation_registration))
 
@@ -871,7 +877,7 @@ class TestRegistrationRevertToDraft(AdminTestCase):
 
         assert self.registration.sanction is None
 
-    def test_embargo_is_reset_after_revertion(self):
+    def test_embargo_is_reset_after_reversion(self):
         self.no_moderation_draft = DraftRegistrationFactory(
             title='embargo-registration',
             description='some description',

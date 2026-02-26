@@ -26,9 +26,9 @@ from framework.postcommit_tasks.handlers import enqueue_postcommit_task
 from framework.sessions.utils import remove_sessions_for_user
 from framework.sessions import get_session
 from framework.utils import throttle_period_expired
-from osf.models import OSFUser
+from osf.models import OSFUser, NotificationType
 from osf.utils.sanitize import strip_html
-from website import settings, mails, language
+from website import settings, language
 from website.util import web_url_for
 from osf.exceptions import ValidationValueError, BlockedEmailError
 from osf.models.provider import PreprintProvider
@@ -207,19 +207,23 @@ def redirect_unsupported_institution(auth):
 def forgot_password_post():
     """Dispatches to ``_forgot_password_post`` passing non-institutional user mail template
     and reset action."""
-    return _forgot_password_post(mail_template=mails.FORGOT_PASSWORD,
-                                 reset_route='reset_password_get')
+    return _forgot_password_post(
+        notificaton_type=NotificationType.Type.USER_FORGOT_PASSWORD,
+        reset_route='reset_password_get'
+    )
 
 
 def forgot_password_institution_post():
     """Dispatches to `_forgot_password_post` passing institutional user mail template, reset
     action, and setting the ``institutional`` flag."""
-    return _forgot_password_post(mail_template=mails.FORGOT_PASSWORD_INSTITUTION,
-                                 reset_route='reset_password_institution_get',
-                                 institutional=True)
+    return _forgot_password_post(
+        notificaton_type=NotificationType.Type.USER_FORGOT_PASSWORD_INSTITUTION,
+        reset_route='reset_password_institution_get',
+        institutional=True
+    )
 
 
-def _forgot_password_post(mail_template, reset_route, institutional=False):
+def _forgot_password_post(notificaton_type, reset_route, institutional=False):
     """
     View for user to submit forgot password form (standard or institutional).  Validates submitted
     form and sends reset-password link via email if valid.  If user has submitted another password
@@ -272,11 +276,13 @@ def _forgot_password_post(mail_template, reset_route, institutional=False):
                         token=user_obj.verification_key_v2['token']
                     )
                 )
-                mails.send_mail(
-                    to_addr=email,
-                    mail=mail_template,
-                    reset_link=reset_link,
-                    can_change_preferences=False,
+                notificaton_type.instance.emit(
+                    user=user_obj,
+                    event_context={
+                        'reset_link': reset_link,
+                        'can_change_preferences': False,
+                        'osf_contact_email': settings.OSF_CONTACT_EMAIL,
+                    },
                 )
 
         # institutional forgot password page displays the message as main text, not as an alert
@@ -653,12 +659,14 @@ def external_login_confirm_email_get(auth, uid, token):
     if external_status == 'CREATE':
         service_url += '&{}'.format(urlencode({'new': 'true'}))
     elif external_status == 'LINK':
-        mails.send_mail(
+        NotificationType.Type.USER_EXTERNAL_LOGIN_LINK_SUCCESS.instance.emit(
             user=user,
-            to_addr=user.username,
-            mail=mails.EXTERNAL_LOGIN_LINK_SUCCESS,
-            external_id_provider=provider,
-            can_change_preferences=False,
+            event_context={
+                'user_fullname': user.fullname,
+                'external_id_provider': provider,
+                'can_change_preferences': False,
+                'osf_contact_email': settings.OSF_CONTACT_EMAIL,
+            },
         )
 
     # Send to celery the following async task to affiliate the user with eligible institutions if verified
@@ -820,51 +828,54 @@ def send_confirm_email(user, email, renew=False, external_id_provider=None, exte
         destination=destination
     )
 
+    logout_query = ''
     try:
         merge_target = OSFUser.objects.get(emails__address=email)
     except OSFUser.DoesNotExist:
         merge_target = None
-
+    merge_account_data = {}
     campaign = campaigns.campaign_for_user(user)
-    branded_preprints_provider = None
-    logo = None
     # Choose the appropriate email template to use and add existing_user flag if a merge or adding an email.
     if external_id_provider and external_id:
         # First time login through external identity provider, link or create an OSF account confirmation
         if user.external_identity[external_id_provider][external_id] == 'CREATE':
-            mail_template = mails.EXTERNAL_LOGIN_CONFIRM_EMAIL_CREATE
+            notification_type = NotificationType.Type.USER_EXTERNAL_LOGIN_CONFIRM_EMAIL_CREATE
         elif user.external_identity[external_id_provider][external_id] == 'LINK':
-            mail_template = mails.EXTERNAL_LOGIN_CONFIRM_EMAIL_LINK
+            notification_type = NotificationType.Type.USER_EXTERNAL_LOGIN_CONFIRM_EMAIL_LINK
+        else:
+            raise HTTPError(http_status.HTTP_400_BAD_REQUEST, data={})
     elif merge_target:
         # Merge account confirmation
-        mail_template = mails.CONFIRM_MERGE
-        confirmation_url = f'{confirmation_url}?logout=1'
+        merge_account_data = {
+            'merge_target_fullname': merge_target.fullname or merge_target.username,
+            'user_username': user.username,
+            'email': merge_target.email,
+        }
+        notification_type = NotificationType.Type.USER_CONFIRM_MERGE
+        logout_query = '?logout=1'
     elif user.is_active:
         # Add email confirmation
-        mail_template = mails.CONFIRM_EMAIL
-        confirmation_url = f'{confirmation_url}?logout=1'
+        notification_type = NotificationType.Type.USER_CONFIRM_EMAIL
+        logout_query = '?logout=1'
     elif campaign:
         # Account creation confirmation: from campaign
-        mail_template = campaigns.email_template_for_campaign(campaign)
-        if campaigns.is_proxy_login(campaign) and campaigns.get_service_provider(campaign) != 'OSF':
-            branded_preprints_provider = campaigns.get_service_provider(campaign)
-        logo = campaigns.get_campaign_logo(campaign)
+        notification_type = campaigns.email_template_for_campaign(campaign)
     else:
         # Account creation confirmation: from OSF
-        mail_template = mails.INITIAL_CONFIRM_EMAIL
+        notification_type = NotificationType.Type.USER_INITIAL_CONFIRM_EMAIL
 
-    mails.send_mail(
-        email,
-        mail_template,
-        user=user,
-        confirmation_url=confirmation_url,
-        email=email,
-        merge_target=merge_target,
-        external_id_provider=external_id_provider,
-        branded_preprints_provider=branded_preprints_provider,
-        osf_support_email=settings.OSF_SUPPORT_EMAIL,
-        can_change_preferences=False,
-        logo=logo if logo else settings.OSF_LOGO
+    notification_type.instance.emit(
+        destination_address=email,
+        event_context={
+            'user_fullname': user.fullname,
+            'confirmation_url': f'{confirmation_url}{logout_query}',
+            'can_change_preferences': False,
+            'external_id_provider': external_id_provider,
+            'osf_contact_email': settings.OSF_CONTACT_EMAIL,
+            'osf_support_email': settings.OSF_SUPPORT_EMAIL,
+            **merge_account_data,
+        },
+        save=False
     )
 
 def send_confirm_email_async(user, email, renew=False, external_id_provider=None, external_id=None, destination=None):
@@ -886,7 +897,7 @@ def register_user(**kwargs):
     """
 
     # Verify that email address match.
-    # Note: Both `landing.mako` and `register.mako` already have this check on the form. Users can not submit the form
+    # Note: Both `landing.mako` and `register.mako` already have this check on the form. Users cannot submit the form
     # if emails do not match. However, this check should not be removed given we may use the raw api call directly.
     json_data = request.get_json()
     if str(json_data['email1']).lower() != str(json_data['email2']).lower():
@@ -1072,6 +1083,8 @@ def external_login_email_post():
                 destination = campaign
                 break
 
+    status_message = None
+    error_list = []
     if form.validate():
         clean_email = form.email.data
         user = get_user(email=clean_email)
@@ -1104,11 +1117,11 @@ def external_login_email_post():
                 destination=destination
             )
             # 3. notify user
-            message = language.EXTERNAL_LOGIN_EMAIL_LINK_SUCCESS.format(
+            status_message = language.EXTERNAL_LOGIN_EMAIL_LINK_SUCCESS.format(
+                fullname=fullname,
                 external_id_provider=external_id_provider,
                 email=user.username
             )
-            kind = 'success'
             # 4. Clear session data
             clear_external_first_login_anonymous_session_data(session)
         else:
@@ -1134,22 +1147,26 @@ def external_login_email_post():
                 destination=destination
             )
             # 4. notify user
-            message = language.EXTERNAL_LOGIN_EMAIL_CREATE_SUCCESS.format(
+            status_message = language.EXTERNAL_LOGIN_EMAIL_CREATE_SUCCESS.format(
+                fullname=fullname,
                 external_id_provider=external_id_provider,
                 email=user.username
             )
-            kind = 'success'
-            # 5. Clear session data
+            # 5. clear session data
             clear_external_first_login_anonymous_session_data(session)
-        status.push_status_message(message, kind=kind, trust=False)
     else:
-        forms.push_errors_to_status(form.errors)
+        form_errors = form.errors
+        for field, _ in form_errors.items():
+            for error in form_errors[field]:
+                error_list.append(error)
 
     # Don't go anywhere
     return {
         'form': form,
         'external_id_provider': external_id_provider,
-        'auth_user_fullname': fullname
+        'auth_user_fullname': fullname,
+        'status_message': status_message,
+        'error_list': error_list,
     }
 
 

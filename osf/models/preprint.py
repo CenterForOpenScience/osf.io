@@ -20,6 +20,7 @@ from framework import sentry
 from framework.auth import Auth
 from framework.exceptions import PermissionsError, UnpublishedPendingPreprintVersionExists
 from framework.auth import oauth_scopes
+from osf.models.notification_type import NotificationType
 
 from .subject import Subject
 from .tag import Tag
@@ -34,14 +35,12 @@ from osf.utils.workflows import DefaultStates, ReviewStates
 from osf.utils import sanitize
 from osf.utils.permissions import ADMIN, WRITE
 from osf.utils.requests import get_request_and_user_id, string_type_request_headers
-from website.notifications.emails import get_user_subscriptions
-from website.notifications import utils
 from website.identifiers.clients import CrossRefClient, ECSArXivCrossRefClient
 from website.project.licenses import set_license
 from website.util import api_v2_url, api_url_for, web_url_for
 from website.util.metrics import provider_source_tag
 from website.citations.utils import datetime_to_csl
-from website import settings, mails
+from website import settings
 from website.preprints.tasks import update_or_enqueue_on_preprint_updated
 
 from .base import BaseModel, Guid, GuidVersionsThrough, GuidMixinQuerySet, VersionedGuidMixin, check_manually_assigned_guid
@@ -383,14 +382,18 @@ class Preprint(DirtyFieldsMixin, VersionedGuidMixin, IdentifierMixin, Reviewable
 
     def get_last_not_rejected_version(self):
         """Get the last version that is not rejected.
+        Returns None if all versions are rejected.
         """
-        return self.get_guid().versions.filter(is_rejected=False).order_by('-version').first().referent
+        last_not_rejected = self.get_guid().versions.filter(is_rejected=False).order_by('-version').first()
+        return last_not_rejected.referent if last_not_rejected else None
 
     def has_unpublished_pending_version(self):
         """Check if preprint has pending unpublished version.
         Note: use `.check_unfinished_or_unpublished_version()` if checking both types
         """
         last_not_rejected_version = self.get_last_not_rejected_version()
+        if not last_not_rejected_version:
+            return False
         return not last_not_rejected_version.date_published and last_not_rejected_version.machine_state == 'pending'
 
     def has_initiated_but_unfinished_version(self):
@@ -529,6 +532,7 @@ class Preprint(DirtyFieldsMixin, VersionedGuidMixin, IdentifierMixin, Reviewable
                     referrer=auth.user,
                     email=contributor.user.email,
                     given_name=contributor.user.fullname,
+                    skip_referrer_permissions=auth.user.groups.filter(name='osf_admin').exists()
                 )
             except ValidationError as e:
                 sentry.log_exception(e)
@@ -587,10 +591,6 @@ class Preprint(DirtyFieldsMixin, VersionedGuidMixin, IdentifierMixin, Reviewable
     @property
     def osfstorage_region(self):
         return self.region
-
-    @property
-    def contributor_email_template(self):
-        return 'preprint'
 
     @property
     def file_read_scope(self):
@@ -696,6 +696,24 @@ class Preprint(DirtyFieldsMixin, VersionedGuidMixin, IdentifierMixin, Reviewable
         return self.machine_state != DefaultStates.INITIAL.value
 
     @property
+    def is_pending_moderation(self):
+        if self.machine_state == DefaultStates.INITIAL.value:
+            return False
+
+        if not self.provider or not self.provider.reviews_workflow:
+            return False
+
+        from api.providers.workflows import PUBLIC_STATES
+
+        workflow = self.provider.reviews_workflow
+        public_states = PUBLIC_STATES.get(workflow, [])
+
+        if self.machine_state not in public_states:
+            return True
+
+        return False
+
+    @property
     def deep_url(self):
         # Required for GUID routing
         return f'/preprints/{self._id}/'
@@ -776,6 +794,22 @@ class Preprint(DirtyFieldsMixin, VersionedGuidMixin, IdentifierMixin, Reviewable
     def is_latest_version(self):
         return self.guids.exists()
 
+    @property
+    def date_created_first_version(self):
+        try:
+            base_guid = self.versioned_guids.first().guid if self.versioned_guids.exists() else None
+            if not base_guid:
+                return self.created
+
+            first_version = base_guid.versions.order_by('version').first()
+
+            if first_version and first_version.referent:
+                return first_version.referent.created
+
+            return self.created
+        except Exception:
+            return self.created
+
     def get_preprint_versions(self, include_rejected=True, **version_filters):
         guids = self.versioned_guids.first().guid.versions.all()
         preprint_versions = (
@@ -797,6 +831,12 @@ class Preprint(DirtyFieldsMixin, VersionedGuidMixin, IdentifierMixin, Reviewable
 
     def get_absolute_url(self):
         return self.absolute_api_v2_url
+
+    def get_versioned_absolute_api_v2_url(self, version):
+        if self.guids.first().versions.filter(version=version).exists():
+            path = f'/preprints/{self.guids.first()._id}{VersionedGuidMixin.GUID_VERSION_DELIMITER}{version}/'
+            return api_v2_url(path)
+        return None
 
     def add_log(self, action, params, auth, foreign_user=None, log_date=None, save=True, request=None, should_hide=False):
         user = None
@@ -1031,34 +1071,29 @@ class Preprint(DirtyFieldsMixin, VersionedGuidMixin, IdentifierMixin, Reviewable
     def _send_preprint_confirmation(self, auth):
         # Send creator confirmation email
         recipient = self.creator
-        event_type = utils.find_subscription_type('global_reviews')
-        user_subscriptions = get_user_subscriptions(recipient, event_type)
-        if self.provider._id == 'osf':
-            logo = settings.OSF_PREPRINTS_LOGO
-        else:
-            logo = self.provider._id
-
-        context = {
-            'domain': settings.DOMAIN,
-            'reviewable': self,
-            'workflow': self.provider.reviews_workflow,
-            'provider_url': '{domain}preprints/{provider_id}'.format(
-                            domain=self.provider.domain or settings.DOMAIN,
-                            provider_id=self.provider._id if not self.provider.domain else '').strip('/'),
-            'provider_contact_email': self.provider.email_contact or settings.OSF_CONTACT_EMAIL,
-            'provider_support_email': self.provider.email_support or settings.OSF_SUPPORT_EMAIL,
-            'no_future_emails': user_subscriptions['none'],
-            'is_creator': True,
-            'provider_name': 'OSF Preprints' if self.provider.name == 'Open Science Framework' else self.provider.name,
-            'logo': logo,
-            'document_type': self.provider.preprint_word
-        }
-
-        mails.send_mail(
-            recipient.username,
-            mails.REVIEWS_SUBMISSION_CONFIRMATION,
+        NotificationType.Type.PROVIDER_REVIEWS_SUBMISSION_CONFIRMATION.instance.emit(
+            subscribed_object=self.provider,
             user=recipient,
-            **context
+            event_context={
+                'domain': settings.DOMAIN,
+                'user_fullname': recipient.fullname,
+                'referrer_fullname': recipient.fullname,
+                'reviewable_title': self.title,
+                'no_future_emails': self.provider.allow_submissions,
+                'reviewable_absolute_url': self.absolute_url,
+                'reviewable_provider_name': self.provider.name,
+                'reviewable_provider__id': self.provider._id,
+                'workflow': self.provider.reviews_workflow,
+                'provider_url': f'{self.provider.domain or settings.DOMAIN}preprints/'
+                                f'{(self.provider._id if not self.provider.domain else '').strip('/')}',
+                'provider_contact_email': self.provider.email_contact or settings.OSF_CONTACT_EMAIL,
+                'provider_support_email': self.provider.email_support or settings.OSF_SUPPORT_EMAIL,
+                'is_creator': True,
+                'provider_name': 'OSF Preprints' if self.provider.name == 'Open Science Framework' else self.provider.name,
+                'logo': settings.OSF_PREPRINTS_LOGO if self.provider._id == 'osf' else self.provider._id,
+                'document_type': self.provider.preprint_word,
+                'notify_comment': not self.provider.reviews_comments_private
+            },
         )
 
     # FOLLOWING BEHAVIOR NOT SPECIFIC TO PREPRINTS
@@ -1070,12 +1105,16 @@ class Preprint(DirtyFieldsMixin, VersionedGuidMixin, IdentifierMixin, Reviewable
         return Tag.all_tags.filter(preprint_tagged=self)
 
     @property
+    def system_tags_objects(self):
+        return self.all_tags.filter(system=True)
+
+    @property
     def system_tags(self):
         """The system tags associated with this node. This currently returns a list of string
         names for the tags, for compatibility with v1. Eventually, we can just return the
         QuerySet.
         """
-        return self.all_tags.filter(system=True).values_list('name', flat=True)
+        return self.system_tags_objects.values_list('name', flat=True)
 
     # Override Taggable
     def add_tag_log(self, tag, auth):
@@ -1096,10 +1135,15 @@ class Preprint(DirtyFieldsMixin, VersionedGuidMixin, IdentifierMixin, Reviewable
     def remove_tag(self, tag, auth, save=True):
         if not tag:
             raise InvalidTagError
-        elif not self.tags.filter(name=tag).exists():
+
+        tag_obj = self.tags.filter(name=tag).first() or self.all_tags.filter(name=tag).first()
+        if not tag_obj:
             raise TagNotFoundError
+
+        if tag_obj.system:
+            # because system tags are hidden by default TagManager
+            tag_obj.delete()
         else:
-            tag_obj = Tag.objects.get(name=tag)
             self.tags.remove(tag_obj)
             self.add_log(
                 action=PreprintLog.TAG_REMOVED,
@@ -1110,10 +1154,12 @@ class Preprint(DirtyFieldsMixin, VersionedGuidMixin, IdentifierMixin, Reviewable
                 auth=auth,
                 save=False,
             )
-            if save:
-                self.save()
-            update_or_enqueue_on_preprint_updated(preprint_id=self._id, saved_fields=['tags'])
-            return True
+
+        if save:
+            self.save()
+
+        update_or_enqueue_on_preprint_updated(preprint_id=self._id, saved_fields=['tags'])
+        return True
 
     @require_permission([WRITE])
     def set_supplemental_node(self, node, auth, save=False, ignore_node_permissions=False, **kwargs):
@@ -1170,7 +1216,7 @@ class Preprint(DirtyFieldsMixin, VersionedGuidMixin, IdentifierMixin, Reviewable
         """Set the description and log the event.
 
         :param str description: The new description
-        :param auth: All the auth informtion including user, API key.
+        :param auth: All the auth information including user, API key.
         :param bool save: Save self after updating.
         """
         return super().set_description(description, auth, save)
@@ -1400,7 +1446,7 @@ class Preprint(DirtyFieldsMixin, VersionedGuidMixin, IdentifierMixin, Reviewable
     @require_permission([ADMIN])
     def update_has_data_links(self, auth: Auth, has_data_links: bool, log: bool = True, save: bool = True, **kwargs):
         """
-        This method sets the `has_data_links` field that respresent the availability of links to supplementary data
+        This method sets the `has_data_links` field that represent the availability of links to supplementary data
         for this preprint and logs that change.
 
         :param auth: Auth object

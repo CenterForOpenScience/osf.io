@@ -200,11 +200,11 @@ def get_settings_url(uid, user):
         return web_url_for('user_notifications', _absolute=True)
 
     node = AbstractNode.load(uid)
-    assert node, 'get_settings_url recieved an invalid Node id'
+    assert node, 'get_settings_url received an invalid Node id'
     return node.web_url_for('node_setting', _guid=True, _absolute=True)
 
 def fix_locale(locale):
-    """Atempt to fix a locale to have the correct casing, e.g. de_de -> de_DE
+    """Attempt to fix a locale to have the correct casing, e.g. de_de -> de_DE
 
     This is NOT guaranteed to return a valid locale identifier.
     """

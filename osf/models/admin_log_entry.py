@@ -34,6 +34,9 @@ REJECT_WITHDRAWAL = 61
 PREPRINT_REMOVED = 70
 PREPRINT_RESTORED = 71
 
+DOI_CREATION_FAILED = 80
+DOI_UPDATE_FAILED = 81
+
 def update_admin_log(user_id, object_id, object_repr, message, action_flag=UNKNOWN):
     AdminLogEntry.objects.log_action(
         user_id=user_id,

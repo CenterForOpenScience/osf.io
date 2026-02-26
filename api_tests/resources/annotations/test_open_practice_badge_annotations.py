@@ -262,7 +262,7 @@ class TestRegistrationListOpenPracticeAnnotations:
         self, app, open_data, open_code, open_materials, creator, open_papers, open_supplements, api_url
     ):
         if api_url.startswith(f'/{API_BASE}nodes/'):
-            pytest.xfail(reason='Filtering not implemented for NodeRegistratonsList')
+            pytest.xfail(reason='Filtering not implemented for NodeRegistrationsList')
         filter_url = f'{api_url}?filter[has_data]=True'
         resp = app.get(filter_url, auth=creator.auth, expect_errors=False)
         data = resp.json['data']
@@ -274,7 +274,7 @@ class TestRegistrationListOpenPracticeAnnotations:
         self, app, open_data, open_code, open_materials, creator, open_papers, open_supplements, api_url
     ):
         if api_url.startswith(f'/{API_BASE}nodes/'):
-            pytest.xfail(reason='Filtering not implemented for NodeRegistratonsList')
+            pytest.xfail(reason='Filtering not implemented for NodeRegistrationsList')
         filter_url = f'{api_url}?filter[has_analytic_code]=True'
         resp = app.get(filter_url, auth=creator.auth, expect_errors=False)
         data = resp.json['data']
@@ -286,7 +286,7 @@ class TestRegistrationListOpenPracticeAnnotations:
         self, app, open_data, open_code, open_materials, creator, open_papers, open_supplements, api_url
     ):
         if api_url.startswith(f'/{API_BASE}nodes/'):
-            pytest.xfail(reason='Filtering not implemented for NodeRegistratonsList')
+            pytest.xfail(reason='Filtering not implemented for NodeRegistrationsList')
         filter_url = f'{api_url}?filter[has_materials]=True'
         resp = app.get(filter_url, auth=creator.auth, expect_errors=False)
         data = resp.json['data']
@@ -298,7 +298,7 @@ class TestRegistrationListOpenPracticeAnnotations:
         self, app, open_data, open_code, open_materials, creator, open_papers, open_supplements, api_url
     ):
         if api_url.startswith(f'/{API_BASE}nodes/'):
-            pytest.xfail(reason='Filtering not implemented for NodeRegistratonsList')
+            pytest.xfail(reason='Filtering not implemented for NodeRegistrationsList')
         filter_url = f'{api_url}?filter[has_papers]=True'
         resp = app.get(filter_url, auth=creator.auth, expect_errors=False)
         data = resp.json['data']
@@ -310,7 +310,7 @@ class TestRegistrationListOpenPracticeAnnotations:
         self, app, open_data, open_code, open_materials, creator, open_papers, open_supplements, api_url
     ):
         if api_url.startswith(f'/{API_BASE}nodes/'):
-            pytest.xfail(reason='Filtering not implemented for NodeRegistratonsList')
+            pytest.xfail(reason='Filtering not implemented for NodeRegistrationsList')
         filter_url = f'{api_url}?filter[has_supplements]=True'
         resp = app.get(filter_url, auth=creator.auth, expect_errors=False)
         data = resp.json['data']

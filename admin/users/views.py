@@ -20,6 +20,7 @@ from osf.exceptions import UserStateError
 from osf.models.base import Guid
 from osf.models.user import OSFUser
 from osf.models.spam import SpamStatus
+from osf.models.notification_type import NotificationType
 from framework.auth import get_user
 from framework.auth.core import generate_verification_key
 
@@ -37,17 +38,18 @@ from osf.models.admin_log_entry import (
     CONFIRM_HAM,
     UNFLAG_SPAM,
     REINDEX_ELASTIC,
+    REINDEX_SHARE,
 )
 
 from admin.users.forms import (
     EmailResetForm,
     UserSearchForm,
-    MergeUserForm,
-    AddSystemTagForm
+    MergeUserForm
 )
+from admin.nodes.views import NodeAddSystemTag, NodeRemoveSystemTag
 from admin.base.views import GuidView
 from api.users.services import send_password_reset_email
-from website.settings import DOMAIN
+from website.settings import DOMAIN, OSF_SUPPORT_EMAIL
 from django.urls import reverse_lazy
 
 
@@ -181,6 +183,14 @@ class UserDisableView(UserMixin, View):
                 object_repr='User',
                 message=f'User account {user.pk} disabled',
                 action_flag=USER_REMOVED
+            )
+            NotificationType.Type.USER_REQUEST_DEACTIVATION_COMPLETE.instance.emit(
+                user=user,
+                event_context={
+                    'user_fullname': user.fullname,
+                    'contact_email': OSF_SUPPORT_EMAIL,
+                    'can_change_preferences': False,
+                }
             )
         else:
             user.reactivate_account()
@@ -383,20 +393,16 @@ class User2FactorDeleteView(UserMixin, View):
         return redirect(self.get_success_url())
 
 
-class UserAddSystemTag(UserMixin, FormView):
+class UserAddSystemTag(UserMixin, NodeAddSystemTag):
     """ Allows authorized users to add system tags to a user.
     """
     permission_required = 'osf.change_osfuser'
-    raise_exception = True
-    form_class = AddSystemTagForm
 
-    def form_valid(self, form):
-        user = self.get_object()
-        system_tag_to_add = form.cleaned_data['system_tag_to_add']
-        user.add_system_tag(system_tag_to_add)
-        user.save()
 
-        return super().form_valid(form)
+class UserRemoveSystemTag(UserMixin, NodeRemoveSystemTag):
+    """ Allows authorized users to remove system tags from a user.
+    """
+    permission_required = 'osf.change_osfuser'
 
 
 class UserMergeAccounts(UserMixin, FormView):
@@ -552,6 +558,44 @@ class UserReindexElastic(UserMixin, View):
             message=f'User Reindexed (Elastic): {user._id}',
             action_flag=REINDEX_ELASTIC
         )
+        return redirect(self.get_success_url())
+
+
+class UserShareReindex(UserMixin, View):
+    permission_required = 'osf.change_osfuser'
+
+    def post(self, request, *args, **kwargs):
+        from api.share.utils import update_share
+        user = self.get_object()
+
+        nodes_count = user.contributed.count()
+        preprints_count = user.preprints.filter(deleted=None).count()
+
+        for node in user.contributed:
+            try:
+                update_share(node)
+            except Exception as e:
+                messages.error(request, f'Failed to SHARE reindex node {node._id}: {e}')
+
+        for preprint in user.preprints.filter(deleted=None):
+            try:
+                update_share(preprint)
+            except Exception as e:
+                messages.error(request, f'Failed to SHARE reindex preprint {preprint._id}: {e}')
+
+        messages.success(
+            request,
+            f'Triggered SHARE reindexing for {nodes_count} nodes and {preprints_count} preprints'
+        )
+
+        update_admin_log(
+            user_id=self.request.user.id,
+            object_id=user._id,
+            object_repr='User',
+            message=f'SHARE reindexed all content for user {user._id}',
+            action_flag=REINDEX_SHARE
+        )
+
         return redirect(self.get_success_url())
 
 

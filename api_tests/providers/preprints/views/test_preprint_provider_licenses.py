@@ -53,7 +53,7 @@ class TestPreprintProviderLicenses:
         assert res.json['links']['meta']['total'] == len(licenses)
         assert license_two._id in [item['id'] for item in res.json['data']]
 
-    def test_prerint_provider_has_acceptable_licenses_but_no_default(self, app, provider, licenses, license_one, license_two, license_three, url):
+    def test_preprint_provider_has_acceptable_licenses_but_no_default(self, app, provider, licenses, license_one, license_two, license_three, url):
         provider.licenses_acceptable.add(license_one, license_two)
         provider.default_license = None
         provider.save()

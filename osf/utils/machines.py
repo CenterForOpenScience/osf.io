@@ -6,6 +6,7 @@ from api.providers.workflows import Workflows
 from framework.auth import Auth
 
 from osf.exceptions import InvalidTransitionError
+from osf.models.notification_type import NotificationType
 from osf.models.preprintlog import PreprintLog
 from osf.models.action import ReviewAction, NodeRequestAction, PreprintRequestAction
 from osf.utils import permissions
@@ -21,7 +22,6 @@ from osf.utils.workflows import (
     COLLECTION_SUBMISSION_TRANSITIONS,
     NodeRequestTypes
 )
-from website.mails import mails
 from website.reviews import signals as reviews_signals
 from website.settings import DOMAIN, OSF_SUPPORT_EMAIL, OSF_CONTACT_EMAIL
 
@@ -38,7 +38,7 @@ class BaseMachine(Machine):
 
     def __init__(self, machineable, state_attr='machine_state'):
         """
-        Welcome to the machine, this is our attempt at a state machine. It was written for nodes, prerprints etc,
+        Welcome to the machine, this is our attempt at a state machine. It was written for nodes, preprints etc,
         but sometimes applies to sanctions, it may be to applied to anything that wants to have states and transitions.
 
         The general idea behind this is that we are instantiating the machine object as part of the model and it will
@@ -162,40 +162,59 @@ class ReviewsMachine(BaseMachine):
         notify.notify_accept_reject(self.machineable, ev.kwargs.get('user'), self.action, self.States)
 
     def notify_edit_comment(self, ev):
-        notify.notify_edit_comment(self.machineable, ev.kwargs.get('user'), self.action)
+        notify.notify_edit_comment(self.machineable, ev.kwargs.get('user'), self.action, self.States)
 
     def notify_withdraw(self, ev):
         context = self.get_context()
-        context['ever_public'] = self.machineable.ever_public
+        context['force_withdrawal'] = False
+
         try:
-            preprint_request_action = PreprintRequestAction.objects.get(target__target__id=self.machineable.id,
-                                                                   from_state='pending',
-                                                                   to_state='accepted',
-                                                                   trigger='accept')
-            context['requester'] = preprint_request_action.target.creator
+            preprint_request_action = PreprintRequestAction.objects.get(
+                target__target__id=self.machineable.id,
+                from_state='pending',
+                to_state='accepted',
+                trigger='accept'
+            )
+            requester = preprint_request_action.target.creator
+            comment = preprint_request_action.comment
         except PreprintRequestAction.DoesNotExist:
             # If there is no preprint request action, it means the withdrawal is directly initiated by admin/moderator
             context['force_withdrawal'] = True
+            requester = self.machineable.creator
+            comment = None
+
+        context['requester_fullname'] = requester.fullname
+        context['ever_public'] = self.machineable.ever_public
+        context['reviewable_withdrawal_justification'] = self.machineable.withdrawal_justification
 
         for contributor in self.machineable.contributors.all():
-            context['contributor'] = contributor
-            if context.get('requester', None):
-                context['is_requester'] = context['requester'].username == contributor.username
-            mails.send_mail(
-                contributor.username,
-                mails.WITHDRAWAL_REQUEST_GRANTED,
-                document_type=self.machineable.provider.preprint_word,
-                **context
+            context['contributor_fullname'] = contributor.fullname
+            if context.get('requester_fullname', None):
+                context['is_requester'] = requester == contributor
+
+            NotificationType.Type.PREPRINT_REQUEST_WITHDRAWAL_APPROVED.instance.emit(
+                user=contributor,
+                subscribed_object=self.machineable,
+                event_context={
+                    'document_type': self.machineable.provider.preprint_word,
+                    'reviewable_provider_name': self.machineable.provider.name,
+                    'comment': comment,
+                    'notify_comment': not self.machineable.provider.reviews_comments_private,
+                    **context
+                }
             )
 
     def get_context(self):
         return {
             'domain': DOMAIN,
-            'reviewable': self.machineable,
+            'reviewable_title': self.machineable.title,
+            'reviewable_absolute_url': self.machineable.absolute_url,
+            'reviewable_provider__id': self.machineable.provider._id,
             'workflow': self.machineable.provider.reviews_workflow,
             'provider_url': self.machineable.provider.domain or f'{DOMAIN}preprints/{self.machineable.provider._id}',
             'provider_contact_email': self.machineable.provider.email_contact or OSF_CONTACT_EMAIL,
             'provider_support_email': self.machineable.provider.email_support or OSF_SUPPORT_EMAIL,
+            'osf_contact_email': OSF_SUPPORT_EMAIL,
         }
 
 
@@ -214,13 +233,18 @@ class NodeRequestMachine(BaseMachine):
                 contributor_permissions = ev.kwargs.get('permissions', self.machineable.requested_permissions)
                 make_curator = self.machineable.request_type == NodeRequestTypes.INSTITUTIONAL_REQUEST.value
                 visible = False if make_curator else ev.kwargs.get('visible', True)
+                if self.machineable.request_type in (NodeRequestTypes.ACCESS.value, NodeRequestTypes.INSTITUTIONAL_REQUEST.value):
+                    notification_type = NotificationType.Type.NODE_CONTRIBUTOR_ADDED_ACCESS_REQUEST
+                else:
+                    notification_type = None
+
                 try:
                     self.machineable.target.add_contributor(
                         self.machineable.creator,
                         auth=Auth(ev.kwargs['user']),
                         permissions=contributor_permissions,
                         visible=visible,
-                        send_email=f'{self.machineable.request_type}_request',
+                        notification_type=notification_type,
                         make_curator=make_curator,
                     )
                 except IntegrityError as e:
@@ -238,14 +262,16 @@ class NodeRequestMachine(BaseMachine):
         context = self.get_context()
         context['contributors_url'] = f'{self.machineable.target.absolute_url}contributors/'
         context['project_settings_url'] = f'{self.machineable.target.absolute_url}settings/'
+
         if not self.machineable.request_type == NodeRequestTypes.INSTITUTIONAL_REQUEST.value:
             for admin in self.machineable.target.get_users_with_perm(permissions.ADMIN):
-                mails.send_mail(
-                    admin.username,
-                    mails.ACCESS_REQUEST_SUBMITTED,
-                    admin=admin,
-                    osf_contact_email=OSF_CONTACT_EMAIL,
-                    **context
+                NotificationType.Type.NODE_REQUEST_ACCESS_SUBMITTED.instance.emit(
+                    user=admin,
+                    subscribed_object=self.machineable,
+                    event_context={
+                        'user_fullname': admin.fullname,
+                        **context
+                    }
                 )
 
     def notify_resubmit(self, ev):
@@ -259,11 +285,11 @@ class NodeRequestMachine(BaseMachine):
         """
         if ev.event.name == DefaultTriggers.REJECT.value:
             context = self.get_context()
-            mails.send_mail(
-                self.machineable.creator.username,
-                mails.ACCESS_REQUEST_DENIED,
-                osf_contact_email=OSF_CONTACT_EMAIL,
-                **context
+
+            NotificationType.Type.NODE_REQUEST_ACCESS_DENIED.instance.emit(
+                user=self.machineable.creator,
+                subscribed_object=self.machineable,
+                event_context=context
             )
         else:
             # add_contributor sends approval notification email
@@ -276,8 +302,11 @@ class NodeRequestMachine(BaseMachine):
 
     def get_context(self):
         return {
-            'node': self.machineable.target,
-            'requester': self.machineable.creator
+            'node_title': self.machineable.target.title,
+            'node_id': self.machineable.target._id,
+            'node_absolute_url': self.machineable.target.absolute_url,
+            'requester_fullname': self.machineable.creator.fullname,
+            'requester_absolute_url': self.machineable.creator.absolute_url,
         }
 
 
@@ -305,15 +334,21 @@ class PreprintRequestMachine(BaseMachine):
     def notify_submit(self, ev):
         context = self.get_context()
         if not self.auto_approval_allowed():
+            context['reviewable'] = self.machineable.target
+            context['requester_fullname'] = self.machineable.creator.fullname
             reviews_signals.email_withdrawal_requests.send(timestamp=timezone.now(), context=context)
+            reviews_signals.reviews_email_withdrawal_requests.send(timestamp=timezone.now(), context=context)
 
     def notify_accept_reject(self, ev):
         if ev.event.name == DefaultTriggers.REJECT.value:
             context = self.get_context()
-            mails.send_mail(
-                self.machineable.creator.username,
-                mails.WITHDRAWAL_REQUEST_DECLINED,
-                **context
+            context['comment'] = self.action.comment
+            context['contributor_fullname'] = self.machineable.creator.fullname
+
+            NotificationType.Type.PREPRINT_REQUEST_WITHDRAWAL_DECLINED.instance.emit(
+                user=self.machineable.creator,
+                subscribed_object=self.machineable,
+                event_context=context
             )
         else:
             pass
@@ -332,10 +367,14 @@ class PreprintRequestMachine(BaseMachine):
 
     def get_context(self):
         return {
-            'reviewable': self.machineable.target,
-            'requester': self.machineable.creator,
+            'reviewable_title': self.machineable.target.title,
+            'reviewable_absolute_url': self.machineable.target.absolute_url,
+            'reviewable_provider__id': self.machineable.target.provider._id,
+            'reviewable_provider_name': self.machineable.target.provider.name,
+            'requester_fullname': self.machineable.creator.fullname,
             'is_request_email': True,
-            'document_type': self.machineable.target.provider.preprint_word
+            'document_type': self.machineable.target.provider.preprint_word,
+            'notify_comment': not self.machineable.target.provider.reviews_comments_private,
         }
 
 
@@ -345,7 +384,7 @@ class ApprovalsMachine(Machine):
     The valid machine states for a Sanction object are defined in Workflows.ApprovalStates.
     The valid transitions between these states are defined in Workflows.APPROVAL_TRANSITIONS.
 
-    The ApprovaslMachine can be used by by instantiating an ApprovalsMachine and attaching the
+    The ApprovalsMachine can be used by by instantiating an ApprovalsMachine and attaching the
     desired model with the 'model' kwarg. Attached models will inherit the 'trigger' functions
     named in the APPROVAL_TRANSITIONS dictionary (submit, approve, accept, and reject).
 
@@ -356,9 +395,9 @@ class ApprovalsMachine(Machine):
     4) Update the state field of the Sanction object via the approval_stage setter
     5) Call Sanction member functions listed in the 'after' key of the dictionary
 
-    Attached models must define the callbacks used by the ApprvalsMachine:
+    Attached models must define the callbacks used by the ApprovalsMachine:
     * is_moderated: Determines what transition to follow from `accept` and `reject` triggers
-    * revisable: Determines what transiition to follow on a 'reject' trigger
+    * revisable: Determines what transition to follow on a 'reject' trigger
     * `_on_submit', '_on_approve', '_on_complete', and '_on_reject': Define any custom per-trigger logic
     * _save_transition': Defines any global, post-transition logic
 

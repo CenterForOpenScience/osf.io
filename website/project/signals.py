@@ -11,5 +11,3 @@ node_deleted = signals.signal('node-deleted')
 after_create_registration = signals.signal('post-create-registration')
 
 archive_callback = signals.signal('archive-callback')
-
-privacy_set_public = signals.signal('privacy_set_public')

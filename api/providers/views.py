@@ -78,6 +78,7 @@ from osf.models import (
     WhitelistedSHAREPreprintProvider,
 )
 from osf.models.action import RegistrationAction, CollectionSubmissionAction
+from osf.models.spam import SpamStatus
 from osf.registrations.utils import (
     BulkRegistrationUpload,
     InvalidHeadersError,
@@ -148,7 +149,7 @@ class RegistrationProviderList(GenericProviderList):
 
 
 class PreprintProviderList(PreprintMetricsViewMixin, GenericProviderList):
-    """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/preprint_provider_list).
+    """See [documentation for this endpoint](https://developer.osf.io/#operation/preprint_provider_list).
     """
 
     model_class = PreprintProvider
@@ -226,7 +227,7 @@ class RegistrationProviderDetail(GenericProviderDetail):
 
 
 class PreprintProviderDetail(GenericProviderDetail, generics.UpdateAPIView):
-    """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/preprint_provider_detail).
+    """See [documentation for this endpoint](https://developer.osf.io/#operation/preprint_provider_detail).
     """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
@@ -322,7 +323,7 @@ class RegistrationProviderSubjects(BaseProviderSubjects):
 
 
 class PreprintProviderSubjects(BaseProviderSubjects):
-    """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/preprint_provider_subjects_list).
+    """See [documentation for this endpoint](https://developer.osf.io/#operation/preprint_provider_subjects_list).
     """
     view_category = 'preprint-providers'
     provider_class = PreprintProvider  # Not actually the model being serialized, privatize to avoid issues
@@ -400,13 +401,13 @@ class PreprintProviderHighlightedSubjectList(GenericProviderHighlightedSubjectLi
 
 
 class GenericProviderLicenseList(LicenseList):
-    """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/preprint_provider_licenses_list)
+    """See [documentation for this endpoint](https://developer.osf.io/#operation/preprint_provider_licenses_list)
     """
     ordering = ()  # TODO: should be ordered once the frontend for selecting default licenses no longer relies on order
 
     def get_default_queryset(self):
         """
-        Returns provider.acceptable_licenses if they exist, otherwise returns all licenses.
+        Returns provider.acceptable_licenses if they exist; otherwise, returns all licenses.
         The provider's default_license is also included in the queryset if one exists.
         """
         provider = get_object_or_error(
@@ -447,7 +448,7 @@ class PreprintProviderLicenseList(GenericProviderLicenseList):
 
 
 class PreprintProviderPreprintList(JSONAPIBaseView, generics.ListAPIView, PreprintFilterMixin, ProviderMixin):
-    """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/preprint_providers_preprints_list).
+    """See [documentation for this endpoint](https://developer.osf.io/#operation/preprint_providers_preprints_list).
     """
     provider_class = PreprintProvider
     permission_classes = (
@@ -778,6 +779,9 @@ class RegistrationProviderRegistrationList(JSONAPIBaseView, generics.ListAPIView
 
         return Registration.objects.filter(
             provider=provider,
+            deleted__isnull=True,
+        ).exclude(
+            spam_status__in=[SpamStatus.FLAGGED, SpamStatus.SPAM],
         ).annotate(
             revision_state=registration_annotations.REVISION_STATE,
             **resource_annotations.make_open_practice_badge_annotations(),

@@ -13,6 +13,7 @@ from osf_tests.factories import (
     RegistrationFactory,
     RegistrationProviderFactory
 )
+from tests.utils import capture_notifications
 
 USER_ROLES = ['read', 'write', 'admin', 'moderator', 'non-contributor', 'unauthenticated']
 UNAPPROVED_RESPONSE_STATES = [
@@ -56,12 +57,13 @@ def configure_test_preconditions(
 
     updated_response = None
     if updated_response_state is not None:
-        updated_response = SchemaResponse.create_from_previous_response(
-            previous_response=initial_response, initiator=initial_response.initiator
-        )
+        with capture_notifications():
+            updated_response = SchemaResponse.create_from_previous_response(
+                previous_response=initial_response,
+                initiator=initial_response.initiator
+            )
         updated_response.approvals_state_machine.set_state(updated_response_state)
         updated_response.save()
-
     auth = configure_auth(registration, role)
     return auth, updated_response, registration, provider
 
@@ -92,7 +94,7 @@ class TestRegistrationSchemaResponseListGETPermissions:
             return 410
         # Withdrawn registrations always return
         # UNAUTHORIZED for unauthenticated users and
-        # FORBIDDEN for all othrs
+        # FORBIDDEN for all others
         if registration_status == 'withdrawn':
             if role == 'unauthenticated':
                 return 401
@@ -210,7 +212,7 @@ class TestRegistrationSchemaResponseListGETBehavior:
         assert encountered_ids == expected_ids
 
     # Only test contributors here.
-    # Moderators tested elsehwere, and permissions tests confirm that unauthenticated users
+    # Moderators tested elsewhere, and permissions tests confirm that unauthenticated users
     # and non-contributors cannot GET SchemaResponses for private registrations
     @pytest.mark.parametrize('role', ['read', 'write', 'admin'])
     @pytest.mark.parametrize('response_state', ApprovalStates)

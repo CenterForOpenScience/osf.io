@@ -30,7 +30,7 @@ def get_bannable_urls(instance):
     parsed_absolute_url = {}
 
     if not hasattr(instance, 'absolute_api_v2_url'):
-        logger.warning(f'Tried to ban {instance.__class__}:{instance} but it didn\'t have a absolute_api_v2_url method')
+        logger.warning(f'Tried to ban {instance.__class__}:{instance} but it didn\'t have an absolute_api_v2_url method')
         return [], ''
 
     for host in get_varnish_servers():

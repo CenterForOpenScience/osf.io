@@ -11,7 +11,7 @@ from framework.auth.core import Auth
 from osf.models import (
     NodeLicense,
     PreprintContributor,
-    PreprintLog
+    PreprintLog, NotificationType
 )
 from osf.utils import permissions as osf_permissions
 from osf.utils.permissions import WRITE
@@ -21,6 +21,7 @@ from osf_tests.factories import (
     ProjectFactory,
     SubjectFactory,
 )
+from tests.utils import assert_notification
 from website.settings import CROSSREF_URL
 
 
@@ -501,28 +502,29 @@ class TestPreprintUpdate:
             self, mock_update_doi_metadata, app, user, preprint, url
     ):
         new_user = AuthUserFactory()
-        res = app.post_json_api(
-            url + 'contributors/',
-            {
-                'data': {
-                    'attributes': {
-                        'bibliographic': True,
-                        'permission': WRITE,
-                        'send_email': False
-                    },
-                    'type': 'contributors',
-                    'relationships': {
-                        'users': {
-                            'data': {
-                                'id': new_user._id,
-                                'type': 'users'
+        with assert_notification(type=NotificationType.Type.PREPRINT_CONTRIBUTOR_ADDED_DEFAULT, user=new_user):
+            res = app.post_json_api(
+                url + 'contributors/',
+                {
+                    'data': {
+                        'attributes': {
+                            'bibliographic': True,
+                            'permission': WRITE,
+                            'send_email': False
+                        },
+                        'type': 'contributors',
+                        'relationships': {
+                            'users': {
+                                'data': {
+                                    'id': new_user._id,
+                                    'type': 'users'
+                                }
                             }
                         }
                     }
-                }
-            },
-            auth=user.auth
-        )
+                },
+                auth=user.auth
+            )
 
         assert res.status_code == 201
         assert new_user in preprint.contributors
@@ -600,14 +602,15 @@ class TestPreprintUpdate:
 
     def test_update_published(self, app, user):
         unpublished = PreprintFactory(creator=user, is_published=False)
-        app.patch_json_api(
-            f'/{API_BASE}preprints/{unpublished._id}/',
-            build_preprint_update_payload(
-                unpublished._id,
-                attributes={'is_published': True}
-            ),
-            auth=user.auth
-        )
+        with assert_notification(type=NotificationType.Type.PROVIDER_REVIEWS_SUBMISSION_CONFIRMATION, user=user):
+            app.patch_json_api(
+                f'/{API_BASE}preprints/{unpublished._id}/',
+                build_preprint_update_payload(
+                    unpublished._id,
+                    attributes={'is_published': True}
+                ),
+                auth=user.auth
+            )
         unpublished.reload()
         assert unpublished.is_published
 
@@ -619,13 +622,14 @@ class TestPreprintUpdate:
             project=project
         )
         assert not unpublished.node.is_public
-        app.patch_json_api(
-            f'/{API_BASE}preprints/{unpublished._id}/',
-            build_preprint_update_payload(
-                unpublished._id,
-                attributes={'is_published': True}),
-            auth=user.auth
-        )
+        with assert_notification(type=NotificationType.Type.PROVIDER_REVIEWS_SUBMISSION_CONFIRMATION, user=user):
+            app.patch_json_api(
+                f'/{API_BASE}preprints/{unpublished._id}/',
+                build_preprint_update_payload(
+                    unpublished._id,
+                    attributes={'is_published': True}),
+                auth=user.auth
+            )
         unpublished.node.reload()
         unpublished.reload()
 
@@ -778,7 +782,7 @@ class TestPreprintUpdate:
         assert log.action == PreprintLog.UPDATE_DATA_LINKS
         assert log.params == {'user': user._id, 'preprint': preprint._id}
 
-        update_payload = build_preprint_update_payload(preprint._id, attributes={'data_links': 'maformed payload'})
+        update_payload = build_preprint_update_payload(preprint._id, attributes={'data_links': 'malformed payload'})
         res = app.patch_json_api(url, update_payload, auth=user.auth, expect_errors=True)
 
         assert res.status_code == 400
@@ -924,7 +928,7 @@ class TestPreprintUpdate:
         assert log.action == PreprintLog.UPDATE_PREREG_LINKS
         assert log.params == {'user': user._id, 'preprint': preprint._id}
 
-        update_payload = build_preprint_update_payload(preprint._id, attributes={'prereg_links': 'maformed payload'})
+        update_payload = build_preprint_update_payload(preprint._id, attributes={'prereg_links': 'malformed payload'})
         res = app.patch_json_api(url, update_payload, auth=user.auth, expect_errors=True)
 
         assert res.status_code == 400
@@ -958,12 +962,12 @@ class TestPreprintUpdate:
 
         update_payload = build_preprint_update_payload(
             preprint._id,
-            attributes={'prereg_link_info': 'maformed payload'}
+            attributes={'prereg_link_info': 'malformed payload'}
         )
         res = app.patch_json_api(url, update_payload, auth=user.auth, expect_errors=True)
 
         assert res.status_code == 400
-        assert res.json['errors'][0]['detail'] == '"maformed payload" is not a valid choice.'
+        assert res.json['errors'][0]['detail'] == '"malformed payload" is not a valid choice.'
 
     def test_update_has_coi_false_with_null_conflict_statement(self, app, user, preprint, url):
         update_payload = build_preprint_update_payload(

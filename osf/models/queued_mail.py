@@ -108,7 +108,7 @@ def queue_mail(to_addr, mail, send_at, user, **context):
 #EMAIL_TYPE = {
 #    'template': the mako template used for email_type,
 #    'subject': subject used for the actual email,
-#    'categories': categories to attach to the email using Sendgrid's SMTPAPI.
+#    'categories': categories to attach to the email using SendGrid's SMTPAPI.
 #    'engagement': Whether this is an engagement email that can be disabled with the disable_engagement_emails waffle flag
 #    'presend': predicate function that determines whether an email should be sent. May also
 #               modify mail.data.

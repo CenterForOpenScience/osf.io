@@ -29,7 +29,7 @@
                 </p>
             </span>
 
-            <!-- Oauth Start Button -->
+            <!-- OAuth Start Button -->
             <span data-bind="if: showTokenCreateButton">
                 <a href="#s3InputCredentials" data-toggle="modal" class="pull-right text-primary addon-auth">
                     Connect  Account

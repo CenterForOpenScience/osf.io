@@ -20,6 +20,7 @@ from osf_tests.factories import (
     RegistrationFactory,
 )
 from tests.base import OsfTestCase
+from tests.utils import capture_notifications
 
 
 @pytest.mark.enable_bookmark_creation
@@ -143,7 +144,7 @@ class TestProjectViews(OsfTestCase):
         url = self.child_project.web_url_for('view_project')
         res = self.app.get(url, auth=self.auth)
         assert 'Private Project' not in res.text
-        assert 'parent project'in res.text
+        assert 'parent project' in res.text
 
     def test_edit_description(self):
         self.app.post(
@@ -359,7 +360,8 @@ class TestProjectViews(OsfTestCase):
         grand_child = NodeFactory(parent=child, creator=user)
         project.save()
 
-        fork = project.fork_node(auth)
+        with capture_notifications():
+            fork = project.fork_node(auth)
         fork.save()
         grand_child_fork = fork.nodes[0].nodes[0]
         assert grand_child_fork.root == fork
@@ -368,7 +370,8 @@ class TestProjectViews(OsfTestCase):
         user = AuthUserFactory()
         project = ProjectFactory(creator=user)
         auth = Auth(project.creator)
-        fork = project.fork_node(auth)
+        with capture_notifications():
+            fork = project.fork_node(auth)
         project.save()
         fork.remove_node(auth)
 
@@ -381,13 +384,14 @@ class TestProjectViews(OsfTestCase):
         user = AuthUserFactory()
         project = ProjectFactory(creator=user)
         auth = Auth(project.creator)
-        fork = project.fork_node(auth)
+        with capture_notifications():
+            fork = project.fork_node(auth)
         project.save()
         registration = RegistrationFactory(project=fork)
 
         url = project.api_url_for('view_project')
         res = self.app.get(url, auth=user.auth)
-        assert 'fork_count'in res.json['node']
+        assert 'fork_count' in res.json['node']
         assert 1 == res.json['node']['fork_count']
 
     def test_registration_retraction_redirect(self):

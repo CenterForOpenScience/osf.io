@@ -43,7 +43,7 @@ commit()
 
 
 ### OAuth and ngrok (alternate untested instructions)
-**Note:** It is reccomended that you follow the above instructions over the ngrok insturctions.
+**Note:** It is recommended that you follow the above instructions over the ngrok instructions.
 
 1. Download ngrok (partially free, but TLS requires [subscription](https://ngrok.com/product#pricing))
 2. Run with `ngrok tls -subdomain=openscience 5000`

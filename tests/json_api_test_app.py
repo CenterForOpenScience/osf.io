@@ -90,7 +90,7 @@ class JSONAPITestApp(TestApp, JSONAPIWrapper):
             # Add any rendered template detail to the response.
             # If there was only one template rendered (the most likely case),
             # flatten the list to a single element.
-            def flattend(detail):
+            def flattened(detail):
                 if len(data[detail]) == 1:
                     return data[detail][0]
                 return data[detail]
@@ -100,12 +100,12 @@ class JSONAPITestApp(TestApp, JSONAPIWrapper):
             response.templates = data.get('templates', None)
 
             if data.get('context'):
-                response.context = flattend('context')
+                response.context = flattened('context')
 
             if data.get('template'):
-                response.template = flattend('template')
+                response.template = flattened('template')
             elif data.get('templates'):
-                response.template = flattend('templates')
+                response.template = flattened('templates')
 
             return response
         finally:

@@ -37,6 +37,7 @@
                 {% include "users/disable_user.html" with user=user %}
                 {% include "users/mark_spam.html" with user=user %}
                 {% include "users/reindex_user_elastic.html" with user=user %}
+                {% include "users/reindex_user_share.html" with user=user %}
             </div>
         </div>
     </div>
@@ -79,6 +80,22 @@
                     <td>{{ user.fullname }}</td>
                 </tr>
                 <tr>
+                    <td>First Name</td>
+                    <td>{{ user.given_name }}</td>
+                </tr>
+                <tr>
+                    <td>Last Name</td>
+                    <td>{{ user.family_name }}</td>
+                </tr>
+                <tr>
+                    <td>Middle Name</td>
+                    <td>{{ user.middle_names }}</td>
+                </tr>
+                <tr>
+                    <td>Suffix</td>
+                    <td>{{ user.suffix }}</td>
+                </tr>
+                <tr>
                     <td>Username</td>
                     <td>{{ user.username }}</td>
                 </tr>
@@ -116,7 +133,7 @@
                 </tr>
                 <tr>
                     <td>Last login</td>
-                    <td>{{ user.last_login }}</td>
+                    <td>{{ user.date_last_login }}</td>
                 </tr>
                 <tr>
                     <td>Change password last attempt</td>
@@ -170,7 +187,7 @@
                         {{ user.is_staff }}
                     </td>
                 </tr>
-                {% include "users/add_system_tags.html" with user=user %}
+                {% include "nodes/add_system_tags.html" with resource=user %}
                 {% include "nodes/spam_status.html" with resource=user %}
                 <tr>
                     <td>Preprints</td>
