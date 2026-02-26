@@ -29,6 +29,7 @@ def deactivate_requested_accounts(dry_run=True):
                         'user_username': user.username,
                     }
                 )
+                # TODO: Should ask PO whether we should send USER_REQUEST_DEACTIVATION mail
         else:
             logger.info(f'Disabling user {user._id}.')
             if not dry_run:

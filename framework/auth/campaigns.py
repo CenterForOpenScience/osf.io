@@ -14,7 +14,7 @@ mutex = threading.Lock()
 CAMPAIGNS = None
 CAMPAIGNS_LAST_REFRESHED = timezone.now()
 
-
+# TODO: should clean campaigns
 def get_campaigns():
 
     global CAMPAIGNS
