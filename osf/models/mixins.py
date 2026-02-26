@@ -2308,11 +2308,14 @@ class SpamOverrideMixin(SpamMixin):
         ):
             self.suspend_spam_user(user, domains=domains)
 
-    def suspend_spam_user(self, user, domains=None):
+    def suspend_spam_user(self, user, domains=None, self_spam=False):
         """
         This suspends a users account and makes all there resources private, key word here is SUSPENDS this should not
         delete the account or any info associated with it. It should not be assumed the account is spam and it should
         not be used to train spam detecting services.
+
+        self_spam - defines if this object must be spammed. When spam is found by akismet or oopsystem, object becomes flagged
+        and we don't need to spam it but for some cases we want to manually call this method with self spamming.
         """
         domains = domains or []
         if user.is_hammy:
@@ -2337,12 +2340,12 @@ class SpamOverrideMixin(SpamMixin):
 
         # Make public nodes private from this contributor
         for node in user.all_nodes:
-            if self._id != node._id and len(node.contributors) == 1 and node.is_public:
+            if (self._id != node._id or self_spam) and len(node.contributors) == 1 and node.is_public:
                 node.confirm_spam(save=True, domains=domains, train_spam_services=False)
 
         # Make preprints private from this contributor
         for preprint in user.preprints.all():
-            if self._id != preprint._id and len(preprint.contributors) == 1 and preprint.is_public:
+            if (self._id != preprint._id or self_spam) and len(preprint.contributors) == 1 and preprint.is_public:
                 preprint.confirm_spam(save=True, domains=domains, train_spam_services=False)
 
     def flag_spam(self, skip_user_suspension=False):

@@ -2494,13 +2494,14 @@ class TestCheckResourceForSpamPostcommit:
             with mock.patch('osf.external.spam.tasks.OOPSpamClient.check_content') as mock_oops_check_content:
                 mock_akismet_check_content.return_value = (bool(akismet_spam_data), akismet_spam_data)
                 mock_oops_check_content.return_value = (bool(oops_spam_data), oops_spam_data)
-                spam_tasks.check_resource_for_spam_postcommit(
-                    guid=spam_object._id,
-                    content=content,
-                    author=author,
-                    author_email=author_email,
-                    request_headers=request_headers
-                )
+                with capture_notifications():
+                    spam_tasks.check_resource_for_spam_postcommit(
+                        guid=spam_object._id,
+                        content=content,
+                        author=author,
+                        author_email=author_email,
+                        request_headers=request_headers
+                    )
                 user.reload()
                 project.reload()
                 project2.reload()
@@ -2750,13 +2751,14 @@ class TestCheckResourceForSpamPostcommit:
 
         mock_check_domains.return_value = ['again_spam.com']
 
-        spam_tasks.check_resource_for_spam_postcommit(
-            guid=project._id,
-            content='Check me for spam at again_spam.com',
-            author=user.fullname,
-            author_email=user.username,
-            request_headers={}
-        )
+        with capture_notifications():
+            spam_tasks.check_resource_for_spam_postcommit(
+                guid=project._id,
+                content='Check me for spam at again_spam.com',
+                author=user.fullname,
+                author_email=user.username,
+                request_headers={}
+            )
         user.reload()
         project.reload()
         project2.reload()
@@ -2788,13 +2790,14 @@ class TestCheckResourceForSpamPostcommit:
 
         mock_check_domains.return_value = ['again_spam.com']
 
-        spam_tasks.check_resource_for_spam_postcommit(
-            guid=preprint._id,
-            content='Check me for spam at again_spam.com',
-            author=user.fullname,
-            author_email=user.username,
-            request_headers={}
-        )
+        with capture_notifications():
+            spam_tasks.check_resource_for_spam_postcommit(
+                guid=preprint._id,
+                content='Check me for spam at again_spam.com',
+                author=user.fullname,
+                author_email=user.username,
+                request_headers={}
+            )
         user.reload()
         project.reload()
         project2.reload()
