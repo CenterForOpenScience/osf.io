@@ -137,7 +137,7 @@ class PreprintMixin(NodeMixin):
                 raise Gone(detail='The requested preprint is no longer available.', meta={'flagged_content': True})
             else:
                 sentry.log_message(f'Preprint deleted: [guid={base_guid_id}, version={preprint_version}]')
-                raise NotFound
+                raise Gone(detail='The requested preprint is no longer available.')
 
         if isinstance(user, AnonymousUser):
             user_is_reviewer = user_is_contributor = False
