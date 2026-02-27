@@ -607,6 +607,14 @@ class TestFileView:
         assert node._id in split_href
         assert node.id not in split_href
 
+    def test_spammed_node_file_detail_gone_for_contributor(self, app, node, file_url, user):
+        node.confirm_spam(save=True, train_spam_services=False)
+        res = app.get(file_url, auth=user.auth, expect_errors=True)
+        assert res.status_code == 410
+        error = res.json['errors'][0]
+        assert error['detail'] == 'The requested file is no longer available.'
+        assert 'meta' in error
+        assert error['meta']['flagged_content']
 
 @pytest.mark.django_db
 class TestFileVersionView:

@@ -233,6 +233,17 @@ class TestRegistrationDetail:
         expected_url = f'{public_url}relationships/subjects/'
         assert urlparse(self_url).path == expected_url
 
+    def test_spammed_registration_detail_gone_for_contributor(self, app, user, public_registration, private_registration):
+        for registration in (public_registration, private_registration):
+            registration.confirm_spam(save=True, train_spam_services=False)
+            url = f'/{API_BASE}registrations/{registration._id}/'
+            res = app.get(url, auth=user.auth, expect_errors=True)
+            assert res.status_code == 410
+            error = res.json['errors'][0]
+            assert error['detail'] == 'The requested registration is no longer available.'
+            assert 'meta' in error
+            assert error['meta']['flagged_content']
+
 
 class TestRegistrationUpdateTestCase:
 
