@@ -30,6 +30,7 @@ from api.files.serializers import (
     FileDetailSerializer,
     FileVersionSerializer,
 )
+from django.contrib.auth.models import AnonymousUser
 
 
 class FileMixin:
@@ -51,6 +52,11 @@ class FileMixin:
                 raise Gone(detail='The requested file is no longer available.')
 
         if getattr(obj.target, 'deleted', None):
+            user = self.request.user
+            # show more specific message for files of spammed target for contributor
+            # to render UI to contact support team to ham it if it is spammed by mistake.
+            if getattr(obj.target, 'is_spammy', False) and not isinstance(user, AnonymousUser) and obj.target.is_contributor(user):
+                raise Gone(detail='The requested file is no longer available.', meta={'flagged_content': True})
             raise Gone(detail='The requested file is no longer available')
 
         if getattr(obj.target, 'is_retracted', False):

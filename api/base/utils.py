@@ -5,6 +5,7 @@ from hashids import Hashids
 import waffle
 
 from django.apps import apps
+from django.contrib.auth.models import AnonymousUser
 from django.core.exceptions import ObjectDoesNotExist
 from django.db.models import QuerySet
 from rest_framework import fields
@@ -156,8 +157,12 @@ def get_object_or_error(model_or_qs, query_or_pk=None, request=None, display_nam
             raise Gone
         else:
             AbstractNode = apps.get_model('osf', 'AbstractNode')
-            meta = {'flagged_content': obj.is_spammy, 'source': display_name} if isinstance(obj, AbstractNode)else {}
-            raise Gone(detail=f'The requested {display_name} is no longer available.', meta=meta)
+            user = getattr(request, 'user', None) if request else None
+            # show more specific message for spammy nodes for contributor to render UI to contact support team to ham it
+            # if it is spammed by mistake.
+            if user and isinstance(obj, AbstractNode) and obj.is_spammy and not isinstance(user, AnonymousUser) and obj.is_contributor(user):
+                raise Gone(detail=f'The requested {display_name} is no longer available.', meta={'flagged_content': True})
+            raise Gone(detail=f'The requested {display_name} is no longer available.')
     return obj
 
 

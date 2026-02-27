@@ -126,16 +126,21 @@ class PreprintMixin(NodeMixin):
                 qs = Preprint.published_objects.filter(versioned_guids__guid___id=base_guid_id).order_by('-versioned_guids__version')
                 preprint = qs.select_for_update().first() if check_select_for_update(self.request) else qs.select_related('node').first()
 
+        user = self.request.user
         if not preprint:
             sentry.log_message(f'Preprint not found: [guid={base_guid_id}, version={preprint_version}]')
             if ignore_404:
                 return
             raise NotFound
         if preprint.deleted is not None:
-            sentry.log_message(f'Preprint deleted: [guid={base_guid_id}, version={preprint_version}]')
-            raise NotFound
+            # show more specific message for spammy preprint for contributor to render UI to contact support team
+            # to ham it if it is spammed by mistake.
+            if preprint.is_spammy and not isinstance(user, AnonymousUser) and preprint.is_contributor(user):
+                raise Gone(detail='The requested preprint is no longer available.', meta={'flagged_content': True})
+            else:
+                sentry.log_message(f'Preprint deleted: [guid={base_guid_id}, version={preprint_version}]')
+                raise NotFound
 
-        user = self.request.user
         if isinstance(user, AnonymousUser):
             user_is_reviewer = user_is_contributor = False
         else:
@@ -166,9 +171,6 @@ class PreprintMixin(NodeMixin):
         # May raise a permission denied
         if check_object_permissions:
             self.check_object_permissions(self.request, preprint)
-
-        if preprint.is_spammy:
-            raise Gone(detail='The requested preprint is no longer available.', meta={'flagged_content': True, 'source': 'preprint'})
 
         return preprint
 
