@@ -616,6 +616,16 @@ class TestFileView:
         assert 'meta' in error
         assert error['meta']['flagged_content']
 
+    def test_deleted_file_not_spammed_gone(self, app, user, file, file_url):
+        file.delete(user=user, save=True)
+        res = app.get(file_url, expect_errors=True)
+        assert res.status_code == 410
+        error = res.json['errors'][0]
+        assert error['detail'] == 'The requested file is no longer available.'
+        assert 'meta' in error
+        assert not error['meta'].get('flagged_content', False)
+
+
 @pytest.mark.django_db
 class TestFileVersionView:
 

@@ -189,6 +189,15 @@ class TestPreprintDetail:
         assert 'meta' in error
         assert error['meta']['flagged_content'] is True
 
+    def test_not_spammed_deleted_preprint_detail(self, app, preprint, user, url):
+        preprint.is_deleted = True
+        preprint.save()
+        res = app.get(url, expect_errors=True)
+        assert res.status_code == 404
+        error = res.json['errors'][0]
+        assert error['detail'] == 'Not found.'
+
+
 @pytest.mark.django_db
 class TestPreprintDelete:
 

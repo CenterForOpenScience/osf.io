@@ -244,6 +244,18 @@ class TestRegistrationDetail:
             assert 'meta' in error
             assert error['meta']['flagged_content']
 
+    def test_not_spammed_detailed_registration_detail_gone(self, app, user, public_registration, private_registration):
+        for registration in (public_registration, private_registration):
+            registration.deleted = timezone.now()
+            registration.save()
+            url = f'/{API_BASE}registrations/{registration._id}/'
+            res = app.get(url, expect_errors=True)
+            assert res.status_code == 410
+            error = res.json['errors'][0]
+            assert error['detail'] == 'The requested registration is no longer available.'
+            assert 'meta' in error
+            assert not error['meta'].get('flagged_content', False)
+
 
 class TestRegistrationUpdateTestCase:
 
