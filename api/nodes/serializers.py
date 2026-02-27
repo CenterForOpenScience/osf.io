@@ -1223,7 +1223,7 @@ class NodeContributorsSerializer(JSONAPISerializer):
 
 class NodeContributorsBulkCreateListSerializer(JSONAPIListSerializer):
 
-    email_preferences = ['default', 'false']
+    email_preferences = ['false']
 
     def _parse_payload_item(self, item, user_map):
         uid = item.get('_id')
@@ -1234,7 +1234,8 @@ class NodeContributorsBulkCreateListSerializer(JSONAPIListSerializer):
             raise exceptions.ValidationError(detail='A user ID or full name must be provided to add a contributor.')
 
         email_pref = self.context['request'].GET.get('send_email') or self.context['default_email']
-        if email_pref not in self.email_preferences:
+        email_preferences = getattr(self.child, 'email_preferences', self.email_preferences)
+        if email_pref not in email_preferences:
             raise exceptions.ValidationError(f'{email_pref} is not a valid email preference.')
 
         return {

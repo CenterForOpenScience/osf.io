@@ -36,7 +36,6 @@ from api.caching.utils import storage_usage_cache
 
 from osf_tests.factories import ProjectFactory, ApiOAuth2PersonalTokenFactory, PreprintFactory
 from website.files.utils import attach_versions
-from website.settings import EXTERNAL_EMBER_APPS
 from api_tests.draft_nodes.views.test_draft_node_files_lists import prepare_mock_wb_response
 
 
@@ -1413,28 +1412,17 @@ class TestFileViews(StorageTestCase):
                 {'name': 'testpath', 'path': '/testpath', 'materialized': '/testpath', 'kind': 'file'},
             ]
         )
-        with override_flag(features.EMBER_FILE_PROJECT_DETAIL, active=True):
-            url = self.node.web_url_for('addon_view_or_download_file', path='testpath', provider='github')
-            self.app.get(url, auth=self.user.auth)
-            file = GithubFile.objects.get(_path='/testpath', provider='github')
-            assert file.history
+        url = self.node.web_url_for('addon_view_or_download_file', path='testpath', provider='github')
+        self.app.get(url, auth=self.user.auth)
+        file = GithubFile.objects.get(_path='/testpath', provider='github')
+        assert file.history
 
-    @mock.patch('website.views.stream_emberapp')
-    def test_file_views(self, mock_ember):
-        with override_flag(features.EMBER_FILE_PROJECT_DETAIL, active=True):
-            file = create_test_file(target=self.node, user=self.user)
-            url = self.node.web_url_for('addon_view_or_download_file', path=file._id, provider=file.provider)
-            res = self.app.get(url, auth=self.user.auth)
-            assert res.status_code == 302
-            assert res.headers['Location'] == f'{settings.DOMAIN}{file.get_guid()._id}/'
-            assert not mock_ember.called
-            res = self.app.get(url, auth=self.user.auth, follow_redirects=True)
-            assert res.status_code == 200
-            assert mock_ember.called
-            args, kwargs = mock_ember.call_args
-
-            assert args[0] == EXTERNAL_EMBER_APPS['ember_osf_web']['server']
-            assert args[1] == EXTERNAL_EMBER_APPS['ember_osf_web']['path'].rstrip('/')
+    def test_file_views(self):
+        file = create_test_file(target=self.node, user=self.user)
+        url = self.node.web_url_for('addon_view_or_download_file', path=file._id, provider=file.provider)
+        res = self.app.get(url, auth=self.user.auth)
+        assert res.status_code == 302
+        assert res.headers['Location'] == f'{settings.DOMAIN}{file.get_guid()._id}/'
 
     def test_download_file(self):
         file = create_test_file(target=self.node, user=self.user)
@@ -1551,11 +1539,19 @@ class TestPreprintFileViews(StorageTestCase):
         # Test download works with path
         url = base_url.format(file._id)
         redirect = self.app.get(url, auth=self.user.auth)
+        link_header = (f'<{settings.DOMAIN}metadata/{file._id}/?format=linkset> ; rel="linkset" ; type="application/linkset", '
+                       f'<{settings.DOMAIN}metadata/{file._id}/?format=linkset-json"> ; rel="linkset-json" ; type="application/linkset+json"')
+        assert link_header == redirect.headers['Link']
         assert redirect.status_code == 302
 
         # Test download works with guid
-        url = base_url.format(file.get_guid(create=True)._id)
+        guid = file.get_guid(create=True)._id
+        url = base_url.format(guid)
         redirect = self.app.get(url, auth=self.user.auth)
+        link_header = (
+            f'<{settings.DOMAIN}metadata/{guid}/?format=linkset> ; rel="linkset" ; type="application/linkset", '
+            f'<{settings.DOMAIN}metadata/{guid}/?format=linkset-json"> ; rel="linkset-json" ; type="application/linkset+json"')
+        assert link_header == redirect.headers['Link']
         assert redirect.status_code == 302
 
         # Test nonexistent file 404's

@@ -90,13 +90,13 @@ class TestAuthUtils(OsfTestCase):
 
         user.reload()
 
-        self.app.set_cookie(settings.COOKIE_NAME, user.get_or_create_cookie().decode())
-        res = self.app.get(f'/confirm/{user._id}/{token}')
+        with capture_notifications(expect_none=True):
+            self.app.set_cookie(settings.COOKIE_NAME, user.get_or_create_cookie().decode())
+            res = self.app.get(f'/confirm/{user._id}/{token}')
+            res = self.app.resolve_redirect(res)
 
-        res = self.app.resolve_redirect(res)
-
-        assert res.status_code == 302
-        assert '/' == urlparse(res.location).path
+            assert res.status_code == 302
+            assert '/myprojects/' == urlparse(res.location).path
         # assert len(get_session()['status']) == 1
 
     def test_get_user_by_id(self):
@@ -114,7 +114,7 @@ class TestAuthUtils(OsfTestCase):
         assert not auth.get_user(email=user.username, password='wrong')
 
     def test_get_user_by_external_info(self):
-        service_url = 'http://localhost:5000/dashboard/'
+        service_url = 'http://localhost:5000/my_projects/'
         user, validated_credentials, cas_resp = generate_external_user_with_resp(service_url)
         user.save()
         assert auth.get_user(external_id_provider=validated_credentials['provider'], external_id=validated_credentials['id']) == user
@@ -123,7 +123,7 @@ class TestAuthUtils(OsfTestCase):
     @mock.patch('framework.auth.cas.CasClient.service_validate')
     def test_successful_external_login_cas_redirect(self, mock_service_validate, mock_get_user_from_cas_resp):
         # TODO: check in qa url encoding
-        service_url = 'http://localhost:5000/dashboard/'
+        service_url = 'http://localhost:5000/my_projects/'
         user, validated_credentials, cas_resp = generate_external_user_with_resp(service_url)
         mock_service_validate.return_value = cas_resp
         mock_get_user_from_cas_resp.return_value = (user, validated_credentials, 'authenticate')
@@ -138,7 +138,7 @@ class TestAuthUtils(OsfTestCase):
     @mock.patch('framework.auth.cas.get_user_from_cas_resp')
     @mock.patch('framework.auth.cas.CasClient.service_validate')
     def test_successful_external_first_login(self, mock_service_validate, mock_get_user_from_cas_resp):
-        service_url = 'http://localhost:5000/dashboard/'
+        service_url = 'http://localhost:5000/my_projects/'
         _, validated_credentials, cas_resp = generate_external_user_with_resp(service_url, user=False)
         mock_service_validate.return_value = cas_resp
         mock_get_user_from_cas_resp.return_value = (None, validated_credentials, 'external_first_login')
@@ -151,7 +151,7 @@ class TestAuthUtils(OsfTestCase):
     @mock.patch('framework.auth.cas.get_user_from_cas_resp')
     @mock.patch('framework.auth.cas.CasClient.service_validate')
     def test_successful_external_first_login_without_attributes(self, mock_service_validate, mock_get_user_from_cas_resp, mock_external_first_login_authenticate):
-        service_url = 'http://localhost:5000/dashboard/'
+        service_url = 'http://localhost:5000/my_projects/'
         user, validated_credentials, cas_resp = generate_external_user_with_resp(service_url, user=False, release=False)
         mock_service_validate.return_value = cas_resp
         mock_get_user_from_cas_resp.return_value = (None, validated_credentials, 'external_first_login')
@@ -721,6 +721,59 @@ class TestPermissionDecorators(AuthAppTestCase):
         with pytest.raises(HTTPError) as ctx:
             thriller(node=project)
         assert ctx.value.code == http_status.HTTP_401_UNAUTHORIZED
+
+    def decorated_view(self, *args, **kwargs):
+        return 'Success'
+
+    ## 1. Public Access
+    @mock.patch('framework.auth.decorators.Auth.from_kwargs')
+    def test_private_resource_not_allow_anonymous(self, mock_auth):
+        from framework.auth.decorators import is_contributor_or_public_resource
+        decorator = is_contributor_or_public_resource('resource')
+        project = ProjectFactory(is_public=False)
+        mock_auth.return_value = Auth(user=None)
+        decorated_func = decorator(self.decorated_view)
+        with decoratorapp.test_request_context():
+            with pytest.raises(HTTPError) as excinfo:
+                decorated_func(resource=project)
+            assert excinfo.value.code == http_status.HTTP_403_FORBIDDEN
+
+    @mock.patch('framework.auth.decorators.Auth.from_kwargs')
+    def test_public_resource_allow_anonymous(self, mock_auth):
+        from framework.auth.decorators import is_contributor_or_public_resource
+        decorator = is_contributor_or_public_resource('resource')
+        project = ProjectFactory(is_public=True)
+        mock_auth.return_value = Auth(user=None)
+        decorated_func = decorator(self.decorated_view)
+        with decoratorapp.test_request_context():
+            result = decorated_func(resource=project)
+            assert result == 'Success'
+
+    @mock.patch('framework.auth.decorators.Auth.from_kwargs')
+    def test_private_resource_allows_contributor(self, mock_auth):
+        from framework.auth.decorators import is_contributor_or_public_resource
+        user = UserFactory()
+        project = ProjectFactory(is_public=False)
+        project.add_contributor(user, save=True)
+        mock_auth.return_value = Auth(user=user)
+        decorator = is_contributor_or_public_resource('resource')
+        decorated_func = decorator(self.decorated_view)
+        with decoratorapp.test_request_context():
+            result = decorated_func(resource=project)
+            assert result == 'Success'
+
+    @mock.patch('framework.auth.decorators.Auth.from_kwargs')
+    def test_private_resource_not_allow_non_contributor_auth_user(self, mock_auth):
+        from framework.auth.decorators import is_contributor_or_public_resource
+        user = UserFactory()
+        project = ProjectFactory(is_public=False)
+        mock_auth.return_value = Auth(user=user)
+        decorator = is_contributor_or_public_resource('resource')
+        decorated_func = decorator(self.decorated_view)
+        with decoratorapp.test_request_context():
+            with pytest.raises(HTTPError) as excinfo:
+                decorated_func(resource=project)
+            assert excinfo.value.code == http_status.HTTP_403_FORBIDDEN
 
 
 def needs_addon_view(**kwargs):

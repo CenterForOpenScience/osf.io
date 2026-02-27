@@ -929,12 +929,12 @@ def addon_view_or_download_file(auth, path, provider, **kwargs):
         )
     )
 
-    # There's no download action redirect to the Ember front-end file view and create guid.
+    # There's no download action redirect to the front-end file view and create guid.
     if action != 'download':
-        if isinstance(target, Node) and flag_is_active(request, features.EMBER_FILE_PROJECT_DETAIL):
+        if isinstance(target, Node):
             guid = file_node.get_guid(create=True)
             return redirect(f'{settings.DOMAIN}{guid._id}/')
-        if isinstance(target, Registration) and flag_is_active(request, features.EMBER_FILE_REGISTRATION_DETAIL):
+        if isinstance(target, Registration):
             guid = file_node.get_guid(create=True)
             return redirect(f'{settings.DOMAIN}{guid._id}/')
 
@@ -1035,9 +1035,12 @@ def persistent_file_download(auth, **kwargs):
 
     query_params = request.args.to_dict()
 
-    return redirect(
-        file.generate_waterbutler_url(**query_params),
-        code=http_status.HTTP_302_FOUND
+    return make_response(
+        '', http_status.HTTP_302_FOUND, {
+            'Location': file.generate_waterbutler_url(**query_params),
+            'Link': f'<{settings.DOMAIN}metadata/{id_or_guid}/?format=linkset> ; rel="linkset" ; type="application/linkset",'
+                    f' <{settings.DOMAIN}metadata/{id_or_guid}/?format=linkset-json"> ; rel="linkset-json" ; type="application/linkset+json"',
+        }
     )
 
 

@@ -50,7 +50,7 @@ class TestRegistrationViews(RegistrationsTestBase):
     @mock.patch('website.archiver.tasks.archive')
     def test_node_register_page_registration(self, mock_archive):
         draft_reg = DraftRegistrationFactory(branched_from=self.node, user=self.node.creator)
-        reg = self.node.register_node(get_default_metaschema(), self.auth, draft_reg, None)
+        reg = self.node.register_node(get_default_metaschema(), self.auth, draft_reg, None, provider=draft_reg.provider)
         url = reg.web_url_for('node_register_page')
         res = self.app.get(url, auth=self.user.auth)
         assert res.status_code == http_status.HTTP_200_OK
@@ -166,31 +166,6 @@ class TestDraftRegistrationViews(RegistrationsTestBase):
         for draft in res.json['drafts']:
             assert draft['pk'] in [f._id for f in found]
 
-    def test_new_draft_registration_POST(self):
-        target = NodeFactory(creator=self.user)
-        payload = {
-            'schema_name': self.meta_schema.name,
-            'schema_version': self.meta_schema.schema_version
-        }
-        url = target.web_url_for('new_draft_registration')
-
-        with capture_notifications():
-            res = self.app.post(url, data=payload, auth=self.user.auth)
-        assert res.status_code == http_status.HTTP_302_FOUND
-        target.reload()
-        draft = DraftRegistration.objects.get(branched_from=target)
-        assert draft.registration_schema == self.meta_schema
-
-    def test_new_draft_registration_on_registration(self):
-        target = RegistrationFactory(user=self.user)
-        payload = {
-            'schema_name': self.meta_schema.name,
-            'schema_version': self.meta_schema.schema_version
-        }
-        url = target.web_url_for('new_draft_registration')
-        res = self.app.post(url, json=payload, auth=self.user.auth)
-        assert res.status_code == http_status.HTTP_403_FORBIDDEN
-
     def test_update_draft_registration_cant_update_registered(self):
         metadata = {
             'summary': {'value': 'updated'}
@@ -205,12 +180,6 @@ class TestDraftRegistrationViews(RegistrationsTestBase):
         url = self.node.api_url_for('update_draft_registration', draft_id=self.draft._id)
 
         res = self.app.put(url, json=payload, auth=self.user.auth)
-        assert res.status_code == http_status.HTTP_403_FORBIDDEN
-
-    def test_edit_draft_registration_page_already_registered(self):
-        self.draft.register(self.auth, save=True)
-        url = self.node.web_url_for('edit_draft_registration_page', draft_id=self.draft._id)
-        res = self.app.get(url, auth=self.user.auth)
         assert res.status_code == http_status.HTTP_403_FORBIDDEN
 
     def test_update_draft_registration(self):

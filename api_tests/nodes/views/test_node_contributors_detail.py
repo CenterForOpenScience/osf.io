@@ -493,7 +493,29 @@ class TestNodeContributorDelete:
         with disconnected_from_listeners(contributor_removed):
             res = app.delete(url, auth=user.auth, expect_errors=True)
 
-        assert res.status_code == 400
+        assert res.status_code == 403
+
+        project.reload()
+        child.reload()
+
+        assert user_write_contrib in project.contributors
+        assert user_write_contrib in child.contributors
+
+    def test_remove_contributor_include_children_forbidden_if_unauthorized_child(self, app, user, user_write_contrib, project):
+        other_admin = AuthUserFactory()
+        child = ProjectFactory(parent=project, creator=other_admin)
+        child.add_contributor(user_write_contrib, permissions=permissions.WRITE, visible=True, save=True)
+
+        assert user in project.contributors
+        assert user not in child.contributors
+        assert other_admin in child.contributors
+        assert user_write_contrib in project.contributors
+        assert user_write_contrib in child.contributors
+
+        url = f'/{API_BASE}nodes/{project._id}/contributors/{user_write_contrib._id}/?include_children=true'
+        with disconnected_from_listeners(contributor_removed):
+            res = app.delete(url, auth=user.auth, expect_errors=True)
+        assert res.status_code == 403
 
         project.reload()
         child.reload()

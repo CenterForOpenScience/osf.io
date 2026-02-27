@@ -21,7 +21,7 @@
         </tr>
     </thead>
     <tbody>
-    {% for brand in brands|dictsort:"name" %}
+    {% for brand in brands|dictsort:"name_lower" %}
     <tr>
         <td><a href="{% url 'brands:detail' brand_id=brand.id %}">{{ brand.name }}</a></td>
         <td>{{ brand.get_provider_types }}</td>
