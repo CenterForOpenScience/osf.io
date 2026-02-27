@@ -574,7 +574,7 @@ class TestNodeDetail:
 
     def test_spammed_node_detail_gone_for_contributor(self, app, user, project_public, url_public):
         project_public.confirm_spam(save=True, train_spam_services=False)
-        res = app.get(url_public, auth=user.auth, expect_errors=True)
+        res = app.get(url_public, expect_errors=True)
         assert res.status_code == 410
         error = res.json['errors'][0]
         assert error['detail'] == 'The requested node is no longer available.'

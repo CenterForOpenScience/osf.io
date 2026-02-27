@@ -133,9 +133,7 @@ class PreprintMixin(NodeMixin):
                 return
             raise NotFound
         if preprint.deleted is not None:
-            # show more specific message for spammy preprint for contributor to render UI to contact support team
-            # to ham it if it is spammed by mistake.
-            if preprint.is_spammy and not isinstance(user, AnonymousUser) and preprint.is_contributor(user):
+            if preprint.is_spammy:
                 raise Gone(detail='The requested preprint is no longer available.', meta={'flagged_content': True})
             else:
                 sentry.log_message(f'Preprint deleted: [guid={base_guid_id}, version={preprint_version}]')

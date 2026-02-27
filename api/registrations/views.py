@@ -102,7 +102,6 @@ from api.schema_responses.permissions import (
     RegistrationSchemaResponseListPermission,
 )
 from api.schema_responses.serializers import RegistrationSchemaResponseSerializer
-from django.contrib.auth.models import AnonymousUser
 
 
 class RegistrationMixin(NodeMixin):
@@ -123,11 +122,7 @@ class RegistrationMixin(NodeMixin):
             raise NotFound
 
         if node.deleted:
-            user = self.request.user
-            # show more specific message for spammy registrations for contributor to render UI to contact support team
-            # to ham it if it is spammed by mistake.
-            is_spam_contributor = node.is_spammy and not isinstance(user, AnonymousUser) and node.is_contributor(user)
-            raise Gone(detail='The requested registration is no longer available.', meta={'flagged_content': True} if is_spam_contributor else {})
+            raise Gone(detail='The requested registration is no longer available.', meta={'flagged_content': node.is_spammy})
 
         if check_object_permissions:
             self.check_object_permissions(self.request, node)
