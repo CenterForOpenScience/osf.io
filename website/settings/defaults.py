@@ -587,6 +587,7 @@ class CeleryConfig:
         'osf.external.spam.tasks',
         'api.share.utils',
         'scripts.remove_after_use.merge_notification_subscription_provider_ct',
+        'scripts.disable_removed_beat_tasks',
     )
 
     # Modules that need metrics and release requirements
@@ -600,6 +601,10 @@ class CeleryConfig:
     #  Setting up a scheduler, essentially replaces an independent cron job
     # Note: these times must be in UTC
     beat_schedule = {
+        'disable_removed_beat_tasks': {
+            'task': 'scripts.disable_removed_beat_tasks',
+            'schedule': crontab(minute=0, hour=0),  # Daily 8:00 PM EDT
+        },
         'retract_registrations': {
             'task': 'scripts.retract_registrations',
             'schedule': crontab(minute=0, hour=5),  # Daily 12 a.m
