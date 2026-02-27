@@ -46,27 +46,6 @@ notification_types:
     tests: ['osf_tests/test_user.py', 'tests/test_auth.py']
     template: 'website/templates/password_reset.html.mako'
 
-  - name: user_contributor_added_preprint_node_from_osf
-    subject: 'You have been added as a contributor to an OSF preprint'
-    __docs__: ...
-    object_content_type_model_name: osfuser
-    template: 'website/templates/contributor_added_preprint_node_from_osf.html.mako'
-    tests: []
-
-  - name: user_contributor_added_access_request
-    subject: 'You have been added as a contributor to an OSF project'
-    __docs__: ...
-    object_content_type_model_name: osfuser
-    tests: ['tests/test_claim_views.py', 'api_tests/requests/views/test_request_actions_create.py', 'api_tests/requests/mixins.py', 'osf_tests/test_institutional_admin_contributors.py']
-    template: 'website/templates/contributor_added_access_request.html.mako'
-
-  - name: user_contributor_added_osf_preprint
-    subject: 'You have been added as a contributor to an OSF preprint.'
-    __docs__: ...
-    object_content_type_model_name: osfuser
-    tests: []
-    template: 'website/templates/contributor_added_preprint_node_from_osf.html.mako'
-
   - name: user_external_login_link_success
     subject: 'OSF Verification Success'
     __docs__: ...
@@ -80,13 +59,6 @@ notification_types:
     object_content_type_model_name: osfuser
     tests: ['tests/test_auth_views.py']
     template: 'website/templates/confirm.html.mako'
-
-  - name: forgot_password
-    subject: 'Reset Password'
-    __docs__: ...
-    object_content_type_model_name: osfuser
-    tests: ['api_tests/users/views/test_user_settings_reset_password.py', 'tests/test_forgot_password.py']
-    template: 'website/templates/forgot_password.html.mako'
 
   - name: user_welcome
     subject: 'Welcome to OSF'
@@ -137,13 +109,6 @@ notification_types:
     tests: ['tests/test_adding_contributor_views.py', 'api_tests/users/views/test_user_claim.py', 'tests/test_claim_views.py']
     template: 'website/templates/invite_default.html.mako'
 
-  - name: user_pending_invite
-    subject: 'You have been invited to contribute to an OSF project'
-    __docs__: ...
-    object_content_type_model_name: osfuser
-    tests: []
-    template: 'website/templates/pending_invite.html.mako'
-
   - name: user_forward_invite_registered
     subject: 'Please forward to {user_fullname}'
     __docs__: ...
@@ -165,13 +130,6 @@ notification_types:
     template: 'website/templates/initial_confirm.html.mako'
     tests: ['tests/test_resend_confirmation.py', 'tests/test_auth.py']
 
-  - name: user_export_data_request
-    subject: 'Data Export Request'
-    __docs__: ...
-    object_content_type_model_name: osfuser
-    template: 'website/templates/support_request.html.mako'
-    tests: []
-
   - name: user_request_deactivation
     subject: '[via OSF] Deactivation Request'
     __docs__: ...
@@ -191,13 +149,6 @@ notification_types:
     __docs__: ...
     object_content_type_model_name: osfuser
     template: 'website/templates/storage_cap_exceeded_announcement.html.mako'
-    tests: []
-
-  - name: user_duplicate_accounts_sso_osf4i
-    subject: 'Duplicate Account Detection'
-    __docs__: ...
-    object_content_type_model_name: osfuser
-    template: 'website/templates/duplicate_accounts_sso_osf4i.html.mako'
     tests: []
 
   - name: user_duplicate_accounts_osf4i
@@ -242,14 +193,14 @@ notification_types:
     template: 'website/templates/registration_bulk_upload_success_partial.html.mako'
     tests: ['api_tests/providers/tasks/test_bulk_upload.py']
 
-  - name: user_registration_bulk_upload_failure_duplicates
+  - name: registration_bulk_upload_failure_duplicates
     subject: 'Bulk Registration Upload Failed - Duplicates Found'
     __docs__: ...
     object_content_type_model_name: osfuser
     template: 'website/templates/registration_bulk_upload_failure_duplicates.html.mako'
     tests: []
 
-  - name: registration_bulk_upload_unexpected_failure
+  - name: desk_user_registration_bulk_upload_unexpected_failure
     subject: 'Bulk Registration Upload Unexpected Failed'
     __docs__: ...
     object_content_type_model_name: osfuser
@@ -319,29 +270,23 @@ notification_types:
     template: 'website/templates/archive_uncaught_error_user.html.mako'
     tests: []
 
-  - name: user_confirm_email_erpc
+  - name: user_campaign_confirm_email_erpc
     subject: 'OSF Account Verification, Election Research Preacceptance Competition'
     object_content_type_model_name: osfuser
     template: 'website/templates/confirm_erpc.html.mako'
     tests: []
 
-  - name: user_confirm_email_agu_conference
+  - name: user_campaign_confirm_email_agu_conference
     subject: 'OSF Account Verification, from the American Geophysical Union Conference'
     object_content_type_model_name: osfuser
     template: 'website/templates/confirm_erpc.html.mako'
     tests: []
 
-  - name: user_confirm_email_registries_osf
+  - name: user_campaign_confirm_email_registries_osf # TODO: recheck
     subject: 'OSF Account Verification, OSF Registries'
     object_content_type_model_name: osfuser
     template: 'website/templates/confirm_registries_osf.html.mako'
     tests: []
-
-  - name: user_confirm_email_preprints
-    subject: 'OSF Account Verification, Preprints'
-    object_content_type_model_name: osfuser
-    template: 'website/templates/confirm_preprints_osf.html.mako'
-    tests: ['']
 
   - name: user_confirm_merge
     subject: 'Confirm account merge'
@@ -373,7 +318,7 @@ notification_types:
     template: 'website/templates/tou_notif.html.mako'
     tests: []
 
-  - name: user_registration_bulk_upload_product_owner
+  - name: desk_registration_bulk_upload_product_owner
     subject: 'Registry Could Not Bulk Upload Registrations'
     object_content_type_model_name: osfuser
     template: 'website/templates/registration_bulk_upload_product_owner.html.mako'
@@ -412,13 +357,6 @@ notification_types:
     template: 'website/templates/new_pending_withdraw_requests.html.mako'
     tests: ['tests/test_registrations/test_review_flows.py']
 
-  - name: provider_contributor_added_preprint
-    subject: 'Contributor Added to Preprint'
-    __docs__: ...
-    object_content_type_model_name: abstractprovider
-    template: 'website/templates/contributor_added_preprints.html.mako'
-    tests: []
-
   - name: provider_confirm_email_moderation
     subject: 'OSF Account Verification, {provider_name}'
     __docs__: ...
@@ -447,14 +385,6 @@ notification_types:
     template: 'website/templates/reviews_resubmission_confirmation.html.mako'
     tests: ['osf_tests/test_reviewable.py']
 
-  #### NODE
-  - name: node_wiki_updated
-    subject: 'Wiki Updated'
-    __docs__: ...
-    object_content_type_model_name: abstractnode
-    template: 'website/templates/file_updated.html.mako'
-    tests: ['tests/test_events.py']
-
   - name: node_file_updated
     subject: 'Files Updated'
     __docs__: ...
@@ -481,7 +411,7 @@ notification_types:
     __docs__: ...
     object_content_type_model_name: abstractnode
     template: 'website/templates/contributor_added_access_request.html.mako'
-    tests: []
+    tests: ['tests/test_claim_views.py', 'api_tests/requests/views/test_request_actions_create.py', 'api_tests/requests/mixins.py', 'osf_tests/test_institutional_admin_contributors.py']
 
   - name: node_pending_registration_admin
     subject: 'Pending Registration - Admin Notification'
@@ -603,26 +533,13 @@ notification_types:
     template: 'website/templates/updates_rejected.html.mako'
     tests: ['osf_tests/test_schema_responses.py']
 
-  - name: node_archive_file_not_found_desk
-    subject: 'Problem registering {src_title}'
-    __docs__: ...
-    object_content_type_model_name: abstractnode
-    template: 'website/templates/archive_file_not_found_desk.html.mako'
-    tests: []
-
-  - name: node_archive_file_not_found_user
+  - name: user_archive_job_file_not_found
     subject: 'Registration failed because of altered files'
     object_content_type_model_name: abstractnode
     template: 'website/templates/archive_file_not_found_user.html.mako'
     tests: []
 
-  - name: node_archive_uncaught_error_desk
-    subject: 'Problem registering {src_title}'
-    object_content_type_model_name: abstractnode
-    template: 'website/templates/archive_uncaught_error_desk.html.mako'
-    tests: []
-
-  - name: node_archive_registration_stuck_desk
+  - name: desk_archive_registration_stuck
     subject: '[auto] Stuck registrations audit'
     object_content_type_model_name: abstractnode
     template: 'website/templates/archive_registration_stuck_desk.html.mako'
@@ -634,17 +551,9 @@ notification_types:
     template: 'website/templates/archive_success.html.mako'
     tests: []
 
-  - name: node_withdraw_registration_approved
-    object_content_type_model_name: abstractnode
-    template: 'website/templates/withdrawal_request_granted.html.mako'
-
   - name: node_withdrawal_request_approved
     object_content_type_model_name: abstractnode
     template: 'website/templates/withdrawal_request_granted.html.mako'
-
-  - name: node_withdraw_registration_declined
-    object_content_type_model_name: abstractnode
-    template: 'website/templates/withdrawal_request_declined.html.mako'
 
   - name: node_new_public_project
     subject: 'Now, public. Next, impact.'
@@ -682,18 +591,6 @@ notification_types:
     object_content_type_model_name: preprint
     template: 'website/templates/contributor_added_preprints.html.mako'
     tests: ['api_tests/preprints/views/test_preprint_contributors_list.py']
-
-  - name: preprint_withdrawal_request_granted
-    subject: 'Your {document_type} has been withdrawn'
-    object_content_type_model_name: preprint
-    template: 'website/templates/withdrawal_request_granted.html.mako'
-    tests: []
-
-  - name: preprint_withdrawal_request_declined
-    subject: 'Your withdrawal request has been declined'
-    object_content_type_model_name: preprint
-    template: 'website/templates/withdrawal_request_declined.html.mako'
-    tests: []
 
   #### SUPPORT
   #### Collection Submissions
@@ -787,13 +684,6 @@ notification_types:
     __docs__: Archive job failed due to an uncaught error. Sent to support desk.
     object_content_type_model_name: desk
     template: 'website/templates/archive_uncaught_error_desk.html.mako'
-    tests: []
-
-  - name: desk_osf_support_email
-    subject: 'OSF Support Email'
-    __docs__: ...
-    object_content_type_model_name: desk
-    template: 'website/templates/crossref_doi_error.html.mako'
     tests: []
 
   - name: desk_request_deactivation

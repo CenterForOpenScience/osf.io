@@ -14,7 +14,7 @@ mutex = threading.Lock()
 CAMPAIGNS = None
 CAMPAIGNS_LAST_REFRESHED = timezone.now()
 
-
+# TODO: Notification Refactor have replaced deprecated notification types with placeholder ones; still need to clean up deprecated campaigns.
 def get_campaigns():
 
     global CAMPAIGNS
@@ -44,12 +44,12 @@ def get_campaigns():
             preprint_providers = PreprintProvider.objects.all()
             for provider in preprint_providers:
                 if provider._id == 'osf':
-                    confirmation_email_template = NotificationTypeEnum.USER_CAMPAIGN_CONFIRM_PREPRINTS_OSF
+                    confirmation_email_template = NotificationTypeEnum.USER_CONFIRM_EMAIL  # added as a placeholder as removed NotificationType
                     name = 'OSF'
                     url_path = 'preprints/'
                     external_url = None
                 else:
-                    confirmation_email_template = NotificationTypeEnum.USER_CAMPAIGN_CONFIRM_PREPRINTS_BRANDED
+                    confirmation_email_template = NotificationTypeEnum.USER_CONFIRM_EMAIL  # added as a placeholder as removed NotificationType
 
                     name = provider.name
                     url_path = f'preprints/{provider._id}'
@@ -96,7 +96,7 @@ def get_campaigns():
                 'agu_conference_2023': {
                     'system_tag': CampaignSourceTags.AguConference2023.value,
                     'redirect_url': furl(DOMAIN).add(path='dashboard/').url,
-                    'confirmation_email_template': NotificationTypeEnum.USER_CAMPAIGN_CONFIRM_EMAIL_AGU_CONFERENCE_2023,
+                    'confirmation_email_template': NotificationTypeEnum.USER_CONFIRM_EMAIL,  # added as a placeholder as removed NotificationType
                     'login_type': 'native',
                 }
             })
