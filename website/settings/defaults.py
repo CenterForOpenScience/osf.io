@@ -603,7 +603,7 @@ class CeleryConfig:
     beat_schedule = {
         'disable_removed_beat_tasks': {
             'task': 'scripts.disable_removed_beat_tasks',
-            'schedule': crontab(minute=0, hour=0),
+            'schedule': crontab(minute=0, hour=0),  # Daily 8:00 PM EDT
         },
         'retract_registrations': {
             'task': 'scripts.retract_registrations',
