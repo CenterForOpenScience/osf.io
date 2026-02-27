@@ -157,12 +157,13 @@ def get_object_or_error(model_or_qs, query_or_pk=None, request=None, display_nam
             raise Gone
         else:
             AbstractNode = apps.get_model('osf', 'AbstractNode')
-            user = getattr(request, 'user', None) if request else None
+            user = getattr(request, 'user', None)
             # show more specific message for spammy nodes for contributor to render UI to contact support team to ham it
             # if it is spammed by mistake.
-            if user and isinstance(obj, AbstractNode) and obj.is_spammy and not isinstance(user, AnonymousUser) and obj.is_contributor(user):
-                raise Gone(detail=f'The requested {display_name} is no longer available.', meta={'flagged_content': True})
-            raise Gone(detail=f'The requested {display_name} is no longer available.')
+            is_spam_contributor = user and isinstance(obj, AbstractNode) and obj.is_spammy and not isinstance(user, AnonymousUser) and obj.is_contributor(user)
+            raise Gone(
+                detail=f'The requested {display_name} is no longer available.', meta={'flagged_content': True} if is_spam_contributor else {},
+            )
     return obj
 
 
