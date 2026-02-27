@@ -243,21 +243,21 @@ class TestPreprintCitationsContentPermissions(PreprintCitationsMixin, ApiTestCas
 
         # Unauthenticated
         res = self.app.get(self.published_preprint_url, expect_errors=True)
-        assert res.status_code == 404
+        assert res.status_code == 410
 
         # Non contrib
         res = self.app.get(self.published_preprint_url, auth=self.other_contrib.auth, expect_errors=True)
-        assert res.status_code == 404
+        assert res.status_code == 410
 
         # Write contrib
         self.published_preprint.add_contributor(self.other_contrib, WRITE, save=True)
         res = self.app.get(self.published_preprint_url, auth=self.other_contrib.auth, expect_errors=True)
         # Really because preprint is in initial machine state
-        assert res.status_code == 404
+        assert res.status_code == 410
 
         # Admin contrib
         res = self.app.get(self.published_preprint_url, auth=self.admin_contributor.auth, expect_errors=True)
-        assert res.status_code == 404
+        assert res.status_code == 410
 
     def test_abandoned_preprint_citations(self):
         self.published_preprint.machine_state = DefaultStates.INITIAL.value
