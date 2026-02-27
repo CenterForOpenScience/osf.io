@@ -19,16 +19,7 @@ def draft_registrations(auth, **kwargs):
                 'initiator': {
                     'name': draft.initiator.fullname,
                 },
-                'url': draft.branched_from.web_url_for(
-                    'edit_draft_registration_page',
-                    draft_id=draft._id,
-                ),
             }
             for draft in drafts
         ],
     }
-
-
-def registries_landing_page(**kwargs):
-    # placeholder for developer who don't have ember app set up.
-    return {}

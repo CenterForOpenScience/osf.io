@@ -7,9 +7,10 @@ from osf.models import Node
 
 from scripts import populate_new_and_noteworthy_projects as script
 
-TEST_NEW_AND_NOTEWORTHY_GUID = 'nguid'
+NEW_AND_NOTEWORTHY_LINKS_NODE = 'nguid'
 
 
+@mock.patch('scripts.populate_new_and_noteworthy_projects.NEW_AND_NOTEWORTHY_LINKS_NODE', NEW_AND_NOTEWORTHY_LINKS_NODE)
 class TestPopulateNewAndNoteworthy(OsfTestCase):
 
     def setUp(self):
@@ -19,11 +20,11 @@ class TestPopulateNewAndNoteworthy(OsfTestCase):
         self.new_and_noteworthy_links_node._id = TEST_NEW_AND_NOTEWORTHY_GUID
         self.new_and_noteworthy_links_node.save()
 
-        self.nn1 = ProjectFactory(is_public=True, title='Noteworthy Alpha')
-        self.nn2 = ProjectFactory(is_public=True, title='Noteworthy Bravo')
-        self.nn3 = ProjectFactory(is_public=True, title='Noteworthy Charlie')
-        self.nn4 = ProjectFactory(is_public=True, title='Noteworthy Foxtrot')
-        self.nn5 = ProjectFactory(is_public=True, title='Noteworthy Golf')
+        self.nn1 = ProjectFactory(is_public=True, title='Noteworthy Project Alpha')
+        self.nn2 = ProjectFactory(is_public=True, title='Noteworthy Project Beta')
+        self.nn3 = ProjectFactory(is_public=True, title='Noteworthy Project Gamma')
+        self.nn4 = ProjectFactory(is_public=True, title='Noteworthy Project Delta')
+        self.nn5 = ProjectFactory(is_public=True, title='Noteworthy Project Epsilon')
 
         self.all_ids = {self.nn1._id, self.nn2._id, self.nn3._id, self.nn4._id, self.nn5._id}
 

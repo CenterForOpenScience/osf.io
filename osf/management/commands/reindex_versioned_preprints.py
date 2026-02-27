@@ -38,12 +38,6 @@ def reindex_versioned_preprints(dry_run=False, batch_size=100, provider_id=None,
         else:
             try:
                 preprint.update_search()
-                if processed % 10 == 0:
-                    logger.info(
-                        f'Re-indexed preprint {preprint._id} '
-                        f'(version {preprint.versioned_guids.first().version if preprint.versioned_guids.exists() else "N/A"}) '
-                        f'[{processed}/{total_count}]'
-                    )
             except Exception as e:
                 logger.error(f'Failed to re-index preprint {preprint._id}: {e}')
 

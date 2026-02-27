@@ -96,12 +96,6 @@ PREPRINT_PROVIDER_DOMAINS = {
     'prefix': PROTOCOL,
     'suffix': '/'
 }
-# External Ember App Local Development
-USE_EXTERNAL_EMBER = False
-PROXY_EMBER_APPS = False
-# http://docs.python-requests.org/en/master/user/advanced/#timeouts
-EXTERNAL_EMBER_SERVER_TIMEOUT = 3.05
-EXTERNAL_EMBER_APPS = {}
 
 LOG_PATH = os.path.join(APP_PATH, 'logs')
 TEMPLATES_PATH = os.path.join(BASE_PATH, 'templates')
@@ -474,6 +468,8 @@ class CeleryConfig:
         'scripts.add_missing_identifiers_to_preprints',
         'osf.management.commands.approve_pending_schema_response',
         'api.share.utils',
+        'scripts.check_manual_restart_approval',
+        'scripts.enhanced_stuck_registration_audit',
     }
 
     try:
@@ -575,6 +571,7 @@ class CeleryConfig:
         'osf.management.commands.approve_pending_schema_responses',
         'osf.management.commands.sync_doi_metadata',
         'api.providers.tasks',
+        'api.users.tasks',
         'osf.management.commands.daily_reporters_go',
         'osf.management.commands.monthly_reporters_go',
         'osf.external.spam.tasks',

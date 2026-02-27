@@ -135,10 +135,6 @@ class PreprintMixin(NodeMixin):
             sentry.log_message(f'Preprint deleted: [guid={base_guid_id}, version={preprint_version}]')
             raise NotFound
 
-        # May raise a permission denied
-        if check_object_permissions:
-            self.check_object_permissions(self.request, preprint)
-
         user = self.request.user
         if isinstance(user, AnonymousUser):
             user_is_reviewer = user_is_contributor = False
@@ -162,7 +158,14 @@ class PreprintMixin(NodeMixin):
                 raise PermissionDenied(
                     detail='This preprint is pending moderation and is not yet publicly available.',
                 )
+            # May raise a permission denied
+            if check_object_permissions:
+                self.check_object_permissions(self.request, preprint)
             raise NotFound
+
+        # May raise a permission denied
+        if check_object_permissions:
+            self.check_object_permissions(self.request, preprint)
 
         return preprint
 
