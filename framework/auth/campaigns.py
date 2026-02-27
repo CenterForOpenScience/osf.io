@@ -14,7 +14,7 @@ mutex = threading.Lock()
 CAMPAIGNS = None
 CAMPAIGNS_LAST_REFRESHED = timezone.now()
 
-# TODO: should clean campaigns
+# TODO: Notification Refactor have replaced deprecated notification types with placeholder ones; still need to clean up deprecated campaigns.
 def get_campaigns():
 
     global CAMPAIGNS
