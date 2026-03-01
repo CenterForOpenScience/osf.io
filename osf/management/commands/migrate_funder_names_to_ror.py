@@ -253,7 +253,14 @@ class Command(BaseCommand):
             ror_info = mapping.get(funder_identifier, None)
 
             if ror_info is None:
-                die("how is possible?")
+                logger.info(
+                    f'{"[DRY RUN] " if dry_run else ""}'
+                    f'Unrecognized ror id for {record.guid._id}: '
+                    f'{funder_identifier}'
+                )
+                updated_funding_info.append(funder)
+                continue
+
 
             # Create updated funder entry
             updated_funder = funder.copy()
