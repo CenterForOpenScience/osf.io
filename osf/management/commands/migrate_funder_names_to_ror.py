@@ -27,7 +27,6 @@ Only the "ror id" and "ror name" columns are used. The others may be omitted.
 """
 import csv
 import logging
-import re
 
 from django.core.management.base import BaseCommand
 from django.db import transaction
