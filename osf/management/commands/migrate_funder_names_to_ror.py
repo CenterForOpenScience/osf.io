@@ -238,11 +238,6 @@ class Command(BaseCommand):
         for funder in record.funding_info:
             funder_type = funder.get('funder_identifier_type', '')
             funder_identifier = funder.get('funder_identifier', '')
-            logger.info(
-                f'{"[DRY RUN] " if dry_run else ""}'
-                f'Updating ror name in {record.guid._id}: '
-                f'{funder_type} -> {funder_identifier}'
-            )
 
             # Only update ROR funder records
             if funder_type != 'ROR':
@@ -251,7 +246,6 @@ class Command(BaseCommand):
 
             # Try to find in mapping
             ror_info = mapping.get(funder_identifier, None)
-
             if ror_info is None:
                 logger.info(
                     f'{"[DRY RUN] " if dry_run else ""}'
@@ -261,21 +255,27 @@ class Command(BaseCommand):
                 updated_funding_info.append(funder)
                 continue
 
+            # Has name changed?
+            if funder.get('funder_name') == ror_info['ror_name']:
+                logger.info(
+                    f'{"[DRY RUN] " if dry_run else ""}'
+                    f'ROR name unchanged for {record.guid._id}: '
+                    f'{funder_identifier} -> {funder.get("funder_name")}'
+                )
+                updated_funding_info.append(funder)
+                continue
 
             # Create updated funder entry
+            logger.info(
+                f'{"[DRY RUN] " if dry_run else ""}'
+                f'Updating name for {record.guid._id}: '
+                f'id {funder_identifier} from {funder["funder_name"]} to {ror_info["ror_name"]}'
+            )
             updated_funder = funder.copy()
-            if ror_info.get('ror_name'):
-                updated_funder['funder_name'] = ror_info['ror_name']
-
+            updated_funder['funder_name'] = ror_info['ror_name']
             updated_funding_info.append(updated_funder)
             record_modified = True
             funder_stats['migrated'] += 1
-
-            logger.info(
-                f'{"[DRY RUN] " if dry_run else ""}'
-                f'Updating ror name in {record.guid._id}: '
-                f'{funder_identifier} -> {ror_info["ror_name"]}'
-            )
 
         # Warn about duplicate ROR IDs that would result from migration
         # THIS SHOULDN'T HAPPEN
