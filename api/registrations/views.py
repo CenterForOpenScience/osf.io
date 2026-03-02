@@ -122,7 +122,7 @@ class RegistrationMixin(NodeMixin):
             raise NotFound
 
         if node.deleted:
-            raise Gone(detail='The requested registration is no longer available.')
+            raise Gone(detail='The requested registration is no longer available.', meta={'flagged_content': node.is_spammy})
 
         if check_object_permissions:
             self.check_object_permissions(self.request, node)
