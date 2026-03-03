@@ -1207,6 +1207,10 @@ def validate_next_url(next_url):
     :return: True if valid, False otherwise
     """
 
+    # allow redirection to angular locally
+    if settings.LOCAL_ANGULAR_URL in next_url and settings.DEBUG_MODE:
+        return True
+
     # disable external domain using `//`: the browser allows `//` as a shortcut for non-protocol specific requests
     # like http:// or https:// depending on the use of SSL on the page already.
     if next_url.startswith('//'):
