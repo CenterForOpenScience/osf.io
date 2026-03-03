@@ -349,29 +349,32 @@ def get_user_from_cas_resp(cas_resp):
     """
     from osf.models import OSFUser
     if cas_resp.user:
-        user = OSFUser.load(cas_resp.user)
-        # cas returns a valid OSF user id
-        if user:
-            return user, None, 'authenticate'
-        # cas does not return a valid OSF user id
-        else:
-            external_credential = validate_external_credential(cas_resp.user)
-            # invalid cas response
-            if not external_credential:
-                print_cas_log('CAS response error - missing user or external identity', LogLevel.ERROR)
-                return None, None, None
-            # cas returns a valid external credential
-            user = get_user(external_id_provider=external_credential['provider'],
-                            external_id=external_credential['id'])
-            # existing user found
-            if user:
-                # Send to celery the following async task to affiliate the user with eligible institutions if verified
-                from framework.auth.tasks import update_affiliation_for_orcid_sso_users
-                enqueue_task(update_affiliation_for_orcid_sso_users.s(user._id, external_credential['id']))
-                return user, external_credential, 'authenticate'
-            # user first time login through external identity provider
-            else:
-                return None, external_credential, 'external_first_login'
+        print('>>>> fake first time ORCiD SSO CAS response')
+        external_credential = validate_external_credential(cas_resp.user)
+        return None, external_credential, 'external_first_login'
+        # user = OSFUser.load(cas_resp.user)
+        # # cas returns a valid OSF user id
+        # if user:
+        #     return user, None, 'authenticate'
+        # # cas does not return a valid OSF user id
+        # else:
+        #     external_credential = validate_external_credential(cas_resp.user)
+        #     # invalid cas response
+        #     if not external_credential:
+        #         print_cas_log('CAS response error - missing user or external identity', LogLevel.ERROR)
+        #         return None, None, None
+        #     # cas returns a valid external credential
+        #     user = get_user(external_id_provider=external_credential['provider'],
+        #                     external_id=external_credential['id'])
+        #     # existing user found
+        #     if user:
+        #         # Send to celery the following async task to affiliate the user with eligible institutions if verified
+        #         from framework.auth.tasks import update_affiliation_for_orcid_sso_users
+        #         enqueue_task(update_affiliation_for_orcid_sso_users.s(user._id, external_credential['id']))
+        #         return user, external_credential, 'authenticate'
+        #     # user first time login through external identity provider
+        #     else:
+        #         return None, external_credential, 'external_first_login'
     print_cas_log('CAS response error - `cas_resp.user` is empty', LogLevel.ERROR)
     return None, None, None
 
@@ -385,23 +388,24 @@ def validate_external_credential(external_credential):
     :return: provider and id
 
     """
-    # wrong format
-    if not external_credential or '#' not in external_credential:
-        return False
+    # # wrong format
+    # if not external_credential or '#' not in external_credential:
+    #     return False
+    #
+    # profile_name, technical_id = external_credential.split('#', 1)
+    #
+    # # invalid external identity provider
+    # if profile_name not in settings.EXTERNAL_IDENTITY_PROFILE:
+    #     return False
+    #
+    # # invalid external id
+    # if len(technical_id) <= 0:
+    #     return False
+    #
+    # provider = settings.EXTERNAL_IDENTITY_PROFILE[profile_name]
 
-    profile_name, technical_id = external_credential.split('#', 1)
-
-    # invalid external identity provider
-    if profile_name not in settings.EXTERNAL_IDENTITY_PROFILE:
-        return False
-
-    # invalid external id
-    if len(technical_id) <= 0:
-        return False
-
-    provider = settings.EXTERNAL_IDENTITY_PROFILE[profile_name]
-
+    print('>>>> fake first time ORCiD SSO validation ...')
     return {
-        'provider': provider,
-        'id': technical_id,
+        'provider': 'ORCiD',
+        'id': 'fake-orcid-id',
     }
