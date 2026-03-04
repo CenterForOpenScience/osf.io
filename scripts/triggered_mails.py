@@ -2,7 +2,7 @@ import logging
 import uuid
 
 from django.db import transaction
-from django.db.models import Q, Exists, OuterRef
+from django.db.models import Q, F
 from django.utils import timezone
 
 from framework.celery_tasks import app as celery_app
@@ -81,7 +81,10 @@ def find_inactive_users_without_enqueued_or_sent_no_login():
     # Exclude users who have already received a no-login email recently
     return base_q.filter(
         Q(no_login_email_last_sent__isnull=True) |
-        Q(no_login_email_last_sent__lt=now - settings.NO_LOGIN_WAIT_TIME)
+        (
+            Q(no_login_email_last_sent__lt=now - settings.NO_LOGIN_WAIT_TIME) &
+            Q(no_login_email_last_sent__lt=F('date_last_login'))
+        )
     )
 
 
