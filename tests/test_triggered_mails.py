@@ -127,6 +127,27 @@ class TestTriggeredMails(OsfTestCase):
         ids = {u.id for u in users}
         assert ids == {u1.id}  # u2 excluded because of existing task
 
+    def test_finder_excludes_users_logged_in_before_no_login_email_last_sent(self):
+        """Inactive users but one already has a no_login_email_last_sent -> excluded."""
+        u1 = UserFactory(fullname='Jalen Hurts')
+        u2 = UserFactory(fullname='Jason Kelece')
+        u1.date_last_login = _inactive_time() - timedelta(weeks=2)
+        u2.date_last_login = _inactive_time() - timedelta(weeks=2)  # old login, but still inactive
+        u2.no_login_email_last_sent = timezone.now() - timedelta(weeks=53)  # old enough to be eligible if not for the login
+        u1.save()
+        u2.save()
+
+        users = list(find_inactive_users_without_enqueued_or_sent_no_login())
+        ids = {u.id for u in users}
+        assert ids == {u1.id}  # u2 excluded because last login was before email was sent
+
+        u2.date_last_login = timezone.now() - timedelta(weeks=53)
+        u2.save()
+
+        users = list(find_inactive_users_without_enqueued_or_sent_no_login())
+        ids = {u.id for u in users}
+        assert ids == {u1.id, u2.id}  # u2 included again because they logged in after the email was sent
+
     @override_switch(features.ENABLE_NO_LOGIN_EMAILS, active=False)
     def test_disable_task(self):
         u1 = UserFactory(fullname='Jalen Hurts')
