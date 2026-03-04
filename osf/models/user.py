@@ -1461,15 +1461,18 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
 
         return True
 
-    def confirm_spam(self, domains=None, save=True, train_spam_services=False):
+    def confirm_spam(self, domains=None, save=True, train_spam_services=False, skip_resources_spam=False):
         self.deactivate_account()
         super().confirm_spam(domains=domains, save=save, train_spam_services=train_spam_services)
 
+        if skip_resources_spam:
+            return
+
         # Don't train on resources merely associated with spam user
         for node in self.nodes.filter(is_public=True, is_deleted=False):
-            node.confirm_spam(train_spam_services=train_spam_services)
+            node.confirm_spam(domains=domains, train_spam_services=train_spam_services)
         for preprint in self.preprints.filter(is_public=True, deleted__isnull=True):
-            preprint.confirm_spam(train_spam_services=train_spam_services)
+            preprint.confirm_spam(domains=domains, train_spam_services=train_spam_services)
 
     def confirm_ham(self, save=False, train_spam_services=False):
         self.reactivate_account()
