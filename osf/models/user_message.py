@@ -3,7 +3,7 @@ from django.db import models
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 
-from osf.models.notification_type import NotificationType
+from osf.models.notification_type import NotificationTypeEnum
 from .base import BaseModel, ObjectIDMixin
 from website import settings
 
@@ -32,7 +32,7 @@ class MessageTypes(models.TextChoices):
             str: The email template string for the specified message type.
         """
         return {
-            cls.INSTITUTIONAL_REQUEST: NotificationType.Type.USER_INSTITUTIONAL_ACCESS_REQUEST
+            cls.INSTITUTIONAL_REQUEST: NotificationTypeEnum.USER_INSTITUTIONAL_ACCESS_REQUEST
         }[message_type]
 
 

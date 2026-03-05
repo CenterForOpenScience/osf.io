@@ -8,7 +8,7 @@ from rest_framework import status as http_status
 from framework import auth
 from framework.auth import Auth
 from framework.exceptions import HTTPError
-from osf.models import NodeRelation, NotificationType
+from osf.models import NodeRelation, NotificationTypeEnum
 from osf.utils import permissions
 from osf_tests.factories import (
     fake_email,
@@ -266,7 +266,7 @@ class TestAddingContributorViews(OsfTestCase):
             project.add_contributors(contributors, auth=self.auth, notification_type=None)
             project.save()
         assert len(notifications['emits']) == 1
-        assert notifications['emits'][0]['type'] == NotificationType.Type.NODE_CONTRIBUTOR_ADDED_DEFAULT
+        assert notifications['emits'][0]['type'] == NotificationTypeEnum.NODE_CONTRIBUTOR_ADDED_DEFAULT
 
     def test_contributor_added_email_sent_to_unreg_user(self):
         unreg_user = UnregUserFactory()
@@ -305,17 +305,17 @@ class TestAddingContributorViews(OsfTestCase):
                 notify_added_contributor(
                     project,
                     contributor,
-                    notification_type=NotificationType.Type.NODE_CONTRIBUTOR_ADDED_DEFAULT,
+                    notification_type=NotificationTypeEnum.NODE_CONTRIBUTOR_ADDED_DEFAULT,
                     auth=auth
                 )
         assert len(notifications['emits']) == 1
-        assert notifications['emits'][0]['type'] == NotificationType.Type.NODE_CONTRIBUTOR_ADDED_DEFAULT
+        assert notifications['emits'][0]['type'] == NotificationTypeEnum.NODE_CONTRIBUTOR_ADDED_DEFAULT
 
         # 2nd call does not send email because throttle period has not expired
         notify_added_contributor(
             project,
             contributor,
-            notification_type=NotificationType.Type.NODE_CONTRIBUTOR_ADDED_DEFAULT,
+            notification_type=NotificationTypeEnum.NODE_CONTRIBUTOR_ADDED_DEFAULT,
             auth=auth
         )
 
@@ -327,23 +327,23 @@ class TestAddingContributorViews(OsfTestCase):
             notify_added_contributor(
                 project,
                 contributor,
-                NotificationType.Type.NODE_CONTRIBUTOR_ADDED_DEFAULT,
+                NotificationTypeEnum.NODE_CONTRIBUTOR_ADDED_DEFAULT,
                 auth,
             )
         assert len(notifications['emits']) == 1
-        assert notifications['emits'][0]['type'] == NotificationType.Type.NODE_CONTRIBUTOR_ADDED_DEFAULT
+        assert notifications['emits'][0]['type'] == NotificationTypeEnum.NODE_CONTRIBUTOR_ADDED_DEFAULT
 
         time.sleep(2)  # throttle period expires
         with capture_notifications() as notifications:
             notify_added_contributor(
                 project,
                 contributor,
-                NotificationType.Type.NODE_CONTRIBUTOR_ADDED_DEFAULT,
+                NotificationTypeEnum.NODE_CONTRIBUTOR_ADDED_DEFAULT,
                 auth,
                 throttle=1
             )
         assert len(notifications['emits']) == 1
-        assert notifications['emits'][0]['type'] == NotificationType.Type.NODE_CONTRIBUTOR_ADDED_DEFAULT
+        assert notifications['emits'][0]['type'] == NotificationTypeEnum.NODE_CONTRIBUTOR_ADDED_DEFAULT
 
     def test_add_contributor_to_fork_sends_email(self):
         contributor = UserFactory()
@@ -352,7 +352,7 @@ class TestAddingContributorViews(OsfTestCase):
             fork.add_contributor(contributor, auth=Auth(self.creator))
             fork.save()
         assert len(notifications['emits']) == 1
-        assert notifications['emits'][0]['type'] == NotificationType.Type.NODE_CONTRIBUTOR_ADDED_DEFAULT
+        assert notifications['emits'][0]['type'] == NotificationTypeEnum.NODE_CONTRIBUTOR_ADDED_DEFAULT
 
     def test_add_contributor_to_template_sends_email(self):
         contributor = UserFactory()
@@ -361,11 +361,11 @@ class TestAddingContributorViews(OsfTestCase):
             template.add_contributor(
                 contributor,
                 auth=Auth(self.creator),
-                notification_type=NotificationType.Type.NODE_CONTRIBUTOR_ADDED_DEFAULT
+                notification_type=NotificationTypeEnum.NODE_CONTRIBUTOR_ADDED_DEFAULT
             )
             template.save()
         assert len(notifications['emits']) == 2
-        assert notifications['emits'][0]['type'] == NotificationType.Type.NODE_CONTRIBUTOR_ADDED_ACCESS_REQUEST
+        assert notifications['emits'][0]['type'] == NotificationTypeEnum.NODE_CONTRIBUTOR_ADDED_ACCESS_REQUEST
 
     def test_creating_fork_does_not_email_creator(self):
         with capture_notifications():
@@ -512,7 +512,7 @@ class TestUserInviteViews(OsfTestCase):
         with capture_notifications() as notifications:
             send_claim_email(email=given_email, unclaimed_user=unreg_user, node=project)
         assert len(notifications['emits']) == 1
-        assert notifications['emits'][0]['type'] == NotificationType.Type.USER_INVITE_DEFAULT
+        assert notifications['emits'][0]['type'] == NotificationTypeEnum.USER_INVITE_DEFAULT
 
     def test_send_claim_email_to_referrer(self):
         project = ProjectFactory()
@@ -528,8 +528,8 @@ class TestUserInviteViews(OsfTestCase):
             send_claim_email(email=real_email, unclaimed_user=unreg_user, node=project)
 
         assert len(notifications['emits']) == 2
-        assert notifications['emits'][0]['type'] == NotificationType.Type.USER_PENDING_VERIFICATION
-        assert notifications['emits'][1]['type'] ==  NotificationType.Type.USER_FORWARD_INVITE
+        assert notifications['emits'][0]['type'] == NotificationTypeEnum.USER_PENDING_VERIFICATION
+        assert notifications['emits'][1]['type'] ==  NotificationTypeEnum.USER_FORWARD_INVITE
 
     def test_send_claim_email_before_throttle_expires(self):
         project = ProjectFactory()

@@ -6,7 +6,7 @@ import random
 from api.base.settings.defaults import API_BASE
 from api.nodes.serializers import NodeContributorsCreateSerializer
 from framework.auth.core import Auth
-from osf.models.notification_type import NotificationType
+from osf.models.notification_type import NotificationTypeEnum
 from osf_tests.factories import (
     fake_email,
     AuthUserFactory,
@@ -1273,7 +1273,7 @@ class TestNodeContributorCreateEmail(NodeCRUDTestCase):
         res = app.post_json_api(url, payload, auth=user.auth)
         args, kwargs = mock_send.call_args
         assert res.status_code == 201
-        assert NotificationType.Type.NODE_CONTRIBUTOR_ADDED_DEFAULT == kwargs['notification_type']
+        assert NotificationTypeEnum.NODE_CONTRIBUTOR_ADDED_DEFAULT == kwargs['notification_type']
 
     def test_add_contributor_signal_preprint_email_disallowed(
         self, app, user, user_two, url_project_contribs
@@ -1311,7 +1311,7 @@ class TestNodeContributorCreateEmail(NodeCRUDTestCase):
             )
             assert res.status_code == 201
         assert len(notifications['emits']) == 1
-        assert notifications['emits'][0]['type'] == NotificationType.Type.USER_INVITE_DEFAULT
+        assert notifications['emits'][0]['type'] == NotificationTypeEnum.USER_INVITE_DEFAULT
 
     @mock.patch('website.project.signals.unreg_contributor_added.send')
     def test_add_unregistered_contributor_signal_if_default(
@@ -1333,7 +1333,7 @@ class TestNodeContributorCreateEmail(NodeCRUDTestCase):
             )
             assert res.status_code == 201
         assert len(notifications['emits']) == 1
-        assert notifications['emits'][0]['type'] == NotificationType.Type.USER_INVITE_DEFAULT
+        assert notifications['emits'][0]['type'] == NotificationTypeEnum.USER_INVITE_DEFAULT
 
     def test_add_unregistered_contributor_signal_preprint_email_disallowed(
         self, app, user, url_project_contribs

@@ -5,7 +5,7 @@ import lxml.etree
 
 from django.utils import timezone
 
-from osf.models import NotificationType
+from osf.models import NotificationTypeEnum
 from osf_tests import factories
 from tests.utils import capture_notifications
 from website import settings
@@ -163,7 +163,7 @@ class TestCrossRefEmailResponse:
         with capture_notifications() as notifications:
             app.post(url, context_data)
         assert len(notifications['emits']) == 1
-        assert notifications['emits'][0]['type'] == NotificationType.Type.DESK_CROSSREF_ERROR
+        assert notifications['emits'][0]['type'] == NotificationTypeEnum.DESK_CROSSREF_ERROR
         assert not preprint.get_identifier_value('doi')
 
     def test_success_response_sets_doi(self, app, url, preprint, success_xml):

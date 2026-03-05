@@ -2,7 +2,7 @@ import pytest
 
 from api.base.settings.defaults import API_BASE
 from api_tests.requests.mixins import NodeRequestTestMixin
-from osf.models import NotificationType
+from osf.models import NotificationTypeEnum
 
 from osf_tests.factories import NodeFactory, InstitutionFactory, AuthUserFactory
 from osf.utils.workflows import DefaultStates, NodeRequestTypes
@@ -141,7 +141,7 @@ class TestNodeRequestListInstitutionalAccess(NodeRequestTestMixin):
         """
         Test that an institutional admin can make an institutional access request.
         """
-        with assert_notification(type=NotificationType.Type.NODE_INSTITUTIONAL_ACCESS_REQUEST, user=user_with_affiliation):
+        with assert_notification(type=NotificationTypeEnum.NODE_INSTITUTIONAL_ACCESS_REQUEST, user=user_with_affiliation):
             res = app.post_json_api(url, create_payload, auth=institutional_admin.auth)
         assert res.status_code == 201
 
@@ -172,7 +172,7 @@ class TestNodeRequestListInstitutionalAccess(NodeRequestTestMixin):
         Test that an institutional admin can make an institutional access request with requested_permissions.
         """
         create_payload['data']['attributes']['requested_permissions'] = 'admin'
-        with assert_notification(type=NotificationType.Type.NODE_INSTITUTIONAL_ACCESS_REQUEST, user=user_with_affiliation):
+        with assert_notification(type=NotificationTypeEnum.NODE_INSTITUTIONAL_ACCESS_REQUEST, user=user_with_affiliation):
             res = app.post_json_api(url, create_payload, auth=institutional_admin.auth)
         assert res.status_code == 201
 
@@ -243,7 +243,7 @@ class TestNodeRequestListInstitutionalAccess(NodeRequestTestMixin):
         project.save()
 
         # Perform the action
-        with assert_notification(type=NotificationType.Type.NODE_INSTITUTIONAL_ACCESS_REQUEST, user=user_with_affiliation):
+        with assert_notification(type=NotificationTypeEnum.NODE_INSTITUTIONAL_ACCESS_REQUEST, user=user_with_affiliation):
             res = app.post_json_api(url, create_payload, auth=institutional_admin.auth)
 
         # Ensure response is successful
@@ -284,7 +284,7 @@ class TestNodeRequestListInstitutionalAccess(NodeRequestTestMixin):
         """
         Test that an email is sent to the appropriate recipients when an institutional access request is made.
         """
-        with assert_notification(type=NotificationType.Type.NODE_INSTITUTIONAL_ACCESS_REQUEST, user=user_with_affiliation):
+        with assert_notification(type=NotificationTypeEnum.NODE_INSTITUTIONAL_ACCESS_REQUEST, user=user_with_affiliation):
             res = app.post_json_api(url, create_payload, auth=institutional_admin.auth)
         assert res.status_code == 201
 
@@ -302,7 +302,7 @@ class TestNodeRequestListInstitutionalAccess(NodeRequestTestMixin):
         Ensure BCC option works as expected, sending messages to sender giving them a copy for themselves.
         """
         create_payload['data']['attributes']['bcc_sender'] = True
-        with assert_notification(type=NotificationType.Type.NODE_INSTITUTIONAL_ACCESS_REQUEST, user=user_with_affiliation):
+        with assert_notification(type=NotificationTypeEnum.NODE_INSTITUTIONAL_ACCESS_REQUEST, user=user_with_affiliation):
             res = app.post_json_api(url, create_payload, auth=institutional_admin.auth)
         assert res.status_code == 201
 
@@ -320,7 +320,7 @@ class TestNodeRequestListInstitutionalAccess(NodeRequestTestMixin):
         Ensure reply-to option works as expected, allowing a reply to header be added to the email.
         """
         create_payload['data']['attributes']['reply_to'] = True
-        with assert_notification(type=NotificationType.Type.NODE_INSTITUTIONAL_ACCESS_REQUEST, user=user_with_affiliation):
+        with assert_notification(type=NotificationTypeEnum.NODE_INSTITUTIONAL_ACCESS_REQUEST, user=user_with_affiliation):
             res = app.post_json_api(url, create_payload, auth=institutional_admin.auth)
         assert res.status_code == 201
 
@@ -354,7 +354,7 @@ class TestNodeRequestListInstitutionalAccess(NodeRequestTestMixin):
         """
         # Test with empty comment
         create_payload['data']['attributes']['comment'] = ''
-        with assert_notification(type=NotificationType.Type.NODE_INSTITUTIONAL_ACCESS_REQUEST,
+        with assert_notification(type=NotificationTypeEnum.NODE_INSTITUTIONAL_ACCESS_REQUEST,
                                  user=user_with_affiliation):
             res = app.post_json_api(url, create_payload, auth=institutional_admin.auth)
         assert res.status_code == 201
@@ -372,19 +372,19 @@ class TestNodeRequestListInstitutionalAccess(NodeRequestTestMixin):
         Test that a requester can submit another access request for the same node.
         """
         # Create the first request
-        with assert_notification(type=NotificationType.Type.NODE_INSTITUTIONAL_ACCESS_REQUEST,
+        with assert_notification(type=NotificationTypeEnum.NODE_INSTITUTIONAL_ACCESS_REQUEST,
                                  user=user_with_affiliation):
             app.post_json_api(url, create_payload, auth=institutional_admin.auth)
         node_request = project.requests.get()
 
-        with assert_notification(type=NotificationType.Type.NODE_REQUEST_ACCESS_DENIED,
+        with assert_notification(type=NotificationTypeEnum.NODE_REQUEST_ACCESS_DENIED,
                                  user=node_request.creator):
             node_request.run_reject(project.creator, 'test comment2')
         node_request.refresh_from_db()
         assert node_request.machine_state == 'rejected'
 
         # Attempt to create a second request
-        with assert_notification(type=NotificationType.Type.NODE_INSTITUTIONAL_ACCESS_REQUEST,
+        with assert_notification(type=NotificationTypeEnum.NODE_INSTITUTIONAL_ACCESS_REQUEST,
                                  user=user_with_affiliation):
             res = app.post_json_api(url, create_payload, auth=institutional_admin.auth)
         assert res.status_code == 201
@@ -406,11 +406,11 @@ class TestNodeRequestListInstitutionalAccess(NodeRequestTestMixin):
         """
 
         # Create the first request a basic request_type == `access` request
-        with assert_notification(type=NotificationType.Type.NODE_REQUEST_ACCESS_SUBMITTED,
+        with assert_notification(type=NotificationTypeEnum.NODE_REQUEST_ACCESS_SUBMITTED,
                                  user=project.creator):
             app.post_json_api(url, create_payload_non_institutional_access, auth=institutional_admin.auth)
         node_request = project.requests.get()
-        with assert_notification(type=NotificationType.Type.NODE_REQUEST_ACCESS_DENIED,
+        with assert_notification(type=NotificationTypeEnum.NODE_REQUEST_ACCESS_DENIED,
                                  user=node_request.creator):
             node_request.run_reject(project.creator, 'test comment2')
         node_request.refresh_from_db()
@@ -421,7 +421,7 @@ class TestNodeRequestListInstitutionalAccess(NodeRequestTestMixin):
         create_payload['data']['relationships']['message_recipient']['data']['id'] = project.creator._id
 
         # Attempt to create a second request, refresh and update as institutional
-        with assert_notification(type=NotificationType.Type.NODE_INSTITUTIONAL_ACCESS_REQUEST,
+        with assert_notification(type=NotificationTypeEnum.NODE_INSTITUTIONAL_ACCESS_REQUEST,
                                  user=project.creator):
             res = app.post_json_api(url, create_payload, auth=institutional_admin.auth)
         assert res.status_code == 201
@@ -441,12 +441,12 @@ class TestNodeRequestListInstitutionalAccess(NodeRequestTestMixin):
         Test that a requester can submit another access request for the same node.
         """
         # Create the first request
-        with assert_notification(type=NotificationType.Type.NODE_INSTITUTIONAL_ACCESS_REQUEST,
+        with assert_notification(type=NotificationTypeEnum.NODE_INSTITUTIONAL_ACCESS_REQUEST,
                                  user=user_with_affiliation):
             app.post_json_api(url, create_payload, auth=institutional_admin.auth)
         node_request = project.requests.get()
 
-        with assert_notification(type=NotificationType.Type.NODE_CONTRIBUTOR_ADDED_ACCESS_REQUEST,
+        with assert_notification(type=NotificationTypeEnum.NODE_CONTRIBUTOR_ADDED_ACCESS_REQUEST,
                                  user=node_request.creator):
             node_request.run_accept(project.creator, 'test comment2')
         node_request.refresh_from_db()
@@ -456,7 +456,7 @@ class TestNodeRequestListInstitutionalAccess(NodeRequestTestMixin):
         node_request = project.requests.get()
 
         # Attempt to create a second request
-        with assert_notification(type=NotificationType.Type.NODE_INSTITUTIONAL_ACCESS_REQUEST,
+        with assert_notification(type=NotificationTypeEnum.NODE_INSTITUTIONAL_ACCESS_REQUEST,
                                  user=user_with_affiliation):
             res = app.post_json_api(url, create_payload, auth=institutional_admin.auth)
         assert res.status_code == 201
@@ -468,12 +468,12 @@ class TestNodeRequestListInstitutionalAccess(NodeRequestTestMixin):
         Test that a requester can submit another access request for the same node.
         """
         # Create the first request
-        with assert_notification(type=NotificationType.Type.NODE_INSTITUTIONAL_ACCESS_REQUEST,
+        with assert_notification(type=NotificationTypeEnum.NODE_INSTITUTIONAL_ACCESS_REQUEST,
                                  user=user_with_affiliation):
             app.post_json_api(url, create_payload, auth=institutional_admin.auth)
         node_request = project.requests.get()
 
-        with assert_notification(type=NotificationType.Type.NODE_CONTRIBUTOR_ADDED_ACCESS_REQUEST,
+        with assert_notification(type=NotificationTypeEnum.NODE_CONTRIBUTOR_ADDED_ACCESS_REQUEST,
                                  user=node_request.creator):
             node_request.run_accept(project.creator, 'test comment2')
         node_request.refresh_from_db()
@@ -482,7 +482,7 @@ class TestNodeRequestListInstitutionalAccess(NodeRequestTestMixin):
         project.remove_contributor(node_request.creator, Auth(node_request.creator))
 
         # Attempt to create a second request
-        with assert_notification(type=NotificationType.Type.NODE_INSTITUTIONAL_ACCESS_REQUEST,
+        with assert_notification(type=NotificationTypeEnum.NODE_INSTITUTIONAL_ACCESS_REQUEST,
                                  user=user_with_affiliation):
             res = app.post_json_api(url, create_payload, auth=institutional_admin.auth)
         assert res.status_code == 201
@@ -493,7 +493,7 @@ class TestNodeRequestListInstitutionalAccess(NodeRequestTestMixin):
         assert project.requests.all().count() == 1
 
         # Attempt to create a second request
-        with assert_notification(type=NotificationType.Type.NODE_INSTITUTIONAL_ACCESS_REQUEST,
+        with assert_notification(type=NotificationTypeEnum.NODE_INSTITUTIONAL_ACCESS_REQUEST,
                                  user=user_with_affiliation):
             res = app.post_json_api(url, create_payload, auth=institutional_admin.auth)
         assert res.status_code == 201

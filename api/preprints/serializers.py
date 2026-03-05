@@ -50,7 +50,7 @@ from osf.models import (
     PreprintProvider,
     Node,
     NodeLicense,
-    NotificationType,
+    NotificationTypeEnum,
 )
 from osf.utils import permissions as osf_permissions
 from osf.utils.workflows import DefaultStates
@@ -480,7 +480,7 @@ class PreprintSerializer(TaxonomizableSerializerMixin, MetricsSerializerMixin, J
                         preprint,
                         contributor=author,
                         auth=auth,
-                        notification_type=NotificationType.Type.PREPRINT_CONTRIBUTOR_ADDED_DEFAULT,
+                        notification_type=NotificationTypeEnum.PREPRINT_CONTRIBUTOR_ADDED_DEFAULT,
                     )
 
         return preprint

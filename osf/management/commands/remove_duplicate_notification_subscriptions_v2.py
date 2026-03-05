@@ -2,7 +2,7 @@ from django.core.management.base import BaseCommand
 from django.db import transaction
 from django.db.models import OuterRef, Exists, Q
 
-from osf.models import NotificationSubscription, NotificationType
+from osf.models import NotificationSubscription, NotificationType, NotificationTypeEnum
 
 
 class Command(BaseCommand):
@@ -23,22 +23,22 @@ class Command(BaseCommand):
         self.stdout.write('Finding duplicate NotificationSubscription records…')
         digest_type_names = {
             # User types
-            NotificationType.Type.USER_NO_ADDON.value,
+            NotificationTypeEnum.USER_NO_ADDON.value,
             # File types
-            NotificationType.Type.ADDON_FILE_COPIED.value,
-            NotificationType.Type.ADDON_FILE_MOVED.value,
-            NotificationType.Type.ADDON_FILE_RENAMED.value,
-            NotificationType.Type.FILE_ADDED.value,
-            NotificationType.Type.FILE_REMOVED.value,
-            NotificationType.Type.FILE_UPDATED.value,
-            NotificationType.Type.FOLDER_CREATED.value,
-            NotificationType.Type.NODE_FILE_UPDATED.value,
-            NotificationType.Type.USER_FILE_UPDATED.value,
+            NotificationTypeEnum.ADDON_FILE_COPIED.value,
+            NotificationTypeEnum.ADDON_FILE_MOVED.value,
+            NotificationTypeEnum.ADDON_FILE_RENAMED.value,
+            NotificationTypeEnum.FILE_ADDED.value,
+            NotificationTypeEnum.FILE_REMOVED.value,
+            NotificationTypeEnum.FILE_UPDATED.value,
+            NotificationTypeEnum.FOLDER_CREATED.value,
+            NotificationTypeEnum.NODE_FILE_UPDATED.value,
+            NotificationTypeEnum.USER_FILE_UPDATED.value,
             # Review types
-            NotificationType.Type.COLLECTION_SUBMISSION_SUBMITTED.value,
-            NotificationType.Type.PROVIDER_NEW_PENDING_SUBMISSIONS.value,
-            NotificationType.Type.PROVIDER_NEW_PENDING_WITHDRAW_REQUESTS.value,
-            NotificationType.Type.REVIEWS_SUBMISSION_STATUS.value,
+            NotificationTypeEnum.COLLECTION_SUBMISSION_SUBMITTED.value,
+            NotificationTypeEnum.PROVIDER_NEW_PENDING_SUBMISSIONS.value,
+            NotificationTypeEnum.PROVIDER_NEW_PENDING_WITHDRAW_REQUESTS.value,
+            NotificationTypeEnum.REVIEWS_SUBMISSION_STATUS.value,
         }
 
         digest_type_ids = NotificationType.objects.filter(

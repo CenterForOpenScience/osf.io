@@ -1,7 +1,7 @@
 from django.shortcuts import redirect
 from django.views.generic import TemplateView
 from django.contrib import messages
-from osf.models import RegistrationProvider, OSFUser, CollectionProvider, NotificationType
+from osf.models import RegistrationProvider, OSFUser, CollectionProvider, NotificationTypeEnum
 from website.settings import DOMAIN
 
 
@@ -63,7 +63,7 @@ class AddAdminOrModerator(TemplateView):
 
         context['provider_url'] = f'{provider.domain or DOMAIN}{provider_type_word}/{(provider._id if not provider.domain else '').strip('/')}'
         messages.success(request, f'The following {target_type} was successfully added: {target_user.fullname} ({target_user.username})')
-        notification_type = NotificationType.Type.PROVIDER_MODERATOR_ADDED
+        notification_type = NotificationTypeEnum.PROVIDER_MODERATOR_ADDED
         notification_type.instance.emit(
             user=target_user,
             event_context=context,

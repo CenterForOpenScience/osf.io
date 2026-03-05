@@ -67,7 +67,7 @@ from website import filters
 from website.project import new_bookmark_collection
 from website.util.metrics import OsfSourceTags, unregistered_created_source_tag
 from importlib import import_module
-from osf.models.notification_type import NotificationType
+from osf.models.notification_type import NotificationTypeEnum
 from osf.utils.requests import string_type_request_headers
 
 
@@ -249,6 +249,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
     # }
 
     email_last_sent = NonNaiveDateTimeField(null=True, blank=True)
+    no_login_email_last_sent = NonNaiveDateTimeField(null=True, blank=True)
     change_password_last_attempt = NonNaiveDateTimeField(null=True, blank=True)
     # Logs number of times user attempted to change their password where their
     # old password was invalid
@@ -1096,14 +1097,13 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
             raise ChangePasswordError(['Password cannot be the same as your email address'])
         super().set_password(raw_password)
         if had_existing_password and notify:
-            NotificationType.Type.USER_PASSWORD_RESET.instance.emit(
+            NotificationTypeEnum.USER_PASSWORD_RESET.instance.emit(
                 subscribed_object=self,
                 user=self,
                 message_frequency='instantly',
                 event_context={
                     'domain': website_settings.DOMAIN,
                     'user_fullname': self.fullname,
-                    'can_change_preferences': False,
                     'osf_contact_email': website_settings.OSF_CONTACT_EMAIL
                 }
             )

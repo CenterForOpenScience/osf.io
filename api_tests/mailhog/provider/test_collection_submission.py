@@ -7,7 +7,7 @@ from osf_tests.factories import (
     CollectionProviderFactory,
     CollectionFactory,
 )
-from osf.models import NotificationType, CollectionSubmission
+from osf.models import NotificationTypeEnum, CollectionSubmission
 from tests.utils import get_mailhog_messages, delete_mailhog_messages, capture_notifications
 from osf.utils.workflows import CollectionSubmissionStates
 
@@ -49,8 +49,8 @@ class TestModeratedCollectionSubmission:
             )
             collection_submission.save()
         assert len(notifications['emits']) == 2
-        assert notifications['emits'][0]['type'] == NotificationType.Type.COLLECTION_SUBMISSION_SUBMITTED
-        assert notifications['emits'][1]['type'] == NotificationType.Type.PROVIDER_NEW_PENDING_SUBMISSIONS
+        assert notifications['emits'][0]['type'] == NotificationTypeEnum.COLLECTION_SUBMISSION_SUBMITTED
+        assert notifications['emits'][1]['type'] == NotificationTypeEnum.PROVIDER_NEW_PENDING_SUBMISSIONS
         assert collection_submission.state == CollectionSubmissionStates.PENDING
         massages = get_mailhog_messages()
         assert massages['count'] == len(notifications['emails'])
@@ -67,8 +67,8 @@ class TestModeratedCollectionSubmission:
             )
             collection_submission.save()
         assert len(notifications['emits']) == 2
-        assert notifications['emits'][0]['type'] == NotificationType.Type.COLLECTION_SUBMISSION_SUBMITTED
-        assert notifications['emits'][1]['type'] == NotificationType.Type.PROVIDER_NEW_PENDING_SUBMISSIONS
+        assert notifications['emits'][0]['type'] == NotificationTypeEnum.COLLECTION_SUBMISSION_SUBMITTED
+        assert notifications['emits'][1]['type'] == NotificationTypeEnum.PROVIDER_NEW_PENDING_SUBMISSIONS
         assert collection_submission.state == CollectionSubmissionStates.PENDING
         massages = get_mailhog_messages()
         assert massages['count'] == len(notifications['emails'])

@@ -8,7 +8,7 @@ from django.contrib.auth.models import Permission, Group, AnonymousUser
 from django.contrib.messages.storage.fallback import FallbackStorage
 
 from tests.base import AdminTestCase
-from osf.models import Preprint, PreprintLog, PreprintRequest, NotificationType
+from osf.models import Preprint, PreprintLog, PreprintRequest, NotificationTypeEnum
 from framework.auth import Auth
 from osf_tests.factories import (
     AuthUserFactory,
@@ -719,7 +719,7 @@ class TestPreprintWithdrawalRequests:
             machine_state=DefaultStates.INITIAL.value)
         withdrawal_request.run_submit(admin)
 
-        with assert_notification(type=NotificationType.Type.PREPRINT_REQUEST_WITHDRAWAL_APPROVED):
+        with assert_notification(type=NotificationTypeEnum.PREPRINT_REQUEST_WITHDRAWAL_APPROVED):
             withdrawal_request.run_accept(admin, withdrawal_request.comment)
 
         assert preprint.machine_state == 'withdrawn'
