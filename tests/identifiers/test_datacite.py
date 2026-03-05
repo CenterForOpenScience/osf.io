@@ -6,7 +6,7 @@ from datacite import schema40
 from django.utils import timezone
 
 from framework.auth import Auth
-from osf.models import Outcome
+from osf.models import GuidMetadataRecord, Outcome
 from osf.utils.outcomes import ArtifactTypes
 from osf_tests.factories import AuthUserFactory, IdentifierFactory, RegistrationFactory
 from tests.base import OsfTestCase
@@ -299,6 +299,151 @@ class TestDataCiteClient:
             },
         ]
         _assert_unordered_list_of_dicts_equal(metadata_dict['relatedIdentifiers'], expected_relationships)
+
+    def _set_funding_info(self, registration, funding_info):
+        metadata_record = GuidMetadataRecord.objects.for_guid(registration._id)
+        metadata_record.funding_info = funding_info
+        metadata_record.save()
+
+    def test_datacite_funding_references_with_ror_identifier_xml(self, registration, datacite_client):
+        self._set_funding_info(registration, [
+            {
+                'funder_name': 'National Science Foundation',
+                'funder_identifier': 'https://ror.org/021nxhr62',
+                'funder_identifier_type': 'ROR',
+            },
+        ])
+        metadata_xml = datacite_client.build_metadata(registration)
+        parser = lxml.etree.XMLParser(ns_clean=True, recover=True, encoding='utf-8')
+        root = lxml.etree.fromstring(metadata_xml, parser=parser)
+        ns = schema40.ns[None]
+
+        funding_refs = root.find(f'{{{ns}}}fundingReferences')
+        refs = funding_refs.findall(f'{{{ns}}}fundingReference')
+        assert len(refs) == 1
+
+        funder_name = refs[0].find(f'{{{ns}}}funderName')
+        assert funder_name.text == 'National Science Foundation'
+
+        funder_id = refs[0].find(f'{{{ns}}}funderIdentifier')
+        assert funder_id.text == 'https://ror.org/021nxhr62'
+        assert funder_id.attrib['funderIdentifierType'] == 'ROR'
+        assert funder_id.attrib['schemeURI'] == 'https://ror.org/'
+
+    def test_datacite_funding_references_with_ror_identifier_json(self, registration, datacite_client):
+        self._set_funding_info(registration, [
+            {
+                'funder_name': 'National Science Foundation',
+                'funder_identifier': 'https://ror.org/021nxhr62',
+                'funder_identifier_type': 'ROR',
+            },
+        ])
+        metadata_dict = datacite_client.build_metadata(registration, as_xml=False)
+
+        funding_refs = metadata_dict['fundingReferences']
+        assert len(funding_refs) == 1
+        assert str(funding_refs[0]['funderName']) == 'National Science Foundation'
+        assert funding_refs[0]['funderIdentifier']['funderIdentifier'] == 'https://ror.org/021nxhr62'
+        assert funding_refs[0]['funderIdentifier']['funderIdentifierType'] == 'ROR'
+        assert funding_refs[0]['funderIdentifier']['schemeURI'] == 'https://ror.org/'
+
+    def test_datacite_funding_references_with_crossref_funder_id(self, registration, datacite_client):
+        self._set_funding_info(registration, [
+            {
+                'funder_name': 'Mx. Moneypockets',
+                'funder_identifier': 'https://doi.org/10.13039/100000001',
+                'funder_identifier_type': 'Crossref Funder ID',
+                'award_number': '10000000',
+                'award_uri': 'https://moneypockets.example/millions',
+                'award_title': 'because reasons',
+            },
+        ])
+        metadata_xml = datacite_client.build_metadata(registration)
+        parser = lxml.etree.XMLParser(ns_clean=True, recover=True, encoding='utf-8')
+        root = lxml.etree.fromstring(metadata_xml, parser=parser)
+        ns = schema40.ns[None]
+
+        funding_refs = root.find(f'{{{ns}}}fundingReferences')
+        refs = funding_refs.findall(f'{{{ns}}}fundingReference')
+        assert len(refs) == 1
+
+        funder_id = refs[0].find(f'{{{ns}}}funderIdentifier')
+        assert funder_id.text == 'https://doi.org/10.13039/100000001'
+        assert funder_id.attrib['funderIdentifierType'] == 'Crossref Funder ID'
+        assert funder_id.attrib['schemeURI'] == 'https://www.crossref.org/services/funder-registry/'
+
+        award_number = refs[0].find(f'{{{ns}}}awardNumber')
+        assert award_number.text == '10000000'
+
+    def test_datacite_funding_references_mixed_ror_and_crossref(self, registration, datacite_client):
+        self._set_funding_info(registration, [
+            {
+                'funder_name': 'Mx. Moneypockets',
+                'funder_identifier': 'https://doi.org/10.13039/100000001',
+                'funder_identifier_type': 'Crossref Funder ID',
+                'award_number': '10000000',
+                'award_uri': 'https://moneypockets.example/millions',
+                'award_title': 'because reasons',
+            },
+            {
+                'funder_name': 'National Science Foundation',
+                'funder_identifier': 'https://ror.org/021nxhr62',
+                'funder_identifier_type': 'ROR',
+            },
+        ])
+        metadata_dict = datacite_client.build_metadata(registration, as_xml=False)
+        funding_refs = metadata_dict['fundingReferences']
+        assert len(funding_refs) == 2
+
+        # Build a lookup by funder name for order-independent assertions
+        refs_by_name = {str(ref['funderName']): ref for ref in funding_refs}
+
+        crossref_ref = refs_by_name['Mx. Moneypockets']
+        assert crossref_ref['funderIdentifier']['funderIdentifier'] == 'https://doi.org/10.13039/100000001'
+        assert crossref_ref['funderIdentifier']['funderIdentifierType'] == 'Crossref Funder ID'
+        assert crossref_ref['funderIdentifier']['schemeURI'] == 'https://www.crossref.org/services/funder-registry/'
+        assert crossref_ref['awardNumber']['awardNumber'] == '10000000'
+
+        ror_ref = refs_by_name['National Science Foundation']
+        assert ror_ref['funderIdentifier']['funderIdentifier'] == 'https://ror.org/021nxhr62'
+        assert ror_ref['funderIdentifier']['funderIdentifierType'] == 'ROR'
+        assert ror_ref['funderIdentifier']['schemeURI'] == 'https://ror.org/'
+
+    def test_datacite_funding_references_ror_with_award_info(self, registration, datacite_client):
+        self._set_funding_info(registration, [
+            {
+                'funder_name': 'National Institutes of Health',
+                'funder_identifier': 'https://ror.org/01cwqze88',
+                'funder_identifier_type': 'ROR',
+                'award_number': 'R01-GM123456',
+                'award_uri': 'https://reporter.nih.gov/project-details/123456',
+                'award_title': 'Studying important things',
+            },
+        ])
+        metadata_xml = datacite_client.build_metadata(registration)
+        parser = lxml.etree.XMLParser(ns_clean=True, recover=True, encoding='utf-8')
+        root = lxml.etree.fromstring(metadata_xml, parser=parser)
+        ns = schema40.ns[None]
+
+        funding_refs = root.find(f'{{{ns}}}fundingReferences')
+        refs = funding_refs.findall(f'{{{ns}}}fundingReference')
+        assert len(refs) == 1
+
+        funder_id = refs[0].find(f'{{{ns}}}funderIdentifier')
+        assert funder_id.text == 'https://ror.org/01cwqze88'
+        assert funder_id.attrib['funderIdentifierType'] == 'ROR'
+        assert funder_id.attrib['schemeURI'] == 'https://ror.org/'
+
+        award_number = refs[0].find(f'{{{ns}}}awardNumber')
+        assert award_number.text == 'R01-GM123456'
+
+        award_title = refs[0].find(f'{{{ns}}}awardTitle')
+        assert award_title.text == 'Studying important things'
+
+    def test_datacite_funding_references_no_funding_info(self, registration, datacite_client):
+        # With no funding info set, fundingReferences should be empty
+        metadata_dict = datacite_client.build_metadata(registration, as_xml=False)
+        assert metadata_dict.get('fundingReferences', []) == []
 
 
 @pytest.mark.django_db
