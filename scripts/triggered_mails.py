@@ -79,13 +79,19 @@ def find_inactive_users_without_enqueued_or_sent_no_login():
     ).distinct()
 
     # Exclude users who have already received a no-login email recently
-    return base_q.filter(
+    base_q = base_q.filter(
         Q(no_login_email_last_sent__isnull=True) |
         (
             Q(no_login_email_last_sent__lt=now - settings.NO_LOGIN_WAIT_TIME) &
             Q(no_login_email_last_sent__lt=F('date_last_login'))
         )
     )
+    # Exlude users who already have a pending/started/retrying EmailTask for no-login
+    base_q = base_q.exclude(
+        emailtask__task_id__startswith=NO_LOGIN_PREFIX,
+        emailtask__status__in=['PENDING', 'STARTED', 'RETRY']
+    )
+    return base_q
 
 
 @celery_app.task(name='scripts.triggered_no_login_email')

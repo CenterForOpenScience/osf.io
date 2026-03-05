@@ -3,7 +3,7 @@ from datetime import timedelta
 from unittest import mock
 from waffle.testutils import override_switch
 from osf import features
-
+from website import settings
 from django.utils import timezone
 
 from tests.base import OsfTestCase
@@ -22,7 +22,7 @@ from scripts.triggered_mails import (
 def _inactive_time():
     """Make a timestamp that is definitely 'inactive' regardless of threshold settings."""
     # Very conservative: 12 weeks ago
-    return timezone.now() - timedelta(weeks=52)
+    return timezone.now() - settings.NO_LOGIN_WAIT_TIME
 
 
 def _recent_time():
@@ -119,7 +119,9 @@ class TestTriggeredMails(OsfTestCase):
         u2 = UserFactory(fullname='Jason Kelece')
         u1.date_last_login = _inactive_time()
         u2.date_last_login = _inactive_time()
-        u2.no_login_email_last_sent = timezone.now()
+        EmailTask.objects.create(
+            user=u2, task_id=f'{NO_LOGIN_PREFIX}uuid4', status='PENDING',
+        )
         u1.save()
         u2.save()
 
@@ -127,13 +129,27 @@ class TestTriggeredMails(OsfTestCase):
         ids = {u.id for u in users}
         assert ids == {u1.id}  # u2 excluded because of existing task
 
+    def test_finder_excludes_users_with_recent_no_login_email(self):
+        """Inactive users but one already has a no_login_email_last_sent -> excluded."""
+        u1 = UserFactory(fullname='Jalen Hurts')
+        u2 = UserFactory(fullname='Jason Kelece')
+        u1.date_last_login = _inactive_time()
+        u2.date_last_login = _inactive_time()
+        u2.no_login_email_last_sent = timezone.now()
+        u1.save()
+        u2.save()
+
+        users = list(find_inactive_users_without_enqueued_or_sent_no_login())
+        ids = {u.id for u in users}
+        assert ids == {u1.id}  # u2 excluded because of recent email
+
     def test_finder_excludes_users_logged_in_before_no_login_email_last_sent(self):
         """Inactive users but one already has a no_login_email_last_sent -> excluded."""
         u1 = UserFactory(fullname='Jalen Hurts')
         u2 = UserFactory(fullname='Jason Kelece')
-        u1.date_last_login = _inactive_time() - timedelta(weeks=2)
-        u2.date_last_login = _inactive_time() - timedelta(weeks=2)  # old login, but still inactive
-        u2.no_login_email_last_sent = timezone.now() - timedelta(weeks=53)  # old enough to be eligible if not for the login
+        u1.date_last_login = _inactive_time()
+        u2.date_last_login = _inactive_time()
+        u2.no_login_email_last_sent = timezone.now() - settings.NO_LOGIN_WAIT_TIME  # old enough to be eligible if not for the login
         u1.save()
         u2.save()
 
@@ -141,7 +157,7 @@ class TestTriggeredMails(OsfTestCase):
         ids = {u.id for u in users}
         assert ids == {u1.id}  # u2 excluded because last login was before email was sent
 
-        u2.date_last_login = timezone.now() - timedelta(weeks=53)
+        u2.date_last_login = timezone.now() - settings.NO_LOGIN_WAIT_TIME
         u2.save()
 
         users = list(find_inactive_users_without_enqueued_or_sent_no_login())
