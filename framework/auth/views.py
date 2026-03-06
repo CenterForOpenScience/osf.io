@@ -83,7 +83,7 @@ def _reset_password_get(auth, uid=None, token=None, institutional=False):
         }
         raise HTTPError(http_status.HTTP_400_BAD_REQUEST, data=error_data)
 
-    # override routes.py login_url to redirect to myprojects
+    # override routes.py login_url to redirect to my-projects
     service_url = web_url_for('my_projects', _absolute=True)
 
     return {
@@ -174,7 +174,7 @@ def forgot_password_get(auth):
     if auth.logged_in:
         return auth_logout(redirect_url=request.url)
 
-    #overriding the routes.py sign in url to redirect to the myprojects after login
+    #overriding the routes.py sign in url to redirect to the my-projects after login
     context = {}
     context['login_url'] = web_url_for('my_projects', _absolute=True)
 
@@ -410,7 +410,7 @@ def auth_login(auth):
         if campaign and logged out, go to campaign register page (with next_url if presents)
         if next_url and logged in, go to next url
         if next_url and logged out, go to cas login page with current request url as service parameter
-        if none, go to `/myprojects` which is decorated by `@must_be_logged_in`
+        if none, go to `/my-projects` which is decorated by `@must_be_logged_in`
 
     :param auth: the auth context
     :return: redirects
@@ -437,7 +437,7 @@ def auth_register(auth):
         if next_url and logged in, go to next url
         if next_url and logged out, go to cas login page with current request url as service parameter
         if next_url and logout flag, log user out first and then go to the next_url
-        if none, go to `/myprojects` which is decorated by `@must_be_logged_in`
+        if none, go to `/my-projects` which is decorated by `@must_be_logged_in`
 
     :param auth: the auth context
     :return: land, redirect or `auth_logout`
@@ -999,7 +999,7 @@ def resend_confirmation_post(auth):
                     try:
                         send_confirm_email(user, clean_email, renew=True)
                     except KeyError:
-                        # already confirmed, redirect to myprojects
+                        # already confirmed, redirect to my-projects
                         status_message = f'This email {clean_email} has already been confirmed.'
                         kind = 'warning'
                     user.email_last_sent = timezone.now()
