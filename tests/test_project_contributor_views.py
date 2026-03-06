@@ -453,7 +453,7 @@ class TestProjectContributorViews(OsfTestCase):
         )
         self.project.reload()
         assert res.status_code == 200
-        assert res.json['redirectUrl'] == '/myprojects/'
+        assert res.json['redirectUrl'] == '/my-projects/'
         assert self.user2._id not in self.project.contributors
 
     def test_public_project_remove_self_not_admin(self):

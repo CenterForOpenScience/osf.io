@@ -165,11 +165,11 @@ def paginate(items, total, page, size):
 
 
 def index():
-    return redirect('/myprojects/')
+    return redirect('/my-projects/')
 
 
 def dashboard():
-    return redirect('/myprojects/')
+    return redirect('/my-projects/')
 
 
 def reproducibility():
