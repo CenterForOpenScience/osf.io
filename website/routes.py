@@ -309,7 +309,7 @@ def make_url_map(app):
             notemplate
         ),
         Rule(
-            '/myprojects/',
+            '/my-projects/',
             'get',
             website_views.my_projects,
             OsfWebRenderer('my_projects.mako', trust=False)
