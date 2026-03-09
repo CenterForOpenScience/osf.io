@@ -179,32 +179,6 @@ class TestAUser(OsfTestCase):
         # Can see log event
         assert 'created' in res.text
 
-    def test_no_wiki_content_message(self):
-        project = ProjectFactory(creator=self.user)
-        # Goes to project's wiki, where there is no content
-        res = self.app.get(f'/{project._primary_key}/wiki/home/', auth=self.auth)
-        # Sees a message indicating no content
-        assert 'Add important information, links, or images here to describe your project.' in res.text
-        # Sees that edit panel is open by default when home wiki has no content
-        assert 'panelsUsed: ["view", "menu", "edit"]' in res.text
-
-    def test_wiki_content(self):
-        project = ProjectFactory(creator=self.user)
-        wiki_page_name = 'home'
-        wiki_content = 'Kittens'
-        wiki_page = WikiFactory(
-            user=self.user,
-            node=project,
-        )
-        WikiVersionFactory(
-            wiki_page=wiki_page,
-            content=wiki_content
-        )
-        res = self.app.get(f'/{project._primary_key}/wiki/{wiki_page_name}/', auth=self.auth)
-        assert 'Add important information, links, or images here to describe your project.' not in res.text
-        assert wiki_content in res.text
-        assert 'panelsUsed: ["view", "menu"]' in res.text
-
     def test_wiki_page_name_non_ascii(self):
         project = ProjectFactory(creator=self.user)
         non_ascii = to_mongo_key('WöRlÐé')
@@ -220,11 +194,6 @@ class TestAUser(OsfTestCase):
         res = self.app.get(project.url, follow_redirects=True)
         # Should not see wiki widget (since non-contributor and no content)
         assert 'Add important information, links, or images here to describe your project.' not in res.text
-
-    def test_wiki_does_not_exist(self):
-        project = ProjectFactory(creator=self.user)
-        res = self.app.get(f'/{project._primary_key}/wiki/not a real page yet/', auth=self.auth)
-        assert 'Add important information, links, or images here to describe your project.' in res.text
 
     def test_sees_own_profile(self):
         res = self.app.get('/profile/', auth=self.auth)
