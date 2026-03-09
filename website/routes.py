@@ -1003,6 +1003,15 @@ def make_url_map(app):
             policy_views.terms_policy,
             OsfWebRenderer('policies/generic_policy.mako', trust=True)
         ),
+        Rule(
+            [
+                '/project/<pid>/',
+                '/project/<pid>/node/<nid>/',
+            ],
+            'get',
+            project_views.node.view_project,
+            OsfWebRenderer('project/project.mako', trust=False)
+        ),
 
         # Process token action
         Rule(
