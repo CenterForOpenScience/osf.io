@@ -11,7 +11,10 @@ from osf.management.commands.sync_doi_metadata import async_request_identifier_u
 
 logger = logging.getLogger(__name__)
 
+# 5-minute pause between rate-limit windows to avoid flooding the Crossref API
+# with too many deposit requests in a short period.
 RATE_LIMIT_SLEEP = 60 * 5
+
 
 def get_preprints_needing_v1_doi(provider_id=None):
     content_type = ContentType.objects.get_for_model(Preprint)
@@ -43,7 +46,7 @@ def get_preprints_needing_v1_doi(provider_id=None):
     return qs
 
 
-def resync_preprint_dois_v1(dry_run=True, batch_size=0, rate_limit=100, provider_id=None):
+def resync_preprint_dois_v1(dry_run=True, batch_size=500, rate_limit=100, provider_id=None):
     preprints_to_update = get_preprints_needing_v1_doi(provider_id=provider_id)
 
     total = preprints_to_update.count()
@@ -60,6 +63,7 @@ def resync_preprint_dois_v1(dry_run=True, batch_size=0, rate_limit=100, provider
 
     queued = 0
     skipped = 0
+    errored = 0
     for record_number, preprint in enumerate(preprints_iterable, 1):
         if not preprint.provider.doi_prefix:
             logger.warning(
@@ -78,13 +82,17 @@ def resync_preprint_dois_v1(dry_run=True, batch_size=0, rate_limit=100, provider
             logger.info(f'Rate limit reached at {record_number} preprints, sleeping {RATE_LIMIT_SLEEP}s')
             time.sleep(RATE_LIMIT_SLEEP)
 
-        async_request_identifier_update.apply_async(kwargs={'preprint_id': preprint._id})
-        logger.info(f'Queued DOI resync for preprint {preprint._id}')
-        queued += 1
+        try:
+            async_request_identifier_update.apply_async(kwargs={'preprint_id': preprint._id})
+            logger.info(f'Queued DOI resync for preprint {preprint._id}')
+            queued += 1
+        except Exception:
+            logger.exception(f'Failed to queue DOI resync for preprint {preprint._id}')
+            errored += 1
 
     logger.info(
         f'{"[DRY RUN] " if dry_run else ""}'
-        f'Done: {queued} preprints queued, {skipped} skipped (no DOI prefix)'
+        f'Done: {queued} preprints queued, {skipped} skipped (no DOI prefix), {errored} errored'
     )
 
 
@@ -101,8 +109,12 @@ class Command(BaseCommand):
             '--batch_size',
             '-b',
             type=int,
-            default=0,
-            help='Maximum number of preprints to process (0 = no limit).',
+            default=500,
+            help=(
+                'Maximum number of preprints to process per run (default: 500). '
+                'The command processes the first N eligible preprints and exits; '
+                're-run the command to continue with the next batch.'
+            ),
         )
         parser.add_argument(
             '--rate_limit',
