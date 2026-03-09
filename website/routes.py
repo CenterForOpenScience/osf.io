@@ -1003,15 +1003,6 @@ def make_url_map(app):
             policy_views.terms_policy,
             OsfWebRenderer('policies/generic_policy.mako', trust=True)
         ),
-        Rule(
-            [
-                '/project/<pid>/',
-                '/project/<pid>/node/<nid>/',
-            ],
-            'get',
-            project_views.node.view_project,
-            OsfWebRenderer('project/project.mako', trust=False)
-        ),
 
         # Process token action
         Rule(
@@ -1053,17 +1044,6 @@ def make_url_map(app):
             'get',
             project_views.node.node_setting,
             OsfWebRenderer('project/settings.mako', trust=False)
-        ),
-
-        # Permissions
-        Rule(  # TODO: Where, if anywhere, is this route used?
-            [
-                '/project/<pid>/permissions/<permissions>/',
-                '/project/<pid>/node/<nid>/permissions/<permissions>/',
-            ],
-            'post',
-            project_views.node.project_set_privacy,
-            OsfWebRenderer('project/project.mako', trust=False)
         ),
 
         # View forks

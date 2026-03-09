@@ -26,14 +26,12 @@ var entry = {
     'base-page': staticPath('js/pages/base-page.js'),
     'dashboard-page': staticPath('js/pages/dashboard-page.js'),
     'profile-page': staticPath('js/pages/profile-page.js'),
-    'project-dashboard': staticPath('js/pages/project-dashboard-page.js'),
     'project-base-page': staticPath('js/pages/project-base-page.js'),
     'project-settings-page': staticPath('js/pages/project-settings-page.js'),
     'project-addons-page': staticPath('js/pages/project-addons-page.js'),
     'registration-retraction-page': staticPath('js/pages/registration-retraction-page.js'),
     'registration-edit-page': staticPath('js/pages/registration-edit-page.js'),
     'register-page': staticPath('js/pages/register-page.js'),
-    'wiki-edit-page': staticPath('js/pages/wiki-edit-page.js'),
     'request-access-page': staticPath('js/pages/request-access-page.js'),
     'file-page': staticPath('js/pages/file-page.js'),
     'files-page': staticPath('js/pages/files-page.js'),
@@ -131,7 +129,7 @@ var resolve = {
         './website/static/vendor/bower_components',
         'node_modules',
     ],
-    extensions: ['*', '.es6.js', '.js', '.min.js'],
+    extensions: ['*', '.js', '.min.js'],
     // Need to alias libraries that aren't managed by bower or npm
     alias: {
         'knockout-sortable': staticPath('vendor/knockout-sortable/knockout-sortable.js'),
@@ -206,7 +204,6 @@ module.exports = {
     output: output,
     module: {
         rules: [
-            {test: /\.es6\.js$/, exclude: [/node_modules/, /bower_components/, /vendor/], loader: 'babel-loader'},
             {test: /\.css$/, use: [{loader: 'style-loader'}, {loader: 'css-loader'}]},
             // url-loader uses DataUrls; files-loader emits files
             {test: /\.png$/, loader: 'url-loader?limit=100000&mimetype=image/png'},
