@@ -80,6 +80,7 @@ def task__update_share(self, guid: str, is_backfill=False, osfmap_partition_name
         raise ValueError(f'unknown osfguid "{guid}"')
     _resource = _osfid_instance.referent
     _is_deletion = _should_delete_indexcard(_resource)
+    _osfid_instance.mark_indexing_failed()
     try:
         _response = (
             pls_delete_trove_record(_resource, osfmap_partition=_osfmap_partition)
@@ -115,6 +116,7 @@ def task__update_share(self, guid: str, is_backfill=False, osfmap_partition_name
         if HTTPStatus(_response.status_code).is_server_error:
             raise self.retry(exc=e)
     else:  # success response
+        _osfid_instance.mark_indexing_success()
         if not _is_deletion:
             # enqueue followup task for supplementary metadata
             _next_partition = _next_osfmap_partition(_osfmap_partition)
