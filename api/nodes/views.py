@@ -74,7 +74,10 @@ from api.comments.serializers import (
     NodeCommentSerializer,
 )
 from api.draft_registrations.serializers import DraftRegistrationSerializer, DraftRegistrationDetailSerializer
-from api.draft_registrations.permissions import DraftRegistrationPermission
+from api.draft_registrations.permissions import (
+    DraftRegistrationPermission,
+    CanSubmitDraftRegistrationToProvider,
+)
 from api.files.serializers import FileSerializer, OsfStorageFileSerializer
 from api.files import annotations as file_annotations
 from api.identifiers.serializers import NodeIdentifierSerializer
@@ -671,6 +674,7 @@ class NodeDraftRegistrationsList(JSONAPIBaseView, generics.ListCreateAPIView, No
         DraftRegistrationPermission,
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
+        CanSubmitDraftRegistrationToProvider,
     )
 
     parser_classes = (JSONAPIMultipleRelationshipsParser, JSONAPIMultipleRelationshipsParserForRegularJSON)
