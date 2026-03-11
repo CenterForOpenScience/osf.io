@@ -155,7 +155,7 @@
             <section>
                 <h4><u>Sync Notification Templates</u></h4>
                 <p>
-                    Use this management command to sync notification templates.
+                    Use this management command to sync notification templates. Warning: existing templates modifications via django admin will be overridden if they haven't been updated in code. In addition, templates are cached for 2 hours so changes won't be effective immediately.
                 </p>
                 <form method="post"
                       action="{% url 'management:sync_notification_templates'%}">
