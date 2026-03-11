@@ -135,6 +135,11 @@ class CollectionSubmission(TaxonomizableMixin, BaseModel):
 
     def _notify_moderators_pending(self, event_data):
         user = event_data.kwargs.get('user', None)
+        logo_context = {}
+        if self.collection.provider and not self.collection.provider.is_default:
+            logo_context['logo_url'] = self.collection.provider.get_asset_url('favicon')
+        else:
+            logo_context['logo'] = settings.OSF_PREPRINTS_LOGO
         NotificationTypeEnum.PROVIDER_NEW_PENDING_SUBMISSIONS.instance.emit(
             user=user,
             subscribed_object=self.collection.provider,
@@ -146,8 +151,7 @@ class CollectionSubmission(TaxonomizableMixin, BaseModel):
                 'reviews_submission_url': f'{DOMAIN}reviews/registries/{self.guid.referent._id}/{self.guid.referent._id}',
                 'is_request_email': False,
                 'profile_image_url': user.profile_image_url(),
-                'logo': self.collection.provider._id if
-                self.collection.provider and not self.collection.provider.is_default else settings.OSF_PREPRINTS_LOGO,
+                **logo_context,
             },
             is_digest=True,
         )
@@ -163,6 +167,11 @@ class CollectionSubmission(TaxonomizableMixin, BaseModel):
 
     def _notify_accepted(self, event_data):
         if self.collection.provider:
+            logo_context = {}
+            if not self.collection.provider.is_default:
+                logo_context['logo_url'] = self.collection.provider.get_asset_url('favicon')
+            else:
+                logo_context['logo'] = settings.OSF_PREPRINTS_LOGO
             for contributor in self.guid.referent.contributors:
                 NotificationTypeEnum.COLLECTION_SUBMISSION_ACCEPTED.instance.emit(
                     user=contributor,
@@ -188,8 +197,7 @@ class CollectionSubmission(TaxonomizableMixin, BaseModel):
                         'domain': settings.DOMAIN,
                         'osf_contact_email': settings.OSF_CONTACT_EMAIL,
                         'is_initiator': self.creator == contributor,
-                        'logo': self.collection.provider._id if
-                        self.collection.provider and not self.collection.provider.is_default else settings.OSF_PREPRINTS_LOGO,
+                        **logo_context,
                     },
                 )
 
@@ -207,6 +215,11 @@ class CollectionSubmission(TaxonomizableMixin, BaseModel):
             raise PermissionsError(f'{user} must have moderator permissions.')
 
     def _notify_moderated_rejected(self, event_data):
+        logo_context = {}
+        if self.collection.provider and not self.collection.provider.is_default:
+            logo_context['logo_url'] = self.collection.provider.get_asset_url('favicon')
+        else:
+            logo_context['logo'] = settings.OSF_PREPRINTS_LOGO
         for contributor in self.guid.referent.contributors:
             NotificationTypeEnum.COLLECTION_SUBMISSION_REJECTED.instance.emit(
                 user=contributor,
@@ -229,8 +242,7 @@ class CollectionSubmission(TaxonomizableMixin, BaseModel):
                     'reviews_submission_url': f'{DOMAIN}reviews/registries/{self.guid.referent._id}/{self.guid.referent._id}',
                     'rejection_justification': event_data.kwargs.get('comment'),
                     'osf_contact_email': settings.OSF_CONTACT_EMAIL,
-                    'logo': self.collection.provider._id if
-                    self.collection.provider and not self.collection.provider.is_default else settings.OSF_PREPRINTS_LOGO,
+                    **logo_context,
                 },
             )
 
@@ -258,6 +270,11 @@ class CollectionSubmission(TaxonomizableMixin, BaseModel):
         is_moderator = user.has_perm('withdraw_submissions', self.collection.provider)
         is_admin = self.guid.referent.has_permission(user, ADMIN)
         node = self.guid.referent
+        logo_context = {}
+        if self.collection.provider and not self.collection.provider.is_default:
+            logo_context['logo_url'] = self.collection.provider.get_asset_url('favicon')
+        else:
+            logo_context['logo'] = settings.OSF_PREPRINTS_LOGO
 
         event_context_base = {
             'remover_fullname': user.fullname,
@@ -274,8 +291,7 @@ class CollectionSubmission(TaxonomizableMixin, BaseModel):
             'profile_image_url': user.profile_image_url(),
             'domain': settings.DOMAIN,
             'osf_contact_email': settings.OSF_CONTACT_EMAIL,
-            'logo': self.collection.provider._id if
-            self.collection.provider and not self.collection.provider.is_default else settings.OSF_PREPRINTS_LOGO,
+            **logo_context,
         }
 
         if removed_due_to_privacy and self.collection.provider:
