@@ -152,6 +152,19 @@
                     </nav>
                 </form>
             </section>
+            <section>
+                <h4><u>Sync Notification Templates</u></h4>
+                <p>
+                    Use this management command to sync notification templates.
+                </p>
+                <form method="post"
+                      action="{% url 'management:sync_notification_templates'%}">
+                    {% csrf_token %}
+                    <nav>
+                        <input class="btn btn-success" type="submit" value="Run" />
+                    </nav>
+                </form>
+            </section>
         </div>
     </section>
 {% endblock %}
