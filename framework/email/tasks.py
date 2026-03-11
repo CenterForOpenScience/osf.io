@@ -154,7 +154,6 @@ def _send_with_sendgrid(
     reply_to=None,
     client=None,
 ):
-    return True
     in_allowed_list = to_addr in settings.SENDGRID_EMAIL_WHITELIST
     if settings.SENDGRID_WHITELIST_MODE and not in_allowed_list:
         sentry.log_message(
