@@ -1055,17 +1055,6 @@ def make_url_map(app):
             OsfWebRenderer('project/settings.mako', trust=False)
         ),
 
-        # Permissions
-        Rule(  # TODO: Where, if anywhere, is this route used?
-            [
-                '/project/<pid>/permissions/<permissions>/',
-                '/project/<pid>/node/<nid>/permissions/<permissions>/',
-            ],
-            'post',
-            project_views.node.project_set_privacy,
-            OsfWebRenderer('project/project.mako', trust=False)
-        ),
-
         # View forks
         Rule(
             [
