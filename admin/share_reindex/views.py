@@ -45,4 +45,9 @@ class FailedShareIndexedGuidList(PermissionRequiredMixin, ListView):
         kwargs.setdefault('page', page)
         resource_type = self.request.GET.get('type', 'projects')
         kwargs.setdefault('selected_resource_type', resource_type)
+        resource_type_detail_mapping = {
+            'users': 'users:user', 'preprints': 'preprints:preprint', 'registries': 'nodes:node', 'projects': 'nodes:node'
+        }
+
+        kwargs.setdefault('resource_detail', resource_type_detail_mapping.get(resource_type))
         return super().get_context_data(**kwargs)

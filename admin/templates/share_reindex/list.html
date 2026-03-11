@@ -42,7 +42,11 @@
     <tbody>
     {% for guid in guids %}
     <tr>
-        <td>{{guid.custom_id}}</td>
+        <td>
+             <a href="{% url resource_detail guid=guid.custom_id %}">
+                {{guid.custom_id}}
+            </a>
+        </td>
         <td>{{guid.date_last_indexed}}</td>
 
         <td>
