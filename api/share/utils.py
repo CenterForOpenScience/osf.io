@@ -6,6 +6,9 @@ from http import HTTPStatus
 import logging
 
 from django.apps import apps
+from django.db.models import Q
+from django.contrib.contenttypes.models import ContentType
+from website.settings import CeleryConfig
 from celery.utils.time import get_exponential_backoff_interval
 import requests
 
@@ -127,6 +130,32 @@ def task__update_share(self, guid: str, is_backfill=False, osfmap_partition_name
                     osfmap_partition_name=_next_partition.name,
                 )
 
+
+@celery_app.task
+def task__reindex_resource_into_share(resource_type: str, limit: int):
+    guids = get_not_indexed_guids_for_resource(resource_type).values_list('_id', flat=True)[:limit].iterator()
+    for guid in guids:
+        task__update_share.apply_async(
+            kwargs={'guid': guid, 'is_backfill': True},
+            queue=CeleryConfig.task_low_queue,
+        )
+
+def get_not_indexed_guids_for_resource(resource_type: str):
+    from osf.models import Guid, Registration, Preprint, Node, OSFUser
+    resource_mapper = {
+        'projects': (Node, Q(is_public=True) & Q(deleted__isnull=True)),
+        'preprints': (Preprint, Q(is_public=True) & Q(is_published=True) & Q(deleted__isnull=True)),
+        'registries': (Registration, Q(is_public=True) & Q(deleted__isnull=True)),
+        'users': (OSFUser, Q(is_active=True) & Q(deleted__isnull=True)),
+    }
+    resource_model, query = resource_mapper.get(resource_type, 'projects')
+    node_type = ContentType.objects.get_for_model(resource_model)
+    public_node_ids = resource_model.objects.filter(query).values_list('id', flat=True)
+    return Guid.objects.filter(
+        Q(has_been_indexed=False) | Q(has_been_indexed__isnull=True),
+        content_type=node_type,
+        object_id__in=public_node_ids,
+    )
 
 def pls_send_trove_record(osf_item, *, is_backfill: bool, osfmap_partition: OsfmapPartition):
     try:
