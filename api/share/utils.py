@@ -6,7 +6,7 @@ from http import HTTPStatus
 import logging
 
 from django.apps import apps
-from django.db.models import Q
+from django.db.models import Q, Exists, OuterRef
 from django.contrib.contenttypes.models import ContentType
 from website.settings import CeleryConfig
 from celery.utils.time import get_exponential_backoff_interval
@@ -133,14 +133,14 @@ def task__update_share(self, guid: str, is_backfill=False, osfmap_partition_name
 
 @celery_app.task
 def task__reindex_resource_into_share(resource_type: str, limit: int):
-    guids = get_not_indexed_guids_for_resource(resource_type).values_list('_id', flat=True)[:limit].iterator()
+    guids = get_not_indexed_guids_for_resource_with_no_indexed_guid(resource_type).values_list('_id', flat=True)[:limit].iterator()
     for guid in guids:
         task__update_share.apply_async(
             kwargs={'guid': guid, 'is_backfill': True},
             queue=CeleryConfig.task_low_queue,
         )
 
-def get_not_indexed_guids_for_resource(resource_type: str):
+def get_not_indexed_guids_for_resource_with_no_indexed_guid(resource_type: str):
     from osf.models import Guid, Registration, Preprint, Node, OSFUser
     resource_mapper = {
         'projects': (Node, Q(is_public=True) & Q(deleted__isnull=True)),
@@ -150,11 +150,25 @@ def get_not_indexed_guids_for_resource(resource_type: str):
     }
     resource_model, query = resource_mapper.get(resource_type, 'projects')
     node_type = ContentType.objects.get_for_model(resource_model)
-    public_node_ids = resource_model.objects.filter(query).values_list('id', flat=True)
-    return Guid.objects.filter(
-        Q(has_been_indexed=False) | Q(has_been_indexed__isnull=True),
+    # Check if guid belong to a public resource
+    is_public_resource = resource_model.objects.filter(
+        query,
+        id=OuterRef('object_id'),
+    )
+    # Check if specific resource has any indexed guids
+    has_indexed_guid = Guid.objects.filter(
         content_type=node_type,
-        object_id__in=public_node_ids,
+        object_id=OuterRef('object_id'),
+        has_been_indexed=True,
+    )
+    return (
+        Guid.objects
+        .exclude(Exists(has_indexed_guid))  # exclude guid if its resource has any indexed guid
+        .exclude(has_been_indexed=True)  # exclude other guids if its indexed that belong to other resource_type
+        .filter(content_type=node_type)
+        .filter(Exists(is_public_resource))  # keep guid if the resource is public for specific content_type
+        .order_by('object_id', 'id')
+        .distinct('object_id')  # return the oldest created guid from several
     )
 
 def pls_send_trove_record(osf_item, *, is_backfill: bool, osfmap_partition: OsfmapPartition):

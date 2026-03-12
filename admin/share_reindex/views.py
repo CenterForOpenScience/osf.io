@@ -5,7 +5,7 @@ from django.views.generic import ListView, View
 from osf.models import Guid
 from django.db.models import F
 from urllib.parse import urlencode
-from api.share.utils import get_not_indexed_guids_for_resource, task__reindex_resource_into_share
+from api.share.utils import get_not_indexed_guids_for_resource_with_no_indexed_guid, task__reindex_resource_into_share
 
 class FailedShareIndexedGuidList(PermissionRequiredMixin, ListView):
     paginate_by = 25
@@ -17,7 +17,7 @@ class FailedShareIndexedGuidList(PermissionRequiredMixin, ListView):
     def get_queryset(self):
         resource_type = self.request.GET.get('type', 'projects')
         # use custom_id because _id fails to render in django template
-        return get_not_indexed_guids_for_resource(resource_type).annotate(custom_id=F('_id'))
+        return get_not_indexed_guids_for_resource_with_no_indexed_guid(resource_type).annotate(custom_id=F('_id'))
 
     def get_context_data(self, **kwargs):
         query_set = kwargs.pop('object_list', self.object_list)
