@@ -588,6 +588,7 @@ class CeleryConfig:
         'api.share.utils',
         'scripts.remove_after_use.merge_notification_subscription_provider_ct',
         'scripts.disable_removed_beat_tasks',
+        'osf.management.commands.delete_withdrawn_or_failed_registration_files',
     )
 
     # Modules that need metrics and release requirements
