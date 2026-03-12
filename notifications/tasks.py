@@ -226,6 +226,10 @@ def send_moderator_email_task(self, user_id, notification_ids, provider_content_
                     'logo_url': provider.brand.hero_logo_image,
                     'top_bar_color': provider.brand.primary_color
                 }
+            elif logo_url := provider.get_asset_url('favicon'):
+                additional_context = {
+                    'logo_url': logo_url,
+                }
             else:
                 logo = settings.OSF_REGISTRIES_LOGO
         elif isinstance(provider, CollectionProvider):
@@ -238,8 +242,12 @@ def send_moderator_email_task(self, user_id, notification_ids, provider_content_
                     'logo_url': provider.brand.hero_logo_image,
                     'top_bar_color': provider.brand.primary_color
                 }
+            elif logo_url := provider.get_asset_url('favicon'):
+                additional_context = {
+                    'logo_url': logo_url,
+                }
             else:
-                logo = settings.OSF_REGISTRIES_LOGO
+                logo = settings.OSF_LOGO
         else:
             provider_type = 'preprint'
             submissions_url = f'{settings.DOMAIN}preprints/{provider._id}/moderation/submissions'
