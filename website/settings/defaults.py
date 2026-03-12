@@ -186,7 +186,7 @@ WAIT_BETWEEN_MAILS = timedelta(days=7)  # Deprecated setting, used by deprecated
 NO_ADDON_WAIT_TIME = timedelta(weeks=8)  # 2 months for "Link an add-on to your OSF project" email
 NO_LOGIN_WAIT_TIME = timedelta(weeks=52)   # 1 year for "We miss you at OSF" email
 NO_LOGIN_OSF4M_WAIT_TIME = timedelta(weeks=52)  # 1 year for "We miss you at OSF" email to users created from OSF4M
-NOTIFICATIONS_CLEANUP_AGE = timedelta(weeks=2)  # 1 month to clean up old notifications and email tasks
+NOTIFICATIONS_CLEANUP_AGE = timedelta(weeks=12)  # 3 months to clean up old notifications and email tasks
 NOTIFICATIONS_CLEANUP_BATCH_SIZE = 10000  # Batch size for notifications and email tasks cleanup
 
 # Configuration for "We miss you at OSF" email (`NotificationTypeEnum.USER_NO_LOGIN`)
