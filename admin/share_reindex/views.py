@@ -3,9 +3,8 @@ from django.urls import reverse
 from django.shortcuts import redirect
 from django.views.generic import ListView, View
 from osf.models import Guid
-from django.db.models import F
 from urllib.parse import urlencode
-from api.share.utils import get_not_indexed_guids_for_resource_with_no_indexed_guid, task__reindex_resource_into_share
+from api.share.utils import get_not_indexed_guids_for_resource_with_no_indexed_guid, task__reindex_failed_or_not_indexed_resource_into_share
 
 class FailedShareIndexedGuidList(PermissionRequiredMixin, ListView):
     paginate_by = 25
@@ -16,14 +15,13 @@ class FailedShareIndexedGuidList(PermissionRequiredMixin, ListView):
 
     def get_queryset(self):
         resource_type = self.request.GET.get('type', 'projects')
-        # use custom_id because _id fails to render in django template
-        return get_not_indexed_guids_for_resource_with_no_indexed_guid(resource_type).annotate(custom_id=F('_id'))
+        return get_not_indexed_guids_for_resource_with_no_indexed_guid(resource_type)
 
     def get_context_data(self, **kwargs):
         query_set = kwargs.pop('object_list', self.object_list)
         page_size = self.get_paginate_by(query_set)
         paginator, page, query_set, is_paginated = self.paginate_queryset(query_set, page_size)
-        kwargs.setdefault('guids', query_set)
+        kwargs.setdefault('items_to_index', query_set)
         kwargs.setdefault('page', page)
         resource_type = self.request.GET.get('type', 'projects')
         kwargs.setdefault('selected_resource_type', resource_type)
@@ -48,7 +46,7 @@ class FailedShareIndexedGuidReindex(PermissionRequiredMixin, View):
     def post(self, request, *args, **kwargs):
         resource_type = self.kwargs.get('resource_type')
         # reindex 100_000 guids in background task for specific resource_type and resource is public
-        task__reindex_resource_into_share.delay(resource_type, 100_000)
+        task__reindex_failed_or_not_indexed_resource_into_share.delay(resource_type)
         base_url = reverse('share_reindex:list')
         query_string = urlencode({'type': resource_type, 'status': 'indexing'})
         return redirect(f"{base_url}?{query_string}")

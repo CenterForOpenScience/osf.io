@@ -12,7 +12,6 @@ from django.db.models import ForeignKey, UniqueConstraint
 from django.db.models.query import QuerySet
 from django.db.models.signals import post_save
 from django.dispatch import receiver
-from django.utils import timezone
 from django_extensions.db.models import TimeStampedModel
 
 from framework import sentry
@@ -218,8 +217,6 @@ class Guid(BaseModel):
     object_id = models.PositiveIntegerField(null=True, blank=True)
 
     created = NonNaiveDateTimeField(db_index=True, auto_now_add=True)
-    has_been_indexed = models.BooleanField(default=None, null=True, blank=True, db_index=True)
-    date_last_indexed = models.DateTimeField(null=True, blank=True)
 
     def __repr__(self):
         return f'<id:{self._id}, referent:({self.referent.__repr__()})>'
@@ -286,15 +283,6 @@ class Guid(BaseModel):
     @property
     def is_versioned(self):
         return self.versions.exists()
-
-    def mark_indexing_failed(self):
-        self.has_been_indexed = False
-        self.save(update_fields=['has_been_indexed'])
-
-    def mark_indexing_success(self):
-        self.has_been_indexed = True
-        self.date_last_indexed = timezone.now()
-        self.save(update_fields=['has_been_indexed', 'date_last_indexed'])
 
     class Meta:
         ordering = ['-created']

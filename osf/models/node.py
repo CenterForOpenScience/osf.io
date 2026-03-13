@@ -44,7 +44,7 @@ from .licenses import NodeLicenseRecord
 from .metadata import GuidMetadataRecord
 from .mixins import (AddonModelMixin, CommentableMixin, Loggable, GuardianMixin,
                      NodeLinkMixin, SpamOverrideMixin, RegistrationResponseMixin,
-                     EditableFieldsMixin)
+                     EditableFieldsMixin, ShareIndexMixin)
 from .node_relation import NodeRelation
 from .nodelog import NodeLog
 from .private_link import PrivateLink
@@ -238,7 +238,7 @@ class AbstractNodeManager(TypedModelManager):
 
 class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixin, EditableFieldsMixin, GuardianMixin,
                    NodeLinkMixin, CommentableMixin, SpamOverrideMixin, Loggable, GuidMixin, RegistrationResponseMixin,
-                   BaseModel):
+                   ShareIndexMixin, BaseModel):
     """
     All things that inherit from AbstractNode will appear in
     the same table and will be differentiated by the `type` column.
