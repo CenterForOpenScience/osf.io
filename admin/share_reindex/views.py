@@ -26,7 +26,7 @@ class FailedShareIndexedGuidList(PermissionRequiredMixin, ListView):
         resource_type = self.request.GET.get('type', 'projects')
         kwargs.setdefault('selected_resource_type', resource_type)
         resource_type_detail_mapping = {
-            'users': 'users:user', 'preprints': 'preprints:preprint', 'registries': 'nodes:node', 'projects': 'nodes:node'
+            'users': 'users:user', 'preprints': 'preprints:preprint', 'registries': 'nodes:node', 'projects': 'nodes:node', 'files': 'files:file'
         }
 
         kwargs.setdefault('resource_detail', resource_type_detail_mapping.get(resource_type))
@@ -34,7 +34,7 @@ class FailedShareIndexedGuidList(PermissionRequiredMixin, ListView):
             'users': 'users:reindex-share-user', 'preprints': 'preprints:reindex-share-preprint', 'registries': 'nodes:reindex-share-node', 'projects': 'nodes:reindex-share-node'
         }
         kwargs.setdefault('resource_guid_reindex', resource_type_guid_reindex.get(resource_type))
-        status_msg = f'Reindex of {resource_type} started, please check in several minutes.' if self.request.GET.get('status') == 'indexing' else ''
+        status_msg = f'Reindex of {resource_type} started, please check later.' if self.request.GET.get('status') == 'indexing' else ''
         kwargs.setdefault('share_reindex_message', status_msg)
         return super().get_context_data(**kwargs)
 

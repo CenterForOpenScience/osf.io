@@ -23,6 +23,7 @@
                 <option value="preprints" {% if selected_resource_type == 'preprints' %}selected{% endif %}>Preprints</option>
                 <option value="registries" {% if selected_resource_type == 'registries' %}selected{% endif %}>Registries</option>
                 <option value="users" {% if selected_resource_type == 'users' %}selected{% endif %}>Users</option>
+                <option value="files" {% if selected_resource_type == 'files' %}selected{% endif %}>Files</option>
             </select>
 
             </form>
@@ -64,8 +65,18 @@
     <thead>
         <tr>
             <th>Guid</th>
+             {% if selected_resource_type == 'projects' or selected_resource_type == 'preprints' or selected_resource_type == 'registries' %}
+                 <th>Title</th>
+            {% elif selected_resource_type == 'users' %}
+                 <th>Fullname</th>
+            {% else %}
+                <th>Name</th>
+            {% endif %}
             <th>Datetime Last Indexed</th>
-			<th>Re-index</th>
+<!--			there is no a file indexing option for detail page for now -->
+            {% if selected_resource_type != 'files' %}
+                <th>Reindex</th>
+            {% endif %}
         </tr>
     </thead>
     <tbody>
@@ -76,32 +87,42 @@
                 {{item.first_guid}}
             </a>
         </td>
+        {% if selected_resource_type == 'projects' or selected_resource_type == 'preprints' or selected_resource_type == 'registries' %}
+                  <td>{{item.title}}</td>
+        {% elif selected_resource_type == 'users' %}
+                  <td>{{item.fullname}}</td>
+        {% else %}
+                <th>{{item.name}}</th>
+        {% endif %}
+
         <td>{{item.date_last_indexed}}</td>
 
-        <td>
-            <a data-toggle="modal" data-target="#confirmReindexShareNode-{{ item.first_guid }}" class="btn btn-primary">SHARE Reindex</a>
-        </td>
-        <div class="modal" id="confirmReindexShareNode-{{ item.first_guid }}">
-            <div class="modal-dialog">
-                <div class="modal-content">
-                    <form class="well" method="post" action="{% url resource_guid_reindex guid=item.first_guid %}">
-                        <div class="modal-header">
-                            <button type="button" class="close" data-dismiss="modal">x</button>
-                            <h3>Are you sure you want to reindex this node (SHARE)? {{ item.first_guid }}</h3>
-                        </div>
-                        {% csrf_token %}
-                        <div class="modal-footer">
-                            <input class="btn btn-danger" type="submit" value="Confirm" />
-                            <button type="button" class="btn btn-default" data-dismiss="modal">
-                                Cancel
-                            </button>
-                        </div>
-                    </form>
+        {% if selected_resource_type != 'files' %}
+            <td>
+                <a data-toggle="modal" data-target="#confirmReindexShareNode-{{ item.first_guid }}" class="btn btn-primary">SHARE Reindex</a>
+            </td>
+            <div class="modal" id="confirmReindexShareNode-{{ item.first_guid }}">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <form class="well" method="post" action="{% url resource_guid_reindex guid=item.first_guid %}">
+                            <div class="modal-header">
+                                <button type="button" class="close" data-dismiss="modal">x</button>
+                                <h3>Are you sure you want to reindex this node (SHARE)? {{ item.first_guid }}</h3>
+                            </div>
+                            {% csrf_token %}
+                            <div class="modal-footer">
+                                <input class="btn btn-danger" type="submit" value="Confirm" />
+                                <button type="button" class="btn btn-default" data-dismiss="modal">
+                                    Cancel
+                                </button>
+                            </div>
+                        </form>
 
+                    </div>
+                    {# Data from above link #}
                 </div>
-                {# Data from above link #}
             </div>
-        </div>
+        {% endif %}
 
 
     </tr>
