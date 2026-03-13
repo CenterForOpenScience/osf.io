@@ -10,7 +10,7 @@ from api.collections_providers.fields import CollectionProviderRelationshipField
 from api.preprints.serializers import PreprintProviderRelationshipField
 from api.providers.workflows import Workflows
 from api.base.metrics import MetricsSerializerMixin
-from osf.models import CitationStyle, NotificationType, RegistrationProvider, CollectionProvider
+from osf.models import CitationStyle, NotificationTypeEnum, RegistrationProvider, CollectionProvider
 from osf.models.user import Email, OSFUser
 from osf.models.validators import validate_email
 from osf.utils.permissions import REVIEW_GROUPS, ADMIN
@@ -385,9 +385,9 @@ class ModeratorSerializer(JSONAPISerializer):
         provider.add_to_group(user, perm_group)
         setattr(user, 'permission_group', perm_group)  # Allows reserialization
         if 'claim_url' in context:
-            notification_type = NotificationType.Type.PROVIDER_CONFIRM_EMAIL_MODERATION
+            notification_type = NotificationTypeEnum.PROVIDER_CONFIRM_EMAIL_MODERATION
         else:
-            notification_type = NotificationType.Type.PROVIDER_MODERATOR_ADDED
+            notification_type = NotificationTypeEnum.PROVIDER_MODERATOR_ADDED
         notification_type.instance.emit(
             user=user,
             event_context=context,

@@ -1,13 +1,15 @@
-from django.db.models import Value, When, Case, OuterRef, Subquery
+from django.contrib.contenttypes.models import ContentType
+from django.core.exceptions import PermissionDenied
+from django.db.models import Value, When, Case, OuterRef, Subquery, F
 from django.db.models.fields import CharField, IntegerField
 from django.db.models.functions import Concat, Cast
-from django.contrib.contenttypes.models import ContentType
+
 from rest_framework import generics
 from rest_framework import permissions as drf_permissions
-from rest_framework.exceptions import NotFound
-from django.core.exceptions import ObjectDoesNotExist, PermissionDenied
 from rest_framework.response import Response
+
 from framework.auth.oauth_scopes import CoreScopes
+
 from api.base.views import JSONAPIBaseView
 from api.base.filters import ListFilterMixin
 from api.base import permissions as base_permissions
@@ -18,6 +20,8 @@ from api.subscriptions.serializers import (
     RegistrationSubscriptionSerializer,
 )
 from api.subscriptions.permissions import IsSubscriptionOwner
+from api.subscriptions import utils
+
 from osf.models import (
     CollectionProvider,
     PreprintProvider,
@@ -25,8 +29,9 @@ from osf.models import (
     AbstractProvider,
     AbstractNode,
     Guid,
+    OSFUser,
 )
-from osf.models.notification_type import NotificationType
+from osf.models.notification_type import NotificationTypeEnum
 from osf.models.notification_subscription import NotificationSubscription
 
 
@@ -44,63 +49,79 @@ class SubscriptionList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin):
     required_write_scopes = [CoreScopes.NULL]
 
     def get_queryset(self):
+
+        user = self.request.user
         user_guid = self.request.user._id
+
+        filter_id = self.request.query_params.get('filter[id]')
+        filter_event_name = self.request.query_params.get('filter[event_name]')
+
+        provider_ct = ContentType.objects.get_for_model(AbstractProvider)
+        node_ct = ContentType.objects.get_for_model(AbstractNode)
+        user_ct = ContentType.objects.get_for_model(OSFUser)
 
         node_subquery = AbstractNode.objects.filter(
             id=Cast(OuterRef('object_id'), IntegerField()),
         ).values('guids___id')[:1]
 
         _global_file_updated = [
-            NotificationType.Type.USER_FILE_UPDATED.value,
-            NotificationType.Type.FILE_ADDED.value,
-            NotificationType.Type.FILE_REMOVED.value,
-            NotificationType.Type.ADDON_FILE_COPIED.value,
-            NotificationType.Type.ADDON_FILE_RENAMED.value,
-            NotificationType.Type.ADDON_FILE_MOVED.value,
-            NotificationType.Type.ADDON_FILE_REMOVED.value,
-            NotificationType.Type.FOLDER_CREATED.value,
+            NotificationTypeEnum.USER_FILE_UPDATED.value,
+            NotificationTypeEnum.FILE_ADDED.value,
+            NotificationTypeEnum.FILE_REMOVED.value,
+            NotificationTypeEnum.ADDON_FILE_COPIED.value,
+            NotificationTypeEnum.ADDON_FILE_RENAMED.value,
+            NotificationTypeEnum.ADDON_FILE_MOVED.value,
+            NotificationTypeEnum.ADDON_FILE_REMOVED.value,
+            NotificationTypeEnum.FOLDER_CREATED.value,
         ]
-        _global_reviews = [
-            NotificationType.Type.PROVIDER_NEW_PENDING_SUBMISSIONS.value,
-            NotificationType.Type.PROVIDER_REVIEWS_SUBMISSION_CONFIRMATION.value,
-            NotificationType.Type.PROVIDER_REVIEWS_RESUBMISSION_CONFIRMATION.value,
-            NotificationType.Type.PROVIDER_NEW_PENDING_WITHDRAW_REQUESTS.value,
-            NotificationType.Type.REVIEWS_SUBMISSION_STATUS.value,
+        _global_reviews_provider = [
+            NotificationTypeEnum.PROVIDER_NEW_PENDING_SUBMISSIONS.value,
+            NotificationTypeEnum.PROVIDER_REVIEWS_SUBMISSION_CONFIRMATION.value,
+            NotificationTypeEnum.PROVIDER_REVIEWS_RESUBMISSION_CONFIRMATION.value,
+            NotificationTypeEnum.PROVIDER_NEW_PENDING_WITHDRAW_REQUESTS.value,
+        ]
+        _global_reviews_user = [
+            NotificationTypeEnum.REVIEWS_SUBMISSION_STATUS.value,
         ]
         _node_file_updated = [
-            NotificationType.Type.NODE_FILE_UPDATED.value,
-            NotificationType.Type.FILE_ADDED.value,
-            NotificationType.Type.FILE_REMOVED.value,
-            NotificationType.Type.ADDON_FILE_COPIED.value,
-            NotificationType.Type.ADDON_FILE_RENAMED.value,
-            NotificationType.Type.ADDON_FILE_MOVED.value,
-            NotificationType.Type.ADDON_FILE_REMOVED.value,
-            NotificationType.Type.FOLDER_CREATED.value,
-            NotificationType.Type.FILE_UPDATED.value,
+            NotificationTypeEnum.NODE_FILE_UPDATED.value,
+            NotificationTypeEnum.FILE_ADDED.value,
+            NotificationTypeEnum.FILE_REMOVED.value,
+            NotificationTypeEnum.ADDON_FILE_COPIED.value,
+            NotificationTypeEnum.ADDON_FILE_RENAMED.value,
+            NotificationTypeEnum.ADDON_FILE_MOVED.value,
+            NotificationTypeEnum.ADDON_FILE_REMOVED.value,
+            NotificationTypeEnum.FOLDER_CREATED.value,
+            NotificationTypeEnum.FILE_UPDATED.value,
         ]
 
-        qs = NotificationSubscription.objects.filter(
-            notification_type__name__in=[
-                NotificationType.Type.USER_FILE_UPDATED.value,
-                NotificationType.Type.NODE_FILE_UPDATED.value,
-                NotificationType.Type.PROVIDER_NEW_PENDING_SUBMISSIONS.value,
-            ] + _global_reviews + _global_file_updated + _node_file_updated,
-            user=self.request.user,
+        full_set_of_types = _global_reviews_provider + _global_reviews_user + _global_file_updated + _node_file_updated
+        annotated_qs = NotificationSubscription.objects.filter(
+            notification_type__name__in=full_set_of_types,
+            user=user,
         ).annotate(
             event_name=Case(
                 When(
                     notification_type__name__in=_node_file_updated,
-                    then=Value('files_updated'),
+                    content_type=node_ct,
+                    then=Value('file_updated'),
                 ),
                 When(
                     notification_type__name__in=_global_file_updated,
+                    content_type=user_ct,
                     then=Value('global_file_updated'),
                 ),
                 When(
-                    notification_type__name__in=_global_reviews,
+                    notification_type__name__in=_global_reviews_provider,
+                    content_type=provider_ct,
                     then=Value('global_reviews'),
                 ),
-                default=Value('notification_type__name'),
+                When(
+                    notification_type__name__in=_global_reviews_user,
+                    content_type=user_ct,
+                    then=Value('global_reviews'),
+                ),
+                default=F('notification_type__name'),
             ),
             legacy_id=Case(
                 When(
@@ -112,24 +133,44 @@ class SubscriptionList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin):
                     then=Value(f'{user_guid}_global_file_updated'),
                 ),
                 When(
-                    notification_type__name__in=_global_reviews,
+                    notification_type__name__in=_global_reviews_provider,
+                    content_type=provider_ct,
                     then=Value(f'{user_guid}_global_reviews'),
                 ),
-                default=Value('notification_type__name'),
+                When(
+                    notification_type__name__in=_global_reviews_user,
+                    content_type=user_ct,
+                    then=Value(f'{user_guid}_global_reviews'),
+                ),
+                default=F('notification_type__name'),
             ),
         ).distinct('legacy_id')
 
-        # Apply manual filter for legacy_id if requested
-        filter_id = self.request.query_params.get('filter[id]')
-        if filter_id:
-            qs = qs.filter(legacy_id=filter_id)
-            # convert to list comprehension because legacy_id is an annotation, not in DB
-        # Apply manual filter for event_name if requested
-        filter_event_name = self.request.query_params.get('filter[event_name]')
-        if filter_event_name:
-            qs = qs.filter(event_name__in=filter_event_name.split(','))
+        return_qs = annotated_qs
 
-        return qs
+        # Apply manual filter for legacy_id if requested
+        if filter_id:
+            return_qs = annotated_qs.filter(legacy_id=filter_id)
+            # TODO: Rework missing subscription fix after fully populating the OSF DB with all missing notifications
+            # NOTE: `.exists()` errors for unknown reason, possibly due to complex annotation with `.distinct()`
+            if return_qs.count() == 0:
+                missing_subscription_created = utils.create_missing_notification_from_legacy_id(filter_id, user)
+                if missing_subscription_created:
+                    return_qs = annotated_qs.filter(legacy_id=filter_id)
+            # `filter_id` takes priority over `filter_event_name`
+            return return_qs
+
+        # Apply manual filter for event_name if requested
+        if filter_event_name:
+            filter_event_names = filter_event_name.split(',')
+            return_qs = annotated_qs.filter(event_name__in=filter_event_names)
+            # TODO: Rework missing subscription fix after fully populating the OSF DB with all missing notifications
+            # NOTE: `.exists()` errors for unknown reason, possibly due to complex annotation with `.distinct()`
+            if return_qs.count() == 0:
+                utils.create_missing_notifications_from_event_name(filter_event_names, user)
+
+        return return_qs
+
 
 class AbstractProviderSubscriptionList(SubscriptionList):
     def get_queryset(self):
@@ -155,66 +196,74 @@ class SubscriptionDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView):
 
     def get_object(self):
         subscription_id = self.kwargs['subscription_id']
+        user = self.request.user
         user_guid = self.request.user._id
-
-        provider_ct = ContentType.objects.get(app_label='osf', model='abstractprovider')
-        node_ct = ContentType.objects.get(app_label='osf', model='abstractnode')
+        user_ct = ContentType.objects.get_for_model(OSFUser)
+        node_ct = ContentType.objects.get_for_model(AbstractNode)
 
         node_subquery = AbstractNode.objects.filter(
             id=Cast(OuterRef('object_id'), IntegerField()),
         ).values('guids___id')[:1]
 
-        try:
-            annotated_obj_qs = NotificationSubscription.objects.filter(user=self.request.user).annotate(
-                legacy_id=Case(
-                    When(
-                        notification_type__name=NotificationType.Type.NODE_FILE_UPDATED.value,
-                        content_type=node_ct,
-                        then=Concat(Subquery(node_subquery), Value('_files_updated')),
-                    ),
-                    When(
-                        notification_type__name=NotificationType.Type.USER_FILE_UPDATED.value,
-                        then=Value(f'{user_guid}_global_file_updated'),
-                    ),
-                    When(
-                        notification_type__name=NotificationType.Type.PROVIDER_NEW_PENDING_SUBMISSIONS.value,
-                        content_type=provider_ct,
-                        then=Value(f'{user_guid}_global_reviews'),
-                    ),
-                    default=Value(f'{user_guid}_global'),
-                    output_field=CharField(),
+        missing_subscription_created = None
+        annotated_obj_qs = NotificationSubscription.objects.filter(user=user).annotate(
+            legacy_id=Case(
+                When(
+                    notification_type__name=NotificationTypeEnum.NODE_FILE_UPDATED.value,
+                    content_type=node_ct,
+                    then=Concat(Subquery(node_subquery), Value('_file_updated')),
                 ),
-            )
-            obj = annotated_obj_qs.filter(legacy_id=subscription_id)
+                When(
+                    notification_type__name=NotificationTypeEnum.USER_FILE_UPDATED.value,
+                    then=Value(f'{user_guid}_global_file_updated'),
+                ),
+                When(
+                    notification_type__name=NotificationTypeEnum.REVIEWS_SUBMISSION_STATUS.value,
+                    content_type=user_ct,
+                    then=Value(f'{user_guid}_global_reviews'),
+                ),
+                default=Value(f'{user_guid}_global'),
+                output_field=CharField(),
+            ),
+        )
+        existing_subscriptions = annotated_obj_qs.filter(legacy_id=subscription_id)
 
-        except ObjectDoesNotExist:
-            raise NotFound
-
-        obj = obj.filter(user=self.request.user).first()
-        if not obj:
+        # TODO: Rework missing subscription fix after fully populating the OSF DB with all missing notifications
+        if not existing_subscriptions.exists():
+            missing_subscription_created = utils.create_missing_notification_from_legacy_id(subscription_id, user)
+        if missing_subscription_created:
+            # Note: must use `annotated_obj_qs` to insert `legacy_id` so that `SubscriptionSerializer` can build data
+            # properly; in addition, there should be only one result
+            subscription = annotated_obj_qs.get(legacy_id=subscription_id)
+        else:
+            # TODO: Use `get()` and fails/warns on multiple objects after fully de-duplicating the OSF DB
+            subscription = existing_subscriptions.order_by('id').last()
+        if not subscription:
             raise PermissionDenied
 
-        self.check_object_permissions(self.request, obj)
-        return obj
+        self.check_object_permissions(self.request, subscription)
+        return subscription
 
     def update(self, request, *args, **kwargs):
         """
         Update a notification subscription
         """
+        self.get_object()
+
         if '_global_file_updated' in self.kwargs['subscription_id']:
             # Copy _global_file_updated subscription changes to all file subscriptions
             qs = NotificationSubscription.objects.filter(
                 user=self.request.user,
                 notification_type__name__in=[
-                    NotificationType.Type.USER_FILE_UPDATED.value,
-                    NotificationType.Type.FILE_UPDATED.value,
-                    NotificationType.Type.FILE_ADDED.value,
-                    NotificationType.Type.FILE_REMOVED.value,
-                    NotificationType.Type.ADDON_FILE_COPIED.value,
-                    NotificationType.Type.ADDON_FILE_RENAMED.value,
-                    NotificationType.Type.ADDON_FILE_MOVED.value,
-                    NotificationType.Type.ADDON_FILE_REMOVED.value,
-                    NotificationType.Type.FOLDER_CREATED.value,
+                    NotificationTypeEnum.USER_FILE_UPDATED.value,
+                    NotificationTypeEnum.FILE_UPDATED.value,
+                    NotificationTypeEnum.FILE_ADDED.value,
+                    NotificationTypeEnum.FILE_REMOVED.value,
+                    NotificationTypeEnum.ADDON_FILE_COPIED.value,
+                    NotificationTypeEnum.ADDON_FILE_RENAMED.value,
+                    NotificationTypeEnum.ADDON_FILE_MOVED.value,
+                    NotificationTypeEnum.ADDON_FILE_REMOVED.value,
+                    NotificationTypeEnum.FOLDER_CREATED.value,
                 ],
             ).exclude(content_type=ContentType.objects.get_for_model(AbstractNode))
             if not qs.exists():
@@ -230,11 +279,11 @@ class SubscriptionDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView):
             qs = NotificationSubscription.objects.filter(
                 user=self.request.user,
                 notification_type__name__in=[
-                    NotificationType.Type.PROVIDER_NEW_PENDING_SUBMISSIONS.value,
-                    NotificationType.Type.PROVIDER_REVIEWS_SUBMISSION_CONFIRMATION.value,
-                    NotificationType.Type.PROVIDER_REVIEWS_RESUBMISSION_CONFIRMATION.value,
-                    NotificationType.Type.PROVIDER_NEW_PENDING_WITHDRAW_REQUESTS.value,
-                    NotificationType.Type.REVIEWS_SUBMISSION_STATUS.value,
+                    NotificationTypeEnum.PROVIDER_NEW_PENDING_SUBMISSIONS.value,
+                    NotificationTypeEnum.PROVIDER_REVIEWS_SUBMISSION_CONFIRMATION.value,
+                    NotificationTypeEnum.PROVIDER_REVIEWS_RESUBMISSION_CONFIRMATION.value,
+                    NotificationTypeEnum.PROVIDER_NEW_PENDING_WITHDRAW_REQUESTS.value,
+                    NotificationTypeEnum.REVIEWS_SUBMISSION_STATUS.value,
                 ],
             )
             if not qs.exists():
@@ -245,24 +294,24 @@ class SubscriptionDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView):
                 serializer.is_valid(raise_exception=True)
                 self.perform_update(serializer)
             return Response(serializer.data)
-        elif '_files_updated' in self.kwargs['subscription_id']:
-            # Copy _files_updated subscription changes to all node file subscriptions
-            node_id = Guid.load(self.kwargs['subscription_id'].split('_files_updated')[0]).object_id
+        elif '_file_updated' in self.kwargs['subscription_id']:
+            # Copy _file_updated subscription changes to all node file subscriptions
+            node_id = Guid.load(self.kwargs['subscription_id'].split('_file_updated')[0]).object_id
 
             qs = NotificationSubscription.objects.filter(
                 user=self.request.user,
                 content_type=ContentType.objects.get_for_model(AbstractNode),
                 object_id=node_id,
                 notification_type__name__in=[
-                    NotificationType.Type.NODE_FILE_UPDATED.value,
-                    NotificationType.Type.FILE_UPDATED.value,
-                    NotificationType.Type.FILE_ADDED.value,
-                    NotificationType.Type.FILE_REMOVED.value,
-                    NotificationType.Type.ADDON_FILE_COPIED.value,
-                    NotificationType.Type.ADDON_FILE_RENAMED.value,
-                    NotificationType.Type.ADDON_FILE_MOVED.value,
-                    NotificationType.Type.ADDON_FILE_REMOVED.value,
-                    NotificationType.Type.FOLDER_CREATED.value,
+                    NotificationTypeEnum.NODE_FILE_UPDATED.value,
+                    NotificationTypeEnum.FILE_UPDATED.value,
+                    NotificationTypeEnum.FILE_ADDED.value,
+                    NotificationTypeEnum.FILE_REMOVED.value,
+                    NotificationTypeEnum.ADDON_FILE_COPIED.value,
+                    NotificationTypeEnum.ADDON_FILE_RENAMED.value,
+                    NotificationTypeEnum.ADDON_FILE_MOVED.value,
+                    NotificationTypeEnum.ADDON_FILE_REMOVED.value,
+                    NotificationTypeEnum.FOLDER_CREATED.value,
                 ],
             )
             if not qs.exists():

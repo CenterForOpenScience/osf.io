@@ -545,7 +545,7 @@ def _safe_obj_id(obj: Any) -> Optional[str]:
 @contextlib.contextmanager
 def assert_notification(
     *,
-    type,                       # NotificationType, NotificationType.Type, or str
+    type,                       # NotificationType, NotificationTypeEnum, or str
     user: Any = None,           # optional user object to match
     subscribed_object: Any = None,  # optional object (e.g., node) to match
     times: int = 1,             # exact number of emits expected
@@ -555,7 +555,7 @@ def assert_notification(
 ):
     """
     Usage:
-        with assert_notification(type=NotificationType.Type.NODE_FORK_COMPLETED, user=self.user):
+        with assert_notification(type=NotificationTypeEnum.NODE_FORK_COMPLETED, user=self.user):
             <code that emits>
     """
     expected_type = _notif_type_name(type)

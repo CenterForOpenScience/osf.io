@@ -8,7 +8,7 @@
     %>
     Hello ${user_fullname},<br>
     <br>
-    You have been added by ${referrer_name} as a contributor to the project <a href="${node_absolute_url}">${node_title}</a> on the Open Science Framework.<br>
+    You have been added by ${referrer_fullname} as a contributor to the project <a href="${node_absolute_url}">${node_title}</a> on the Open Science Framework.<br>
     <br>
     <a href="${claim_url}">Click here</a> to set a password for your account.<br>
     <br>
