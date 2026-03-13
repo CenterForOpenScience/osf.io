@@ -2573,12 +2573,20 @@ class ShareIndexMixin(models.Model):
 
     def mark_indexing_failed(self):
         self.has_been_indexed = False
-        self.save(update_fields=['has_been_indexed'])
+        from addons.osfstorage.models import OsfStorageFile
+        if isinstance(self, OsfStorageFile):
+            self.save(update_fields=['has_been_indexed'], skip_search=True)
+        else:
+            self.save(update_fields=['has_been_indexed'])
 
     def mark_indexing_success(self):
         self.has_been_indexed = True
         self.date_last_indexed = timezone.now()
-        self.save(update_fields=['has_been_indexed', 'date_last_indexed'])
+        from addons.osfstorage.models import OsfStorageFile
+        if isinstance(self, OsfStorageFile):
+            self.save(update_fields=['has_been_indexed', 'date_last_indexed'], skip_search=True)
+        else:
+            self.save(update_fields=['has_been_indexed'])
 
     class Meta:
         abstract = True
