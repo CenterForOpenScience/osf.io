@@ -4,7 +4,7 @@ from unittest import mock
 import pytest
 
 from addons.osfstorage.models import Region
-from osf.models import Institution, InstitutionStorageRegion, NotificationType
+from osf.models import Institution, InstitutionStorageRegion, NotificationTypeEnum
 from osf_tests.factories import (
     AuthUserFactory,
     InstitutionFactory,
@@ -157,8 +157,8 @@ class TestInstitutionManager:
         with capture_notifications() as notifications:
             institution._send_deactivation_email()
         assert len(notifications['emits']) == 2
-        assert notifications['emits'][0]['type'] == NotificationType.Type.USER_INSTITUTION_DEACTIVATION
-        assert notifications['emits'][1]['type'] == NotificationType.Type.USER_INSTITUTION_DEACTIVATION
+        assert notifications['emits'][0]['type'] == NotificationTypeEnum.USER_INSTITUTION_DEACTIVATION
+        assert notifications['emits'][1]['type'] == NotificationTypeEnum.USER_INSTITUTION_DEACTIVATION
 
     def test_send_deactivation_email_call_args(self):
         institution = InstitutionFactory()
@@ -168,7 +168,7 @@ class TestInstitutionManager:
         with capture_notifications() as notifications:
             institution._send_deactivation_email()
         assert len(notifications['emits']) == 1
-        assert notifications['emits'][0]['type'] == NotificationType.Type.USER_INSTITUTION_DEACTIVATION
+        assert notifications['emits'][0]['type'] == NotificationTypeEnum.USER_INSTITUTION_DEACTIVATION
 
     def test_deactivate_inactive_institution_noop(self):
         institution = InstitutionFactory()

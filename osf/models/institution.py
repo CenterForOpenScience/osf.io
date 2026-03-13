@@ -14,7 +14,7 @@ from django.urls import reverse
 from django.utils import timezone
 
 from framework import sentry
-from osf.models.notification_type import NotificationType
+from osf.models.notification_type import NotificationTypeEnum
 from .base import BaseModel, ObjectIDMixin
 from .contributor import InstitutionalContributor
 from .institution_affiliation import InstitutionAffiliation
@@ -220,7 +220,7 @@ class Institution(DirtyFieldsMixin, Loggable, ObjectIDMixin, BaseModel, Guardian
         success = 0
         for user in self.get_institution_users():
             attempts += 1
-            NotificationType.Type.USER_INSTITUTION_DEACTIVATION.instance.emit(
+            NotificationTypeEnum.USER_INSTITUTION_DEACTIVATION.instance.emit(
                 user=user,
                 event_context={
                     'user_fullname': user.fullname,

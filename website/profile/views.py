@@ -26,7 +26,7 @@ from framework.status import push_status_message
 from framework.utils import throttle_period_expired
 
 from osf import features
-from osf.models import ApiOAuth2Application, ApiOAuth2PersonalToken, OSFUser, NotificationType
+from osf.models import ApiOAuth2Application, ApiOAuth2PersonalToken, OSFUser, NotificationTypeEnum
 from osf.exceptions import BlockedEmailError, OSFError
 from osf.utils.requests import string_type_request_headers
 from website import mailchimp_utils
@@ -187,13 +187,12 @@ def update_user(auth):
 
         # make sure the new username has already been confirmed
         if username and username != user.username and user.emails.filter(address=username).exists():
-            NotificationType.Type.USER_PRIMARY_EMAIL_CHANGED.instance.emit(
+            NotificationTypeEnum.USER_PRIMARY_EMAIL_CHANGED.instance.emit(
                 subscribed_object=user,
                 user=user,
                 event_context={
                     'user_fullname': user.fullname,
                     'new_address': username,
-                    'can_change_preferences': False,
                     'osf_contact_email': settings.OSF_CONTACT_EMAIL,
                 }
             )
@@ -798,13 +797,12 @@ def request_export(auth):
                         data={'message_long': 'Too many requests. Please wait a while before sending another account export request.',
                               'error_type': 'throttle_error'})
 
-    NotificationType.Type.DESK_REQUEST_EXPORT.instance.emit(
+    NotificationTypeEnum.DESK_REQUEST_EXPORT.instance.emit(
         user=user,
         event_context={
             'user_username': user.username,
             'user_absolute_url': user.absolute_url,
             'user__id': user._id,
-            'can_change_preferences': False,
         }
     )
     user.email_last_sent = timezone.now()

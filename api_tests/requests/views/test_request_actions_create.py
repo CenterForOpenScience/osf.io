@@ -2,7 +2,7 @@ import pytest
 
 from api.base.settings.defaults import API_BASE
 from api_tests.requests.mixins import NodeRequestTestMixin, PreprintRequestTestMixin
-from osf.models import NotificationType
+from osf.models import NotificationTypeEnum
 
 from osf.utils import permissions
 from tests.utils import capture_notifications, assert_notification
@@ -201,7 +201,7 @@ class TestCreateNodeRequestAction(NodeRequestTestMixin):
         with capture_notifications() as notifications:
             res = app.post_json_api(url, payload, auth=admin.auth)
         assert len(notifications['emits']) == 1
-        assert notifications['emits'][0]['type'] == NotificationType.Type.NODE_CONTRIBUTOR_ADDED_ACCESS_REQUEST
+        assert notifications['emits'][0]['type'] == NotificationTypeEnum.NODE_CONTRIBUTOR_ADDED_ACCESS_REQUEST
         assert res.status_code == 201
         node_request.reload()
         assert initial_state != node_request.machine_state
@@ -214,7 +214,7 @@ class TestCreateNodeRequestAction(NodeRequestTestMixin):
         with capture_notifications() as notifications:
             res = app.post_json_api(url, payload, auth=admin.auth)
         assert len(notifications['emits']) == 1
-        assert notifications['emits'][0]['type'] == NotificationType.Type.NODE_REQUEST_ACCESS_DENIED
+        assert notifications['emits'][0]['type'] == NotificationTypeEnum.NODE_REQUEST_ACCESS_DENIED
 
         assert res.status_code == 201
         node_request.reload()
@@ -326,7 +326,7 @@ class TestCreatePreprintRequestAction(PreprintRequestTestMixin):
             initial_state = request.machine_state
             assert not request.target.is_retracted
             payload = self.create_payload(request._id, trigger='accept')
-            with assert_notification(type=NotificationType.Type.PREPRINT_REQUEST_WITHDRAWAL_APPROVED, user=request.target.creator):
+            with assert_notification(type=NotificationTypeEnum.PREPRINT_REQUEST_WITHDRAWAL_APPROVED, user=request.target.creator):
                 res = app.post_json_api(url, payload, auth=moderator.auth)
             assert res.status_code == 201
             request.reload()
@@ -363,7 +363,7 @@ class TestCreatePreprintRequestAction(PreprintRequestTestMixin):
             initial_state = request.machine_state
             assert not request.target.is_retracted
             payload = self.create_payload(request._id, trigger='reject')
-            with assert_notification(type=NotificationType.Type.PREPRINT_REQUEST_WITHDRAWAL_DECLINED, user=request.target.creator):
+            with assert_notification(type=NotificationTypeEnum.PREPRINT_REQUEST_WITHDRAWAL_DECLINED, user=request.target.creator):
                 res = app.post_json_api(url, payload, auth=moderator.auth)
             assert res.status_code == 201
             request.reload()
@@ -402,8 +402,8 @@ class TestCreatePreprintRequestAction(PreprintRequestTestMixin):
             with capture_notifications() as notifications:
                 res = app.post_json_api(url, payload, auth=moderator.auth)
             assert len(notifications['emits']) == 2
-            assert notifications['emits'][0]['type'] == NotificationType.Type.PREPRINT_REQUEST_WITHDRAWAL_APPROVED
-            assert notifications['emits'][1]['type'] == NotificationType.Type.PREPRINT_REQUEST_WITHDRAWAL_APPROVED
+            assert notifications['emits'][0]['type'] == NotificationTypeEnum.PREPRINT_REQUEST_WITHDRAWAL_APPROVED
+            assert notifications['emits'][1]['type'] == NotificationTypeEnum.PREPRINT_REQUEST_WITHDRAWAL_APPROVED
             assert res.status_code == 201
             request.reload()
             request.target.reload()

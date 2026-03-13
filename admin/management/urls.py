@@ -17,5 +17,7 @@ urlpatterns = [
     re_path(r'^ingest_cedar_metadata_templates', views.IngestCedarMetadataTemplates.as_view(), name='ingest_cedar_metadata_templates'),
     re_path(r'^bulk_resync', views.BulkResync.as_view(), name='bulk-resync'),
     re_path(r'^empty_metadata_dataarchive_registration_bulk_resync', views.EmptyMetadataDataarchiveRegistrationBulkResync.as_view(),
-            name='empty-metadata-dataarchive-registration-bulk-resync')
+            name='empty-metadata-dataarchive-registration-bulk-resync'),
+    re_path(r'^sync_notification_templates', views.SyncNotificationTemplates.as_view(),
+            name='sync_notification_templates')
 ]
