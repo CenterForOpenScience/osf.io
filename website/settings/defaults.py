@@ -186,14 +186,17 @@ WAIT_BETWEEN_MAILS = timedelta(days=7)  # Deprecated setting, used by deprecated
 NO_ADDON_WAIT_TIME = timedelta(weeks=8)  # 2 months for "Link an add-on to your OSF project" email
 NO_LOGIN_WAIT_TIME = timedelta(weeks=52)   # 1 year for "We miss you at OSF" email
 NO_LOGIN_OSF4M_WAIT_TIME = timedelta(weeks=52)  # 1 year for "We miss you at OSF" email to users created from OSF4M
-NOTIFICATIONS_CLEANUP_AGE = timedelta(weeks=52)  # 1 month to clean up old notifications and email tasks
+# TODO: this will be changed to 12 weeks (3 month) with ENG-9856
+NOTIFICATIONS_CLEANUP_AGE = timedelta(weeks=52)  # 1 year to clean up old notifications and email tasks
 
 # Configuration for "We miss you at OSF" email (`NotificationTypeEnum.USER_NO_LOGIN`)
 # Note: 1) we can gradually increase `MAX_DAILY_NO_LOGIN_EMAILS` to 10000, 100000, etc. or set it to `None` after we
 # have verified that users are not spammed by this email after NR release. 2) If we want to clean up database for those
 # already sent `USER_NO_LOGIN` emails, we need to adjust the cut-off time to the day we clean the DB.
 MAX_DAILY_NO_LOGIN_EMAILS = 1000
-NO_LOGIN_EMAIL_CUTOFF = datetime.datetime(2026, 1, 5)
+# Note: set to 26/3/13 which is the date we release to `master` and deploy to test server; prod server has a different
+# date, which is configured in the private config, using the date when it is deployed to prod.
+NO_LOGIN_EMAIL_CUTOFF = datetime.datetime(2026, 3, 13)
 
 # TODO: Override in local.py
 MAILGUN_API_KEY = None
