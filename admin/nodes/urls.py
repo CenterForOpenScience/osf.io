@@ -8,6 +8,7 @@ urlpatterns = [
     re_path(r'^flagged_spam$', views.NodeFlaggedSpamList.as_view(), name='flagged-spam'),
     re_path(r'^known_spam$', views.NodeKnownSpamList.as_view(), name='known-spam'),
     re_path(r'^known_ham$', views.NodeKnownHamList.as_view(), name='known-ham'),
+    re_path(r'^embargo_report/$', views.EmbargoReportView.as_view(), name='embargo-report'),
     re_path(r'^doi_backlog_list/$', views.DoiBacklogListView.as_view(), name='doi-backlog-list'),
     re_path(r'^approval_backlog_list/$', views.ApprovalBacklogListView.as_view(), name='approval-backlog-list'),
     re_path(r'^confirm_approve_backlog_list/$', views.ConfirmApproveBacklogView.as_view(), name='confirm-approve-backlog-list'),
