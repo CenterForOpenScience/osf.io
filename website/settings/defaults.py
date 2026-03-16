@@ -194,7 +194,9 @@ NOTIFICATIONS_CLEANUP_BATCH_SIZE = 10000  # Batch size for notifications and ema
 # have verified that users are not spammed by this email after NR release. 2) If we want to clean up database for those
 # already sent `USER_NO_LOGIN` emails, we need to adjust the cut-off time to the day we clean the DB.
 MAX_DAILY_NO_LOGIN_EMAILS = 1000
-NO_LOGIN_EMAIL_CUTOFF = datetime.datetime(2026, 1, 5)
+# Note: set to 26/3/13 which is the date we release to `master` and deploy to test server; prod server has a different
+# date, which is configured in the private config, using the date when it is deployed to prod.
+NO_LOGIN_EMAIL_CUTOFF = datetime.datetime(2026, 3, 13)
 
 # TODO: Override in local.py
 MAILGUN_API_KEY = None
