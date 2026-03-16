@@ -163,15 +163,15 @@
                     <td><span><i class='fa fa-globe fa-2x'/></span></td>
                     <td data-bind="visible: profileWebsites().length > 1">Personal websites</td>
                     <td data-bind="visible: profileWebsites().length === 1">Personal website</td>
-                    <td data-bind="foreach: profileWebsites"><a rel="nofollow" data-bind="attr: {href: $data}, text: $data"></a><br></td>
+                    <td data-bind="foreach: profileWebsites"><a target="_blank" rel="nofollow me" data-bind="attr: {href: $data}, text: $data"></a><br></td>
                 </tr>
             </tbody>
 
             <tbody data-bind="foreach: values">
                 <tr data-bind="if: value">
-                    <td><a target="_blank" ="" data-bind="attr: {href: value, 'aria-label': 'Link to user ' + label}"><span data-bind="html: iconName(label)"></span></a></td>
+                    <td><a target="_blank" rel="nofollow me" data-bind="attr: {href: value, 'aria-label': 'Link to user ' + label}"><span data-bind="html: iconName(label)"></span></a></td>
                     <td><span data-bind="text: label"></span></td>
-                    <td><a target="_blank" data-bind="attr: {href: value}, text: text"></a></td>
+                    <td><a target="_blank" rel="nofollow me" data-bind="attr: {href: value}, text: text"></a></td>
                 </tr>
             </tbody>
         </table>
