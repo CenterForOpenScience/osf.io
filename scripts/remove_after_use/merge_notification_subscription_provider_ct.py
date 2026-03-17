@@ -27,7 +27,7 @@ def merge_notification_subscription_provider_ct():
 
     provider_ct_ids = [ct.id for ct in provider_ct_list]
 
-    abstract_qs = NotificationSubscription.objects.filter(
+    abstract_provider_ct_qs = NotificationSubscription.objects.filter(
         content_type=abstract_provider_ct
     )
 
@@ -35,7 +35,7 @@ def merge_notification_subscription_provider_ct():
         content_type_id__in=provider_ct_ids
     ).annotate(
         abstract_exists=Exists(
-            abstract_qs.filter(
+            abstract_provider_ct_qs.filter(
                 notification_type_id=OuterRef('notification_type_id'),
                 user_id=OuterRef('user_id'),
                 object_id=OuterRef('object_id'),
