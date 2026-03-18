@@ -11,7 +11,7 @@ from framework.auth.core import Auth
 from osf.models import (
     NodeLicense,
     PreprintContributor,
-    PreprintLog, NotificationType
+    PreprintLog, NotificationTypeEnum
 )
 from osf.utils import permissions as osf_permissions
 from osf.utils.permissions import WRITE
@@ -502,7 +502,7 @@ class TestPreprintUpdate:
             self, mock_update_doi_metadata, app, user, preprint, url
     ):
         new_user = AuthUserFactory()
-        with assert_notification(type=NotificationType.Type.PREPRINT_CONTRIBUTOR_ADDED_DEFAULT, user=new_user):
+        with assert_notification(type=NotificationTypeEnum.PREPRINT_CONTRIBUTOR_ADDED_DEFAULT, user=new_user):
             res = app.post_json_api(
                 url + 'contributors/',
                 {
@@ -602,7 +602,7 @@ class TestPreprintUpdate:
 
     def test_update_published(self, app, user):
         unpublished = PreprintFactory(creator=user, is_published=False)
-        with assert_notification(type=NotificationType.Type.PROVIDER_REVIEWS_SUBMISSION_CONFIRMATION, user=user):
+        with assert_notification(type=NotificationTypeEnum.PROVIDER_REVIEWS_SUBMISSION_CONFIRMATION, user=user):
             app.patch_json_api(
                 f'/{API_BASE}preprints/{unpublished._id}/',
                 build_preprint_update_payload(
@@ -622,7 +622,7 @@ class TestPreprintUpdate:
             project=project
         )
         assert not unpublished.node.is_public
-        with assert_notification(type=NotificationType.Type.PROVIDER_REVIEWS_SUBMISSION_CONFIRMATION, user=user):
+        with assert_notification(type=NotificationTypeEnum.PROVIDER_REVIEWS_SUBMISSION_CONFIRMATION, user=user):
             app.patch_json_api(
                 f'/{API_BASE}preprints/{unpublished._id}/',
                 build_preprint_update_payload(

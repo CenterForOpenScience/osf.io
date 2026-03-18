@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "osf-io"
-version = "24.05.2"
+version = "26.5.0"
 description = "The code for [https://osf.io](https://osf.io)."
 authors = ["Your Name <you@example.com>"]
 license = "Apache License 2.0"

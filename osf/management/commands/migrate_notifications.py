@@ -7,7 +7,7 @@ from django.contrib.contenttypes.models import ContentType
 from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction, connection
 
-from osf.models import NotificationType, NotificationSubscription
+from osf.models import NotificationType, NotificationTypeEnum, NotificationSubscription
 from osf.models.notifications import NotificationSubscriptionLegacy
 from osf.management.commands.populate_notification_types import populate_notification_types
 from tqdm import tqdm
@@ -25,13 +25,13 @@ FREQ_MAP = {
 
 EVENT_NAME_TO_NOTIFICATION_TYPE = {
     # Provider notifications
-    'global_reviews': NotificationType.Type.REVIEWS_SUBMISSION_STATUS,
+    'global_reviews': NotificationTypeEnum.REVIEWS_SUBMISSION_STATUS,
 
     # Node notifications
-    'file_updated': NotificationType.Type.NODE_FILE_UPDATED,
+    'file_updated': NotificationTypeEnum.NODE_FILE_UPDATED,
 
     # User notifications
-    'global_file_updated': NotificationType.Type.USER_FILE_UPDATED,
+    'global_file_updated': NotificationTypeEnum.USER_FILE_UPDATED,
 }
 
 
@@ -152,7 +152,7 @@ def migrate_legacy_notification_subscriptions(
 
             notif_enum = EVENT_NAME_TO_NOTIFICATION_TYPE.get(event_name)
             if subscribed_object == legacy.user and event_name == 'global_file_updated':
-                notif_enum = NotificationType.Type.USER_FILE_UPDATED
+                notif_enum = NotificationTypeEnum.USER_FILE_UPDATED
             if not notif_enum:
                 skipped += 1
                 continue

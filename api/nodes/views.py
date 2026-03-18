@@ -160,8 +160,12 @@ from osf.models import (
     CedarMetadataRecord,
     Preprint,
     Collection,
+<<<<<<< HEAD
     Contributor,
     NotificationType,
+=======
+    NotificationTypeEnum,
+>>>>>>> upstream/develop
 )
 from addons.osfstorage.models import Region
 from osf.utils.permissions import ADMIN, WRITE_NODE
@@ -1093,26 +1097,22 @@ class NodeForksList(JSONAPIBaseView, generics.ListCreateAPIView, NodeMixin, Node
         try:
             fork = serializer.save(node=node)
         except Exception as exc:
-            NotificationType.Type.NODE_FORK_FAILED.instance.emit(
+            NotificationTypeEnum.NODE_FORK_FAILED.instance.emit(
                 user=user,
                 subscribed_object=node,
                 event_context={
-                    'domain': settings.DOMAIN,
                     'node_title': node.title,
-                    'can_change_preferences': False,
                 },
             )
             raise exc
 
-        NotificationType.Type.NODE_FORK_COMPLETED.instance.emit(
+        NotificationTypeEnum.NODE_FORK_COMPLETED.instance.emit(
             user=user,
             subscribed_object=node,
             event_context={
                 'domain': settings.DOMAIN,
                 'node_title': node.title,
-                'fork_title': fork.title,
                 'fork__id': fork._id,
-                'can_change_preferences': False,
             },
         )
 

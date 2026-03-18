@@ -34,9 +34,13 @@
        Sincerely,
        <br>
        Your ${reviewable_provider_name} and OSF teams
+<<<<<<< HEAD
        <p>
             Center for Open Science
        </p>
+=======
+       <br>
+>>>>>>> upstream/develop
        <a href="https://github.com/CenterForOpenScience/cos.io/blob/master/PRIVACY_POLICY.md">Privacy Policy</a>
     </div>
 </%def>

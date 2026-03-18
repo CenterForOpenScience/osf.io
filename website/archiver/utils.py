@@ -27,44 +27,37 @@ def normalize_unicode_filenames(filename):
 
 
 def send_archiver_size_exceeded_mails(src, user, stat_result, url):
-    from osf.models.notification_type import NotificationType
+    from osf.models.notification_type import NotificationTypeEnum
 
-    NotificationType.Type.DESK_ARCHIVE_JOB_EXCEEDED.instance.emit(
+    NotificationTypeEnum.DESK_ARCHIVE_JOB_EXCEEDED.instance.emit(
         destination_address=settings.OSF_SUPPORT_EMAIL,
         subscribed_object=src,
         event_context={
             'user_fullname': user.fullname,
             'user__id': user._id,
-            'src__id': src._id,
             'src_url': src.url,
             'src_title': src.title,
             'stat_result': stat_result,
             'url': url,
             'max_archive_size': MAX_ARCHIVE_SIZE / 1024 ** 3,
-            'can_change_preferences': False,
         }
     )
-    NotificationType.Type.USER_ARCHIVE_JOB_EXCEEDED.instance.emit(
+    NotificationTypeEnum.USER_ARCHIVE_JOB_EXCEEDED.instance.emit(
         user=user,
         subscribed_object=user,
         event_context={
-            'user_fullname': user.fullname,
-            'user__id': user._id,
             'src_title': src.title,
             'src_url': src.url,
-            'max_archive_size': MAX_ARCHIVE_SIZE / 1024 ** 3,
-            'can_change_preferences': False,
         }
     )
 
 
 def send_archiver_copy_error_mails(src, user, results, url):
-    from osf.models.notification_type import NotificationType
+    from osf.models.notification_type import NotificationTypeEnum
 
-    NotificationType.Type.DESK_ARCHIVE_JOB_COPY_ERROR.instance.emit(
+    NotificationTypeEnum.DESK_ARCHIVE_JOB_COPY_ERROR.instance.emit(
         destination_address=settings.OSF_SUPPORT_EMAIL,
         event_context={
-            'domain': settings.DOMAIN,
             'user_fullname': user.fullname,
             'user__id': user._id,
             'src__id': src._id,
@@ -72,37 +65,34 @@ def send_archiver_copy_error_mails(src, user, results, url):
             'src_title': src.title,
             'results': results,
             'url': url,
-            'can_change_preferences': False,
         }
     )
-    NotificationType.Type.USER_ARCHIVE_JOB_COPY_ERROR.instance.emit(
+    NotificationTypeEnum.USER_ARCHIVE_JOB_COPY_ERROR.instance.emit(
         user=user,
         event_context={
             'domain': settings.DOMAIN,
-            'user_fullname': user.fullname,
-            'user__id': user._id,
-            'src__id': src._id,
             'src_url': src.url,
             'src_title': src.title,
-            'results': results,
-            'can_change_preferences': False,
+
         }
     )
 
 def send_archiver_file_not_found_mails(src, user, results, url):
-    from osf.models.notification_type import NotificationType
+    from osf.models.notification_type import NotificationTypeEnum
 
-    NotificationType.Type.DESK_ARCHIVE_JOB_FILE_NOT_FOUND.instance.emit(
+    NotificationTypeEnum.DESK_ARCHIVE_JOB_FILE_NOT_FOUND.instance.emit(
         destination_address=settings.OSF_SUPPORT_EMAIL,
         event_context={
-            'user': user.id,
-            'src': src._id,
+            'domain': settings.DOMAIN,
+            'src': src,
+            'src_title': src.title,
+            'user__id': user._id,
+            'user_fullname': user.fullname,
+            'src__id': src._id,
             'results': results,
-            'url': url,
-            'can_change_preferences': False,
         }
     )
-    NotificationType.Type.USER_ARCHIVE_JOB_FILE_NOT_FOUND.instance.emit(
+    NotificationTypeEnum.USER_ARCHIVE_JOB_FILE_NOT_FOUND.instance.emit(
         user=user,
         event_context={
             'user': user.id,
@@ -110,39 +100,29 @@ def send_archiver_file_not_found_mails(src, user, results, url):
             'src_title': src.title,
             'src_url': src.url,
             'results': results,
-            'can_change_preferences': False,
         }
     )
 
 def send_archiver_uncaught_error_mails(src, user, results, url):
-    from osf.models.notification_type import NotificationType
+    from osf.models.notification_type import NotificationTypeEnum
 
-    NotificationType.Type.DESK_ARCHIVE_JOB_UNCAUGHT_ERROR.instance.emit(
+    NotificationTypeEnum.DESK_ARCHIVE_JOB_UNCAUGHT_ERROR.instance.emit(
         destination_address=settings.OSF_SUPPORT_EMAIL,
         event_context={
             'user_fullname': user.fullname,
             'user__id': user._id,
-            'user_username': user.username,
             'src_title': src.title,
-            'src__id': src._id,
             'src_url': src.url,
-            'src': src._id,
-            'results': [str(error) for error in results],
             'url': url,
-            'can_change_preferences': False,
+            'src__id': src._id,
+            'results': results,
         }
     )
-    NotificationType.Type.USER_ARCHIVE_JOB_UNCAUGHT_ERROR.instance.emit(
+    NotificationTypeEnum.USER_ARCHIVE_JOB_UNCAUGHT_ERROR.instance.emit(
         user=user,
         event_context={
-            'user_fullname': user.fullname,
-            'user__id': user._id,
             'src_title': src.title,
-            'src__id': src._id,
             'src_url': src.url,
-            'src': src._id,
-            'results': [str(error) for error in results],
-            'can_change_preferences': False,
         }
     )
 

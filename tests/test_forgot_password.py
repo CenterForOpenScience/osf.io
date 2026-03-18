@@ -1,6 +1,6 @@
 from urllib.parse import quote_plus
 
-from osf.models import NotificationType
+from osf.models import NotificationTypeEnum
 from tests.base import OsfTestCase
 from osf_tests.factories import (
     AuthUserFactory,
@@ -50,7 +50,7 @@ class TestForgotPassword(OsfTestCase):
             res = form.submit(self.app)
         # check mail was sent
         assert len(notifications['emits']) == 1
-        assert notifications['emits'][0]['type'] == NotificationType.Type.USER_FORGOT_PASSWORD
+        assert notifications['emits'][0]['type'] == NotificationTypeEnum.USER_FORGOT_PASSWORD
         # check http 200 response
         assert res.status_code == 200
         # check request URL is /forgotpassword
@@ -152,7 +152,7 @@ class TestForgotPasswordInstitution(OsfTestCase):
 
         # check mail was sent
         assert len(notifications['emits']) == 1
-        assert notifications['emits'][0]['type'] == NotificationType.Type.USER_FORGOT_PASSWORD_INSTITUTION
+        assert notifications['emits'][0]['type'] == NotificationTypeEnum.USER_FORGOT_PASSWORD_INSTITUTION
         # check http 200 response
         assert res.status_code == 200
         # check request URL is /forgotpassword

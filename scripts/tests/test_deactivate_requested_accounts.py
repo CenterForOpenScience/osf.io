@@ -1,6 +1,6 @@
 import pytest
 
-from osf.models import NotificationType
+from osf.models import NotificationTypeEnum
 from osf_tests.factories import ProjectFactory, AuthUserFactory
 
 from osf.management.commands.deactivate_requested_accounts import deactivate_requested_accounts
@@ -30,7 +30,7 @@ class TestDeactivateRequestedAccount:
         with capture_notifications() as notifications:
             deactivate_requested_accounts(dry_run=False)
         assert len(notifications['emits']) == 1
-        assert notifications['emits'][0]['type'] == NotificationType.Type.USER_REQUEST_DEACTIVATION_COMPLETE
+        assert notifications['emits'][0]['type'] == NotificationTypeEnum.USER_REQUEST_DEACTIVATION_COMPLETE
         user_requested_deactivation.reload()
 
         assert user_requested_deactivation.requested_deactivation
@@ -42,7 +42,7 @@ class TestDeactivateRequestedAccount:
         with capture_notifications() as notifications:
             deactivate_requested_accounts(dry_run=False)
         assert len(notifications['emits']) == 1
-        assert notifications['emits'][0]['type'] == NotificationType.Type.DESK_REQUEST_DEACTIVATION
+        assert notifications['emits'][0]['type'] == NotificationTypeEnum.DESK_REQUEST_DEACTIVATION
         user_requested_deactivation_with_node.reload()
 
         assert user_requested_deactivation_with_node.requested_deactivation

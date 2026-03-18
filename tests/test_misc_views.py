@@ -21,7 +21,7 @@ from osf.models import (
     Comment,
     OSFUser,
     SpamStatus,
-    NodeRelation, NotificationType,
+    NodeRelation, NotificationTypeEnum,
 )
 from osf.utils import permissions
 from osf_tests.factories import (
@@ -422,6 +422,11 @@ class TestExternalAuthViews(OsfTestCase):
         url = self.user.get_confirmation_url(self.user.username, external_id_provider='orcid', destination='my_projects')
         with capture_notifications():
             res = self.app.get(url)
+<<<<<<< HEAD
+=======
+        assert len(notifications['emits']) == 1
+        assert notifications['emits'][0]['type'] == NotificationTypeEnum.USER_EXTERNAL_LOGIN_LINK_SUCCESS
+>>>>>>> upstream/develop
         assert res.status_code == 302, 'redirects to cas login'
         assert 'You should be redirected automatically' in str(res.html)
         assert '/login?service=' in res.location

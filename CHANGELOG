@@ -2,6 +2,38 @@
 
 We follow the CalVer (https://calver.org/) versioning scheme: YY.MINOR.MICRO.
 
+26.5.0 (2026-03-13)
+===================
+
+- Notification refactor post-release project (Post-NR)
+
+26.4.1 (2026-03-01)
+===================
+
+- Add script to update ROR funder names
+
+26.4.0 (2026-02-26)
+===================
+
+- Transition funder ids from CrossRef to ROR
+
+26.3.0 (2026-02-24)
+===================
+
+- FAIR Signposting
+
+26.2.1 (2026-02-09)
+===================
+
+- Permanently update two notification types
+- Link digest to types and fix/log incorrect usage
+- Update notifiction dedupe command
+
+26.2.0
+======
+
+- TODO: add date and log
+
 26.1.6 (2026-01-14)
 ===================
 

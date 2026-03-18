@@ -2,7 +2,7 @@ from waffle.testutils import override_switch
 from osf import features
 
 from framework.auth.core import Auth
-from osf.models import NotificationType, Notification
+from osf.models import NotificationTypeEnum
 from osf_tests.factories import (
     ProjectFactory,
     AuthUserFactory,
@@ -12,7 +12,6 @@ from osf_tests.factories import (
 from osf.utils.permissions import WRITE
 from tests.base import OsfTestCase
 from tests.utils import get_mailhog_messages, delete_mailhog_messages, capture_notifications, assert_emails
-from notifications.tasks import send_users_instant_digest_email
 
 
 class TestPreprintConfirmationEmails(OsfTestCase):
@@ -33,27 +32,16 @@ class TestPreprintConfirmationEmails(OsfTestCase):
         with capture_notifications(passthrough=True) as notifications:
             self.preprint.set_published(True, auth=Auth(self.user), save=True)
         assert len(notifications['emits']) == 1
-        assert notifications['emits'][0]['type'] == NotificationType.Type.PROVIDER_REVIEWS_SUBMISSION_CONFIRMATION
+        assert notifications['emits'][0]['type'] == NotificationTypeEnum.PROVIDER_REVIEWS_SUBMISSION_CONFIRMATION
         messages = get_mailhog_messages()
-        assert not messages['items']
-        assert Notification.objects.all()
-        with capture_notifications(passthrough=True) as notifications:
-            send_users_instant_digest_email.delay()
-
-        messages = get_mailhog_messages()
-        assert messages['count'] == len(notifications['emits'])
+        assert_emails(messages, notifications)
 
         delete_mailhog_messages()
         with capture_notifications(passthrough=True) as notifications:
             self.preprint_branded.set_published(True, auth=Auth(self.user), save=True)
         assert len(notifications['emits']) == 1
-        assert notifications['emits'][0]['type'] == NotificationType.Type.PROVIDER_REVIEWS_SUBMISSION_CONFIRMATION
+        assert notifications['emits'][0]['type'] == NotificationTypeEnum.PROVIDER_REVIEWS_SUBMISSION_CONFIRMATION
         messages = get_mailhog_messages()
-        assert not messages['items']
-        with capture_notifications(passthrough=True) as notifications:
-            send_users_instant_digest_email.delay()
-        massages = get_mailhog_messages()
-        assert massages['count'] == len(notifications['emits'])
-        assert_emails(massages, notifications)
+        assert_emails(messages, notifications)
 
         delete_mailhog_messages()

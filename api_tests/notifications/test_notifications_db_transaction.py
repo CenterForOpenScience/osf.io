@@ -1,12 +1,14 @@
+from django.db import reset_queries, connection
+from django.utils import timezone
+
 import pytest
+
+from osf.models import Notification, NotificationTypeEnum, NotificationSubscription
 from osf_tests.factories import (
     AuthUserFactory,
     NotificationTypeFactory
 )
-from datetime import datetime
-from osf.models import Notification, NotificationType, NotificationSubscription
 from tests.utils import capture_notifications
-from django.db import reset_queries, connection
 
 
 @pytest.mark.django_db
@@ -25,9 +27,9 @@ class TestNotificationTypeDBTransaction:
         )
 
     def test_notification_type_cache(self):
-        NotificationType.Type.NODE_FILE_UPDATED.instance
+        NotificationTypeEnum.NODE_FILE_UPDATED.instance
         reset_queries()
-        NotificationType.Type.NODE_FILE_UPDATED.instance
+        NotificationTypeEnum.NODE_FILE_UPDATED.instance
         assert len(connection.queries) == 0
 
     def test_emit_without_saving(self, user_one, test_notification_type):
@@ -47,12 +49,21 @@ class TestNotificationTypeDBTransaction:
         ).exists()
 
     def test_emit_frequency_none(self, user_one, test_notification_type):
+        assert not Notification.objects.filter(
+            subscription__notification_type=test_notification_type,
+            fake_sent=True
+        ).exists()
+        time_before = timezone.now()
         test_notification_type.emit(
             user=user_one,
             event_context={'notifications': 'test template for Test notification'},
             message_frequency='none'
         )
-        assert Notification.objects.filter(
+        time_after = timezone.now()
+        notifications = Notification.objects.filter(
             subscription__notification_type=test_notification_type,
-            sent=datetime(1000, 1, 1)
-        ).exists()
+            fake_sent=True
+        )
+        assert notifications.exists()
+        assert notifications.count() == 1
+        assert time_before < notifications.first().sent < time_after

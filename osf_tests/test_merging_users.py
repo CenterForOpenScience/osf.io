@@ -19,7 +19,7 @@ from osf_tests.factories import (
 )
 from importlib import import_module
 from django.conf import settings as django_conf_settings
-from osf.models import UserSessionMap, NotificationType
+from osf.models import UserSessionMap, NotificationTypeEnum
 from tests.utils import run_celery_tasks, capture_notifications
 from waffle.testutils import override_flag
 from osf.features import ENABLE_GV
@@ -300,5 +300,5 @@ class TestUserMerging(OsfTestCase):
         with capture_notifications() as notifications:
             send_confirm_email(merger, target_email)
         assert len(notifications['emits']) == 1
-        assert notifications['emits'][0]['type'] == NotificationType.Type.USER_CONFIRM_MERGE
+        assert notifications['emits'][0]['type'] == NotificationTypeEnum.USER_CONFIRM_MERGE
         assert notifications['emits'][0]['kwargs']['destination_address'] == target_email

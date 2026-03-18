@@ -7,7 +7,7 @@ from django.utils import timezone
 from api.base.settings.defaults import API_BASE
 from api.nodes.serializers import NodeContributorsCreateSerializer
 from framework.auth.core import Auth
-from osf.models import PreprintLog, NotificationType
+from osf.models import PreprintLog, NotificationTypeEnum
 from osf_tests.factories import (
     fake_email,
     AuthUserFactory,
@@ -1418,7 +1418,7 @@ class TestPreprintContributorCreateEmail(NodeCRUDTestCase):
             )
         assert res.status_code == 201
         assert len(notifications['emits']) == 1
-        assert notifications['emits'][0]['type'] == NotificationType.Type.PREPRINT_CONTRIBUTOR_ADDED_DEFAULT
+        assert notifications['emits'][0]['type'] == NotificationTypeEnum.PREPRINT_CONTRIBUTOR_ADDED_DEFAULT
 
     def test_add_contributor_signal_no_query_param(
             self, app, user, user_two, url_preprint_contribs):
@@ -1444,7 +1444,7 @@ class TestPreprintContributorCreateEmail(NodeCRUDTestCase):
             )
         assert res.status_code == 201
         assert len(notifications['emits']) == 1
-        assert notifications['emits'][0]['type'] == NotificationType.Type.PREPRINT_CONTRIBUTOR_ADDED_DEFAULT
+        assert notifications['emits'][0]['type'] == NotificationTypeEnum.PREPRINT_CONTRIBUTOR_ADDED_DEFAULT
 
     def test_add_unregistered_contributor_sends_email(
             self, app, user, url_preprint_contribs):
@@ -1463,7 +1463,7 @@ class TestPreprintContributorCreateEmail(NodeCRUDTestCase):
                 auth=user.auth
             )
         assert len(notifications['emits']) == 1
-        assert notifications['emits'][0]['type'] == NotificationType.Type.PROVIDER_USER_INVITE_PREPRINT
+        assert notifications['emits'][0]['type'] == NotificationTypeEnum.PROVIDER_USER_INVITE_PREPRINT
         assert res.status_code == 201
 
     def test_add_unregistered_contributor_signal_if_preprint(self, app, user, url_preprint_contribs):
@@ -1483,7 +1483,7 @@ class TestPreprintContributorCreateEmail(NodeCRUDTestCase):
             )
         assert res.status_code == 201
         assert len(notifications['emits']) == 1
-        assert notifications['emits'][0]['type'] == NotificationType.Type.PROVIDER_USER_INVITE_PREPRINT
+        assert notifications['emits'][0]['type'] == NotificationTypeEnum.PROVIDER_USER_INVITE_PREPRINT
 
     def test_add_contributor_invalid_send_email_param(self, app, user, url_preprint_contribs):
         url = f'{url_preprint_contribs}?send_email=true'
@@ -1529,7 +1529,7 @@ class TestPreprintContributorCreateEmail(NodeCRUDTestCase):
         user_two = AuthUserFactory()
         preprint_unpublished.add_contributor(user_two, permissions=permissions.WRITE, save=True)
         with capture_signals() as mock_signal:
-            with assert_notification(type=NotificationType.Type.PROVIDER_REVIEWS_SUBMISSION_CONFIRMATION, user=user):
+            with assert_notification(type=NotificationTypeEnum.PROVIDER_REVIEWS_SUBMISSION_CONFIRMATION, user=user):
                 res = app.patch_json_api(
                     url,
                     {
@@ -1564,7 +1564,7 @@ class TestPreprintContributorCreateEmail(NodeCRUDTestCase):
             )
         assert res.status_code == 201
         assert len(notifications['emits']) == 1
-        assert notifications['emits'][0]['type'] == NotificationType.Type.PROVIDER_USER_INVITE_PREPRINT
+        assert notifications['emits'][0]['type'] == NotificationTypeEnum.PROVIDER_USER_INVITE_PREPRINT
 
 @pytest.mark.django_db
 class TestPreprintContributorBulkCreate(NodeCRUDTestCase):

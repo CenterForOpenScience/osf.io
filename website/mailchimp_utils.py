@@ -8,7 +8,7 @@ from framework.celery_tasks import app
 from framework.celery_tasks.handlers import queued_task
 from framework.auth.signals import user_confirmed
 from osf.exceptions import OSFError
-from osf.models import OSFUser, NotificationSubscription, NotificationType
+from osf.models import OSFUser, NotificationSubscription, NotificationTypeEnum
 from website import settings
 
 
@@ -123,16 +123,22 @@ def subscribe_on_confirm(user):
     # Subscribe user to default notification subscriptions
     NotificationSubscription.objects.get_or_create(
         user=user,
-        notification_type=NotificationType.Type.REVIEWS_SUBMISSION_STATUS.instance,
+        notification_type=NotificationTypeEnum.REVIEWS_SUBMISSION_STATUS.instance,
         content_type=ContentType.objects.get_for_model(user),
         object_id=user.id,
-        defaults={'message_frequency': 'instantly'},
+        defaults={
+            '_is_digest': True,
+            'message_frequency': 'instantly',
+        },
     )
 
     NotificationSubscription.objects.get_or_create(
         user=user,
-        notification_type=NotificationType.Type.USER_FILE_UPDATED.instance,
+        notification_type=NotificationTypeEnum.USER_FILE_UPDATED.instance,
         content_type=ContentType.objects.get_for_model(user),
         object_id=user.id,
-        defaults={'message_frequency': 'instantly'},
+        defaults={
+            '_is_digest': True,
+            'message_frequency': 'instantly',
+        },
     )
