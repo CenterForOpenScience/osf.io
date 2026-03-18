@@ -95,13 +95,8 @@ def get_campaigns():
             newest_campaigns.update({
                 'agu_conference_2023': {
                     'system_tag': CampaignSourceTags.AguConference2023.value,
-<<<<<<< HEAD
                     'redirect_url': furl(DOMAIN).add(path='my_projects/').url,
                     'confirmation_email_template': NotificationType.Type.USER_CAMPAIGN_CONFIRM_EMAIL_AGU_CONFERENCE_2023,
-=======
-                    'redirect_url': furl(DOMAIN).add(path='dashboard/').url,
-                    'confirmation_email_template': NotificationTypeEnum.USER_CONFIRM_EMAIL,  # added as a placeholder as removed NotificationType
->>>>>>> upstream/develop
                     'login_type': 'native',
                 }
             })
@@ -109,13 +104,8 @@ def get_campaigns():
             newest_campaigns.update({
                 'agu_conference': {
                     'system_tag': CampaignSourceTags.AguConference.value,
-<<<<<<< HEAD
                     'redirect_url': furl(DOMAIN).add(path='my_projects/').url,
                     'confirmation_email_template': NotificationType.Type.USER_CAMPAIGN_CONFIRM_EMAIL_AGU_CONFERENCE,
-=======
-                    'redirect_url': furl(DOMAIN).add(path='dashboard/').url,
-                    'confirmation_email_template': NotificationTypeEnum.USER_CAMPAIGN_CONFIRM_EMAIL_AGU_CONFERENCE,
->>>>>>> upstream/develop
                     'login_type': 'native',
                 }
             })

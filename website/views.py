@@ -287,13 +287,7 @@ def resolve_guid(guid, suffix=None):
     if clean_suffix == 'metadata':
         format_arg = request.args.get('format')
         if format_arg:
-<<<<<<< HEAD
-            return guid_metadata_download(guid, resource, format_arg)
-=======
             return guid_metadata_download(guid, resource=resource, metadata_format=format_arg)
-        else:
-            return use_ember_app()
->>>>>>> upstream/develop
 
     if isinstance(resource, Preprint) and resource.provider.domain_redirect_enabled:
         return redirect(resource.absolute_url, http_status.HTTP_301_MOVED_PERMANENTLY)

@@ -160,12 +160,8 @@ from osf.models import (
     CedarMetadataRecord,
     Preprint,
     Collection,
-<<<<<<< HEAD
     Contributor,
-    NotificationType,
-=======
     NotificationTypeEnum,
->>>>>>> upstream/develop
 )
 from addons.osfstorage.models import Region
 from osf.utils.permissions import ADMIN, WRITE_NODE

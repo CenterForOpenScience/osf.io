@@ -50,13 +50,6 @@ from website.conferences import views as conference_views
 from website.policies import views as policy_views
 from website.preprints import views as preprint_views
 from website.registries import views as registries_views
-<<<<<<< HEAD
-from website.notifications import views as notification_views
-=======
-from website.reviews import views as reviews_views
-from website.institutions import views as institution_views
-from website.ember_osf_web import views as ember_osf_web_views
->>>>>>> upstream/develop
 from website.closed_challenges import views as closed_challenges_views
 from website.identifiers import views as identifier_views
 
