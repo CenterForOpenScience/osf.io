@@ -329,7 +329,11 @@ def handle_file_operation(file_tree, reg, file_obj, log, obj_cache):
     elif log.action == 'osf_storage_file_updated':
         return modify_file_tree_recursive(reg._id, file_tree, file_obj, cached=bool(file_obj._id in obj_cache), revert=True)
     elif log.action == 'addon_file_moved':
-        parent = BaseFileNode.objects.get(_id__in=obj_cache, name='/{}'.format(log.params['source']['materialized']).rstrip('/').split('/')[-2])
+        if '/' not in log.params['source']['materialized'].rstrip('/'):
+            # Root dir — parent is the root storage folder (name='')
+            parent = BaseFileNode.objects.get(_id__in=obj_cache, name='')
+        else:
+            parent = BaseFileNode.objects.get(_id__in=obj_cache, name='/{}'.format(log.params['source']['materialized']).rstrip('/').split('/')[-2])
         return modify_file_tree_recursive(reg._id, file_tree, file_obj, cached=bool(file_obj._id in obj_cache), move_under=parent)
     elif log.action == 'addon_file_renamed':
         return modify_file_tree_recursive(reg._id, file_tree, file_obj, cached=bool(file_obj._id in obj_cache), rename=log.params['source']['name'])
@@ -356,7 +360,8 @@ def revert_log_actions(file_tree, reg, obj_cache, permissible_addons):
 
 def build_file_tree(reg, node_settings, *args, **kwargs):
     n = reg.registered_from
-    obj_cache = set(n.files.values_list('_id', flat=True))
+    ct_id = ContentType.objects.get_for_model(n.__class__()).id
+    obj_cache = set(BaseFileNode.objects.filter(target_object_id=n.id, target_content_type_id=ct_id).values_list('_id', flat=True))
 
     def _recurse(file_obj, node):
         ct_id = ContentType.objects.get_for_model(node.__class__()).id
