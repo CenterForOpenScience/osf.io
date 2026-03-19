@@ -49,9 +49,9 @@ class SsoFilterCriteriaAction(Enum):
 class SSOAvailability(Enum):
     """Defines 3 SSO availability states for institutions.
     """
-    PUBLIC = 'Public'  # Active and has a delegation protocol
+    PUBLIC = 'Public'  # Active, has a delegation protocol and SSO setup has been verified
     UNAVAILABLE = 'Unavailable'  # Does not have a delegation protocol
-    HIDDEN = 'Hidden'  # Inactive and has a delegation protocol
+    HIDDEN = 'Hidden'  # 1) Inactive and has a delegation protocol, or 2) active, has a delegation protocol and SSO setup is in-progress
 
 
 class InstitutionManager(models.Manager):
