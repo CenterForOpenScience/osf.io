@@ -49,9 +49,9 @@ class SsoFilterCriteriaAction(Enum):
 class SSOAvailability(Enum):
     """Defines 3 SSO availability states for institutions.
     """
-    PUBLIC = 'Public'
-    UNAVAILABLE = 'Unavailable'
-    HIDDEN = 'Hidden'
+    PUBLIC = 'Public'  # Active and has a delegation protocol
+    UNAVAILABLE = 'Unavailable'  # Does not have a delegation protocol
+    HIDDEN = 'Hidden'  # Inactive and has a delegation protocol
 
 
 class InstitutionManager(models.Manager):
@@ -88,9 +88,9 @@ class Institution(DirtyFieldsMixin, Loggable, ObjectIDMixin, BaseModel, Guardian
 
     # Institution SSO availability
     sso_availability = models.CharField(
-        choices=[(el.value, el.name) for el in SSOAvailability],
+        choices=[(choice.value, choice.name) for choice in SSOAvailability],
         max_length=15,
-        default='Hidden'
+        default=SSOAvailability.HIDDEN.value
     )
 
     # Default Storage Region
