@@ -139,12 +139,22 @@ class TestInstitutionManager:
             assert institution.deactivated is not None
             assert mock__send_deactivation_email.called
 
+    def test_reactivate_sso_institution(self):
+        institution = InstitutionFactory()
+        institution.delegation_protocol = 'saml-shib'
+        institution.deactivated = timezone.now()
+        institution.save()
+        institution.reactivate()
+        assert institution.deactivated is None
+        assert institution.sso_availability == 'Hidden'
+
     def test_reactivate_institution(self):
         institution = InstitutionFactory()
         institution.deactivated = timezone.now()
         institution.save()
         institution.reactivate()
         assert institution.deactivated is None
+        assert institution.sso_availability == 'Unavailable'
 
     def test_send_deactivation_email_call_count(self):
         institution = InstitutionFactory()

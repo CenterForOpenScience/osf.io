@@ -46,6 +46,13 @@ class SsoFilterCriteriaAction(Enum):
     CONTAINS = 'contains'  # Type 2: SSO releases a multi-value attribute, of which one value matches
     IN = 'in'  # Type 3: SSO releases a single-value attribute that have multiple valid values
 
+class SSOAvailability(Enum):
+    """Defines 3 SSO availability states for institutions.
+    """
+    PUBLIC = 'Public'
+    UNAVAILABLE = 'Unavailable'
+    HIDDEN = 'Hidden'
+
 
 class InstitutionManager(models.Manager):
 
@@ -77,6 +84,13 @@ class Institution(DirtyFieldsMixin, Loggable, ObjectIDMixin, BaseModel, Guardian
         max_length=15,
         blank=True,
         default=''
+    )
+
+    # Institution SSO availability
+    sso_availability = models.CharField(
+        choices=[(el.value, el.name) for el in SSOAvailability],
+        max_length=15,
+        default='Hidden'
     )
 
     # Default Storage Region
@@ -125,7 +139,6 @@ class Institution(DirtyFieldsMixin, Loggable, ObjectIDMixin, BaseModel, Guardian
         default='',
         help_text='Full URL where institutional admins can access archived metrics reports.',
     )
-    sso_in_progress = models.BooleanField(default=False)
 
     class Meta:
         # custom permissions for use in the OSF Admin App
@@ -238,6 +251,11 @@ class Institution(DirtyFieldsMixin, Loggable, ObjectIDMixin, BaseModel, Guardian
         """
         if not self.deactivated:
             self.deactivated = timezone.now()
+            if not self.delegation_protocol:
+                self.sso_availability = SSOAvailability.UNAVAILABLE.value
+            else:
+                self.sso_availability = SSOAvailability.HIDDEN.value
+
             self.save()
             # Django mangers aren't used when querying on related models. Thus, we can query
             # affiliated users and send notification emails after the institution has been deactivated.
@@ -252,6 +270,10 @@ class Institution(DirtyFieldsMixin, Loggable, ObjectIDMixin, BaseModel, Guardian
         """
         if self.deactivated:
             self.deactivated = None
+            if not self.delegation_protocol:
+                self.sso_availability = SSOAvailability.UNAVAILABLE.value
+            else:
+                self.sso_availability = SSOAvailability.HIDDEN.value
             self.save()
         else:
             message = f'Action rejected - reactivating an active institution [{self._id}].'
