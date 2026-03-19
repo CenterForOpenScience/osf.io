@@ -11,6 +11,7 @@ from osf.management.commands.daily_reporters_go import daily_reporters_go
 from osf.management.commands.monthly_reporters_go import monthly_reporters_go
 from osf.management.commands.fetch_cedar_metadata_templates import ingest_cedar_metadata_templates
 from osf.management.commands.sync_doi_metadata import sync_doi_metadata, sync_doi_empty_metadata_dataarchive_registrations
+from osf.management.commands.populate_notification_types import populate_notification_types
 from scripts.find_spammy_content import manage_spammy_content
 from django.urls import reverse
 from django.shortcuts import redirect
@@ -171,4 +172,12 @@ class EmptyMetadataDataarchiveRegistrationBulkResync(ManagementCommandPermission
             'dry_run': False
         })
         messages.success(request, 'Resyncing with DataCite! It will take some time.')
+        return redirect(reverse('management:commands'))
+
+
+class SyncNotificationTemplates(ManagementCommandPermissionView):
+
+    def post(self, request):
+        populate_notification_types()
+        messages.success(request, 'Notification templates have been successfully synced.')
         return redirect(reverse('management:commands'))

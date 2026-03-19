@@ -6,7 +6,7 @@ from django.views.decorators.csrf import csrf_exempt
 from rest_framework.views import APIView
 
 from api.crossref.permissions import RequestComesFromMailgun
-from osf.models import Preprint, NotificationType
+from osf.models import Preprint, NotificationTypeEnum
 from website import settings
 from website.preprints.tasks import mint_doi_on_crossref_fail
 
@@ -78,7 +78,7 @@ class ParseCrossRefConfirmation(APIView):
             if unexpected_errors:
                 batch_id = crossref_email_content.find('batch_id').text
                 email_error_text = request.POST['body-plain']
-                NotificationType.Type.DESK_CROSSREF_ERROR.instance.emit(
+                NotificationTypeEnum.DESK_CROSSREF_ERROR.instance.emit(
                     destination_address=settings.OSF_SUPPORT_EMAIL,
                     event_context={
                         'batch_id': batch_id,

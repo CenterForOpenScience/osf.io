@@ -1,7 +1,7 @@
 import pytest
 
 from api.base.settings.defaults import API_BASE
-from osf.models import NotificationType
+from osf.models import NotificationTypeEnum
 from osf_tests.factories import (
     InstitutionFactory,
     AuthUserFactory,
@@ -198,7 +198,7 @@ class TestNodeRelationshipInstitutions(RelationshipInstitutionsTestMixin):
             )
         assert len(notifications['emits']) == 2
         assert notifications['emits'][0]['kwargs']['user'] == user
-        assert notifications['emits'][0]['type'] == NotificationType.Type.NODE_AFFILIATION_CHANGED
+        assert notifications['emits'][0]['type'] == NotificationTypeEnum.NODE_AFFILIATION_CHANGED
 
         assert res.status_code == 201
         data = res.json['data']
@@ -228,9 +228,9 @@ class TestNodeRelationshipInstitutions(RelationshipInstitutionsTestMixin):
         assert len(notifications['emits']) == 2
 
         assert notifications['emits'][0]['kwargs']['user'] == user
-        assert notifications['emits'][0]['type'] == NotificationType.Type.NODE_AFFILIATION_CHANGED
+        assert notifications['emits'][0]['type'] == NotificationTypeEnum.NODE_AFFILIATION_CHANGED
         assert notifications['emits'][1]['kwargs']['user'] == user
-        assert notifications['emits'][1]['type'] == NotificationType.Type.NODE_AFFILIATION_CHANGED
+        assert notifications['emits'][1]['type'] == NotificationTypeEnum.NODE_AFFILIATION_CHANGED
 
     def test_remove_institutions_with_affiliated_user(
             self,
@@ -254,7 +254,7 @@ class TestNodeRelationshipInstitutions(RelationshipInstitutionsTestMixin):
 
         assert len(notifications['emits']) == 1
         assert notifications['emits'][0]['kwargs']['user'] == user
-        assert notifications['emits'][0]['type'] == NotificationType.Type.NODE_AFFILIATION_CHANGED
+        assert notifications['emits'][0]['type'] == NotificationTypeEnum.NODE_AFFILIATION_CHANGED
 
         assert res.status_code == 200
         assert node.affiliated_institutions.count() == 0
@@ -287,7 +287,7 @@ class TestNodeRelationshipInstitutions(RelationshipInstitutionsTestMixin):
                 auth=user.auth
             )
         assert len(notifications['emits']) == 1
-        assert notifications['emits'][0]['type'] == NotificationType.Type.NODE_AFFILIATION_CHANGED
+        assert notifications['emits'][0]['type'] == NotificationTypeEnum.NODE_AFFILIATION_CHANGED
 
         assert res.status_code == 200
         assert institution_one in node.affiliated_institutions.all()
@@ -314,7 +314,7 @@ class TestNodeRelationshipInstitutions(RelationshipInstitutionsTestMixin):
             )
         assert len(notifications['emits']) == 1
         assert notifications['emits'][0]['kwargs']['user'] == user
-        assert notifications['emits'][0]['type'] == NotificationType.Type.NODE_AFFILIATION_CHANGED
+        assert notifications['emits'][0]['type'] == NotificationTypeEnum.NODE_AFFILIATION_CHANGED
 
         assert res.status_code == 200
         assert institution_one in node.affiliated_institutions.all()
@@ -342,10 +342,10 @@ class TestNodeRelationshipInstitutions(RelationshipInstitutionsTestMixin):
             )
         assert len(notifications['emits']) == 2
         assert notifications['emits'][0]['kwargs']['user'] == user
-        assert notifications['emits'][0]['type'] == NotificationType.Type.NODE_AFFILIATION_CHANGED
+        assert notifications['emits'][0]['type'] == NotificationTypeEnum.NODE_AFFILIATION_CHANGED
 
         assert notifications['emits'][1]['kwargs']['user'] == user
-        assert notifications['emits'][1]['type'] == NotificationType.Type.NODE_AFFILIATION_CHANGED
+        assert notifications['emits'][1]['type'] == NotificationTypeEnum.NODE_AFFILIATION_CHANGED
 
         assert res.status_code == 200
         assert institution_one not in node.affiliated_institutions.all()
@@ -373,7 +373,7 @@ class TestNodeRelationshipInstitutions(RelationshipInstitutionsTestMixin):
             )
         assert len(notifications['emits']) == 1
         assert notifications['emits'][0]['kwargs']['user'] == user
-        assert notifications['emits'][0]['type'] == NotificationType.Type.NODE_AFFILIATION_CHANGED
+        assert notifications['emits'][0]['type'] == NotificationTypeEnum.NODE_AFFILIATION_CHANGED
 
         assert res.status_code == 201
         assert institution_one in node.affiliated_institutions.all()
@@ -406,7 +406,7 @@ class TestNodeRelationshipInstitutions(RelationshipInstitutionsTestMixin):
             )
         assert len(notifications['emits']) == 1
         assert notifications['emits'][0]['kwargs']['user'] == user
-        assert notifications['emits'][0]['type'] == NotificationType.Type.NODE_AFFILIATION_CHANGED
+        assert notifications['emits'][0]['type'] == NotificationTypeEnum.NODE_AFFILIATION_CHANGED
 
         assert res.status_code == 204
         assert institution_one not in node.affiliated_institutions.all()
@@ -426,7 +426,7 @@ class TestNodeRelationshipInstitutions(RelationshipInstitutionsTestMixin):
             )
         assert len(notifications['emits']) == 1
         assert notifications['emits'][0]['kwargs']['user'] == user
-        assert notifications['emits'][0]['type'] == NotificationType.Type.NODE_AFFILIATION_CHANGED
+        assert notifications['emits'][0]['type'] == NotificationTypeEnum.NODE_AFFILIATION_CHANGED
 
         assert res.status_code == 204
         assert institution_one not in node.affiliated_institutions.all()
@@ -444,7 +444,7 @@ class TestNodeRelationshipInstitutions(RelationshipInstitutionsTestMixin):
             )
         assert len(notifications['emits']) == 1
         assert notifications['emits'][0]['kwargs']['user'] == user
-        assert notifications['emits'][0]['type'] == NotificationType.Type.NODE_AFFILIATION_CHANGED
+        assert notifications['emits'][0]['type'] == NotificationTypeEnum.NODE_AFFILIATION_CHANGED
 
         assert res.status_code == 204
 
@@ -488,7 +488,7 @@ class TestNodeRelationshipInstitutions(RelationshipInstitutionsTestMixin):
                 auth=user_auth.auth,
             )
         assert len(notifications['emits']) == 1
-        assert notifications['emits'][0]['type'] == NotificationType.Type.NODE_AFFILIATION_CHANGED
+        assert notifications['emits'][0]['type'] == NotificationTypeEnum.NODE_AFFILIATION_CHANGED
 
         assert res.status_code == 204
         assert institution_one not in project.affiliated_institutions.all()
@@ -509,7 +509,7 @@ class TestNodeRelationshipInstitutions(RelationshipInstitutionsTestMixin):
             )
         assert len(notifications['emits']) == 1
         assert notifications['emits'][0]['kwargs']['user'] == user
-        assert notifications['emits'][0]['type'] == NotificationType.Type.NODE_AFFILIATION_CHANGED
+        assert notifications['emits'][0]['type'] == NotificationTypeEnum.NODE_AFFILIATION_CHANGED
         assert res.status_code == 201
         assert institution_one in node.affiliated_institutions.all()
 
@@ -530,7 +530,7 @@ class TestNodeRelationshipInstitutions(RelationshipInstitutionsTestMixin):
                 auth=user.auth
             )
         assert len(notifications['emits']) == 1
-        assert notifications['emits'][0]['type'] == NotificationType.Type.NODE_AFFILIATION_CHANGED
+        assert notifications['emits'][0]['type'] == NotificationTypeEnum.NODE_AFFILIATION_CHANGED
         assert res.status_code == 204
         assert institution_one not in node.affiliated_institutions.all()
 
@@ -552,7 +552,7 @@ class TestNodeRelationshipInstitutions(RelationshipInstitutionsTestMixin):
                 auth=user.auth
             )
         assert len(notifications['emits']) == 1
-        assert notifications['emits'][0]['type'] == NotificationType.Type.NODE_AFFILIATION_CHANGED
+        assert notifications['emits'][0]['type'] == NotificationTypeEnum.NODE_AFFILIATION_CHANGED
         assert res.status_code == 204
         assert read_contrib_institution not in node.affiliated_institutions.all()
 
@@ -572,7 +572,7 @@ class TestNodeRelationshipInstitutions(RelationshipInstitutionsTestMixin):
                 auth=write_contrib.auth
             )
         assert len(notifications['emits']) == 1
-        assert notifications['emits'][0]['type'] == NotificationType.Type.NODE_AFFILIATION_CHANGED
+        assert notifications['emits'][0]['type'] == NotificationTypeEnum.NODE_AFFILIATION_CHANGED
         assert res.status_code == 201
         assert write_contrib_institution in node.affiliated_institutions.all()
 
@@ -594,7 +594,7 @@ class TestNodeRelationshipInstitutions(RelationshipInstitutionsTestMixin):
                 auth=write_contrib.auth
             )
         assert len(notifications['emits']) == 1
-        assert notifications['emits'][0]['type'] == NotificationType.Type.NODE_AFFILIATION_CHANGED
+        assert notifications['emits'][0]['type'] == NotificationTypeEnum.NODE_AFFILIATION_CHANGED
         assert res.status_code == 204
         assert write_contrib_institution not in node.affiliated_institutions.all()
 

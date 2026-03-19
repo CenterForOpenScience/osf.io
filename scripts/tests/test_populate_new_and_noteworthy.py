@@ -36,6 +36,7 @@ class TestPopulateNewAndNoteworthy(OsfTestCase):
         new_noteworthy = script.get_new_and_noteworthy_nodes(self.new_and_noteworthy_links_node)
         assert set(new_noteworthy) == self.all_ids
 
+    @mock.patch.object(script, 'NEW_AND_NOTEWORTHY_LINKS_NODE', NEW_AND_NOTEWORTHY_LINKS_NODE)
     def test_populate_new_and_noteworthy(self):
         assert self.new_and_noteworthy_links_node._nodes.count() == 0
 

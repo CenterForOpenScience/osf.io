@@ -2,7 +2,7 @@ import pytest
 from waffle.testutils import override_switch
 from osf import features
 from api.base.settings.defaults import API_BASE
-from osf.models import NotificationType
+from osf.models import NotificationTypeEnum
 from osf_tests.factories import (
     AuthUserFactory,
     CollectionProviderFactory,
@@ -69,7 +69,7 @@ class TestPOSTCollectionsModeratorList:
         with capture_notifications(passthrough=True) as notifications:
             res = app.post_json_api(url, payload, auth=admin.auth)
         assert len(notifications['emits']) == 1
-        assert notifications['emits'][0]['type'] == NotificationType.Type.PROVIDER_MODERATOR_ADDED
+        assert notifications['emits'][0]['type'] == NotificationTypeEnum.PROVIDER_MODERATOR_ADDED
         assert res.status_code == 201
         assert res.json['data']['id'] == nonmoderator._id
         assert res.json['data']['attributes']['permission_group'] == 'moderator'
@@ -97,7 +97,7 @@ class TestPOSTCollectionsModeratorList:
             res = app.post_json_api(url, payload, auth=admin.auth)
         assert res.status_code == 201
         assert len(notifications['emits']) == 1
-        assert notifications['emits'][0]['type'] == NotificationType.Type.PROVIDER_CONFIRM_EMAIL_MODERATION
+        assert notifications['emits'][0]['type'] == NotificationTypeEnum.PROVIDER_CONFIRM_EMAIL_MODERATION
         assert notifications['emits'][0]['kwargs']['user'].username == unreg_user['email']
 
         massages = get_mailhog_messages()
@@ -113,7 +113,7 @@ class TestPOSTCollectionsModeratorList:
         with capture_notifications(passthrough=True) as notifications:
             res = app.post_json_api(url, payload, auth=admin.auth)
         assert len(notifications['emits']) == 1
-        assert notifications['emits'][0]['type'] == NotificationType.Type.PROVIDER_CONFIRM_EMAIL_MODERATION
+        assert notifications['emits'][0]['type'] == NotificationTypeEnum.PROVIDER_CONFIRM_EMAIL_MODERATION
         assert res.status_code == 201
         assert len(res.json['data']['id']) == 5
         assert res.json['data']['attributes']['permission_group'] == 'moderator'
