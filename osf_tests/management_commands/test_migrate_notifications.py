@@ -11,6 +11,7 @@ from osf_tests.factories import (
 )
 from osf.models import (
     NotificationType,
+    NotificationTypeEnum,
     NotificationSubscription,
 )
 from osf.management.commands.migrate_notifications import (
@@ -99,7 +100,7 @@ class TestNotificationSubscriptionMigration:
         self.create_legacy_sub(event_name='global_reviews', users=users, provider=RegistrationProvider.get_default())
         migrate_legacy_notification_subscriptions()
         subs = NotificationSubscription.objects.filter(
-            notification_type__name=NotificationType.Type.REVIEWS_SUBMISSION_STATUS
+            notification_type__name=NotificationTypeEnum.REVIEWS_SUBMISSION_STATUS
         )
         assert subs.count() == 9
         for obj in [provider, provider2, RegistrationProvider.get_default()]:
@@ -108,7 +109,7 @@ class TestNotificationSubscriptionMigration:
 
     def test_migrate_node_subscription(self, users, user, node):
         migrate_legacy_notification_subscriptions()
-        nt = NotificationType.objects.get(name=NotificationType.Type.NODE_FILE_UPDATED)
+        nt = NotificationType.objects.get(name=NotificationTypeEnum.NODE_FILE_UPDATED)
         assert nt.object_content_type == ContentType.objects.get_for_model(Node)
         subs = NotificationSubscription.objects.filter(notification_type=nt)
         assert subs.count() == 1
@@ -130,7 +131,7 @@ class TestNotificationSubscriptionMigration:
                 user=user,
                 object_id=node.id,
                 content_type=ContentType.objects.get_for_model(node.__class__),
-                notification_type__name=NotificationType.Type.NODE_FILE_UPDATED
+                notification_type__name=NotificationTypeEnum.NODE_FILE_UPDATED
             )
 
     def test_migrate_all_subscription_types(self, users, user, provider, provider2, node):
@@ -158,7 +159,7 @@ class TestNotificationSubscriptionMigration:
 
         node_ct = ContentType.objects.get_for_model(node.__class__)
         assert NotificationSubscription.objects.filter(
-            notification_type=NotificationType.Type.NODE_FILE_UPDATED.instance,
+            notification_type=NotificationTypeEnum.NODE_FILE_UPDATED.instance,
             content_type=node_ct,
             object_id=node.id
         ).exists()
@@ -201,7 +202,7 @@ class TestNotificationSubscriptionMigration:
         )
         migrate_legacy_notification_subscriptions()
         assert NotificationSubscription.objects.filter(
-            notification_type__name=NotificationType.Type.REVIEWS_SUBMISSION_STATUS
+            notification_type__name=NotificationTypeEnum.REVIEWS_SUBMISSION_STATUS
         ).count() == 3
 
     def test_migrate_subscription_frequencies_none(self, user, django_db_blocker):
@@ -214,7 +215,7 @@ class TestNotificationSubscriptionMigration:
 
         migrate_legacy_notification_subscriptions()
 
-        nt = NotificationType.objects.get(name=NotificationType.Type.USER_FILE_UPDATED)
+        nt = NotificationType.objects.get(name=NotificationTypeEnum.USER_FILE_UPDATED)
         subs = NotificationSubscription.objects.filter(notification_type=nt)
         assert subs.count() == 1
         assert subs.get().message_frequency == 'none'
@@ -228,7 +229,7 @@ class TestNotificationSubscriptionMigration:
 
         migrate_legacy_notification_subscriptions()
 
-        nt = NotificationType.objects.get(name=NotificationType.Type.USER_FILE_UPDATED)
+        nt = NotificationType.objects.get(name=NotificationTypeEnum.USER_FILE_UPDATED)
         subs = NotificationSubscription.objects.filter(
             notification_type=nt,
             content_type=ContentType.objects.get_for_model(user.__class__),
@@ -246,7 +247,7 @@ class TestNotificationSubscriptionMigration:
 
         migrate_legacy_notification_subscriptions()
 
-        nt = NotificationType.objects.get(name=NotificationType.Type.USER_FILE_UPDATED)
+        nt = NotificationType.objects.get(name=NotificationTypeEnum.USER_FILE_UPDATED)
         subs = NotificationSubscription.objects.filter(
             notification_type=nt,
             content_type=ContentType.objects.get_for_model(user.__class__),
@@ -264,7 +265,7 @@ class TestNotificationSubscriptionMigration:
 
         migrate_legacy_notification_subscriptions()
 
-        nt = NotificationType.objects.get(name=NotificationType.Type.NODE_FILE_UPDATED)
+        nt = NotificationType.objects.get(name=NotificationTypeEnum.NODE_FILE_UPDATED)
         subs = NotificationSubscription.objects.filter(
             user=user,
             notification_type=nt,
@@ -283,7 +284,7 @@ class TestNotificationSubscriptionMigration:
 
         migrate_legacy_notification_subscriptions()
 
-        NotificationType.Type.FILE_UPDATED.instance.emit(
+        NotificationTypeEnum.FILE_UPDATED.instance.emit(
             user=user,
             subscribed_object=node,
             event_context={
@@ -294,7 +295,7 @@ class TestNotificationSubscriptionMigration:
 
         nt = NotificationSubscription.objects.get(
             user=user,
-            notification_type__name=NotificationType.Type.FILE_UPDATED,
+            notification_type__name=NotificationTypeEnum.FILE_UPDATED,
             content_type=ContentType.objects.get_for_model(node),
             object_id=node.id,
         )
@@ -309,7 +310,7 @@ class TestNotificationSubscriptionMigration:
 
         migrate_legacy_notification_subscriptions()
 
-        NotificationType.Type.FILE_UPDATED.instance.emit(
+        NotificationTypeEnum.FILE_UPDATED.instance.emit(
             user=user,
             subscribed_object=user,
             event_context={
@@ -320,7 +321,7 @@ class TestNotificationSubscriptionMigration:
 
         nt = NotificationSubscription.objects.get(
             user=user,
-            notification_type__name=NotificationType.Type.FILE_UPDATED,
+            notification_type__name=NotificationTypeEnum.FILE_UPDATED,
             content_type=ContentType.objects.get_for_model(user),
             object_id=user.id,
         )
@@ -335,7 +336,7 @@ class TestNotificationSubscriptionMigration:
 
         migrate_legacy_notification_subscriptions()
 
-        NotificationType.Type.PROVIDER_NEW_PENDING_SUBMISSIONS.instance.emit(
+        NotificationTypeEnum.PROVIDER_NEW_PENDING_SUBMISSIONS.instance.emit(
             user=user,
             subscribed_object=provider,
             event_context={
@@ -346,8 +347,8 @@ class TestNotificationSubscriptionMigration:
 
         nt = NotificationSubscription.objects.get(
             user=user,
-            notification_type__name=NotificationType.Type.PROVIDER_NEW_PENDING_SUBMISSIONS,
-            content_type=ContentType.objects.get_for_model(provider, for_concrete_model=False),
+            notification_type__name=NotificationTypeEnum.PROVIDER_NEW_PENDING_SUBMISSIONS,
+            content_type=ContentType.objects.get_for_model(provider),
             object_id=provider.id,
         )
         assert nt.message_frequency == 'none'

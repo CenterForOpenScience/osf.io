@@ -1,4 +1,4 @@
-from osf.models import NotificationType
+from osf.models import NotificationTypeEnum
 from tests.base import OsfTestCase
 from osf_tests.factories import (
     UserFactory,
@@ -34,7 +34,7 @@ class TestResendConfirmation(OsfTestCase):
             res = form.submit(self.app)
         # check email, request and response
         assert len(notifications['emits']) == 1
-        assert notifications['emits'][0]['type'] == NotificationType.Type.USER_INITIAL_CONFIRM_EMAIL
+        assert notifications['emits'][0]['type'] == NotificationTypeEnum.USER_INITIAL_CONFIRM_EMAIL
         assert res.status_code == 200
         assert res.request.path == self.post_url
 

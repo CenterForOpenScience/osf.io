@@ -470,8 +470,12 @@
                   "ISNI",
                   "GRID",
                   "Crossref Funder ID",
+                  "ROR",
                   "Other"
                 ]
+              },
+              "schemeURI": {
+                "$ref": "#/definitions/uri"
               }
             },
             "additionalProperties": false,

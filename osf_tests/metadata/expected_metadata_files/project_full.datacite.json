@@ -56,7 +56,8 @@
       "awardTitle": "because reasons",
       "funderIdentifier": {
         "funderIdentifier": "https://doi.org/10.$$$$",
-        "funderIdentifierType": "Crossref Funder ID"
+        "funderIdentifierType": "Crossref Funder ID",
+        "schemeURI": "https://www.crossref.org/services/funder-registry/"
       },
       "funderName": "Mx. Moneypockets"
     },
@@ -68,14 +69,16 @@
       "awardTitle": "because reasons!",
       "funderIdentifier": {
         "funderIdentifier": "https://doi.org/10.$$$$",
-        "funderIdentifierType": "Crossref Funder ID"
+        "funderIdentifierType": "Crossref Funder ID",
+        "schemeURI": "https://www.crossref.org/services/funder-registry/"
       },
       "funderName": "Mx. Moneypockets"
     },
     {
       "funderIdentifier": {
-        "funderIdentifier": "https://doi.org/10.$",
-        "funderIdentifierType": "Crossref Funder ID"
+        "funderIdentifier": "https://ror.org/0example",
+        "funderIdentifierType": "ROR",
+        "schemeURI": "https://ror.org/"
       },
       "funderName": "Caring Fan"
     }

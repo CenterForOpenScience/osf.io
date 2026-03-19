@@ -367,7 +367,7 @@ class EmailTaskAdmin(admin.ModelAdmin):
 
 @admin.register(Notification)
 class NotificationAdmin(admin.ModelAdmin):
-    list_display = ('user', 'notification_type_name', 'sent', 'seen')
+    list_display = ('user', 'notification_type_name', 'sent', 'fake_sent')
     list_filter = ('sent',)
     search_fields = ('subscription__notification_type__name', 'subscription__user__username')
     list_per_page = 50

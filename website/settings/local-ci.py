@@ -81,9 +81,11 @@ NO_ADDON_WAIT_TIME = timedelta(weeks=8)
 NO_LOGIN_WAIT_TIME = timedelta(weeks=4)
 NO_LOGIN_OSF4M_WAIT_TIME = timedelta(weeks=6)
 
-# Configuration for "We miss you at OSF" email (`NotificationType.Type.USER_NO_LOGIN`)
+# Configuration for "We miss you at OSF" email (`NotificationTypeEnum.USER_NO_LOGIN`)
 MAX_DAILY_NO_LOGIN_EMAILS = None
 NO_LOGIN_EMAIL_CUTOFF = None
+
+NOTIFICATIONS_CLEANUP_AGE = timedelta(weeks=4)  # 1 month to clean up old notifications and email tasks
 
 USE_CDN_FOR_CLIENT_LIBS = False
 

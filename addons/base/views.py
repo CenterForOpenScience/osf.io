@@ -51,7 +51,7 @@ from osf.models import (
     DraftRegistration,
     Guid,
     FileVersionUserMetadata,
-    FileVersion, NotificationType
+    FileVersion, NotificationTypeEnum
 )
 from osf.metrics import PreprintView, PreprintDownload
 from osf.utils import permissions
@@ -575,14 +575,13 @@ def create_waterbutler_log(payload, **kwargs):
 
             if payload.get('email') or payload.get('errors'):
                 if payload.get('email'):
-                    notification_type = NotificationType.Type.USER_FILE_OPERATION_SUCCESS.instance
+                    notification_type = NotificationTypeEnum.USER_FILE_OPERATION_SUCCESS.instance
                 if payload.get('errors'):
-                    notification_type = NotificationType.Type.USER_FILE_OPERATION_FAILED.instance
+                    notification_type = NotificationTypeEnum.USER_FILE_OPERATION_FAILED.instance
                 notification_type.emit(
                     user=user,
                     subscribed_object=node,
                     event_context={
-                        'user_fullname': user.fullname,
                         'action': payload['action'],
                         'source_node': source_node._id,
                         'source_node_title': source_node.title,
@@ -1035,9 +1034,12 @@ def persistent_file_download(auth, **kwargs):
 
     query_params = request.args.to_dict()
 
-    return redirect(
-        file.generate_waterbutler_url(**query_params),
-        code=http_status.HTTP_302_FOUND
+    return make_response(
+        '', http_status.HTTP_302_FOUND, {
+            'Location': file.generate_waterbutler_url(**query_params),
+            'Link': f'<{settings.DOMAIN}metadata/{id_or_guid}/?format=linkset> ; rel="linkset" ; type="application/linkset",'
+                    f' <{settings.DOMAIN}metadata/{id_or_guid}/?format=linkset-json"> ; rel="linkset-json" ; type="application/linkset+json"',
+        }
     )
 
 

@@ -24,7 +24,7 @@ from osf_tests.factories import (
 from framework.auth import Auth
 from framework.auth.decorators import must_be_logged_in
 from framework.sessions import get_session
-from osf.models import OSFUser, NotificationType
+from osf.models import OSFUser, NotificationTypeEnum
 from osf.utils import permissions
 from tests.utils import capture_notifications
 from website import settings
@@ -165,7 +165,7 @@ class TestAuthUtils(OsfTestCase):
             user.set_password('killerqueen')
             user.save()
         assert len(notifications['emits']) == 1
-        assert notifications['emits'][0]['type'] == NotificationType.Type.USER_PASSWORD_RESET
+        assert notifications['emits'][0]['type'] == NotificationTypeEnum.USER_PASSWORD_RESET
 
     @mock.patch('framework.auth.utils.requests.post')
     def test_validate_recaptcha_success(self, req_post):
@@ -210,13 +210,13 @@ class TestAuthUtils(OsfTestCase):
         with capture_notifications() as notifications:
             self.app.post(url, json=sign_up_data)
         assert len(notifications['emits']) == 2
-        assert notifications['emits'][0]['type'] == NotificationType.Type.USER_NO_ADDON
-        assert notifications['emits'][1]['type'] == NotificationType.Type.USER_INITIAL_CONFIRM_EMAIL
+        assert notifications['emits'][0]['type'] == NotificationTypeEnum.USER_NO_ADDON
+        assert notifications['emits'][1]['type'] == NotificationTypeEnum.USER_INITIAL_CONFIRM_EMAIL
 
         with capture_notifications() as notifications:
             self.app.post(url, json=sign_up_data)
         assert len(notifications['emits']) == 1
-        assert notifications['emits'][0]['type'] == NotificationType.Type.USER_INITIAL_CONFIRM_EMAIL
+        assert notifications['emits'][0]['type'] == NotificationTypeEnum.USER_INITIAL_CONFIRM_EMAIL
 
 
 class TestAuthObject(OsfTestCase):
@@ -721,6 +721,59 @@ class TestPermissionDecorators(AuthAppTestCase):
         with pytest.raises(HTTPError) as ctx:
             thriller(node=project)
         assert ctx.value.code == http_status.HTTP_401_UNAUTHORIZED
+
+    def decorated_view(self, *args, **kwargs):
+        return 'Success'
+
+    ## 1. Public Access
+    @mock.patch('framework.auth.decorators.Auth.from_kwargs')
+    def test_private_resource_not_allow_anonymous(self, mock_auth):
+        from framework.auth.decorators import is_contributor_or_public_resource
+        decorator = is_contributor_or_public_resource('resource')
+        project = ProjectFactory(is_public=False)
+        mock_auth.return_value = Auth(user=None)
+        decorated_func = decorator(self.decorated_view)
+        with decoratorapp.test_request_context():
+            with pytest.raises(HTTPError) as excinfo:
+                decorated_func(resource=project)
+            assert excinfo.value.code == http_status.HTTP_403_FORBIDDEN
+
+    @mock.patch('framework.auth.decorators.Auth.from_kwargs')
+    def test_public_resource_allow_anonymous(self, mock_auth):
+        from framework.auth.decorators import is_contributor_or_public_resource
+        decorator = is_contributor_or_public_resource('resource')
+        project = ProjectFactory(is_public=True)
+        mock_auth.return_value = Auth(user=None)
+        decorated_func = decorator(self.decorated_view)
+        with decoratorapp.test_request_context():
+            result = decorated_func(resource=project)
+            assert result == 'Success'
+
+    @mock.patch('framework.auth.decorators.Auth.from_kwargs')
+    def test_private_resource_allows_contributor(self, mock_auth):
+        from framework.auth.decorators import is_contributor_or_public_resource
+        user = UserFactory()
+        project = ProjectFactory(is_public=False)
+        project.add_contributor(user, save=True)
+        mock_auth.return_value = Auth(user=user)
+        decorator = is_contributor_or_public_resource('resource')
+        decorated_func = decorator(self.decorated_view)
+        with decoratorapp.test_request_context():
+            result = decorated_func(resource=project)
+            assert result == 'Success'
+
+    @mock.patch('framework.auth.decorators.Auth.from_kwargs')
+    def test_private_resource_not_allow_non_contributor_auth_user(self, mock_auth):
+        from framework.auth.decorators import is_contributor_or_public_resource
+        user = UserFactory()
+        project = ProjectFactory(is_public=False)
+        mock_auth.return_value = Auth(user=user)
+        decorator = is_contributor_or_public_resource('resource')
+        decorated_func = decorator(self.decorated_view)
+        with decoratorapp.test_request_context():
+            with pytest.raises(HTTPError) as excinfo:
+                decorated_func(resource=project)
+            assert excinfo.value.code == http_status.HTTP_403_FORBIDDEN
 
 
 def needs_addon_view(**kwargs):

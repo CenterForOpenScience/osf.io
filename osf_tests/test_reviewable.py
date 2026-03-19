@@ -1,7 +1,7 @@
 from unittest import mock
 import pytest
 
-from osf.models import Preprint, NotificationType
+from osf.models import Preprint, NotificationTypeEnum
 from osf.utils.workflows import DefaultStates
 from osf_tests.factories import PreprintFactory, AuthUserFactory
 from tests.utils import capture_notifications
@@ -48,7 +48,7 @@ class TestReviewable:
         with capture_notifications() as notifications:
             preprint.run_submit(user)
         assert len(notifications['emits']) == 1
-        assert notifications['emits'][0]['type'] == NotificationType.Type.PROVIDER_REVIEWS_SUBMISSION_CONFIRMATION
+        assert notifications['emits'][0]['type'] == NotificationTypeEnum.PROVIDER_REVIEWS_SUBMISSION_CONFIRMATION
         assert preprint.machine_state == DefaultStates.PENDING.value
 
         assert not user.notification_subscriptions.exists()
@@ -59,5 +59,5 @@ class TestReviewable:
         with capture_notifications() as notifications:
             preprint.run_submit(user)  # Resubmission alerts users and moderators
         assert len(notifications['emits']) == 1
-        assert notifications['emits'][0]['type'] == NotificationType.Type.PROVIDER_REVIEWS_RESUBMISSION_CONFIRMATION
+        assert notifications['emits'][0]['type'] == NotificationTypeEnum.PROVIDER_REVIEWS_RESUBMISSION_CONFIRMATION
         assert preprint.machine_state == DefaultStates.PENDING.value
