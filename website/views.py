@@ -20,7 +20,7 @@ from website import settings
 from addons.osfstorage.models import Region, OsfStorageFile
 
 from osf import exceptions
-from osf.models import Guid, Preprint, AbstractNode, Node, DraftNode
+from osf.models import Guid, Preprint, AbstractNode, Node, DraftNode, Registration
 
 from website.settings import DOMAIN
 from website.project.decorators import check_contributor_auth
