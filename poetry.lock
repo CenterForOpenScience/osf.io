@@ -1085,27 +1085,24 @@ Django = ">=2.0"
 
 [[package]]
 name = "django-elasticsearch-metrics"
-version = "2022.0.6"
+version = "2026.0.0"
 description = "Django app for storing time-series metrics in Elasticsearch."
 optional = false
-python-versions = "*"
+python-versions = ">=3.10,<4"
 groups = ["main"]
 files = []
 develop = false
 
-[package.dependencies]
-elasticsearch6-dsl = ">=6.3.0,<7.0.0"
-
 [package.extras]
-dev = ["factory-boy (==2.11.1)", "flake8 (==5.0.4)", "flake8-bugbear (==18.8.0)", "konch (>=3.0.0)", "mock", "pre-commit (==2.17.0)", "pytest", "pytest-django (==3.10.0)", "tox"]
-lint = ["flake8 (==5.0.4)", "flake8-bugbear (==18.8.0)", "pre-commit (==2.17.0)"]
-tests = ["factory-boy (==2.11.1)", "mock", "pytest", "pytest-django (==3.10.0)"]
+anydjango = ["django"]
+elastic6 = ["elasticsearch6-dsl (>=6.3.0,<7.0.0)"]
+elastic8 = ["elasticsearch8 (>=8.0.0,<9.0.0)"]
 
 [package.source]
 type = "git"
 url = "https://github.com/CenterForOpenScience/django-elasticsearch-metrics.git"
-reference = "f5b9312914154e213aa01731e934c593e3434269"
-resolved_reference = "f5b9312914154e213aa01731e934c593e3434269"
+reference = "36fc0bbe001ee792f4ab5723eaeec295b8a20eb2"
+resolved_reference = "36fc0bbe001ee792f4ab5723eaeec295b8a20eb2"
 
 [[package]]
 name = "django-extensions"
@@ -1361,14 +1358,14 @@ stone = ">=2"
 
 [[package]]
 name = "elastic-transport"
-version = "8.13.0"
+version = "8.17.1"
 description = "Transport classes and utilities shared among Python Elastic client libraries"
 optional = false
-python-versions = ">=3.7"
+python-versions = ">=3.8"
 groups = ["main"]
 files = [
-    {file = "elastic-transport-8.13.0.tar.gz", hash = "sha256:2410ec1ff51221e8b3a01c0afa9f0d0498e1386a269283801f5c12f98e42dc45"},
-    {file = "elastic_transport-8.13.0-py3-none-any.whl", hash = "sha256:aec890afdddd057762b27ff3553b0be8fa4673ec1a4fd922dfbd00325874bb3d"},
+    {file = "elastic_transport-8.17.1-py3-none-any.whl", hash = "sha256:192718f498f1d10c5e9aa8b9cf32aed405e469a7f0e9d6a8923431dbb2c59fb8"},
+    {file = "elastic_transport-8.17.1.tar.gz", hash = "sha256:5edef32ac864dca8e2f0a613ef63491ee8d6b8cfb52881fa7313ba9290cac6d2"},
 ]
 
 [package.dependencies]
@@ -1376,7 +1373,7 @@ certifi = "*"
 urllib3 = ">=1.26.2,<3"
 
 [package.extras]
-develop = ["aiohttp", "furo", "httpx", "mock", "opentelemetry-api", "opentelemetry-sdk", "orjson", "pytest", "pytest-asyncio", "pytest-cov", "pytest-httpserver", "pytest-mock", "requests", "respx", "sphinx (>2)", "sphinx-autodoc-typehints", "trustme"]
+develop = ["aiohttp", "furo", "httpx", "opentelemetry-api", "opentelemetry-sdk", "orjson", "pytest", "pytest-asyncio", "pytest-cov", "pytest-httpserver", "pytest-mock", "requests", "respx", "sphinx (>2)", "sphinx-autodoc-typehints", "trustme"]
 
 [[package]]
 name = "elasticsearch"
@@ -1470,6 +1467,32 @@ six = "*"
 
 [package.extras]
 develop = ["coverage (<5.0.0)", "mock", "pytest (>=3.0.0)", "pytest-cov", "pytz", "sphinx", "sphinx-rtd-theme"]
+
+[[package]]
+name = "elasticsearch8"
+version = "8.19.3"
+description = "Python client for Elasticsearch"
+optional = false
+python-versions = ">=3.8"
+groups = ["main"]
+files = [
+    {file = "elasticsearch8-8.19.3-py3-none-any.whl", hash = "sha256:4b52e59e68aea6f59bf37c28f6f4512333302dd8a52e26c17d0f10c076d833a1"},
+    {file = "elasticsearch8-8.19.3.tar.gz", hash = "sha256:7effe95b360241b6d56ef68219037a90ad0f56723614db54bbe57d33058402f4"},
+]
+
+[package.dependencies]
+elastic-transport = ">=8.15.1,<9"
+python-dateutil = "*"
+typing-extensions = "*"
+
+[package.extras]
+async = ["aiohttp (>=3,<4)"]
+dev = ["aiohttp", "black", "build", "coverage", "isort", "jinja2", "mapbox-vector-tile", "mypy", "nox", "numpy", "orjson", "pandas", "pyarrow ; python_version < \"3.14\"", "pyright", "pytest", "pytest-asyncio", "pytest-cov", "pytest-mock", "python-dateutil", "pyyaml (>=5.4)", "requests (>=2,<3)", "simsimd", "tqdm", "twine", "types-python-dateutil", "types-tqdm", "unasync"]
+docs = ["sphinx", "sphinx-autodoc-typehints", "sphinx-rtd-theme (>=2.0)"]
+orjson = ["orjson (>=3)"]
+pyarrow = ["pyarrow (>=1)"]
+requests = ["requests (>=2.4.0,!=2.32.2,<3.0.0)"]
+vectorstore-mmr = ["numpy (>=1)", "simsimd (>=3)"]
 
 [[package]]
 name = "email-validator"
@@ -4413,6 +4436,18 @@ files = [
 ]
 
 [[package]]
+name = "typing-extensions"
+version = "4.15.0"
+description = "Backported and Experimental Type Hints for Python 3.9+"
+optional = false
+python-versions = ">=3.9"
+groups = ["main"]
+files = [
+    {file = "typing_extensions-4.15.0-py3-none-any.whl", hash = "sha256:f0fa19c6845758ab08074a0cfa8b7aecb71c999ca73d62883bc25cc018c4e548"},
+    {file = "typing_extensions-4.15.0.tar.gz", hash = "sha256:0cea48d173cc12fa28ecabc3b837ea3cf6f38c6d1136f85cbaaf598984861466"},
+]
+
+[[package]]
 name = "tzdata"
 version = "2024.1"
 description = "Provider of IANA time zone data"
@@ -4715,4 +4750,4 @@ testing = ["coverage (>=5.0.3)", "zope.event", "zope.testing"]
 [metadata]
 lock-version = "2.1"
 python-versions = "^3.12"
-content-hash = "2bc7e95f03d05e8b3335514e887b590acdab5cb2a44fc47bde870bdf8e465bf2"
+content-hash = "2175d011bdf45da06721a3cf70377730725e59a52f6ac4357152c38e4427d1e3"

@@ -2,7 +2,7 @@ import datetime
 from unittest import mock
 
 import pytest
-from elasticsearch_metrics import metrics
+import elasticsearch_metrics.imps.elastic6 as metrics
 
 from osf.metrics.reports import MonthlyReport, ReportInvalid, PublicItemUsageReport
 from osf.metrics.utils import YearMonth

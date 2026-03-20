@@ -13,6 +13,8 @@ volumes:
     external: false
   elasticsearch6_data_vol:
     external: false
+  elasticsearch8_data_vol:
+    external: false
   rabbitmq_vol:
     external: false
   ember_osf_web_dist_vol:
@@ -74,6 +76,18 @@ services:
       - 9201:9200
     volumes:
       - elasticsearch6_data_vol:/usr/share/elasticsearch/data
+    stdin_open: true
+
+  elasticsearch8:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.19.11
+    platform: linux/arm64
+    environment:
+      - xpack.security.enabled=false
+      - discovery.type=single-node
+    ports:
+      - 9202:9200
+    volumes:
+      - elasticsearch8_data_vol:/usr/share/elasticsearch/data
     stdin_open: true
 
   postgres:
