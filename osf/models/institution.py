@@ -24,6 +24,7 @@ from .storage import InstitutionAssetFile
 from .validators import validate_email
 from osf.utils.fields import NonNaiveDateTimeField, LowercaseEmailField
 from website import settings as website_settings
+from urllib.parse import quote
 
 logger = logging.getLogger(__name__)
 
@@ -207,6 +208,18 @@ class Institution(DirtyFieldsMixin, Loggable, ObjectIDMixin, BaseModel, Guardian
             return self.asset_files.get(name='banner').file.url
         except InstitutionAssetFile.DoesNotExist:
             return '/static/img/institutions/banners/placeholder-banner.png'
+
+    @property
+    def cas_login_url(self):
+        if self.delegation_protocol == IntegrationType.NONE.value:
+            return None
+        if 'localhost' in website_settings.DOMAIN:
+            next_param = quote(website_settings.PROTOCOL + website_settings.LOCAL_ANGULAR_URL, safe='')
+        else:
+            next_param = quote(website_settings.DOMAIN, safe='')
+        service_url = quote(f'{website_settings.DOMAIN}login?next={next_param}', safe='')
+
+        return f'{website_settings.CAS_SERVER_URL}/login?campaign=institution&institutionId={self._id}&service={service_url}'
 
     def update_search(self):
         from website.search.search import update_institution
