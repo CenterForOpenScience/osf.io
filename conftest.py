@@ -5,6 +5,7 @@ import re
 
 from django.db import transaction
 from elasticsearch_dsl.connections import connections
+from website import settings as osf_settings
 from elasticsearch_metrics.tests._test_util import RealElasticTestCase
 from faker import Factory
 import pytest
@@ -144,6 +145,11 @@ def _es_metrics_marker(request):
     if not marker:
         yield
         return
+
+    connections.create_connection(
+        alias='osfmetrics_es6',
+        hosts=osf_settings.ELASTIC6_URI,
+    )
 
     es6_test_case = RealElasticTestCase()
     es6_test_case.setup_backends()
