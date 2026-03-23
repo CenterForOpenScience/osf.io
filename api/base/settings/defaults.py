@@ -318,15 +318,15 @@ HASHIDS_SALT = 'pinkhimalayan'
 # django-elasticsearch-metrics
 DJELME_AUTOSETUP = True
 DJELME_BACKENDS = {
-    "osfmetrics_es6": {
-        "elasticsearch_metrics.imps.elastic6": {
-            "hosts": osf_settings.ELASTIC6_URI,
-            "retry_on_timeout": True,
+    'osfmetrics_es6': {
+        'elasticsearch_metrics.imps.elastic6': {
+            'hosts': osf_settings.ELASTIC6_URI,
+            'retry_on_timeout': True,
         },
     },
-    "osfmetrics_es8": {
-        "elasticsearch_metrics.imps.elastic8": {
-            "hosts": osf_settings.ELASTIC8_URI,
+    'osfmetrics_es8': {
+        'elasticsearch_metrics.imps.elastic8': {
+            'hosts': osf_settings.ELASTIC8_URI,
         },
     },
 }
