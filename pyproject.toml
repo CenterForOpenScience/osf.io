@@ -92,7 +92,7 @@ datacite = "1.1.3"
 rdflib = "7.0.0"
 colorlog = "6.8.2"
 # Metrics
-django-elasticsearch-metrics = {git ="https://github.com/CenterForOpenScience/django-elasticsearch-metrics.git", rev = "36fc0bbe001ee792f4ab5723eaeec295b8a20eb2"} # branch is feature/pin-esdsl
+django-elasticsearch-metrics = {git ="https://github.com/CenterForOpenScience/django-elasticsearch-metrics.git", rev = "7a7f664469070dd52dc4d9401f6b6d2d9fe7ddf0"} # branch is feature/pin-esdsl
 # Impact Metrics CSV Export
 djangorestframework-csv = "3.0.2"
 gevent = "24.2.1"
