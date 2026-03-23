@@ -5,7 +5,6 @@
     <style>
         #copy-modal {
             display: none; /* hidden by default */
-
             position: fixed;
             z-index: 2000;
             inset: 0;
@@ -23,7 +22,6 @@
             max-height: 80vh;
             padding: 20px;
             border-radius: 10px;
-
             display: flex;
             flex-direction: column;
             gap: 10px;
@@ -61,12 +59,10 @@
                 {% if perms.osf.change_institution %}
                 <a class="btn btn-primary" href={% url 'institutions:list_and_add_admin' institution.id %}>Manage Admins</a>
                 {% endif %}
-
                 {% if cas_login_url %}
                     <button class="btn btn-primary" onclick="openCopyPopup('{{ cas_login_url|escapejs }}')">
                         Copy SSO URL
                     </button>
-
                     <div id="copy-modal" class="modal">
                         <div class="modal-content">
                             <span class="close" onclick="closeCopyPopup()">&times;</span>
@@ -214,13 +210,9 @@
         window.openCopyPopup = function(text) {
             const modal = document.getElementById("copy-modal");
             const input = document.getElementById("copy-input");
-
             input.value = text;
-
             modal.classList.add("show_modal");
-
             navigator.clipboard.writeText(text).catch(() => {});
-
             input.focus();
             input.select();
         };

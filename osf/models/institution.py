@@ -218,7 +218,6 @@ class Institution(DirtyFieldsMixin, Loggable, ObjectIDMixin, BaseModel, Guardian
         else:
             next_param = quote(website_settings.DOMAIN, safe='')
         service_url = quote(f'{website_settings.DOMAIN}login?next={next_param}', safe='')
-
         return f'{website_settings.CAS_SERVER_URL}/login?campaign=institution&institutionId={self._id}&service={service_url}'
 
     def update_search(self):
