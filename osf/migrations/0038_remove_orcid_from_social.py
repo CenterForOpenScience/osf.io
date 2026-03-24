@@ -1,18 +1,33 @@
-from django.db import migrations
+from django.db import migrations, transaction
 
 
 def remove_orcid_from_social(apps, schema_editor):
     from osf.models import OSFUser
-    users_with_orcid = OSFUser.objects.filter(social__has_key='orcid')
-    users_to_update = []
-    for user in users_with_orcid:
+
+    user_ids = []
+    batch = []
+    CHUNK_SIZE = 1000
+
+    for user in OSFUser.objects.filter(social__has_key='orcid').iterator(chunk_size=CHUNK_SIZE):
         user.social.pop('orcid', None)
-        users_to_update.append(user)
-    if users_to_update:
-        OSFUser.objects.bulk_update(users_to_update, ['social'], batch_size=1000)
-        # update share and elastic too
-        for user in users_to_update:
-            user.update_search()
+        batch.append(user)
+        user_ids.append(user.id)
+        if len(batch) >= 1000:
+            OSFUser.objects.bulk_update(batch, ['social'])
+            batch.clear()
+
+    if batch:
+        OSFUser.objects.bulk_update(batch, ['social'])
+
+    def reindex():
+        for start in range(0, len(user_ids), CHUNK_SIZE):
+            chunked_ids = user_ids[start:start + CHUNK_SIZE]
+            for user in OSFUser.objects.filter(id__in=chunked_ids):
+                user.update_search()
+
+    if user_ids:
+        # if update is successfully saved in database reindex share and elastic too
+        transaction.on_commit(reindex)
 
 
 def reverse(apps, schema_editor):
