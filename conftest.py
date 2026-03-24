@@ -146,17 +146,13 @@ def _es_metrics_marker(request):
         yield
         return
 
-    connections.create_connection(
-        alias='osfmetrics_es6',
-        hosts=osf_settings.ELASTIC6_URI,
-    )
-
-    es6_test_case = RealElasticTestCase()
-    es6_test_case.setup_backends()
-
-    yield
-
-    es6_test_case.teardown_backends()
+    class _Es6TestCase(RealElasticTestCase, autosetup_djelme_backends=True): ...
+    es6_test_case = _Es6TestCase()
+    es6_test_case.setUp()
+    try:
+        yield
+    finally:
+        es6_test_case.tearDown()
 
 @pytest.fixture
 def mock_share_responses():
