@@ -152,6 +152,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         'schools',
         'social',
         'allow_indexing',
+        'external_identity',
     }
 
     # Overrides DirtyFieldsMixin, Foreign Keys checked by '<attribute_name>_id' rather than typical name.
