@@ -4,7 +4,7 @@ import typing
 
 import waffle
 if typing.TYPE_CHECKING:
-    import elasticsearch_dsl as edsl
+    import elasticsearch6_dsl as edsl
 
 import osf.features
 from osf.metadata.osf_gathering import OsfmapPartition

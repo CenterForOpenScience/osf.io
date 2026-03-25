@@ -4,7 +4,7 @@ import os
 import re
 
 from django.db import transaction
-from elasticsearch_dsl.connections import connections
+from elasticsearch6_dsl.connections import connections
 from website import settings as osf_settings
 from elasticsearch_metrics.tests._test_util import RealElasticTestCase
 from faker import Factory
