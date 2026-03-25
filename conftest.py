@@ -146,6 +146,11 @@ def _es_metrics_marker(request):
         yield
         return
 
+    connections.create_connection(
+        alias='osfmetrics_es6',
+        hosts=osf_settings.ELASTIC6_URI,
+    )
+
     class _Es6TestCase(RealElasticTestCase, autosetup_djelme_backends=True): ...
     es6_test_case = _Es6TestCase()
     es6_test_case.setUp()

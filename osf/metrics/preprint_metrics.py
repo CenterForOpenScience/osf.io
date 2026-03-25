@@ -1,4 +1,4 @@
-from elasticsearch.exceptions import NotFoundError
+from elasticsearch6.exceptions import NotFoundError
 import elasticsearch_metrics.imps.elastic6 as metrics
 
 from .metric_mixin import MetricMixin

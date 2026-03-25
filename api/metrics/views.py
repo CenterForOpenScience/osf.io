@@ -6,7 +6,7 @@ from enum import Enum
 from django.http import JsonResponse, HttpResponse, Http404
 from django.utils import timezone
 
-from elasticsearch.exceptions import NotFoundError, RequestError
+from elasticsearch6.exceptions import NotFoundError, RequestError
 from elasticsearch_dsl.connections import get_connection
 
 from framework.auth.oauth_scopes import CoreScopes

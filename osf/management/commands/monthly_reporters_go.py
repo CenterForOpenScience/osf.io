@@ -3,7 +3,7 @@ import logging
 
 from django.core.management.base import BaseCommand
 from django.db import OperationalError as DjangoOperationalError
-from elasticsearch.exceptions import ConnectionError as ElasticConnectionError
+from elasticsearch6.exceptions import ConnectionError as ElasticConnectionError
 from psycopg2 import OperationalError as PostgresOperationalError
 
 from framework.celery_tasks import app as celery_app
