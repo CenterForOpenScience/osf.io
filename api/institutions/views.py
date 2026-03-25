@@ -73,6 +73,9 @@ class InstitutionList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin):
         base_permissions.TokenHasScope,
     )
 
+    # Adding sso_availability to MULTIPLE_VALUES_FIELDS to allow filtering institutions by multiple sso_availability values, e.g. ?filter[sso_availability]=[Unavailable,Hidden]
+    MULTIPLE_VALUES_FIELDS = ListFilterMixin.MULTIPLE_VALUES_FIELDS + ['sso_availability']
+
     required_read_scopes = [CoreScopes.INSTITUTION_READ]
     required_write_scopes = [CoreScopes.NULL]
     model_class = Institution
