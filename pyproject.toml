@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "osf-io"
-version = "26.5.0"
+version = "26.5.1"
 description = "The code for [https://osf.io](https://osf.io)."
 authors = ["Your Name <you@example.com>"]
 license = "Apache License 2.0"
@@ -95,6 +95,7 @@ django-elasticsearch-metrics = {git ="https://github.com/CenterForOpenScience/dj
 djangorestframework-csv = "3.0.2"
 gevent = "24.2.1"
 packaging = "^24.0"
+flask-cors = "6.0.1"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "7.4.4"
