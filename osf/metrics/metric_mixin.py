@@ -77,9 +77,9 @@ class MetricMixin:
     # indices, determined from `after`
     @classmethod
     def search(cls, using=None, index=None, after=None, before=None, *args, **kwargs):
-        # if not index and (before or after):
-        #     indices = cls._get_relevant_indices(after, before)
-        #     index = ','.join(indices)
+        if not index and (before or after):
+            indices = cls._get_relevant_indices(after, before)
+            index = ','.join(indices)
         return super().search(using=using, index=index, *args, **kwargs)
 
     @classmethod

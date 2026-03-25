@@ -10,7 +10,7 @@ from osf_tests.factories import (
     AuthUserFactory
 )
 
-from elasticsearch_metrics.field import Keyword
+from elasticsearch6_dsl import Keyword
 
 from tests.json_api_test_app import JSONAPITestApp
 
