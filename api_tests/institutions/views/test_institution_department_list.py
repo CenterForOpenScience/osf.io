@@ -44,7 +44,7 @@ class TestInstitutionDepartmentList:
             department_name='Old Department',
             public_project_count=1,
             private_project_count=1,
-        ).save(refresh=True)
+        ).save()
 
         _this_month = YearMonth.from_date(datetime.date.today())
 
@@ -56,7 +56,7 @@ class TestInstitutionDepartmentList:
             department_name='New Department',
             public_project_count=1,
             private_project_count=1,
-        ).save(refresh=True)
+        ).save()
 
         # A second user entered the department
         InstitutionalUserReport(
@@ -66,7 +66,7 @@ class TestInstitutionDepartmentList:
             department_name='New Department',
             public_project_count=1,
             private_project_count=1,
-        ).save(refresh=True)
+        ).save()
 
         # A new department with a single user to test sorting
         InstitutionalUserReport(
@@ -76,7 +76,7 @@ class TestInstitutionDepartmentList:
             department_name='Smaller Department',
             public_project_count=1,
             private_project_count=1,
-        ).save(refresh=True)
+        ).save()
 
         # A user with no department
         InstitutionalUserReport(
@@ -85,7 +85,7 @@ class TestInstitutionDepartmentList:
             institution_id=institution._id,
             public_project_count=1,
             private_project_count=1,
-        ).save(refresh=True)
+        ).save()
 
     @pytest.fixture()
     def admin(self, institution):
@@ -113,6 +113,7 @@ class TestInstitutionDepartmentList:
         assert resp.json['data'] == []
 
     def test_get(self, app, url, admin, institution, populate_counts):
+        InstitutionalUserReport._get_connection().indices.refresh(InstitutionalUserReport._template_pattern)
         resp = app.get(url, auth=admin.auth)
 
         assert resp.json['data'] == [{

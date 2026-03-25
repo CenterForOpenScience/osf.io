@@ -75,7 +75,7 @@ class TestElasticSearch:
             path=preprint.primary_file.path,
             timestamp=datetime(year=2020, month=2, day=1)
         )
-        time.sleep(1)  # gives ES some time to update
+        PreprintDownload._get_connection().indices.refresh(PreprintDownload._template_pattern)
 
         resp = app.post_json_api(post_url, payload, auth=user.auth)
         assert resp.status_code == 200
