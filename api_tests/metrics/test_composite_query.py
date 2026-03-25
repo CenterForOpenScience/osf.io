@@ -1,4 +1,3 @@
-import time
 import pytest
 from datetime import datetime
 from osf_tests.factories import (

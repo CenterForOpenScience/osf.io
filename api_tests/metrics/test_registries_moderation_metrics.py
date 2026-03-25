@@ -1,7 +1,6 @@
 import pytest
 from waffle.testutils import override_switch
 
-import time
 from osf import features
 from osf_tests.factories import RegistrationFactory, AuthUserFactory
 from osf.utils.workflows import RegistrationModerationStates, RegistrationModerationTriggers
