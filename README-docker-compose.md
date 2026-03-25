@@ -294,6 +294,11 @@
       ```bash
       docker compose run --rm web python3 manage.py reset_db --noinput
       ```
+- OPTIONAL: Create a `features.yaml` override
+  ```bash
+  cp osf/features.yaml osf/features.override.yaml
+  ```
+  Note: Update the WAFFLE_VALUES_YAML variable to point to the override file (osf/features.override.yaml).
 
 ## Application Debugging
 
