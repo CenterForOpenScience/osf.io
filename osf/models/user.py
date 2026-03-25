@@ -162,7 +162,6 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
     #   search update for all nodes to which the user is a contributor.
 
     SOCIAL_FIELDS = {
-        'orcid': 'http://orcid.org/{}',
         'github': 'http://github.com/{}',
         'scholar': 'http://scholar.google.com/citations?user={}',
         'twitter': 'http://twitter.com/{}',
