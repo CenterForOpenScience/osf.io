@@ -122,6 +122,7 @@ website/static/sitemaps/
 ##############
 
 api/static/vendor
+osf/features.override.yaml
 
 # Local settings files
 local.py
