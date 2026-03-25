@@ -1,4 +1,4 @@
-from flask_cors import CORS
+from flask_cors import CORS as FLASK_CORS
 
 import framework
 import importlib
@@ -9,7 +9,7 @@ from collections import OrderedDict
 
 import django
 
-from api.base.settings import CORS_ORIGIN_WHITELIST
+from api.base.settings import FLASK_CORS_ALLOW_CREDENTIALS, FLASK_CORS_ORIGIN_WHITELIST
 from api.caching import listeners  # noqa
 from django.apps import apps
 from framework.addons.utils import render_addon_capabilities
@@ -93,7 +93,9 @@ def init_app(settings_module='website.settings', set_backends=True, routes=True,
     if app.config.get('IS_INITIALIZED', False) is True:
         return app
 
-    CORS(app, supports_credentials=True, origins=CORS_ORIGIN_WHITELIST)
+    # Setup CORS for flask app
+    FLASK_CORS(app, supports_credentials=FLASK_CORS_ALLOW_CREDENTIALS, origins=FLASK_CORS_ORIGIN_WHITELIST)
+
     setup_django()
 
     # The settings module
