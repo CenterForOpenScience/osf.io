@@ -647,7 +647,6 @@ def external_login_confirm_email_get(auth, uid, token):
 
     user.date_last_logged_in = timezone.now()
     user.external_identity[provider][provider_id] = 'VERIFIED'
-    user.social[provider.lower()] = provider_id
     del user.email_verifications[token]
     user.verification_key = generate_verification_key()
     user.save()
@@ -1132,7 +1131,6 @@ def external_login_email_post():
                 campaign=None,
                 accepted_terms_of_service=accepted_terms_of_service
             )
-            # TODO: [#OSF-6934] update social fields, verified social fields cannot be modified
             user.save()
             # 3. send confirmation email
             send_confirm_email_async(
