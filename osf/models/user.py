@@ -344,7 +344,6 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
     #     'twitter': <list of twitter usernames>,
     #     'github': <list of github usernames>,
     #     'linkedIn': <list of linkedin profiles>,
-    #     'orcid': <orcid for user>,
     #     'researcherID': <researcherID>,
     #     'impactStory': <impactStory identifier>,
     #     'scholar': <google scholar identifier>,
