@@ -4,7 +4,7 @@ Reindex data to use current mapping for ES metrics classes
 import logging
 
 from django.core.management.base import BaseCommand
-from elasticsearch_dsl import connections
+from elasticsearch6_dsl import connections
 from elasticsearch_metrics.registry import registry
 
 logger = logging.getLogger(__name__)

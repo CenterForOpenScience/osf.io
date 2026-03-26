@@ -4,7 +4,7 @@ import datetime
 
 from django.dispatch import receiver
 from elasticsearch6_dsl import InnerDoc
-from elasticsearch_metrics import metrics
+import elasticsearch_metrics.imps.elastic6 as metrics
 from elasticsearch_metrics.signals import pre_save as metrics_pre_save
 
 from osf.metrics.utils import stable_key, YearMonth

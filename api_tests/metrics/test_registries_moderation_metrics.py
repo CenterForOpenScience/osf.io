@@ -1,7 +1,6 @@
 import pytest
 from waffle.testutils import override_switch
 
-import time
 from osf import features
 from osf_tests.factories import RegistrationFactory, AuthUserFactory
 from osf.utils.workflows import RegistrationModerationStates, RegistrationModerationTriggers
@@ -32,7 +31,7 @@ class TestRegistrationModerationMetrics:
                 registration.creator,
                 'Metrics is easy'
             )
-        time.sleep(1)
+        RegistriesModerationMetrics._get_connection().indices.refresh(RegistriesModerationMetrics._template_pattern)
 
         assert RegistriesModerationMetrics.search().count() == 1
         data = RegistriesModerationMetrics.search().execute()['hits']['hits'][0]['_source']
@@ -81,7 +80,7 @@ class TestRegistrationModerationMetricsView:
                 registration.creator,
                 'Metrics is easy'
             )
-        time.sleep(1)
+        RegistriesModerationMetrics._get_connection().indices.refresh(RegistriesModerationMetrics._template_pattern)
 
         res = app.get(base_url, auth=user.auth, expect_errors=True)
         data = res.json

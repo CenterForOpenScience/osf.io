@@ -4,7 +4,7 @@ import logging
 from urllib.parse import urlsplit
 
 from elasticsearch6_dsl import InnerDoc, analyzer, tokenizer
-from elasticsearch_metrics import metrics
+import elasticsearch_metrics.imps.elastic6 as metrics
 from elasticsearch_metrics.signals import pre_save
 from django.dispatch import receiver
 import pytz

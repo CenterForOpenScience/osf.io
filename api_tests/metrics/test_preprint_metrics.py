@@ -8,7 +8,7 @@ setup_django()
 
 from django.utils import timezone
 from waffle.testutils import override_switch
-from elasticsearch.exceptions import RequestError
+from elasticsearch6.exceptions import RequestError
 
 from osf import features
 from api.base.settings import API_PRIVATE_BASE as API_BASE

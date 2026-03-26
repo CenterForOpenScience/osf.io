@@ -14,7 +14,7 @@ from osf.external.gravy_valet.translations import EphemeralNodeSettings
 import waffle
 from django.db import transaction
 from django.contrib.contenttypes.models import ContentType
-from elasticsearch import exceptions as es_exceptions
+from elasticsearch6 import exceptions as es_exceptions
 from rest_framework import status as http_status
 
 from api.caching.tasks import update_storage_usage_with_size
