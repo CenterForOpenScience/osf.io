@@ -755,7 +755,10 @@ class ExternalLogin(JSONAPIBaseView, generics.CreateAPIView):
             # 1. update user oauth, with pending status
             external_identity[external_id_provider][external_id] = 'LINK'
             if external_id_provider in user.external_identity:
-                user.external_identity[external_id_provider].update(external_identity[external_id_provider])
+                if external_id_provider == 'orcid':
+                    user.external_identity[external_id_provider] = external_identity[external_id_provider]
+                else:
+                    user.external_identity[external_id_provider].update(external_identity[external_id_provider])
             else:
                 user.external_identity.update(external_identity)
             if not user.accepted_terms_of_service and accepted_terms_of_service:
@@ -1153,7 +1156,6 @@ class ConfirmEmailView(generics.CreateAPIView):
 
     def _process_external_identity(self, user, external_identity, service_url):
         """Handle all external_identity logic, including task enqueueing and url updates."""
-
         provider = next(iter(external_identity))
         if provider not in user.external_identity:
             raise ValidationError('External-ID provider mismatch.')
