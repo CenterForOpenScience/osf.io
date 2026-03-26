@@ -1,11 +1,13 @@
 from rest_framework import permissions
 
+from api.base.exceptions import Conflict
 from api.base.utils import get_user_auth, assert_resource_type
 from osf.models import (
     DraftRegistration,
     AbstractNode,
     DraftRegistrationContributor,
     OSFUser,
+    RegistrationProvider,
 )
 from api.nodes.permissions import ContributorDetailPermissions
 from osf.utils.permissions import WRITE, ADMIN
@@ -90,3 +92,32 @@ class DraftRegistrationPermission(permissions.BasePermission):
             elif isinstance(obj, AbstractNode):
                 return obj.has_permission(auth.user, WRITE)
         return False
+
+
+class CanSubmitDraftRegistrationToProvider(permissions.BasePermission):
+    """
+    Prevent creating draft registrations for providers that are closed to submissions.
+    """
+
+    def has_permission(self, request, view):
+        if request.method != 'POST':
+            return True
+
+        provider_id = request.data.get('provider')
+
+        if not provider_id:
+            try:
+                provider = RegistrationProvider.get_default()
+            except RegistrationProvider.DoesNotExist:
+                return True
+        else:
+            try:
+                provider = RegistrationProvider.objects.get(_id=provider_id)
+            except RegistrationProvider.DoesNotExist:
+                # Let existing validation handle bad provider ids.
+                return True
+
+        if not provider.allow_submissions:
+            raise Conflict(f"Registry {provider.name} is closed for new submissions. Please start a new registration with a different registry.")
+
+        return True

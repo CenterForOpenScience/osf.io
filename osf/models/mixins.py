@@ -563,14 +563,14 @@ class AddonModelMixin(models.Model):
             return addon
         return self.add_addon(name, *args, **kwargs)
 
-    def get_addon(self, name, is_deleted=False, auth=None):
+    def get_addon(self, name, is_deleted=False, auth=None, cached=True):
         # Avoid test-breakages by avoiding early access to the request context
         if name not in self.OSF_HOSTED_ADDONS:
             request, user_id = get_request_and_user_id()
             if not user_id and auth and auth.user:
                 user_id = auth.user._id
             if flag_is_active(request, features.ENABLE_GV):
-                return self._get_addon_from_gv(gv_pk=name, requesting_user_id=user_id, auth=auth)
+                return self._get_addon_from_gv(gv_pk=name, requesting_user_id=user_id, auth=auth, cached=cached)
 
         try:
             settings_model = self._settings_model(name)
@@ -1457,7 +1457,7 @@ class ContributorMixin(models.Model):
             # Add default contributor permissions
             permissions = permissions or self.DEFAULT_CONTRIBUTOR_PERMISSIONS
 
-            self.add_permission(contrib_to_add, permissions, save=True)
+            self.add_permission(contrib_to_add, permissions, save=False)
             if make_curator:
                 contributor_obj.is_curator = True
             contributor_obj.save()
@@ -1514,6 +1514,7 @@ class ContributorMixin(models.Model):
         :param log: Add log to self
         :param save: Save after adding contributor
         """
+        users = []
         for contrib in contributors:
             self.add_contributor(
                 contributor=contrib['user'],
@@ -1524,6 +1525,7 @@ class ContributorMixin(models.Model):
                 save=False,
                 notification_type=notification_type
             )
+            users.append(contrib['user'])
         if log and contributors:
             params = self.log_params
             params['contributors'] = [
@@ -1539,6 +1541,8 @@ class ContributorMixin(models.Model):
         if save:
             self.save()
 
+        return self.contributor_set.filter(user__in=users)
+
     def add_unregistered_contributor(
             self,
             fullname,
@@ -1547,7 +1551,9 @@ class ContributorMixin(models.Model):
             notification_type=False,
             visible=True,
             permissions=None,
-            existing_user=None
+            existing_user=None,
+            save=True,
+            log=True,
     ):
         """Add a non-registered contributor to the project.
 
@@ -1612,25 +1618,31 @@ class ContributorMixin(models.Model):
             auth=auth,
             visible=visible,
             notification_type=notification_type,
-            log=True,
-            save=False
+            log=log,
+            save=False,
         )
         self._add_related_source_tags(contributor)
-        self.save()
+        if save:
+            self.save()
         return contributor
 
-    def add_contributor_registered_or_not(self,
-                                          auth,
-                                          user_id=None,
-                                          full_name=None,
-                                          email=None,
-                                          notification_type=False,
-                                          permissions=None,
-                                          bibliographic=True,
-                                          index=None):
+    def add_contributor_registered_or_not(
+            self,
+            auth,
+            user_id=None,
+            full_name=None,
+            email=None,
+            notification_type=False,
+            permissions=None,
+            bibliographic=True,
+            index=None,
+            user=None,
+            save=True,
+            log=True,
+    ):
         OSFUser = apps.get_model('osf.OSFUser')
         if user_id:
-            contributor = OSFUser.load(user_id)
+            contributor = user or OSFUser.load(user_id)
             if not contributor:
                 raise ValueError(f'User with id {user_id} was not found.')
 
@@ -1644,7 +1656,8 @@ class ContributorMixin(models.Model):
                     visible=bibliographic,
                     permissions=permissions,
                     notification_type=notification_type,
-                    save=True
+                    save=save,
+                    log=log
                 )
             else:
                 if not full_name:
@@ -1660,6 +1673,8 @@ class ContributorMixin(models.Model):
                     permissions=permissions,
                     visible=bibliographic,
                     existing_user=contributor,
+                    save=save,
+                    log=log,
                 )
 
         else:
@@ -1674,7 +1689,8 @@ class ContributorMixin(models.Model):
                     visible=bibliographic,
                     notification_type=notification_type,
                     permissions=permissions,
-                    save=True
+                    save=save,
+                    log=log,
                 )
             else:
                 contributor = self.add_unregistered_contributor(
@@ -1683,17 +1699,68 @@ class ContributorMixin(models.Model):
                     auth=auth,
                     notification_type=notification_type,
                     permissions=permissions,
-                    visible=bibliographic
+                    visible=bibliographic,
+                    save=save,
+                    log=log,
                 )
 
         auth.user.email_last_sent = timezone.now()
         auth.user.save()
 
         if index is not None:
-            self.move_contributor(contributor=contributor, index=index, auth=auth, save=True)
+            self.move_contributor(contributor=contributor, index=index, auth=auth, save=save)
 
         contributor_obj = self.contributor_set.get(user=contributor)
         return contributor_obj
+
+    def add_contributors_registered_or_not(self, contributors, auth=None, log=True, save=False):
+        """Add multiple contributors using the unified registered-or-not path.
+
+        Each item should be a dictionary with keys compatible with
+        `add_contributor_registered_or_not`, e.g.:
+            {
+                'user_id': '<user guid>',
+                'user': '<OSFUser>' or None,
+                'email': '<email>' or None,
+                'full_name': '<full name>' or None,
+                'notification_type': '<email preference>' or None,
+                'permissions': <permission string>,
+                'bibliographic': <bool>,
+                'index': <int or None>,
+            }
+        """
+        results = []
+
+        for item in contributors:
+            contributor_obj = self.add_contributor_registered_or_not(
+                auth=auth,
+                user_id=item.get('user_id'),
+                user=item.get('user'),
+                full_name=item.get('full_name'),
+                email=item.get('email'),
+                notification_type=item.get('notification_type'),
+                permissions=item.get('permissions'),
+                bibliographic=item.get('bibliographic', True),
+                index=item.get('index'),
+                save=False,
+                log=False,
+            )
+            results.append(contributor_obj)
+
+        if log and results:
+            params = self.log_params
+            params['contributors'] = [c.user._id for c in results]
+            self.add_log(
+                action=self.log_class.CONTRIB_ADDED,
+                params=params,
+                auth=auth,
+                save=False,
+            )
+
+        if save:
+            self.save()
+
+        return results
 
     def replace_contributor(self, old, new):
         """
@@ -2298,28 +2365,32 @@ class SpamOverrideMixin(SpamMixin):
             request_headers,
         )
 
-    def check_spam_user(self, user):
+    def check_spam_user(self, user, domains=None):
         if (
-                settings.SPAM_ACCOUNT_SUSPENSION_ENABLED
-                and (timezone.now() - user.date_confirmed) <= settings.SPAM_ACCOUNT_SUSPENSION_THRESHOLD
+            settings.SPAM_ACCOUNT_SUSPENSION_ENABLED
+            and (timezone.now() - user.date_confirmed) <= settings.SPAM_ACCOUNT_SUSPENSION_THRESHOLD
         ) or (
-                settings.SPAM_AUTOBAN_IP_BLOCK and self.spam_data.get('oopspam_data', None)
-                and self.spam_data['oopspam_data']['Details']['isIPBlocked']
+            settings.SPAM_AUTOBAN_IP_BLOCK and self.spam_data.get('oopspam_data', None)
+            and self.spam_data['oopspam_data']['Details']['isIPBlocked']
         ):
-            self.suspend_spam_user(user)
+            self.suspend_spam_user(user, domains=domains)
 
-    def suspend_spam_user(self, user):
+    def suspend_spam_user(self, user, domains=None, self_spam=False):
         """
         This suspends a users account and makes all there resources private, key word here is SUSPENDS this should not
         delete the account or any info associated with it. It should not be assumed the account is spam and it should
         not be used to train spam detecting services.
+
+        self_spam - defines if this object must be spammed. When spam is found by akismet or oopsystem, object becomes flagged
+        and we don't need to spam it but for some cases we want to manually call this method with self spamming.
         """
+        domains = domains or []
         if user.is_hammy:
             return False
-        self.confirm_spam(save=True, train_spam_services=False)
+
+        self.flag_spam(skip_user_suspension=True)
 
         # Suspend the flagged user for spam.
-        user.flag_spam()
         if not user.is_disabled:
             user.deactivate_account()
             NotificationTypeEnum.USER_SPAM_BANNED.instance.emit(
@@ -2329,19 +2400,21 @@ class SpamOverrideMixin(SpamMixin):
                     'osf_support_email': settings.OSF_SUPPORT_EMAIL,
                 }
             )
+
+        user.confirm_spam(domains=domains or [], save=False, skip_resources_spam=True)
         user.save()
 
         # Make public nodes private from this contributor
         for node in user.all_nodes:
-            if self._id != node._id and len(node.contributors) == 1 and node.is_public:
-                node.confirm_spam(save=True, train_spam_services=False)
+            if (self._id != node._id or self_spam) and len(node.contributors) == 1 and node.is_public:
+                node.confirm_spam(save=True, domains=domains, train_spam_services=False)
 
         # Make preprints private from this contributor
         for preprint in user.preprints.all():
-            if self._id != preprint._id and len(preprint.contributors) == 1 and preprint.is_public:
-                preprint.confirm_spam(save=True, train_spam_services=False)
+            if (self._id != preprint._id or self_spam) and len(preprint.contributors) == 1 and preprint.is_public:
+                preprint.confirm_spam(save=True, domains=domains, train_spam_services=False)
 
-    def flag_spam(self):
+    def flag_spam(self, skip_user_suspension=False):
         """ Overrides SpamMixin#flag_spam.
         """
         super().flag_spam()
@@ -2357,7 +2430,7 @@ class SpamOverrideMixin(SpamMixin):
             )
             log.save()
 
-        if settings.SPAM_THROTTLE_AUTOBAN:
+        if settings.SPAM_THROTTLE_AUTOBAN and not skip_user_suspension:
             creator = self.creator
             yesterday = timezone.now() - timezone.timedelta(days=1)
             node_spam_count = creator.all_nodes.filter(spam_status__in=[SpamStatus.FLAGGED, SpamStatus.SPAM],

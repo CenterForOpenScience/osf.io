@@ -3,11 +3,8 @@ Routes associated with the wiki page
 """
 
 from framework.routing import Rule, json_renderer
-from website.routes import OsfWebRenderer
 
 from . import views
-
-TEMPLATE_DIR = './addons/wiki/templates/'
 
 settings_routes = {
     'rules': [],
@@ -15,76 +12,9 @@ settings_routes = {
 }
 
 # NOTE: <wname> refers to a wiki page's key, e.g. 'Home'
+# All HTML-rendered wiki routes have been removed; only API routes remain.
 page_routes = {
-
-    'rules': [
-
-        # Home (Base) | GET
-        Rule(
-            [
-                '/project/<pid>/wiki/',
-                '/project/<pid>/node/<nid>/wiki/',
-            ],
-            'get',
-            views.project_wiki_home,
-            OsfWebRenderer('edit.mako', trust=False, template_dir=TEMPLATE_DIR)
-        ),
-
-        # View (ID) | GET
-        Rule(
-            [
-                '/project/<pid>/wiki/id/<wid>/',
-                '/project/<pid>/node/<nid>/wiki/id/<wid>/',
-            ],
-            'get',
-            views.project_wiki_id_page,
-            OsfWebRenderer('edit.mako', trust=False, template_dir=TEMPLATE_DIR)
-        ),
-
-        # Wiki | GET
-        Rule(
-            [
-                '/project/<pid>/wiki/<wname>/',
-                '/project/<pid>/node/<nid>/wiki/<wname>/',
-            ],
-            'get',
-            views.project_wiki_view,
-            OsfWebRenderer('edit.mako', trust=False, template_dir=TEMPLATE_DIR)
-        ),
-
-        # Edit | GET (legacy url, trigger redirect)
-        Rule(
-            [
-                '/project/<pid>/wiki/<wname>/edit/',
-                '/project/<pid>/node/<nid>/wiki/<wname>/edit/',
-            ],
-            'get',
-            views.project_wiki_edit,
-            OsfWebRenderer('edit.mako', trust=False, template_dir=TEMPLATE_DIR)
-        ),
-
-        # Compare | GET (legacy url, trigger redirect)
-        Rule(
-            [
-                '/project/<pid>/wiki/<wname>/compare/<int:wver>/',
-                '/project/<pid>/node/<nid>/wiki/<wname>/compare/<int:wver>/',
-            ],
-            'get',
-            views.project_wiki_compare,
-            OsfWebRenderer('edit.mako', trust=False, template_dir=TEMPLATE_DIR)
-        ),
-
-        # Edit | POST
-        Rule(
-            [
-                '/project/<pid>/wiki/<wname>/',
-                '/project/<pid>/node/<nid>/wiki/<wname>/',
-            ],
-            'post',
-            views.project_wiki_edit_post,
-            OsfWebRenderer('edit.mako', trust=False, template_dir=TEMPLATE_DIR)
-        ),
-    ]
+    'rules': [],
 }
 
 api_routes = {

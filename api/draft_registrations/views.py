@@ -8,6 +8,7 @@ from api.draft_registrations.permissions import (
     DraftContributorDetailPermissions,
     DraftRegistrationPermission,
     IsAdminContributor,
+    CanSubmitDraftRegistrationToProvider,
 )
 from api.draft_registrations.serializers import (
     DraftRegistrationSerializer,
@@ -53,6 +54,7 @@ class DraftRegistrationList(NodeDraftRegistrationsList):
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
         DraftRegistrationPermission,
+        CanSubmitDraftRegistrationToProvider,
     )
 
     view_category = 'draft_registrations'

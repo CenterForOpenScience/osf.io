@@ -1456,6 +1456,11 @@ class JSONAPISerializer(BaseAPISerializer):
     @classmethod
     def many_init(cls, *args, **kwargs):
         kwargs['child'] = cls(*args, **kwargs)
+        # Use DRF list_serializer_class if it exists, otherwise use default JSONAPIListSerializer
+        meta = getattr(cls, 'Meta', None)
+        list_cls = getattr(meta, 'list_serializer_class', None)
+        if list_cls:
+            return list_cls(*args, **kwargs)
         return JSONAPIListSerializer(*args, **kwargs)
 
     def invalid_embeds(self, fields, embeds):

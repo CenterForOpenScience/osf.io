@@ -10,7 +10,7 @@
              % if collection_provider:
                 <a href="${collections_link}">${collection_provider_name}</a>
             % else:
-                <a href="${domain + 'myprojects/'}">${collection_provider_name}</a>
+                <a href="${domain + 'my-projects/'}">${collection_provider_name}</a>
             % endif
 
             was canceled. If you wish to be associated with the collection, you will need to request to be added again.
@@ -20,7 +20,7 @@
             % if collection_provider:
                 <a href="${collections_link}">${collection_provider_name}</a>
             % else:
-                <a href="${domain  + 'myprojects/'}">${collection_provider_name}</a>
+                <a href="${domain  + 'my-projects/'}">${collection_provider_name}</a>
             % endif
             If you wish to be associated with the collection, an admin will need to request addition again.
         % endif

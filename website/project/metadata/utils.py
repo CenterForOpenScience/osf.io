@@ -39,7 +39,6 @@ def serialize_draft_registration(draft, auth=None):
         'updated': utils.iso8601format(draft.datetime_updated),
         'flags': draft.flags,
         'urls': {
-            'edit': node.web_url_for('edit_draft_registration_page', draft_id=draft._id, _guid=True),
             'before_register': node.api_url_for('project_before_register'),
             'register': absolute_reverse('nodes:node-registrations', kwargs={'node_id': node._id, 'version': 'v2'}),
             'register_page': node.web_url_for('draft_before_register_page', draft_id=draft._id, _guid=True),
