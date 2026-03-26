@@ -571,3 +571,22 @@ class TestNodeDetail:
         private_link.save()
         res = app.get(f'{url_public}?view_only={private_link.key}', auth=user.auth)
         assert [permissions.READ] == res.json['data']['attributes']['current_user_permissions']
+
+    def test_spammed_node_detail_gone(self, app, user, project_public, url_public):
+        project_public.confirm_spam(save=True, train_spam_services=False)
+        res = app.get(url_public, expect_errors=True)
+        assert res.status_code == 410
+        error = res.json['errors'][0]
+        assert error['detail'] == 'The requested node is no longer available.'
+        assert 'meta' in error
+        assert error['meta']['flagged_content']
+
+    def test_not_spammed_deleted_node_detail_gone(self, app, user, project_public, url_public):
+        project_public.is_deleted = True
+        project_public.save()
+        res = app.get(url_public, expect_errors=True)
+        assert res.status_code == 410
+        error = res.json['errors'][0]
+        assert error['detail'] == 'The requested node is no longer available.'
+        assert 'meta' in error
+        assert not error['meta'].get('flagged_content', False)

@@ -23,6 +23,7 @@ from osf.models.spam import SpamStatus
 from osf.models.notification_type import NotificationTypeEnum
 from framework.auth import get_user
 from framework.auth.core import generate_verification_key
+from osf.models.institution import Institution
 
 from website import search
 from website.settings import EXTERNAL_IDENTITY_PROFILE
@@ -49,6 +50,7 @@ from admin.users.forms import (
 from admin.nodes.views import NodeAddSystemTag, NodeRemoveSystemTag
 from admin.base.views import GuidView
 from api.users.services import send_password_reset_email
+from api.users.tasks import merge_users
 from website.settings import DOMAIN, OSF_SUPPORT_EMAIL
 from django.urls import reverse_lazy
 
@@ -215,16 +217,24 @@ class UserGDPRDeleteView(UserMixin, View):
             user = self.get_object()
             user.gdpr_delete()
             user.save()
-            messages.success(request, f'User {user._id} was successfully GDPR deleted')
-            update_admin_log(
-                user_id=self.request.user.id,
-                object_id=user.pk,
-                object_repr='User',
-                message=f'User {user._id} was successfully GDPR deleted',
-                action_flag=USER_GDPR_DELETED
-            )
         except UserStateError as e:
             messages.warning(request, str(e))
+
+        messages.success(request, f'User {user._id} was successfully GDPR deleted')
+
+        # Update SHARE for all public resources
+        for node in user.nodes.filter(is_public=True, is_deleted=False):
+            node.update_search()
+        for preprint in user.preprints.filter(is_public=True, deleted__isnull=True):
+            preprint.update_search()
+
+        update_admin_log(
+            user_id=self.request.user.id,
+            object_id=user.pk,
+            object_repr='User',
+            message=f'User {user._id} was successfully GDPR deleted',
+            action_flag=USER_GDPR_DELETED
+        )
 
         return redirect(self.get_success_url())
 
@@ -416,7 +426,11 @@ class UserMergeAccounts(UserMixin, FormView):
         guid_to_be_merged = form.cleaned_data['user_guid_to_be_merged']
 
         user_to_be_merged = OSFUser.objects.get(guids___id=guid_to_be_merged, guids___id__isnull=False)
-        user.merge_user(user_to_be_merged)
+        merge_users.delay(user._id, user_to_be_merged._id)
+        messages.success(
+            self.request,
+            f'Merge of user {user_to_be_merged._id} into {user._id} has been queued and will run in the background.',
+        )
 
         return super().form_valid(form)
 
@@ -622,3 +636,60 @@ class UserDraftRegistrationsList(UserMixin, ListView):
                 'draft_registrations': query_set
             }
         )
+
+
+class UserAffiliationBaseView(UserMixin, ListView):
+    permission_required = 'osf.change_institution'
+    template_name = 'users/affiliated_institutions.html'
+    raise_exception = True
+
+    def get_queryset(self):
+        # Django template does not like attributes with underscores for some reason, so we annotate.
+        return self.get_object().get_affiliated_institutions().annotate(
+            guid=F('_id')
+        )
+
+    def get_context_data(self, **kwargs):
+        institutions = self.get_queryset()
+        context = super().get_context_data(**kwargs)
+        context['institutions'] = institutions
+        context['user'] = self.get_object()
+        return context
+
+
+class UserRemoveAffiliations(UserAffiliationBaseView):
+
+    def post(self, request, *args, **kwargs):
+        user = self.get_object()
+        data = dict(request.POST)
+
+        to_be_removed = list(data.keys())
+        removed_affiliations = [institution.replace('institution-', '') for institution in to_be_removed if 'institution-' in institution]
+        institutions_qs = Institution.objects.filter(id__in=removed_affiliations)
+        for institution in institutions_qs:
+            user.remove_affiliated_institution(institution._id)
+
+        if institutions_qs:
+            institutions_names = ' ,'.join(institutions_qs.values_list('name', flat=True))
+            messages.success(request, f'The following users were successfully removed: {institutions_names}')
+
+        return redirect('users:affiliations', guid=user.guid)
+
+
+class UserListAndAddAffiliations(UserAffiliationBaseView):
+
+    def post(self, request, *args, **kwargs):
+        user = self.get_object()
+        data = dict(request.POST)
+        del data['csrfmiddlewaretoken']  # just to remove the key from the form dict
+
+        institution = Institution.load(data['add-affiliation-form'][0])
+        if institution is None:
+            messages.error(request, f'Institution for guid: {data["add-affiliation-form"][0]} could not be found')
+            return redirect('users:affiliations', guid=user.guid)
+
+        user.add_or_update_affiliated_institution(institution)
+
+        messages.success(request, f'The following institution was successfully added: {institution.name}')
+
+        return redirect('users:affiliations', guid=user.guid)

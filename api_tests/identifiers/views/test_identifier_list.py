@@ -380,26 +380,26 @@ class TestPreprintIdentifierList:
 
         # test_unpublished_preprint_identifier_unauthenticated
         res = app.get(url_preprint_identifier, expect_errors=True)
-        assert res.status_code == 404
+        assert res.status_code == 410
 
         # test_unpublished_preprint_identifier_noncontrib_authenticated
         non_contrib = AuthUserFactory()
         res = app.get(url_preprint_identifier, auth=non_contrib.auth, expect_errors=True)
-        assert res.status_code == 404
+        assert res.status_code == 410
 
         # test_unpublished_preprint_identifier_admin_authenticated
         res = app.get(url_preprint_identifier, auth=user.auth, expect_errors=True)
-        assert res.status_code == 404
+        assert res.status_code == 410
 
         # test_unpublished_preprint_identifier_readcontrib_authenticated
         read_user = AuthUserFactory()
         preprint.add_contributor(read_user, READ, save=True)
         res = app.get(url_preprint_identifier, auth=read_user.auth, expect_errors=True)
-        assert res.status_code == 404
+        assert res.status_code == 410
 
         # test_published_preprint_identifier_unauthenticated
         res = app.get(url_preprint_identifier, expect_errors=True)
-        assert res.status_code == 404
+        assert res.status_code == 410
 
     def test_preprint_identifier_list_permissions_abandoned(
             self, app, user, data_preprint_identifier, preprint, url_preprint_identifier):

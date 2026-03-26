@@ -435,7 +435,7 @@ class TestProjectViews(OsfTestCase):
         assert registration.title in res.text
         assert res.status_code == 200
 
-        for route in ['files', 'wiki/home', 'contributors', 'settings', 'withdraw', 'register', 'register/fakeid']:
+        for route in ['files', 'contributors', 'settings', 'withdraw', 'register', 'register/fakeid']:
             res = self.app.get(f'{url}{route}/', auth=self.auth)
             assert res.status_code == 302, route
             res = self.app.get(f'{url}{route}/', auth=self.auth, follow_redirects=True)

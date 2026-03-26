@@ -96,12 +96,6 @@ PREPRINT_PROVIDER_DOMAINS = {
     'prefix': PROTOCOL,
     'suffix': '/'
 }
-# External Ember App Local Development
-USE_EXTERNAL_EMBER = False
-PROXY_EMBER_APPS = False
-# http://docs.python-requests.org/en/master/user/advanced/#timeouts
-EXTERNAL_EMBER_SERVER_TIMEOUT = 3.05
-EXTERNAL_EMBER_APPS = {}
 
 LOG_PATH = os.path.join(APP_PATH, 'logs')
 TEMPLATES_PATH = os.path.join(BASE_PATH, 'templates')
@@ -439,6 +433,9 @@ class CeleryConfig:
         'scripts.populate_new_and_noteworthy_projects',
         'website.search.elastic_search',
         'scripts.generate_sitemap',
+        'scripts.remove_after_use.populate_notification_subscriptions_node_file_updated',
+        'scripts.remove_after_use.populate_notification_subscriptions_user_global_file_updated',
+        'scripts.remove_after_use.populate_notification_subscriptions_user_global_reviews',
         'osf.management.commands.clear_expired_sessions',
         'osf.management.commands.delete_withdrawn_or_failed_registration_files',
         'osf.management.commands.migrate_pagecounter_data',
@@ -478,6 +475,8 @@ class CeleryConfig:
         'scripts.add_missing_identifiers_to_preprints',
         'osf.management.commands.approve_pending_schema_response',
         'api.share.utils',
+        'scripts.check_manual_restart_approval',
+        'scripts.enhanced_stuck_registration_audit',
     }
 
     try:
@@ -568,6 +567,9 @@ class CeleryConfig:
         'scripts.approve_embargo_terminations',
         'scripts.triggered_mails',
         'scripts.generate_sitemap',
+        'scripts.remove_after_use.populate_notification_subscriptions_node_file_updated',
+        'scripts.remove_after_use.populate_notification_subscriptions_user_global_file_updated',
+        'scripts.remove_after_use.populate_notification_subscriptions_user_global_reviews',
         'scripts.premigrate_created_modified',
         'scripts.add_missing_identifiers_to_preprints',
         'osf.management.commands.clear_expired_sessions',
@@ -579,6 +581,7 @@ class CeleryConfig:
         'osf.management.commands.approve_pending_schema_responses',
         'osf.management.commands.sync_doi_metadata',
         'api.providers.tasks',
+        'api.users.tasks',
         'osf.management.commands.daily_reporters_go',
         'osf.management.commands.monthly_reporters_go',
         'osf.external.spam.tasks',
