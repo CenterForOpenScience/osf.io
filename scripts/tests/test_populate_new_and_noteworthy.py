@@ -17,7 +17,7 @@ class TestPopulateNewAndNoteworthy(OsfTestCase):
         super().setUp()
 
         self.new_and_noteworthy_links_node = ProjectFactory()
-        self.new_and_noteworthy_links_node._id = TEST_NEW_AND_NOTEWORTHY_GUID
+        self.new_and_noteworthy_links_node._id = NEW_AND_NOTEWORTHY_LINKS_NODE
         self.new_and_noteworthy_links_node.save()
 
         self.nn1 = ProjectFactory(is_public=True, title='Noteworthy Project Alpha')
