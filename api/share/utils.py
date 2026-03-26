@@ -6,8 +6,11 @@ from http import HTTPStatus
 import logging
 
 from django.apps import apps
+from django.db.models import Q, OuterRef, Subquery
+from django.contrib.contenttypes.models import ContentType
 from celery.utils.time import get_exponential_backoff_interval
 import requests
+
 
 from framework.celery_tasks import app as celery_app
 from framework.celery_tasks.handlers import enqueue_task
@@ -80,6 +83,7 @@ def task__update_share(self, guid: str, is_backfill=False, osfmap_partition_name
         raise ValueError(f'unknown osfguid "{guid}"')
     _resource = _osfid_instance.referent
     _is_deletion = _should_delete_indexcard(_resource)
+    _resource.mark_indexing_failed()
     try:
         _response = (
             pls_delete_trove_record(_resource, osfmap_partition=_osfmap_partition)
@@ -115,6 +119,7 @@ def task__update_share(self, guid: str, is_backfill=False, osfmap_partition_name
         if HTTPStatus(_response.status_code).is_server_error:
             raise self.retry(exc=e)
     else:  # success response
+        _resource.mark_indexing_success()
         if not _is_deletion:
             # enqueue followup task for supplementary metadata
             _next_partition = _next_osfmap_partition(_osfmap_partition)
@@ -124,6 +129,39 @@ def task__update_share(self, guid: str, is_backfill=False, osfmap_partition_name
                     is_backfill=is_backfill,
                     osfmap_partition_name=_next_partition.name,
                 )
+
+
+@celery_app.task
+def task__reindex_failed_or_not_indexed_resource_into_share(resource_type: str, start_id: int = 0, chunk_count: int = 200, chunk_size: int = 500):
+    from osf.management.commands.recatalog_metadata import recatalog
+    queryset = get_not_indexed_guids_for_resource_with_no_indexed_guid(resource_type, first_guid=False)
+    # chunk count and chunk size up to discussion what will be better with Cloud Team
+    recatalog(queryset, start_id, chunk_count, chunk_size)
+
+
+def get_not_indexed_guids_for_resource_with_no_indexed_guid(resource_type: str, first_guid: bool = True):
+    from osf.models import Guid, Registration, Preprint, Node, OSFUser
+    from addons.osfstorage.models import OsfStorageFile
+    common_not_indexed_public_resource_extract_query = (
+        Q(is_public=True) & Q(deleted__isnull=True) &
+        (Q(has_been_indexed=False) | Q(has_been_indexed__isnull=True))
+    )
+    resource_mapper = {
+        'projects': (Node, common_not_indexed_public_resource_extract_query, ('first_guid', 'date_last_indexed', 'title')),
+        'preprints': (Preprint, common_not_indexed_public_resource_extract_query & Q(is_published=True), ('first_guid', 'date_last_indexed', 'title')),
+        'registries': (Registration, common_not_indexed_public_resource_extract_query, ('first_guid', 'date_last_indexed', 'title')),
+        'users': (OSFUser, Q(is_active=True) & Q(deleted__isnull=True) & (Q(has_been_indexed=False) | Q(has_been_indexed__isnull=True)), ('first_guid', 'fullname', 'date_last_indexed')),
+        'files': (OsfStorageFile, Q(deleted__isnull=True), ('first_guid', 'name', 'date_last_indexed')),
+    }
+    resource_model, query, values_to_return = resource_mapper.get(resource_type, 'projects')
+    if first_guid:
+        model_content_type = ContentType.objects.get_for_model(resource_model)
+        first_guid_sq = Guid.objects.filter(
+            content_type=model_content_type,
+            object_id=OuterRef('pk'),
+        ).order_by('created').values('_id')[:1]
+        return resource_model.objects.filter(query).annotate(first_guid=Subquery(first_guid_sq)).exclude(first_guid__isnull=True).values(*values_to_return)
+    return resource_model.objects.filter(query)
 
 
 def pls_send_trove_record(osf_item, *, is_backfill: bool, osfmap_partition: OsfmapPartition):
