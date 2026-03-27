@@ -87,3 +87,21 @@ class TestExternalLogin:
         assert res.json == {'external_id_provider': 'orcid', 'auth_user_fullname': 'external login'}
         user_one.reload()
         assert user_one.username in user_one.unconfirmed_emails
+
+    def test_existing_user_orcid_overwrites(self, app, payload, url, user_one, session_data, csrf_token):
+        user_one.external_identity = {
+            'orcid': {
+                '0000-0000-0000-0000': 'LINK',
+            }
+        }
+        user_one.save()
+        app.set_cookie(CSRF_COOKIE_NAME, csrf_token)
+        app.set_cookie(settings.COOKIE_NAME, str(session_data))
+        assert '0000-0000-0000-0000' in user_one.external_identity['orcid']
+        payload['data']['attributes']['email'] = user_one.username
+        with capture_notifications():
+            res = app.post_json_api(url, payload, headers={'X-CSRFToken': csrf_token})
+        assert res.status_code == 200
+        user_one.reload()
+        assert '0000-0000-0000-0000' not in user_one.external_identity['orcid']
+        assert user_one.external_identity['orcid'] == {'1234-1234-1234-1234': 'LINK'}
