@@ -25,7 +25,7 @@ from framework.auth import get_user
 from framework.auth.core import generate_verification_key
 from osf.models.institution import Institution
 
-from website import search
+from website.search import search
 from website.settings import EXTERNAL_IDENTITY_PROFILE
 
 from osf.models.admin_log_entry import (
@@ -563,7 +563,7 @@ class UserReindexElastic(UserMixin, View):
 
     def post(self, request, *args, **kwargs):
         user = self.get_object()
-        search.search.update_user(user, async_update=False)
+        search.update_user(user, async_update=False)
         update_admin_log(
             user_id=self.request.user.id,
             object_id=user._id,
