@@ -725,31 +725,31 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         from api.share.utils import update_share
         for _node in nodes:
             update_share(_node)
-        from website import search
+        from website.search import search, exceptions
         try:
             serialize = functools.partial(search.search.update_node, index=index, bulk=True, async_update=False)
-            search.search.bulk_update_nodes(serialize, nodes, index=index)
-        except search.exceptions.SearchUnavailableError as e:
+            search.bulk_update_nodes(serialize, nodes, index=index)
+        except exceptions.SearchUnavailableError as e:
             logger.exception(e)
             log_exception(e)
 
     def update_search(self):
         from api.share.utils import update_share
         update_share(self)
-        from website import search
+        from website.search import search, exceptions
         try:
-            search.search.update_node(self, bulk=False, async_update=True)
+            search.update_node(self, bulk=False, async_update=True)
             if self.collection_submissions.exists() and self.is_public:
-                search.search.update_collected_metadata(self._id)
-        except search.exceptions.SearchUnavailableError as e:
+                search.update_collected_metadata(self._id)
+        except exceptions.SearchUnavailableError as e:
             logger.exception(e)
             log_exception(e)
 
     def delete_search_entry(self):
-        from website import search
+        from website.search import search, exceptions
         try:
-            search.search.delete_node(self)
-        except search.exceptions.SearchUnavailableError as e:
+            search.delete_node(self)
+        except exceptions.SearchUnavailableError as e:
             logger.exception(e)
             log_exception(e)
 
