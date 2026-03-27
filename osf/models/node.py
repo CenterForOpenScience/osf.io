@@ -727,7 +727,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             update_share(_node)
         from website.search import search, exceptions
         try:
-            serialize = functools.partial(search.search.update_node, index=index, bulk=True, async_update=False)
+            serialize = functools.partial(search.update_node, index=index, bulk=True, async_update=False)
             search.bulk_update_nodes(serialize, nodes, index=index)
         except exceptions.SearchUnavailableError as e:
             logger.exception(e)
