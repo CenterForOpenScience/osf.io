@@ -29,10 +29,12 @@ class InstitutionSerializer(JSONAPISerializer):
         'id',
         'name',
         'auth_url',
+        'sso_availability',
     ])
 
     name = ser.CharField(read_only=True)
     id = ser.CharField(read_only=True, source='_id')
+    sso_availability = ser.CharField(read_only=True)
     description = ser.CharField(read_only=True)
     auth_url = ser.CharField(read_only=True)
     iri = ser.CharField(read_only=True, source='identifier_domain')

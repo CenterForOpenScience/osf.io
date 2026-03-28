@@ -139,7 +139,8 @@ class TestInstitutionChangeForm(AdminTestCase):
             'name': 'New Name',
             'logo_name': 'awesome_logo.png',
             'domains': 'http://kris.biz/, http://www.little.biz/',
-            '_id': 'newawesomeprov'
+            '_id': 'newawesomeprov',
+            'sso_availability': 'Public',
         }
         form = InstitutionForm(data=new_data)
         assert form.is_valid()
@@ -214,7 +215,8 @@ class TestCreateInstitution(AdminTestCase):
             'email_domains': FakeList('domain_name', n=1),
             'orcid_record_verified_source': '',
             'delegation_protocol': '',
-            'institutional_request_access_enabled': False
+            'institutional_request_access_enabled': False,
+            'sso_availability': 'Public',
         }
         form = InstitutionForm(data=data)
         assert form.is_valid()
