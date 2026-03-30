@@ -80,3 +80,24 @@ class TestInstitutionList:
         assert institution_one._id in ids
         assert institution_three._id in ids
         assert institution_two._id not in ids
+
+    def test_default_filter_excludes_institutions_with_sso_availability_hidden(
+            self, app, institution_one, institution_two, institution_three, url_institution
+    ):
+        institution_one.sso_availability = 'Unavailable'
+        institution_one.save()
+
+        institution_two.sso_availability = 'Public'
+        institution_two.save()
+
+        institution_three.sso_availability = 'Hidden'
+        institution_three.save()
+
+        res = app.get(url_institution)
+        assert res.status_code == 200
+
+        ids = [each['id'] for each in res.json['data']]
+        assert len(res.json['data']) == 2
+        assert institution_one._id in ids
+        assert institution_two._id in ids
+        assert institution_three._id not in ids
