@@ -63,7 +63,7 @@ class InstitutionManager(models.Manager):
     def get_all_institutions(self):
         return super().get_queryset()
 
-    def get_sso_institutions(self):
+    def get_non_hidden_institutions(self):
         return super().get_queryset().filter(deactivated__isnull=True, sso_availability__in=[SSOAvailability.PUBLIC.value, SSOAvailability.UNAVAILABLE.value])
 
 

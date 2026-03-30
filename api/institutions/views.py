@@ -90,7 +90,7 @@ class InstitutionList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin):
     def get_default_queryset(self):
         if 'filter[sso_availability]' in self.request.query_params:
             return Institution.objects.filter(_id__isnull=False, is_deleted=False)
-        return Institution.objects.get_sso_institutions().filter(_id__isnull=False, is_deleted=False)
+        return Institution.objects.get_non_hidden_institutions().filter(_id__isnull=False, is_deleted=False)
 
     # overrides ListAPIView
     def get_queryset(self):
