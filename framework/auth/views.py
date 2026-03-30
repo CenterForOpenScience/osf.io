@@ -1097,7 +1097,8 @@ def external_login_email_post():
             # 1. update user oauth, with pending status
             external_identity[external_id_provider][external_id] = 'LINK'
             if external_id_provider in user.external_identity:
-                if external_id_provider == 'orcid':
+                # v2 looks to be used for auth but add orcid external identity rewrite updates for v1 as well
+                if external_id_provider == settings.EXTERNAL_IDENTITY_PROFILE.get('OrcidProfile'):
                     user.external_identity[external_id_provider] = external_identity[external_id_provider]
                 else:
                     user.external_identity[external_id_provider].update(external_identity[external_id_provider])
