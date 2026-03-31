@@ -3,13 +3,17 @@ from datetime import datetime, timezone
 import pytest
 from unittest import mock
 
+from framework.auth.core import Auth
+
 from osf_tests.factories import (
     AuthUserFactory,
     PreprintFactory,
     NodeFactory,
+    ProjectFactory,
     RegistrationFactory,
     # UserFactory,
 )
+from osf.utils.permissions import READ
 from api_tests.utils import create_test_file
 
 
@@ -351,3 +355,63 @@ class TestGuidFields:
                 'surrounding_guids': None,
             },
         )
+
+
+@pytest.mark.django_db
+class TestContributorExclusion:
+
+    def test_creator_pageview_not_recorded(self, app, mock_save):
+        user = AuthUserFactory()
+        project = ProjectFactory(creator=user)
+        payload = counted_usage_payload(
+            item_guid=project._id,
+            action_labels=['view', 'web'],
+            pageview_info={'page_url': f'https://osf.io/{project._id}/'},
+        )
+        resp = app.post_json_api(COUNTED_USAGE_URL, payload, auth=user.auth)
+        assert resp.status_code == 204
+        assert mock_save.call_count == 0
+
+    def test_read_contributor_pageview_not_recorded(self, app, mock_save):
+        creator = AuthUserFactory()
+        reader = AuthUserFactory()
+        project = ProjectFactory(creator=creator)
+        project.add_contributor(reader, permissions=READ, auth=Auth(creator))
+        payload = counted_usage_payload(
+            item_guid=project._id,
+            action_labels=['view', 'web'],
+            pageview_info={'page_url': f'https://osf.io/{project._id}/analytics/'},
+        )
+        resp = app.post_json_api(COUNTED_USAGE_URL, payload, auth=reader.auth)
+        assert resp.status_code == 204
+        assert mock_save.call_count == 0
+
+    def test_non_contributor_pageview_recorded(self, app, mock_save):
+        creator = AuthUserFactory()
+        visitor = AuthUserFactory()
+        project = ProjectFactory(creator=creator, is_public=True)
+        payload = counted_usage_payload(
+            item_guid=project._id,
+            action_labels=['view', 'web'],
+            pageview_info={'page_url': f'https://osf.io/{project._id}/'},
+        )
+        resp = app.post_json_api(COUNTED_USAGE_URL, payload, auth=visitor.auth)
+        assert resp.status_code == 201
+        assert mock_save.call_count == 1
+
+    def test_parent_contributor_not_on_child_component_pageview_recorded(self, app, mock_save):
+        creator = AuthUserFactory()
+        child_owner = AuthUserFactory()
+        parent_reader = AuthUserFactory()
+        parent = ProjectFactory(creator=creator, is_public=True)
+        child = NodeFactory(parent=parent, creator=child_owner, is_public=True)
+        parent.add_contributor(parent_reader, permissions=READ, auth=Auth(creator))
+        assert not child.contributors_and_group_members.filter(guids___id=parent_reader._id).exists()
+        payload = counted_usage_payload(
+            item_guid=child._id,
+            action_labels=['view', 'web'],
+            pageview_info={'page_url': f'https://osf.io/{child._id}/'},
+        )
+        resp = app.post_json_api(COUNTED_USAGE_URL, payload, auth=parent_reader.auth)
+        assert resp.status_code == 201
+        assert mock_save.call_count == 1
