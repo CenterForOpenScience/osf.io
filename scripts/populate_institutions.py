@@ -12,13 +12,13 @@ django.setup()
 
 from website import settings
 from website.app import init_app
-from osf.models import Institution
+from osf.models.institution import Institution, SSOAvailability, IntegrationType
 from website.search.search import update_institution
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
 
-ENVS = ['prod', 'stage', 'stage2', 'stage3', 'test', 'local']
+ENVS = ['prod', 'stage', 'stage2', 'stage3', 'test', 'local', 'auto_generated']
 
 # TODO: Store only the Entity IDs in OSF DB and move the URL building process to CAS
 SHIBBOLETH_SP_LOGIN = f'{settings.CAS_SERVER_URL}/Shibboleth.sso/Login?entityID={{}}'
@@ -37,7 +37,10 @@ def encode_uri_component(val):
 
 
 def update_or_create(inst_data):
-    inst = Institution.load(inst_data['_id'])
+    try:
+        inst = Institution.objects.get_all_institutions().get(_id=inst_data['_id'])
+    except Institution.DoesNotExist:
+        inst = None
     if inst:
         for key, val in inst_data.items():
             setattr(inst, key, val)
@@ -51,6 +54,53 @@ def update_or_create(inst_data):
         print(f'Added new institution: {inst._id}')
         update_institution(inst)
         return inst, True
+
+
+PROTOCOL_MAP = {
+    IntegrationType.SAML_SHIBBOLETH.value: 'SAML',
+    IntegrationType.CAS_PAC4J.value: 'CAS',
+    IntegrationType.OAUTH_PAC4J.value: 'OAuth',
+    IntegrationType.AFFILIATION_VIA_ORCID.value: 'ORCiD',
+    IntegrationType.NONE.value: 'None',
+}
+
+
+DEACTIVATED_STATES = [
+    None,
+    '2026-01-01T00:00:00+00:00',
+]
+
+
+def get_valid_sso_states(protocol, deactivated):
+    is_active = deactivated is None
+    if not protocol:
+        return [SSOAvailability.UNAVAILABLE.value]
+    if not is_active:
+        return [SSOAvailability.HIDDEN.value]
+    return [SSOAvailability.PUBLIC.value, SSOAvailability.HIDDEN.value]
+
+
+def generate_test_institutions():
+    institutions = []
+
+    for protocol in PROTOCOL_MAP.keys():
+        for deactivated in DEACTIVATED_STATES:
+            for availability in get_valid_sso_states(protocol, deactivated):
+                _id = f"{PROTOCOL_MAP[protocol]}_{availability}_{'a' if deactivated is None else 'i'}".lower()
+                institutions.append({
+                    '_id': _id,
+                    'name': f'Test Institution [{PROTOCOL_MAP[protocol] if protocol else "None"} {availability} {"Inactive" if deactivated else "Active"}]',
+                    'description': f'Description for {PROTOCOL_MAP[protocol] if protocol else "None"} {availability} {"Inactive" if deactivated else "Active"}',
+                    'login_url': SHIBBOLETH_SP_LOGIN.format(encode_uri_component(f'{_id}-entity-id')) if protocol == IntegrationType.SAML_SHIBBOLETH.value else None,
+                    'logout_url': SHIBBOLETH_SP_LOGOUT.format(encode_uri_component(f'{settings.DOMAIN}{_id}')) if protocol == IntegrationType.SAML_SHIBBOLETH.value else None,
+                    'domains': [],
+                    'email_domains': [f'{_id}.osf.io'] if not protocol else [],
+                    'delegation_protocol': protocol,
+                    'sso_availability': availability,
+                    'deactivated': deactivated,
+                })
+
+    return institutions
 
 
 def main(default_args=False):
@@ -67,7 +117,12 @@ def main(default_args=False):
     if not server_env or server_env not in ENVS:
         logger.error(f'A valid environment must be specified: {ENVS}')
         sys.exit(1)
-    institutions = INSTITUTIONS[server_env]
+
+    if server_env == 'auto_generated':
+        logger.info('Generating institutions with all combinations of protocol, availability, and deactivated states for testing purposes.')
+        institutions = generate_test_institutions()
+    else:
+        institutions = INSTITUTIONS[server_env]
 
     if not update_all and not update_ids:
         logger.error('Nothing to update or create. Please either specify a list of institutions '
