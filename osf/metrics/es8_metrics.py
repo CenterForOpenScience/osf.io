@@ -1,6 +1,6 @@
 from __future__ import annotations
 import datetime
-
+import enum
 import elasticsearch8.dsl as esdsl
 import elasticsearch_metrics.imps.elastic8 as djelme
 
@@ -91,6 +91,100 @@ class OsfCountedUsageRecord(djelme.CountedUsageRecord):
     pageview_info: PageviewInfo
 
 
+class CountedAuthUsage(djelme.CountedUsageRecord):
+    """CountedAuthUsage
+
+    Something was used! Let's quickly take note of that and
+    move on, then come back later to query/analyze/investigate.
+
+    Aim to support a COUNTER-style reporting api
+    (see https://cop5.projectcounter.org/en/5.0.2/)
+    """
+
+    # where noted, fields correspond to defined terms from COUNTER
+    # https://cop5.projectcounter.org/en/5.0.2/appendices/a-glossary-of-terms.html
+    platform_iri: str
+    provider_id: str
+    session_id: str
+    item_guid: str
+    item_type: str
+    surrounding_guids: list[str]
+    item_public: bool
+    user_is_authenticated: bool
+    action_labels: list[str]
+    class ActionLabel(enum.Enum):
+        SEARCH = 'search'       # counter:Search
+        VIEW = 'view'           # counter:Investigation
+        DOWNLOAD = 'download'   # counter:Request
+        WEB = 'web'             # counter:Regular (aka "pageview")
+        API = 'api'             # counter:TDM (aka "non-web api usage")
+        # TODO: count api usage, distinguish between web and non-web api requests
+
+    # pageviews get additional info to support the "node analytics" view
+    # (see `api.metrics.views.NodeAnalyticsQuery`)
+    pageview_info: PageviewInfo
+
+    class Meta:
+        dynamic = djelme.MetaField('strict')
+        source = djelme.MetaField(enabled=True)
+
+
+class BasePreprintMetrics(djelme.CountedUsageRecord):
+    '''
+        inherited fields:
+            platform_iri: str
+            database_iri: str
+            item_iri: str
+            sessionhour_id: str
+            within_iris: list[str]
+    '''
+    count: int
+    provider_id: str
+    user_id: str
+    preprint_id: str
+    version: str
+    path: str
+
+    class Index:
+        settings = {
+            'number_of_shards': 1,
+            'number_of_replicas': 1,
+            'refresh_interval': '1s',
+        }
+
+    class Meta:
+        abstract = True
+        source = djelme.MetaField(enabled=True)
+
+
+class PreprintView(BasePreprintMetrics):
+    pass
+
+
+class PreprintDownload(BasePreprintMetrics):
+    pass
+
+
+class RegistriesModerationMetrics(djelme.CountedUsageRecord):
+    registration_id: str
+    provider_id: str
+    trigger: str
+    from_state: str
+    to_state: str
+    user_id: str
+    comment: str
+
+    class Index:
+        settings = {
+            'number_of_shards': 1,
+            'number_of_replicas': 1,
+            'refresh_interval': '1s',
+        }
+
+    class Meta:
+        source = djelme.MetaField(enabled=True)
+
+
 ###
 # Reusable inner objects for reports
 
@@ -132,8 +226,72 @@ class RegistrationRunningTotals(esdsl.InnerDoc):
     withdrawn_daily: int
 
 
+class UsageByStorageAddon(esdsl.InnerDoc):
+    addon_shortname: str
+    enabled_usersettings: RunningTotal
+    linked_usersettings: RunningTotal
+    deleted_usersettings: RunningTotal
+    usersetting_links: RunningTotal
+    connected_nodesettings: RunningTotal
+    disconnected_nodesettings: RunningTotal
+    deleted_nodesettings: RunningTotal
+
+
 ###
 # Cyclic reports
+
+
+class StorageAddonUsage(djelme.CyclicRecord, cycle_timedepth=djelme.DAILY):
+    usage_by_addon: UsageByStorageAddon
+
+
+class DownloadCountReport(djelme.CyclicRecord, cycle_timedepth=djelme.DAILY):
+    daily_file_downloads: int
+
+
+class InstitutionSummaryReport(djelme.CyclicRecord, cycle_timedepth=djelme.DAILY):
+    UNIQUE_TOGETHER_FIELDS = ('cycle_coverage', 'institution_id',)
+
+    institution_id: str
+    institution_name: str
+    users: RunningTotal
+    nodes: NodeRunningTotals
+    projects: NodeRunningTotals
+    registered_nodes: RegistrationRunningTotals
+    registered_projects: RegistrationRunningTotals
+
+
+class NewUserDomainReport(djelme.CyclicRecord, cycle_timedepth=djelme.DAILY):
+    UNIQUE_TOGETHER_FIELDS = ('cycle_coverage', 'domain_name',)
+
+    domain_name: str
+    domain_name: int
+
+
+class NodeSummaryReport(djelme.CyclicRecord, cycle_timedepth=djelme.DAILY):
+    nodes:  NodeRunningTotals
+    projects: NodeRunningTotals
+    registered_nodes: RegistrationRunningTotals
+    registered_projects: RegistrationRunningTotals
+
+
+class OsfstorageFileCountReport(djelme.CyclicRecord, cycle_timedepth=djelme.DAILY):
+    files: FileRunningTotals
+
+
+class PreprintSummaryReport(djelme.CyclicRecord, cycle_timedepth=djelme.DAILY):
+    UNIQUE_TOGETHER_FIELDS = ('cycle_coverage', 'provider_key',)
+    provider_key: str
+    preprint_count: int
+
+
+class UserSummaryReport(djelme.CyclicRecord, cycle_timedepth=djelme.DAILY):
+    active: int
+    deactivated: int
+    merged: int
+    new_users_daily: int
+    new_users_with_institution_daily: int
+    unconfirmed: int
 
 
 class SpamSummaryReport(djelme.CyclicRecord, cycle_timedepth=djelme.MONTHLY):
@@ -151,7 +309,7 @@ class SpamSummaryReport(djelme.CyclicRecord, cycle_timedepth=djelme.MONTHLY):
 
 
 class InstitutionalUserReport(djelme.CyclicRecord, cycle_timedepth=djelme.MONTHLY):
-    # TODO: UNIQUE_TOGETHER_FIELDS = ('report_yearmonth', 'institution_id', 'user_id',)
+    UNIQUE_TOGETHER_FIELDS = ('cycle_coverage', 'institution_id', 'user_id',)
     institution_id: str
     # user info:
     user_id: str
@@ -172,7 +330,7 @@ class InstitutionalUserReport(djelme.CyclicRecord, cycle_timedepth=djelme.MONTHL
 
 
 class InstitutionMonthlySummaryReport(djelme.CyclicRecord, cycle_timedepth=djelme.MONTHLY):
-    UNIQUE_TOGETHER_FIELDS = ('report_yearmonth', 'institution_id', )
+    UNIQUE_TOGETHER_FIELDS = ('cycle_coverage', 'institution_id', )
     institution_id: str
     user_count: int
     public_project_count: int
@@ -187,7 +345,7 @@ class InstitutionMonthlySummaryReport(djelme.CyclicRecord, cycle_timedepth=djelm
 
 
 class PublicItemUsageReport(djelme.CyclicRecord, cycle_timedepth=djelme.MONTHLY):
-    # TODO: UNIQUE_TOGETHER_FIELDS = ('report_yearmonth', 'item_osfid')
+    UNIQUE_TOGETHER_FIELDS = ('cycle_coverage', 'item_osfid')
 
     # where noted, fields are meant to correspond to defined terms from COUNTER
     # https://cop5.projectcounter.org/en/5.1/appendices/a-glossary-of-terms.html
