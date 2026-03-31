@@ -37,9 +37,11 @@ def encode_uri_component(val):
 
 
 def update_or_create(inst_data):
-    inst = Institution.objects.get_all_institutions().filter(_id=inst_data['_id'])
-    if inst.exists():
-        inst = inst.first()
+    try:
+        inst = Institution.objects.get_all_institutions().get(_id=inst_data['_id'])
+    except Institution.DoesNotExist:
+        inst = None
+    if inst:
         for key, val in inst_data.items():
             setattr(inst, key, val)
         inst.save()
@@ -90,7 +92,7 @@ def generate_test_institutions():
                     'name': f'Test Institution [{PROTOCOL_MAP[protocol] if protocol else "None"} {availability} {"Inactive" if deactivated else "Active"}]',
                     'description': f'Description for {PROTOCOL_MAP[protocol] if protocol else "None"} {availability} {"Inactive" if deactivated else "Active"}',
                     'login_url': SHIBBOLETH_SP_LOGIN.format(encode_uri_component(f'{_id}-entity-id')) if protocol == IntegrationType.SAML_SHIBBOLETH.value else None,
-                    'logout_url': SHIBBOLETH_SP_LOGOUT.format(encode_uri_component(f'https://osf.io/{_id}')) if protocol == IntegrationType.SAML_SHIBBOLETH.value else None,
+                    'logout_url': SHIBBOLETH_SP_LOGOUT.format(encode_uri_component(f'{settings.DOMAIN}{_id}')) if protocol == IntegrationType.SAML_SHIBBOLETH.value else None,
                     'domains': [],
                     'email_domains': [f'{_id}.osf.io'] if not protocol else [],
                     'delegation_protocol': protocol,
