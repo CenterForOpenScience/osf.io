@@ -51,4 +51,7 @@ urlpatterns = [
     re_path(r'^(?P<guid>[a-z0-9]+)/system_tags/(?P<tag_id>[a-z0-9]+)/remove/$', views.NodeRemoveSystemTag.as_view(), name='remove-system-tag'),
     re_path(r'^(?P<guid>[a-z0-9]+)/update_permissions/$', views.NodeUpdatePermissionsView.as_view(), name='update-permissions'),
     re_path(r'^(?P<guid>[a-z0-9]+)/remove_file/$', views.NodeRemoveFileView.as_view(), name='remove-file'),
+    re_path(r'^(?P<guid>[a-z0-9]+)/add_osfstorage_file/$', views.NodeAddOsfStorageFileView.as_view(), name='add-osfstorage-file'),
+    re_path(r'^(?P<guid>[a-z0-9]+)/remove_osfstorage_file/$', views.NodeRemoveOsfStorageFileView.as_view(), name='remove-osfstorage-file'),
+
 ]

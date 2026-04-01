@@ -11,6 +11,7 @@ from django.core.exceptions import PermissionDenied, ValidationError
 from django.contrib.auth.models import Permission
 from django.contrib.contenttypes.models import ContentType
 
+from addons.osfstorage.models import OsfStorageFile
 from osf.models import (
     AdminLogEntry,
     NodeLog,
@@ -21,9 +22,11 @@ from osf.models import (
     DraftRegistration,
 )
 from admin.nodes.views import (
+    NodeAddOsfStorageFileView,
     NodeConfirmSpamView,
     NodeDeleteView,
     NodeRemoveContributorView,
+    NodeRemoveOsfStorageFileView,
     NodeView,
     NodeReindexShare,
     NodeReindexElastic,
@@ -40,6 +43,7 @@ from admin.nodes.views import (
 )
 from admin_tests.utilities import setup_log_view, setup_view, handle_post_view_request
 from api_tests.share._utils import mock_update_share
+from osf.models.files import Folder
 from tests.utils import capture_notifications
 from website import settings
 from framework.auth.core import Auth
@@ -905,3 +909,132 @@ class TestRegistrationRevertToDraft(AdminTestCase):
         self.registration = self.no_moderation_draft.registered_node
 
         assert self.registration.sanction is None
+
+
+class TestOsfStorageRegistrationFileAdd(AdminTestCase):
+
+    def _create_file(self, instance, filename):
+        return OsfStorageFile.create(
+            target_object_id=instance.id,
+            target_content_type=ContentType.objects.get_for_model(instance),
+            path=f'/{filename}',
+            name=filename,
+            materialized_path=f'/{filename}'
+        )
+
+    @property
+    def _view(self):
+        return NodeAddOsfStorageFileView()
+
+    def check_message(self, expected_message):
+        assert expected_message == self.request._messages._queued_messages[0].message
+
+    def setUp(self):
+        super().setUp()
+        self.project = ProjectFactory()
+        self.project2 = ProjectFactory()
+        self.registration_registered_from = RegistrationFactory(project=self.project)
+        self.registration_without_registered_from = RegistrationFactory()
+        self.registration_without_registered_from.registered_from = None
+        self.registration_without_registered_from.save()
+
+        self.request = RequestFactory().get('/fake_path')
+        patch_messages(self.request)
+
+    def test_no_guid_found(self):
+        self.request.POST = {'file-guid': '1234'}
+        view = setup_log_view(self._view, self.request, guid=self.registration_registered_from._id)
+        view.post(self.request)
+        self.check_message('No file found with the provided guid.')
+
+    def test_no_parent_registration(self):
+        file = self._create_file(self.project, 'file.txt')
+        file.save()
+        file_guid = file.get_guid(create=True)
+        self.request.POST = {'file-guid': file_guid._id}
+        view = setup_log_view(self._view, self.request, guid=self.registration_without_registered_from._id)
+        view.post(self.request)
+        self.check_message('The registration does not have the parent node.')
+
+    def test_file_is_not_attached_to_parent(self):
+        file = self._create_file(self.project2, 'file.txt')
+        file.save()
+        file_guid = file.get_guid(create=True)
+        self.request.POST = {'file-guid': file_guid._id}
+        view = setup_log_view(self._view, self.request, guid=self.registration_registered_from._id)
+        view.post(self.request)
+        self.check_message('The file with the provided guid is not part of the parent node.')
+
+    def test_file_is_added_to_registration_osfstorage(self):
+        file = self._create_file(self.project, 'file.txt')
+        file.save()
+        file_guid = file.get_guid(create=True)
+        self.request.POST = {'file-guid': file_guid._id}
+        registration_osfstorage = self.registration_registered_from.get_addon('osfstorage')
+        # create archive folder for a registration
+        registration_osfstorage.get_root()._create_child(name=registration_osfstorage.archive_folder_name, kind=Folder)
+        view = setup_log_view(self._view, self.request, guid=self.registration_registered_from._id)
+        view.post(self.request)
+
+        # check that file is added to registration osfstorage under archive folder
+        assert registration_osfstorage.get_root().children.get(
+            name=registration_osfstorage.archive_folder_name
+        ).children.filter(name=file.name).exists()
+
+
+class TestOsfStorageRegistrationFileRemove(AdminTestCase):
+
+    def _create_file(self, instance, filename):
+        return OsfStorageFile.create(
+            target_object_id=instance.id,
+            target_content_type=ContentType.objects.get_for_model(instance),
+            path=f'/{filename}',
+            name=filename,
+            materialized_path=f'/{filename}'
+        )
+
+    @property
+    def _view(self):
+        return NodeRemoveOsfStorageFileView()
+
+    def check_message(self, expected_message):
+        assert expected_message == self.request._messages._queued_messages[0].message
+
+    def setUp(self):
+        super().setUp()
+        self.project = ProjectFactory()
+        self.registration_registered_from = RegistrationFactory(project=self.project)
+
+        self.request = RequestFactory().get('/fake_path')
+        patch_messages(self.request)
+
+    def test_no_guid_found(self):
+        self.request.POST = {'file-guid': '1234'}
+        view = setup_log_view(self._view, self.request, guid=self.registration_registered_from._id)
+        view.post(self.request)
+        self.check_message('No file found with the provided guid.')
+
+    def test_file_is_removed_from_registration_osfstorage(self):
+        file = self._create_file(self.project, 'file2.txt')
+        file.save()
+        file_guid = file.get_guid(create=True)
+        self.request.POST = {'file-guid': file_guid._id}
+        registration_osfstorage = self.registration_registered_from.get_addon('osfstorage')
+        # create archive folder for a registration
+        registration_osfstorage.get_root()._create_child(name=registration_osfstorage.archive_folder_name, kind=Folder)
+        # add file to osfstorage
+        view = setup_log_view(NodeAddOsfStorageFileView(), self.request, guid=self.registration_registered_from._id)
+        view.post(self.request)
+
+        # file exists in archive folder
+        assert registration_osfstorage.get_root().children.get(
+            name=registration_osfstorage.archive_folder_name
+        ).children.filter(name=file.name).exists()
+
+        view = setup_log_view(NodeRemoveOsfStorageFileView(), self.request, guid=self.registration_registered_from._id)
+        view.post(self.request)
+
+        # check that file is removed from registration osfstorage
+        assert not registration_osfstorage.get_root().children.get(
+            name=registration_osfstorage.archive_folder_name
+        ).children.filter(name=file.name).exists()
