@@ -2,6 +2,13 @@
 
 We follow the CalVer (https://calver.org/) versioning scheme: YY.MINOR.MICRO.
 
+26.6.3 (2026-04-02)
+===================
+
+- Readd reindex share button
+- Fix missing notification during email throttle check
+- Fix filter query in AbstractProviderSubscriptionList
+
 26.6.0 (2026-03-26)
 ===================
 
