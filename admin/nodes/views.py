@@ -895,7 +895,7 @@ class NodeRemoveOsfStorageFileView(NodeMixin, View):
             return redirect(self.get_success_url())
 
         file = guid.referent
-        registration.files.filter(copied_from_id=file.id).delete()
+        registration.files.filter(id=file.id).delete()
         messages.success(request, 'The file was successfully removed.')
         return redirect(self.get_success_url())
 

@@ -1018,11 +1018,13 @@ class TestOsfStorageRegistrationFileRemove(AdminTestCase):
         file = self._create_file(self.project, 'file2.txt')
         file.save()
         file_guid = file.get_guid(create=True)
-        self.request.POST = {'file-guid': file_guid._id}
-        registration_osfstorage = self.registration_registered_from.get_addon('osfstorage')
+
         # create archive folder for a registration
+        registration_osfstorage = self.registration_registered_from.get_addon('osfstorage')
         registration_osfstorage.get_root()._create_child(name=registration_osfstorage.archive_folder_name, kind=Folder)
+
         # add file to osfstorage
+        self.request.POST = {'file-guid': file_guid._id}
         view = setup_log_view(NodeAddOsfStorageFileView(), self.request, guid=self.registration_registered_from._id)
         view.post(self.request)
 
@@ -1030,11 +1032,16 @@ class TestOsfStorageRegistrationFileRemove(AdminTestCase):
         assert registration_osfstorage.get_root().children.get(
             name=registration_osfstorage.archive_folder_name
         ).children.filter(name=file.name).exists()
+        # file exists but with different guid
+        registration_file = self.registration_registered_from.files.get(name=file.name)
+        registration_file.get_guid(create=True)
 
+        # delete this file with different guid
+        self.request.POST = {'file-guid': registration_file.guids.first()._id}
         view = setup_log_view(NodeRemoveOsfStorageFileView(), self.request, guid=self.registration_registered_from._id)
         view.post(self.request)
-
         # check that file is removed from registration osfstorage
         assert not registration_osfstorage.get_root().children.get(
             name=registration_osfstorage.archive_folder_name
-        ).children.filter(name=file.name).exists()
+        ).children.exists()
+        assert not self.registration_registered_from.files.exists()
