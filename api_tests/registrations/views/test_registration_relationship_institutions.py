@@ -43,11 +43,11 @@ class TestRegistrationRelationshipInstitutions(RelationshipInstitutionsTestMixin
         return RegistrationFactory
 
     # test override, write contribs can't update institution
-    def test_put_not_admin_but_affiliated(self, app, institution_one, node, node_institutions_url):
+    def test_put_not_admin_but_affiliated_read_permission(self, app, institution_one, node, node_institutions_url):
         user = AuthUserFactory()
         user.add_or_update_affiliated_institution(institution_one)
         user.save()
-        node.add_contributor(user)
+        node.add_contributor(user, permissions=permissions.READ)
         node.save()
 
         res = app.put_json_api(
@@ -61,7 +61,25 @@ class TestRegistrationRelationshipInstitutions(RelationshipInstitutionsTestMixin
         assert res.status_code == 403
         assert institution_one not in node.affiliated_institutions.all()
 
-    # test override, write contribs cannot delete
+    def test_put_not_admin_but_affiliated_and_write_permission(self, app, institution_one, node, node_institutions_url):
+        user = AuthUserFactory()
+        user.add_or_update_affiliated_institution(institution_one)
+        user.save()
+        node.add_contributor(user)
+        node.save()
+
+        res = app.put_json_api(
+            node_institutions_url,
+            self.create_payload([institution_one]),
+            expect_errors=False,
+            auth=user.auth
+        )
+
+        node.reload()
+        assert res.status_code == 200
+        assert institution_one in node.affiliated_institutions.all()
+
+    # test override, write contribs can delete
     def test_delete_user_is_read_write(self, app, institution_one, node, node_institutions_url):
         user = AuthUserFactory()
         user.add_or_update_affiliated_institution(institution_one)
@@ -74,10 +92,10 @@ class TestRegistrationRelationshipInstitutions(RelationshipInstitutionsTestMixin
             node_institutions_url,
             self.create_payload([institution_one]),
             auth=user.auth,
-            expect_errors=True
+            expect_errors=False
         )
 
-        assert res.status_code == 403
+        assert res.status_code == 204
 
     def test_read_write_contributor_can_add_affiliated_institution(
             self, app, write_contrib, write_contrib_institution, node, node_institutions_url):
@@ -92,10 +110,10 @@ class TestRegistrationRelationshipInstitutions(RelationshipInstitutionsTestMixin
                 ]
             },
             auth=write_contrib.auth,
-            expect_errors=True
+            expect_errors=False
         )
-        assert res.status_code == 403
-        assert write_contrib_institution not in node.affiliated_institutions.all()
+        assert res.status_code == 201
+        assert write_contrib_institution in node.affiliated_institutions.all()
 
     def test_read_write_contributor_can_remove_affiliated_institution(
             self, app, write_contrib, write_contrib_institution, node, node_institutions_url):
@@ -112,10 +130,10 @@ class TestRegistrationRelationshipInstitutions(RelationshipInstitutionsTestMixin
                 ]
             },
             auth=write_contrib.auth,
-            expect_errors=True
+            expect_errors=False
         )
-        assert res.status_code == 403
-        assert write_contrib_institution in node.affiliated_institutions.all()
+        assert res.status_code == 204
+        assert write_contrib_institution not in node.affiliated_institutions.all()
 
     def test_user_with_institution_and_permissions_through_patch(self, app, user, institution_one, institution_two,
                                                                  node, node_institutions_url):

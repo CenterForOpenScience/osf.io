@@ -321,7 +321,7 @@ def project_manage_contributors(auth, node, **kwargs):
         raise HTTPError(http_status.HTTP_409_CONFLICT, data={'message_long': error.args[0]})
 
     # If user has removed herself from project, alert; redirect to
-    # node summary if node is public, else to user's dashboard page
+    # node summary if node is public, else to user's my_projects page
     if not node.is_contributor_or_group_member(auth.user):
         status.push_status_message(
             'You have removed yourself as a contributor from this project',
@@ -330,7 +330,7 @@ def project_manage_contributors(auth, node, **kwargs):
         )
         if node.is_public:
             return {'redirectUrl': node.url}
-        return {'redirectUrl': web_url_for('dashboard')}
+        return {'redirectUrl': web_url_for('my_projects')}
     # Else if user has revoked her admin permissions, alert and stay on
     # current page
     if not node.has_permission(auth.user, ADMIN):
@@ -385,7 +385,7 @@ def project_remove_contributor(auth, **kwargs):
                 'message_long': 'Could not remove contributor.'})
 
         # On parent node, if user has removed herself from project, alert; redirect to
-        # node summary if node is public, else to user's dashboard page
+        # node summary if node is public, else to user's my_projects page
         if not node.is_contributor_or_group_member(auth.user) and node_id == parent_id:
             status.push_status_message(
                 'You have removed yourself as a contributor from this project',
@@ -396,7 +396,7 @@ def project_remove_contributor(auth, **kwargs):
             if node.is_public:
                 redirect_url = {'redirectUrl': node.url}
             else:
-                redirect_url = {'redirectUrl': web_url_for('dashboard')}
+                redirect_url = {'redirectUrl': web_url_for('my_projects')}
 
         if node.is_public:
             node.update_search()

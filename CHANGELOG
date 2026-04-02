@@ -2,6 +2,20 @@
 
 We follow the CalVer (https://calver.org/) versioning scheme: YY.MINOR.MICRO.
 
+26.6.0 (2026-03-26)
+===================
+
+- Miscellaneous improvements and bug fixes
+
+26.5.1 (2026-03-25)
+===================
+
+- Post-NR hotfixes
+  - Rework notification history cleanup task
+  - Update merge subscription provider task
+  - Enable overriding features.yaml for local dev to use mailhog
+  - Remove deprecated routes, script and commands
+
 26.5.0 (2026-03-13)
 ===================
 

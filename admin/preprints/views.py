@@ -50,7 +50,7 @@ from osf.models.admin_log_entry import (
 )
 from osf.utils.workflows import DefaultStates
 from osf.utils.permissions import API_CONTRIBUTOR_PERMISSIONS
-from website import search
+from website.search import search
 from website.files.utils import copy_files
 from website.preprints.tasks import on_preprint_updated
 
@@ -256,7 +256,7 @@ class PreprintReindexElastic(PreprintMixin, View):
 
     def post(self, request, *args, **kwargs):
         preprint = self.get_object()
-        search.search.update_preprint(preprint, bulk=False, async_update=False)
+        search.update_preprint(preprint, bulk=False, async_update=False)
         update_admin_log(
             user_id=self.request.user.id,
             object_id=preprint._id,

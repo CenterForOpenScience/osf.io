@@ -19,6 +19,7 @@ from framework import sentry
 from framework.celery_tasks import app as celery_app
 from django.db.models import Q, F, OuterRef, Subquery
 from osf.models import OSFUser, AbstractNode, Preprint, PreprintProvider
+from osf.models.spam import SpamStatus
 from osf.utils.workflows import DefaultStates
 from scripts import utils as script_utils
 from website import settings
@@ -185,7 +186,7 @@ class Sitemap:
         # AbstractNode urls (Nodes and Registrations, no Collections)
         objs = (AbstractNode.objects
             .filter(is_public=True, is_deleted=False, retraction_id__isnull=True)
-            .exclude(type__in=['osf.collection'])
+            .exclude(type__in=['osf.collection'], spam_status__in=[SpamStatus.SPAM, SpamStatus.FLAGGED])
             .values('guids___id', 'modified'))
         progress.start(objs.count(), 'NODE: ')
         for obj in objs:
@@ -198,8 +199,8 @@ class Sitemap:
                 self.log_errors('NODE', obj['guids___id'], e)
             progress.increment()
         progress.stop()
-        #Removed previous logic as it blocked withdrawn preprints to get in sitemap generator
-        objs = Preprint.objects.filter(date_published__isnull=False).annotate(
+        objs = Preprint.objects.filter(
+            date_published__isnull=False).exclude(spam_status__in=[SpamStatus.SPAM, SpamStatus.FLAGGED]).annotate(
             most_recent_non_withdrawn=Subquery(
                 Preprint.objects.filter(
                     guids=OuterRef('guids')

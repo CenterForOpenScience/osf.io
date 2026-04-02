@@ -51,7 +51,7 @@ class FileMixin:
                 raise Gone(detail='The requested file is no longer available.')
 
         if getattr(obj.target, 'deleted', None):
-            raise Gone(detail='The requested file is no longer available')
+            raise Gone(detail='The requested file is no longer available.', meta={'flagged_content': getattr(obj.target, 'is_spammy', False)})
 
         if getattr(obj.target, 'is_retracted', False):
             raise Gone(detail='The requested file is no longer available.')

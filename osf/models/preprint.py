@@ -1297,11 +1297,11 @@ class Preprint(DirtyFieldsMixin, VersionedGuidMixin, IdentifierMixin, Reviewable
         for _preprint in preprints:
             if _preprint.is_latest_version:
                 update_share(_preprint)
-        from website import search
+        from website.search import search, exceptions
         try:
-            serialize = functools.partial(search.search.update_preprint, index=index, bulk=True, async_update=False)
-            search.search.bulk_update_nodes(serialize, preprints, index=index)
-        except search.exceptions.SearchUnavailableError as e:
+            serialize = functools.partial(search.update_preprint, index=index, bulk=True, async_update=False)
+            search.bulk_update_nodes(serialize, preprints, index=index)
+        except exceptions.SearchUnavailableError as e:
             logger.exception(e)
             log_exception(e)
 
@@ -1309,10 +1309,10 @@ class Preprint(DirtyFieldsMixin, VersionedGuidMixin, IdentifierMixin, Reviewable
         # Only update share if the preprint is the latest version (i.e. has `guids`)
         if self.is_latest_version:
             update_share(self)
-        from website import search
+        from website.search import search, exceptions
         try:
-            search.search.update_preprint(self, bulk=False, async_update=True)
-        except search.exceptions.SearchUnavailableError as e:
+            search.update_preprint(self, bulk=False, async_update=True)
+        except exceptions.SearchUnavailableError as e:
             logger.exception(e)
             log_exception(e)
 

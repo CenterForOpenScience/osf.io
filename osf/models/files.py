@@ -448,10 +448,10 @@ class BaseFileNode(TypedModel, CommentableMixin, OptionalGuidMixin, Taggable, Ob
 
     def update_search(self):
         update_share(self)
-        from website import search
+        from website.search import search, exceptions
         try:
-            search.search.update_file(self)
-        except search.exceptions.SearchUnavailableError as e:
+            search.update_file(self)
+        except exceptions.SearchUnavailableError as e:
             logger.exception(e)
             sentry.log_exception(e)
 
