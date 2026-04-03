@@ -157,6 +157,13 @@ class AbstractProvider(TypedModel, TypedObjectIDMixin, ReviewProviderMixin, Dirt
     share_source = models.CharField(blank=True, default='', max_length=200)
     share_title = models.TextField(default='', blank=True)
     doi_prefix = models.CharField(blank=True, null=True, max_length=32)
+    required_metadata_template = models.ForeignKey(
+        'osf.CedarMetadataTemplate',
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name='required_by_providers',
+    )
 
     def __repr__(self):
         return ('(name={self.name!r}, default_license={self.default_license!r}, '
