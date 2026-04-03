@@ -244,8 +244,7 @@ class TestHandleFileOperation:
         """
         from django.contrib.contenttypes.models import ContentType
 
-        root_folder = OsfStorageFolder.create(target=node, name='')
-        root_folder.save()
+        root_folder = node.get_addon('osfstorage').root_node
         file = OsfStorageFile.create(target=node, name='file.txt')
         file.save()
         file.move_under(root_folder)
