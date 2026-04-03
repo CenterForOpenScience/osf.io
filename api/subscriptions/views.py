@@ -205,7 +205,7 @@ class AbstractProviderSubscriptionList(SubscriptionList):
                 user=self.request.user,
                 notification_type=nt,
                 defaults={
-                    '_is_digest': True,
+                    '_is_digest': nt.is_digest_type,
                     'message_frequency': 'instantly',
                 },
             )
