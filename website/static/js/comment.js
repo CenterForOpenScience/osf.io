@@ -12,7 +12,6 @@ require('jquery-autosize');
 
 var osfHelpers = require('js/osfHelpers');
 var CommentPane = require('js/commentpane');
-var markdown = require('js/markdown');
 var atMention = require('js/atMention');
 
 // Cached contributor and group member data, to prevent multiple fetches for @mentions
@@ -461,11 +460,11 @@ var CommentModel = function(data, $parent, $root) {
     });
 
     var linkifyOpts = { target: function (href, type) { return type === 'url' ? '_top' : null; } };
-    self.contentDisplay = ko.observable(linkifyHtml(markdown.full.render(self.content()), linkifyOpts));
+    self.contentDisplay = ko.observable(linkifyHtml(self.content(), linkifyOpts));
 
-    // Update contentDisplay with rendered markdown whenever content changes
+    // Update contentDisplay with linkified text whenever content changes
     self.content.subscribe(function(newContent) {
-        self.contentDisplay(linkifyHtml(markdown.full.render(newContent), linkifyOpts));
+        self.contentDisplay(linkifyHtml(newContent, linkifyOpts));
     });
 
     self.prettyDateCreated = ko.computed(function() {

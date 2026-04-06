@@ -194,21 +194,21 @@ class TestPreprintContributorDetail:
 
         # Unauthenticated
         res = app.get(url_published, expect_errors=True)
-        assert res.status_code == 404
+        assert res.status_code == 410
 
         # Noncontrib
         user_two = AuthUserFactory()
         res = app.get(url_published, auth=user_two.auth, expect_errors=True)
-        assert res.status_code == 404
+        assert res.status_code == 410
 
         # Write contrib
         preprint_published.add_contributor(user_two, permissions.WRITE, save=True)
         res = app.get(url_published, auth=user_two.auth, expect_errors=True)
-        assert res.status_code == 404
+        assert res.status_code == 410
 
         # Admin contrib
         res = app.get(url_published, auth=user.auth, expect_errors=True)
-        assert res.status_code == 404
+        assert res.status_code == 410
 
     def test_preprint_contributor_private(
             self, app, user, preprint_published, url_published):

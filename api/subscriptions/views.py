@@ -177,7 +177,7 @@ class AbstractProviderSubscriptionList(SubscriptionList):
         provider = AbstractProvider.objects.get(_id=self.kwargs['provider_id'])
         return NotificationSubscription.objects.filter(
             object_id=provider,
-            provider__type=ContentType.objects.get_for_model(provider.__class__),
+            content_type=ContentType.objects.get_for_model(provider.__class__),
             user=self.request.user,
         )
 

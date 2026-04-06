@@ -27,12 +27,12 @@ def main(source, dry_run=False, resume_from=None):
     # page.info.protocol + page.info.domain => _source.platform_iri                 # "http://localhost:5000/",
     # visitor.session                       => _source.session_id                   # "fcae918a3b6a19641bd0087f84083f0d57982d8c93ab821c405561d1b5c7b305",
     # user.id                               => _source.user_is_authenticated        # true,
-    # page.url                              => _source.pageview_info.page_url       # "http://localhost:5000/myprojects/",
+    # page.url                              => _source.pageview_info.page_url       # "http://localhost:5000/my-projects/",
     # page.title                            => _source.pageview_info.page_title     # "OSF | My Projects",
     # referrer.url                          => _source.pageview_info.referer_url    # "http://localhost:5000/csab4/analytics",
     # page.meta.routeName                   => _source.pageview_info.route_name     # "OsfWebRenderer.my_projects",
     # time.utc.hour_of_day                  => _source.pageview_info.hour_of_day    # 4,
-    # page.info.path                        => _source.pageview_info.page_path      # "/myprojects",
+    # page.info.path                        => _source.pageview_info.page_path      # "/my-projects",
     # referrer.info.domain                  => _source.pageview_info.referer_domain # "localhost:5000"
     # page.meta.public                      => _source.item_public # true,
     # node.id                               => _source.item_guid   # "ry7dn",
@@ -85,7 +85,7 @@ def populate_action_labels(something_wonderful, row):
 
     if row['page.info.path']:
         path_parts = row['page.info.path'].split('/')
-        if len(path_parts) == 1 and path_parts[0] not in ('myprojects', 'goodbye', 'login'):
+        if len(path_parts) == 1 and path_parts[0] not in ('my-projects', 'goodbye', 'login'):
             labels.append('view')
         elif path_parts[1] in ('wiki'):
             labels.append('view')

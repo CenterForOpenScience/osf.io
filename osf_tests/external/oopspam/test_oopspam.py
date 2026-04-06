@@ -98,7 +98,7 @@ class TestSpam:
 
         user.do_check_spam(
             author='test-author',
-            author_email='test@test.com',
+            author_email=user.username,
             content='test',
             request_headers=request_headers
         )
@@ -119,7 +119,7 @@ class TestSpam:
 
         user.do_check_spam(
             author='test-author',
-            author_email='test@test.com',
+            author_email=user.username,
             content='test',
             request_headers=request_headers
         )
