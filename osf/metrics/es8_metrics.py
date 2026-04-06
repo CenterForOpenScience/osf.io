@@ -269,7 +269,7 @@ class NewUserDomainReport(djelme.CyclicRecord, cycle_timedepth=djelme.DAILY):
 
 
 class NodeSummaryReport(djelme.CyclicRecord, cycle_timedepth=djelme.DAILY):
-    nodes:  NodeRunningTotals
+    nodes: NodeRunningTotals
     projects: NodeRunningTotals
     registered_nodes: RegistrationRunningTotals
     registered_projects: RegistrationRunningTotals
