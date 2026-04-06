@@ -119,6 +119,7 @@ class InstitutionChangeForm(PermissionRequiredMixin, UpdateView):
         return reverse_lazy('institutions:detail', kwargs={'institution_id': self.kwargs.get('institution_id')})
 
     def post(self, request, *args, **kwargs):
+        # Override post method from ProcessFormView due to custom  behavior
         self.object = self.get_object()
         form = self.get_form()
         if form.is_valid():

@@ -22,13 +22,6 @@ class InstitutionForm(forms.ModelForm):
                 if self.cleaned_data['sso_availability'] != SSOAvailability.HIDDEN.value:
                     self.add_error('sso_availability', 'Inactive must be HIDDEN')
 
-            else:
-                if self.cleaned_data['sso_availability'] not in [
-                    SSOAvailability.PUBLIC.value,
-                    SSOAvailability.HIDDEN.value
-                ]:
-                    self.add_error('sso_availability', 'Active must be PUBLIC or HIDDEN')
-
 
 class InstitutionalMetricsAdminRegisterForm(forms.Form):
     """ A form that finds an existing OSF User, and grants permissions to that
