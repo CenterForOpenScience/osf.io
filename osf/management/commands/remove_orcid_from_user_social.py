@@ -9,5 +9,4 @@ def remove_orcid_from_user_social():
 
 class Command(BaseCommand):
     def handle(self, *args, **kwargs):
-        breakpoint()
         remove_orcid_from_user_social()
