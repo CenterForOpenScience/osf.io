@@ -118,6 +118,15 @@ class InstitutionChangeForm(PermissionRequiredMixin, UpdateView):
     def get_success_url(self, *args, **kwargs):
         return reverse_lazy('institutions:detail', kwargs={'institution_id': self.kwargs.get('institution_id')})
 
+    def post(self, request, *args, **kwargs):
+        self.object = self.get_object()
+        form = self.get_form()
+        if form.is_valid():
+            return self.form_valid(form)
+        else:
+            messages.error(request, form.errors)
+            return redirect('institutions:detail', institution_id=self.kwargs.get('institution_id'))
+
 
 class InstitutionExport(PermissionRequiredMixin, View):
     permission_required = 'osf.view_institution'
