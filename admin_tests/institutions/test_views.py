@@ -140,10 +140,22 @@ class TestInstitutionChangeForm(AdminTestCase):
             'logo_name': 'awesome_logo.png',
             'domains': 'http://kris.biz/, http://www.little.biz/',
             '_id': 'newawesomeprov',
-            'sso_availability': 'Public',
+            'sso_availability': 'Unavailable',
         }
         form = InstitutionForm(data=new_data)
         assert form.is_valid()
+
+    def test_institution_form_invalid(self):
+        new_data = {
+            'name': 'New Name',
+            'logo_name': 'awesome_logo.png',
+            'domains': 'http://kris.biz/, http://www.little.biz/',
+            '_id': 'newawesomeprov',
+            'sso_availability': 'Public',
+        }
+        form = InstitutionForm(data=new_data)
+        assert not form.is_valid()
+        assert 'sso_availability' in form.errors
 
 
 class TestInstitutionExport(AdminTestCase):
@@ -216,7 +228,7 @@ class TestCreateInstitution(AdminTestCase):
             'orcid_record_verified_source': '',
             'delegation_protocol': '',
             'institutional_request_access_enabled': False,
-            'sso_availability': 'Public',
+            'sso_availability': 'Unavailable',
         }
         form = InstitutionForm(data=data)
         assert form.is_valid()
