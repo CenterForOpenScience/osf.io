@@ -218,18 +218,22 @@ class TestHamUserRestore(AdminTestCase):
     def setUp(self):
         self.user = UserFactory()
         self.request = RequestFactory().post('/fake_path')
+        patch_messages(self.request)
         self.view = views.UserConfirmHamView
         self.view = setup_log_view(self.view, self.request, guid=self.user._id)
 
-    def test_enable_user(self):
+    @mock.patch('api.users.tasks.confirm_user_ham.delay')
+    def test_enable_user(self, mock_confirm_user_ham_delay):
         self.user.is_disabled = True
         self.user.save()
         assert self.user.is_disabled
         self.view().post(self.request)
         self.user.reload()
 
-        assert not self.user.is_disabled
-        assert self.user.spam_status == SpamStatus.HAM
+        mock_confirm_user_ham_delay.assert_called_with(
+            self.user._id,
+            initiator_guid=mock.ANY,
+        )
 
 
 class TestDisableSpamUser(AdminTestCase):
