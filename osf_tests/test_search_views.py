@@ -102,11 +102,6 @@ class TestSearchViews(OsfTestCase):
         assert page == 2
         assert pages == 3
 
-        # Test search projects
-        url = '/search/'
-        res = self.app.get(url, query_string={'q': self.project.title})
-        assert res.status_code == 200
-
         # Test search node
         res = self.app.post(
             api_url_for('search_node'),

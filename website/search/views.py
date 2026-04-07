@@ -13,7 +13,6 @@ from framework import sentry
 from framework.utils import sanitize_html
 from website import language
 from osf.models import OSFUser, AbstractNode
-from website import settings
 from website.project.views.contributor import get_node_contributors_abbrev
 from website.search import exceptions
 import website.search.search as search
@@ -71,8 +70,6 @@ def search_search(**kwargs):
     results['time'] = round(time.time() - tick, 2)
     return results
 
-def search_view():
-    return {'shareUrl': settings.SHARE_URL},
 
 def conditionally_add_query_item(query, item, condition, value):
     """ Helper for the search_projects_by_title function which will add a condition to a query

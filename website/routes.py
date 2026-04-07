@@ -938,12 +938,6 @@ def make_url_map(app):
     process_rules(app, [
 
         Rule(
-            '/search/',
-            'get',
-            search_views.search_view,
-            OsfWebRenderer('search.mako', trust=False)
-        ),
-        Rule(
             '/share/registration/',
             'get',
             {'register': settings.SHARE_REGISTRATION_URL},
