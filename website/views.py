@@ -333,16 +333,6 @@ def redirect_to_registration_workflow(**kwargs):
     return redirect(furl(DOMAIN).add(path='registries/osf/new').url)
 
 
-# Return error for legacy SHARE v1 search route
-def legacy_share_v1_search(**kwargs):
-    return HTTPError(
-        http_status.HTTP_400_BAD_REQUEST,
-        data=dict(
-            message_long=f'Please use v2 of the SHARE search API available at {settings.SHARE_URL}api/v2/share/search/creativeworks/_search.'
-        )
-    )
-
-
 def get_storage_region_list(user, node=False):
     if not user:  # Preserves legacy frontend test behavior
         return []
