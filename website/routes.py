@@ -944,11 +944,6 @@ def make_url_map(app):
             json_renderer
         ),
         Rule(
-            '/api/v1/user/search/',
-            'get', search_views.search_contributor,
-            json_renderer
-        ),
-        Rule(
             '/api/v1/search/node/',
             'post',
             project_views.node.search_node,

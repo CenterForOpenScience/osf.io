@@ -6,11 +6,9 @@ import time
 from django.db.models import Q
 from flask import request
 
-from framework.auth.decorators import collect_auth
 from framework.auth.decorators import must_be_logged_in
 from framework.exceptions import HTTPError
 from framework import sentry
-from framework.utils import sanitize_html
 from website import language
 from osf.models import OSFUser, AbstractNode
 from website.project.views.contributor import get_node_contributors_abbrev
@@ -184,16 +182,3 @@ def process_project_search_results(results, **kwargs):
         })
 
     return ret
-
-
-@collect_auth
-def search_contributor(auth):
-    user = auth.user if auth else None
-    nid = request.args.get('excludeNode')
-    exclude = AbstractNode.load(nid).contributors if nid else []
-    # TODO: Determine whether bleach is appropriate for ES payload. Also, inconsistent with website.sanitize.util.strip_html
-    query = sanitize_html(request.args.get('query', ''), tags=set(), strip=True)
-    page = int(sanitize_html(request.args.get('page', '0'), tags=set(), strip=True))
-    size = int(sanitize_html(request.args.get('size', '5'), tags=set(), strip=True))
-    return search.search_contributor(query=query, page=page, size=size,
-                                     exclude=exclude, current_user=user)

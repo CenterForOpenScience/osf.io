@@ -44,64 +44,6 @@ class TestSearchViews(OsfTestCase):
         reason="for some reason elasticsearch environment isn't properly set up locally, so this test passes only in CI"
     )
     def test_search_views(self):
-        # Test search contributor
-        url = api_url_for('search_contributor')
-        res = self.app.get(url, query_string={'query': self.contrib.fullname})
-        assert res.status_code == 200
-        result = res.json['users']
-        assert len(result) == 1
-        brian = result[0]
-        assert brian['fullname'] == self.contrib.fullname
-        assert 'profile_image_url' in brian
-        assert brian['registered'] == self.contrib.is_registered
-        assert brian['active'] == self.contrib.is_active
-
-        # Test search pagination
-        res = self.app.get(url, query_string={'query': 'fr'})
-        assert res.status_code == 200
-        result = res.json['users']
-        pages = res.json['pages']
-        page = res.json['page']
-        assert len(result) == 5
-        assert pages == 3
-        assert page == 0
-
-        # Test default page 1
-        res = self.app.get(url, query_string={'query': 'fr', 'page': 1})
-        assert res.status_code == 200
-        result = res.json['users']
-        page = res.json['page']
-        assert len(result) == 5
-        assert page == 1
-
-        # Test default page 2
-        res = self.app.get(url, query_string={'query': 'fr', 'page': 2})
-        assert res.status_code == 200
-        result = res.json['users']
-        page = res.json['page']
-        assert len(result) == 4
-        assert page == 2
-
-        # Test smaller pages
-        res = self.app.get(url, query_string={'query': 'fr', 'size': 5})
-        assert res.status_code == 200
-        result = res.json['users']
-        pages = res.json['pages']
-        page = res.json['page']
-        assert len(result) == 5
-        assert page == 0
-        assert pages == 3
-
-        # Test smaller pages page 2
-        res = self.app.get(url, query_string={'query': 'fr', 'size': 5, 'page': 2})
-        assert res.status_code == 200
-        result = res.json['users']
-        pages = res.json['pages']
-        page = res.json['page']
-        assert len(result) == 4
-        assert page == 2
-        assert pages == 3
-
         # Test search node
         res = self.app.post(
             api_url_for('search_node'),

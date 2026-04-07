@@ -1,8 +1,6 @@
 import copy
 import functools
 import logging
-import math
-import re
 import unicodedata
 from framework import sentry
 
@@ -26,11 +24,9 @@ from osf.models import CollectionSubmission
 from osf.utils.sanitize import unescape_entities
 from osf.utils.workflows import CollectionSubmissionStates
 from website import settings
-from website.filters import profile_image_url
 from osf.models.licenses import serialize_node_license_record
 from website.search import exceptions
-from website.search.util import build_query, clean_splitters
-from website.views import validate_page_num
+from website.search.util import clean_splitters
 
 logger = logging.getLogger(__name__)
 
@@ -885,86 +881,6 @@ def delete_doc(elastic_document_id, node, index=None, category=None):
 def delete_group_doc(deleted_id, index=None):
     index = index or INDEX
     client().delete(index=index, doc_type='group', id=deleted_id, refresh=True, ignore=[404])
-
-@requires_search
-def search_contributor(query, page=0, size=10, exclude=None, current_user=None):
-    """Search for contributors to add to a project using elastic search. Request must
-    include JSON data with a "query" field.
-
-    :param query: The substring of the username to search for
-    :param page: For pagination, the page number to use for results
-    :param size: For pagination, the number of results per page
-    :param exclude: A list of User objects to exclude from the search
-    :param current_user: A User object of the current user
-
-    :return: List of dictionaries, each containing the ID, full name,
-        most recent employment and education, profile_image URL of an OSF user
-
-    """
-    start = (page * size)
-    items = re.split(r'[\s-]+', query)
-    exclude = exclude or []
-    normalized_items = []
-    for item in items:
-        normalized_item = unicodedata.normalize('NFKD', item)
-        normalized_items.append(normalized_item)
-    items = normalized_items
-
-    query = '  AND '.join(f'{re.escape(item)}*~' for item in items) + \
-            ''.join(f' NOT id:"{excluded._id}"' for excluded in exclude)
-
-    results = search(build_query(query, start=start, size=size), index=INDEX, doc_type='user')
-    docs = results['results']
-    pages = math.ceil(results['counts'].get('user', 0) / size)
-    validate_page_num(page, pages)
-
-    users = []
-    for doc in docs:
-        # TODO: use utils.serialize_user
-        user = OSFUser.load(doc['id'])
-
-        if current_user and current_user._id == user._id:
-            n_projects_in_common = -1
-        elif current_user:
-            n_projects_in_common = current_user.n_projects_in_common(user)
-        else:
-            n_projects_in_common = 0
-
-        if user is None:
-            logger.error(f"Could not load user {doc['id']}")
-            continue
-        if user.is_active:  # exclude merged, unregistered, etc.
-            current_employment = None
-            education = None
-
-            if user.jobs:
-                current_employment = user.jobs[0]['institution']
-
-            if user.schools:
-                education = user.schools[0]['institution']
-
-            users.append({
-                'fullname': doc['user'],
-                'id': doc['id'],
-                'employment': current_employment,
-                'education': education,
-                'social': user.social_links,
-                'n_projects_in_common': n_projects_in_common,
-                'profile_image_url': profile_image_url(settings.PROFILE_IMAGE_PROVIDER,
-                                                       user,
-                                                       use_ssl=True,
-                                                       size=settings.PROFILE_IMAGE_MEDIUM),
-                'profile_url': user.profile_url,
-                'registered': user.is_registered,
-                'active': user.is_active
-            })
-
-    return {
-        'users': users,
-        'total': results['counts']['total'],
-        'pages': pages,
-        'page': page,
-    }
 
 
 def serialize_guid_metadata(guid):
