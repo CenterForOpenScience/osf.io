@@ -16,7 +16,9 @@ from django.views.generic import (
     View,
     FormView,
     ListView,
+    TemplateView
 )
+from django.core.paginator import Paginator, InvalidPage
 
 from admin.base.forms import GuidForm
 from admin.base.utils import change_embargo_date
@@ -39,6 +41,7 @@ from osf.models import (
     SpamStatus,
     TrashedFile
 )
+from osf.models.sanctions import Embargo
 from osf.models.admin_log_entry import (
     update_admin_log,
     NODE_REMOVED,
@@ -472,6 +475,54 @@ class ApprovalBacklogListView(RegistrationListView):
             'queryset': queryset,
             'page': page,
         }
+
+
+class EmbargoReportView(PermissionRequiredMixin, TemplateView):
+    """Report view for inspecting current and overdue embargoed registrations.
+
+    Shows:
+    - pending embargoes that should have been activated
+    - active embargoes that are past their end date
+    - upcoming active embargoes
+    """
+    template_name = 'nodes/embargo_report.html'
+    permission_required = 'osf.view_registration'
+    raise_exception = True
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        pending_embargoes = Embargo.objects.pending_embargoes().select_related('initiated_by')
+        active_embargoes = Embargo.objects.active_embargoes().select_related('initiated_by')
+
+        pending_overdue_embargoes = [
+            embargo for embargo in pending_embargoes
+            if embargo.should_be_embargoed
+        ]
+
+        overdue_embargoes = [
+            embargo for embargo in active_embargoes
+            if embargo.should_be_completed
+        ]
+
+        upcoming_queryset = active_embargoes.filter(
+            end_date__gte=timezone.now(),
+        ).order_by('end_date')
+
+        page_number = self.request.GET.get('page') or 1
+        paginator = Paginator(upcoming_queryset, 10)
+        try:
+            upcoming_page = paginator.page(page_number)
+        except InvalidPage:
+            upcoming_page = paginator.page(1)
+
+        context.update({
+            'now': timezone.now(),
+            'pending_overdue_embargoes': pending_overdue_embargoes,
+            'overdue_embargoes': overdue_embargoes,
+            'upcoming_embargoes': upcoming_page.object_list,
+            'upcoming_page': upcoming_page,
+        })
+        return context
 
 
 class ConfirmApproveBacklogView(RegistrationListView):
