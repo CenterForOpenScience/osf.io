@@ -67,7 +67,7 @@ class TestCollectionProviderRequiredMetadataTemplate:
 
     @pytest.fixture()
     def provider_url(self, provider):
-        return f'/{API_BASE}providers/collections/{provider._id}/'
+        return f'/{API_BASE}providers/collections/{provider._id}/?version=2.20'
 
     @pytest.fixture()
     def cedar_template(self):
@@ -85,8 +85,8 @@ class TestCollectionProviderRequiredMetadataTemplate:
         assert res.json['data']['relationships']['required_metadata_template']['data'] is None
 
     def test_required_metadata_template_when_set(self, app, provider, provider_url, cedar_template):
-        provider.required_metadata_template = cedar_template
-        provider.save()
+        from osf.models import AbstractProvider
+        AbstractProvider.objects.filter(pk=provider.pk).update(required_metadata_template=cedar_template)
 
         res = app.get(provider_url)
         assert res.status_code == 200
