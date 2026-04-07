@@ -943,12 +943,6 @@ def make_url_map(app):
             {'register': settings.SHARE_REGISTRATION_URL},
             json_renderer
         ),
-        Rule(
-            '/api/v1/search/node/',
-            'post',
-            project_views.node.search_node,
-            json_renderer,
-        ),
 
     ])
 

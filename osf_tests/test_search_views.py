@@ -44,38 +44,6 @@ class TestSearchViews(OsfTestCase):
         reason="for some reason elasticsearch environment isn't properly set up locally, so this test passes only in CI"
     )
     def test_search_views(self):
-        # Test search node
-        res = self.app.post(
-            api_url_for('search_node'),
-            json={'query': self.project.title},
-            auth=factories.AuthUserFactory().auth
-        )
-        assert res.status_code == 200
-
-        # Test search node includePublic true
-        res = self.app.post(
-            api_url_for('search_node'),
-            json={'query': 'a', 'includePublic': True},
-            auth=self.user_one.auth
-        )
-        node_ids = [node['id'] for node in res.json['nodes']]
-        assert self.project_private_user_one._id in node_ids
-        assert self.project_public_user_one._id in node_ids
-        assert self.project_public_user_two._id in node_ids
-        assert self.project_private_user_two._id not in node_ids
-
-        # Test search node includePublic false
-        res = self.app.post(
-            api_url_for('search_node'),
-            json={'query': 'a', 'includePublic': False},
-            auth=self.user_one.auth
-        )
-        node_ids = [node['id'] for node in res.json['nodes']]
-        assert self.project_private_user_one._id in node_ids
-        assert self.project_public_user_one._id in node_ids
-        assert self.project_public_user_two._id not in node_ids
-        assert self.project_private_user_two._id not in node_ids
-
         # Test search user
         url = '/api/v1/search/user/'
         res = self.app.get(url, query_string={'q': 'Umwali'})
