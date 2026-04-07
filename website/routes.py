@@ -45,7 +45,6 @@ from website.profile.utils import get_profile_image_url
 from website.profile import views as profile_views
 from website.project import views as project_views
 from addons.base import views as addon_views
-from website.discovery import views as discovery_views
 from website.conferences import views as conference_views
 from website.policies import views as policy_views
 from website.preprints import views as preprint_views
@@ -523,17 +522,6 @@ def make_url_map(app):
         Rule('/forms/signin/', 'get', website_views.signin_form, json_renderer),
         Rule('/forms/forgot_password/', 'get', website_views.forgot_password_form, json_renderer),
     ], prefix='/api/v1')
-
-    ### Discovery ###
-
-    process_rules(app, [
-        Rule(
-            ['/activity/', '/explore/activity/', '/explore/'],
-            'get',
-            discovery_views.redirect_activity_to_search,
-            notemplate
-        ),
-    ])
 
     ### Auth ###
 
