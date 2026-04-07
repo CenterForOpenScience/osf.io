@@ -3,13 +3,18 @@ from datetime import datetime, timezone
 import pytest
 from unittest import mock
 
+from framework.auth.core import Auth
+
 from osf_tests.factories import (
     AuthUserFactory,
-    PreprintFactory,
     NodeFactory,
+    PreprintFactory,
+    PrivateLinkFactory,
+    ProjectFactory,
     RegistrationFactory,
     # UserFactory,
 )
+from osf.utils.permissions import ADMIN, READ, WRITE
 from api_tests.utils import create_test_file
 
 
@@ -351,3 +356,125 @@ class TestGuidFields:
                 'surrounding_guids': None,
             },
         )
+
+
+@pytest.mark.django_db
+class TestContributorExclusion:
+
+    def test_creator_pageview_not_recorded(self, app, mock_save):
+        user = AuthUserFactory()
+        project = ProjectFactory(creator=user)
+        payload = counted_usage_payload(
+            item_guid=project._id,
+            action_labels=['view', 'web'],
+            pageview_info={'page_url': f'https://osf.io/{project._id}/'},
+        )
+        resp = app.post_json_api(COUNTED_USAGE_URL, payload, auth=user.auth)
+        assert resp.status_code == 204
+        assert mock_save.call_count == 0
+
+    @pytest.mark.parametrize(
+        'permissions',
+        [READ, WRITE, ADMIN],
+        ids=['read', 'write', 'admin'],
+    )
+    def test_contributor_pageview_not_recorded(self, app, mock_save, permissions):
+        creator = AuthUserFactory()
+        contributor = AuthUserFactory()
+        project = ProjectFactory(creator=creator)
+        project.add_contributor(contributor, permissions=permissions, auth=Auth(creator))
+        payload = counted_usage_payload(
+            item_guid=project._id,
+            action_labels=['view', 'web'],
+            pageview_info={'page_url': f'https://osf.io/{project._id}/analytics/'},
+        )
+        resp = app.post_json_api(COUNTED_USAGE_URL, payload, auth=contributor.auth)
+        assert resp.status_code == 204
+        assert mock_save.call_count == 0
+
+    def test_non_contributor_pageview_recorded(self, app, mock_save):
+        creator = AuthUserFactory()
+        visitor = AuthUserFactory()
+        project = ProjectFactory(creator=creator, is_public=True)
+        payload = counted_usage_payload(
+            item_guid=project._id,
+            action_labels=['view', 'web'],
+            pageview_info={'page_url': f'https://osf.io/{project._id}/'},
+        )
+        resp = app.post_json_api(COUNTED_USAGE_URL, payload, auth=visitor.auth)
+        assert resp.status_code == 201
+        assert mock_save.call_count == 1
+
+    def test_parent_contributor_not_on_child_component_pageview_recorded(self, app, mock_save):
+        creator = AuthUserFactory()
+        child_owner = AuthUserFactory()
+        parent_reader = AuthUserFactory()
+        parent = ProjectFactory(creator=creator, is_public=True)
+        child = NodeFactory(parent=parent, creator=child_owner, is_public=True)
+        parent.add_contributor(parent_reader, permissions=ADMIN, auth=Auth(creator))
+        assert not child.contributors_and_group_members.filter(guids___id=parent_reader._id).exists()
+        payload = counted_usage_payload(
+            item_guid=child._id,
+            action_labels=['view', 'web'],
+            pageview_info={'page_url': f'https://osf.io/{child._id}/'},
+        )
+        resp = app.post_json_api(COUNTED_USAGE_URL, payload, auth=parent_reader.auth)
+        assert resp.status_code == 201
+        assert mock_save.call_count == 1
+
+    def test_anonymous_view_only_link_visitor_pageview_recorded(self, app, mock_save):
+        creator = AuthUserFactory()
+        project = ProjectFactory(creator=creator, is_public=False)
+        link = PrivateLinkFactory(anonymous=True, creator=creator)
+        link.nodes.add(project)
+        payload = counted_usage_payload(
+            item_guid=project._id,
+            action_labels=['view', 'web'],
+            client_session_id='vol-client-session',
+            pageview_info={
+                'page_url': f'https://osf.io/{project._id}/?view_only={link.key}',
+            },
+        )
+        resp = app.post_json_api(COUNTED_USAGE_URL, payload)
+        assert resp.status_code == 201
+        assert mock_save.call_count == 1
+
+    def test_logged_in_non_contributor_view_only_link_pageview_recorded(self, app, mock_save):
+        creator = AuthUserFactory()
+        visitor = AuthUserFactory()
+        project = ProjectFactory(creator=creator, is_public=False)
+        link = PrivateLinkFactory(anonymous=False, creator=creator)
+        link.nodes.add(project)
+        payload = counted_usage_payload(
+            item_guid=project._id,
+            action_labels=['view', 'web'],
+            pageview_info={
+                'page_url': f'https://osf.io/{project._id}/files/?view_only={link.key}',
+            },
+        )
+        resp = app.post_json_api(COUNTED_USAGE_URL, payload, auth=visitor.auth)
+        assert resp.status_code == 201
+        assert mock_save.call_count == 1
+
+    @pytest.mark.parametrize(
+        'permissions',
+        [READ, WRITE, ADMIN],
+        ids=['read', 'write', 'admin'],
+    )
+    def test_logged_in_contributor_view_only_link_pageview_not_recorded(self, app, mock_save, permissions):
+        creator = AuthUserFactory()
+        contributor = AuthUserFactory()
+        project = ProjectFactory(creator=creator, is_public=False)
+        project.add_contributor(contributor, permissions=permissions, auth=Auth(creator))
+        link = PrivateLinkFactory(anonymous=False, creator=creator)
+        link.nodes.add(project)
+        payload = counted_usage_payload(
+            item_guid=project._id,
+            action_labels=['view', 'web'],
+            pageview_info={
+                'page_url': f'https://osf.io/{project._id}/?view_only={link.key}',
+            },
+        )
+        resp = app.post_json_api(COUNTED_USAGE_URL, payload, auth=contributor.auth)
+        assert resp.status_code == 204
+        assert mock_save.call_count == 0
