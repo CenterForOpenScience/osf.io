@@ -238,6 +238,12 @@ def syntax(ctx):
     ctx.run('pre-commit run --all-files --show-diff-on-failure', echo=True)
 
 
+@task
+def check_migrations(ctx):
+    """Check for missing Django migrations."""
+    ctx.run('python3 manage.py --no-init-app makemigrations --settings api.base.settings --check', echo=True)
+
+
 @task(aliases=['req'])
 def requirements(ctx, base=False, addons=False, release=False, dev=True, all=True):
     """Install python dependencies.
@@ -520,6 +526,7 @@ def test_ci_addons(ctx, numprocesses=None, coverage=False, testmon=False, junit=
     """
     #ci_setup(ctx)
     syntax(ctx)
+    check_migrations(ctx)
     test_addons(ctx, numprocesses=numprocesses, coverage=coverage, testmon=testmon, junit=junit)
 
 @task
