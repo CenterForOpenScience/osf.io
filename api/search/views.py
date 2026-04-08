@@ -7,7 +7,6 @@ from api.base.views import JSONAPIBaseView
 from api.base.pagination import SearchPagination
 from api.base.parsers import SearchParser
 from api.base.settings import REST_FRAMEWORK, MAX_PAGE_SIZE
-from api.files.serializers import FileSerializer
 from api.nodes.serializers import NodeSerializer
 from api.registrations.serializers import RegistrationSerializer
 from api.search.permissions import IsAuthenticatedOrReadOnlyForSearch
@@ -16,7 +15,7 @@ from api.institutions.serializers import InstitutionSerializer
 from api.collections.serializers import CollectionSubmissionSerializer
 
 from framework.auth.oauth_scopes import CoreScopes
-from osf.models import Institution, BaseFileNode, AbstractNode, OSFUser, CollectionSubmission
+from osf.models import Institution, AbstractNode, OSFUser, CollectionSubmission
 
 from website.search import search
 from website.search.exceptions import MalformedQueryError
@@ -67,119 +66,6 @@ class BaseSearchView(JSONAPIBaseView, generics.ListCreateAPIView):
         except MalformedQueryError as e:
             raise ValidationError(e)
         return results
-
-
-class SearchFiles(BaseSearchView):
-    """
-    *Read-Only*
-
-    Files that have been found by the given Elasticsearch query.
-
-    <!-- Copied attributes from FileDetail -->
-
-    ####File Entity
-
-        name          type       description
-        =========================================================================
-        guid          string            OSF GUID for this file (if one has been assigned)
-        name          string            name of the file
-        path          string            unique identifier for this file entity for this
-                                        project and storage provider. may not end with '/'
-        materialized  string            the full path of the file relative to the storage
-                                        root.  may not end with '/'
-        kind          string            "file"
-        etag          string            etag - http caching identifier w/o wrapping quotes
-        modified      timestamp         last modified timestamp - format depends on provider
-        contentType   string            MIME-type when available
-        provider      string            id of provider e.g. "osfstorage", "s3", "googledrive".
-                                        equivalent to addon_short_name on the OSF
-        size          integer           size of file in bytes
-        tags          array of strings  list of tags that describes the file (osfstorage only)
-        extra         object            may contain additional data beyond what's described here,
-                                        depending on the provider
-          version     integer           version number of file. will be 1 on initial upload
-          downloads   integer           count of the number times the file has been downloaded
-          hashes      object
-            md5       string            md5 hash of file
-            sha256    string            SHA-256 hash of file
-
-    ##Attributes
-
-    For an OSF File entity, the `type` is "files" regardless of whether the entity is actually a file or folder, because
-    it belongs to the `files` collection of the API.  They can be distinguished by the `kind` attribute.  Files and
-    folders use the same representation, but some attributes may be null for one kind but not the other. `size` will be
-    null for folders.  See the [list of storage provider keys](/v2/#storage-providers).
-
-        name                        type               description
-        ================================================================================================================
-        name                        string             name of the file or folder; used for display
-        kind                        string             "file" or "folder"
-        path                        string             same as for corresponding WaterButler entity
-        materialized_path           string             the unix-style path to the file relative to the provider root
-        size                        integer            size of file in bytes, null for folders
-        provider                    string             storage provider for this file. "osfstorage" if stored on the
-                                                         OSF.  other examples include "s3" for Amazon S3, "googledrive"
-                                                        for Google Drive, "box" for Box.com.
-        current_user_can_comment    boolean            Whether the current user is allowed to post comments
-
-        last_touched                iso8601 timestamp  last time the metadata for the file was retrieved. only
-                                                        applies to non-OSF storage providers.
-        date_modified               iso8601 timestamp  timestamp of when this file was last updated*
-        date_created                iso8601 timestamp  timestamp of when this file was created*
-        extra                       object             may contain additional data beyond what's described here,
-                                                        depending on the provider
-        hashes                      object
-        md5                         string             md5 hash of file, null for folders
-        sha256                      string             SHA-256 hash of file, null for folders
-
-    * A note on timestamps: for files stored in osfstorage, `date_created` refers to the time that the file was
-    first uploaded to osfstorage, and `date_modified` is the time that the file was last updated while in osfstorage.
-    Other providers may or may not provide this information, but if they do it will correspond to the provider's
-    semantics for created/modified times.  These timestamps may also be stale; metadata retrieved via the File Detail
-    endpoint is cached.  The `last_touched` field describes the last time the metadata was retrieved from the external
-    provider.  To force a metadata update, access the parent folder via its Node Files List endpoint.
-
-    <!-- Copied relationships from FileDetail -->
-
-    ##Relationships
-
-    ###Node
-
-    The `node` endpoint describes the project or registration that this file belongs to.
-
-    ###Files (*folders*)
-
-    The `files` endpoint lists all of the subfiles and folders of the current folder. Will be null for files.
-
-    ###Versions (*files*)
-
-    The `versions` endpoint provides version history for files.  Will be null for folders.
-
-    ##Links
-
-        info:        the canonical api endpoint for the folder's contents or file's most recent version
-        new_folder:  url to target when creating new subfolders (null for files)
-        move:        url to target for move, copy, and rename actions
-        upload:      url to target for uploading new files and updating existing files
-        download:    url to request a download of the latest version of the file (null for folders)
-        delete:      url to target for deleting files and folders
-
-    ## Query Params
-
-    + `q=<Str>` -- Query to search files for, searches across a file's name.
-
-    + `page=<Int>` -- page number of results to view, default 1
-
-    #This Request/Response
-
-    """
-
-    model_class = BaseFileNode
-    serializer_class = FileSerializer
-
-    doc_type = 'file'
-    view_category = 'search'
-    view_name = 'search-file'
 
 
 class SearchProjects(BaseSearchView):
