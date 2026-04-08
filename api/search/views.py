@@ -8,12 +8,11 @@ from api.base.pagination import SearchPagination
 from api.base.parsers import SearchParser
 from api.base.settings import REST_FRAMEWORK, MAX_PAGE_SIZE
 from api.search.permissions import IsAuthenticatedOrReadOnlyForSearch
-from api.users.serializers import UserSerializer
 from api.institutions.serializers import InstitutionSerializer
 from api.collections.serializers import CollectionSubmissionSerializer
 
 from framework.auth.oauth_scopes import CoreScopes
-from osf.models import Institution, OSFUser, CollectionSubmission
+from osf.models import Institution, CollectionSubmission
 
 from website.search import search
 from website.search.exceptions import MalformedQueryError
@@ -64,70 +63,6 @@ class BaseSearchView(JSONAPIBaseView, generics.ListCreateAPIView):
         except MalformedQueryError as e:
             raise ValidationError(e)
         return results
-
-
-class SearchUsers(BaseSearchView):
-    """
-    *Read-Only*
-
-    Users that have been found by the given Elasticsearch query.
-
-    <!-- Copied spiel from UserDetail -->
-
-    The User Detail endpoint retrieves information about the user whose id is the final part of the path.  If `me`
-    is given as the id, the record of the currently logged-in user will be returned.  The returned information includes
-    the user's bibliographic information and the date that the user registered.
-
-    Note that if an anonymous view_only key is being used, user information will not be serialized, and the id will be
-    an empty string. Relationships to a user object will not show in this case, either.
-
-    <!-- Copied attributes from UserDetail -->
-
-    ##Attributes
-
-    OSF User entities have the "users" `type`.
-
-        name               type               description
-        ========================================================================================
-        full_name          string             full name of the user; used for display
-        given_name         string             given name of the user; for bibliographic citations
-        middle_names       string             middle name of user; for bibliographic citations
-        family_name        string             family name of user; for bibliographic citations
-        suffix             string             suffix of user's name for bibliographic citations
-        date_registered    iso8601 timestamp  timestamp when the user's account was created
-
-    <!-- Copied relationships from UserDetail -->
-
-    ##Relationships
-
-    ###Nodes
-
-    A list of all nodes the user has contributed to.  If the user id in the path is the same as the logged-in user, all
-    nodes will be visible.  Otherwise, you will only be able to see the other user's publicly-visible nodes.
-
-    ##Links
-
-        self:               the canonical api endpoint of this user
-        html:               this user's page on the OSF website
-        profile_image_url:  a url to the user's profile image
-
-    ## Query Params
-
-    + `q=<Str>` -- Query to search users for, searches across a users's given name, middle names, family name,
-    first listed job, and first listed school.
-
-    + `page=<Int>` -- page number of results to view, default 1
-
-    # This Request/Response
-
-    """
-
-    model_class = OSFUser
-    serializer_class = UserSerializer
-
-    doc_type = 'user'
-    view_category = 'search'
-    view_name = 'search-user'
 
 
 class SearchInstitutions(BaseSearchView):
