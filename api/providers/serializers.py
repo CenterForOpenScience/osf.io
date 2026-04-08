@@ -132,6 +132,11 @@ class CollectionProviderSerializer(ProviderSerializer):
         related_view_kwargs={'brand_id': '<brand.id>'},
     )
 
+    required_metadata_template = RelationshipField(
+        related_view='cedar-metadata-templates:cedar-metadata-template-detail',
+        related_view_kwargs={'template_id': '<required_metadata_template._id>'},
+        read_only=True,
+    )
     filterable_fields = frozenset([
         'allow_submissions',
         'allow_commenting',
@@ -197,6 +202,11 @@ class RegistrationProviderSerializer(ProviderSerializer):
     subscriptions = RelationshipField(
         related_view='providers:registration-providers:notification-subscription-list',
         related_view_kwargs={'provider_id': '<_id>'},
+    )
+
+    required_metadata_template = RelationshipField(
+        related_view='cedar-metadata-templates:cedar-metadata-template-detail',
+        related_view_kwargs={'template_id': '<required_metadata_template._id>'},
     )
 
     links = LinksField({
@@ -267,6 +277,11 @@ class PreprintProviderSerializer(MetricsSerializerMixin, ProviderSerializer):
     brand = RelationshipField(
         related_view='brands:brand-detail',
         related_view_kwargs={'brand_id': '<brand.id>'},
+    )
+
+    required_metadata_template = RelationshipField(
+        related_view='cedar-metadata-templates:cedar-metadata-template-detail',
+        related_view_kwargs={'template_id': '<required_metadata_template._id>'},
     )
 
     def get_preprints_url(self, obj):
