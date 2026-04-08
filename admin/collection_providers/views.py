@@ -132,127 +132,78 @@ class CollectionProviderDisplay(PermissionRequiredMixin, DetailView):
         licenses_html += '</ul>'
         collection_provider_attributes['licenses_acceptable'] = licenses_html
 
-        primary_collection = collection_provider.primary_collection
-        # compile html list of collected_type_choices
-        collected_type_choices_html = '<ul>'
-        for choice in primary_collection.collected_type_choices:
-            collected_type_choices_html += f'<li>{choice}</li>'
-        collected_type_choices_html += '</ul>'
-        kwargs['collected_type_choices'] = collected_type_choices_html
-
-        # compile html list of status_choices
-        status_choices_html = '<ul>'
-        for choice in primary_collection.status_choices:
-            status_choices_html += f'<li>{choice}</li>'
-        status_choices_html += '</ul>'
-        kwargs['status_choices'] = status_choices_html
-
-        # compile html list of volume_choices
-        volume_choices_html = '<ul>'
-        for choice in primary_collection.volume_choices:
-            volume_choices_html += f'<li>{choice}</li>'
-        volume_choices_html += '</ul>'
-        kwargs['volume_choices'] = volume_choices_html
-
-        # compile html list of issue_choices
-        issue_choices_html = '<ul>'
-        for choice in primary_collection.issue_choices:
-            issue_choices_html += f'<li>{choice}</li>'
-        issue_choices_html += '</ul>'
-        kwargs['issue_choices'] = issue_choices_html
-
-        # compile html list of program_area_choices
-        program_area_choices_html = '<ul>'
-        for choice in primary_collection.program_area_choices:
-            program_area_choices_html += f'<li>{choice}</li>'
-        program_area_choices_html += '</ul>'
-        kwargs['program_area_choices'] = program_area_choices_html
-
-        # compile html list of school_type_choices
-        school_type_choices_html = '<ul>{choices}</ul>'.format(choices=''.join(
-            f'<li>{choice}</li>' for choice in primary_collection.school_type_choices
-        ))
-        kwargs['school_type_choices'] = school_type_choices_html
-
-        # compile html list of study_design_choices
-        study_design_choices_html = '<ul>{choices}</ul>'.format(choices=''.join(
-            f'<li>{choice}</li>' for choice in primary_collection.study_design_choices
-        ))
-        kwargs['study_design_choices'] = study_design_choices_html
-
-        disease_choices_html = '<ul>{choices}</ul>'.format(choices=''.join(
-            f'<li>{choice}</li>' for choice in primary_collection.disease_choices
-        ))
-        kwargs['disease_choices'] = disease_choices_html
-
-        data_type_choices_html = '<ul>{choices}</ul>'.format(choices=''.join(
-            f'<li>{choice}</li>' for choice in primary_collection.data_type_choices
-        ))
-        kwargs['data_type_choices'] = data_type_choices_html
-
-        grade_levels_choices_html = '<ul>{choices}</ul>'.format(choices=''.join(
-            f'<li>{choice}</li>' for choice in primary_collection.grade_levels_choices
-        ))
-        kwargs['grade_levels_choices'] = grade_levels_choices_html
-
-        # get a dict of model fields so that we can set the initial value for the update form
-        fields = model_to_dict(collection_provider)
-        fields['collected_type_choices'] = json.dumps(primary_collection.collected_type_choices)
-        fields['status_choices'] = json.dumps(primary_collection.status_choices)
-        fields['volume_choices'] = json.dumps(primary_collection.volume_choices)
-        fields['issue_choices'] = json.dumps(primary_collection.issue_choices)
-        fields['program_area_choices'] = json.dumps(primary_collection.program_area_choices)
-
         fields = model_to_dict(collection_provider)
 
-        fields['school_type_choices'] = json.dumps(primary_collection.school_type_choices)
-        fields['study_design_choices'] = json.dumps(primary_collection.study_design_choices)
-        fields['data_type_choices'] = json.dumps(primary_collection.data_type_choices)
-        fields['disease_choices'] = json.dumps(primary_collection.disease_choices)
-        fields['grade_levels_choices'] = json.dumps(primary_collection.grade_levels_choices)
-
-        # compile html list of collected_type_choices
         if collection_provider.primary_collection:
+            primary_collection = collection_provider.primary_collection
+
+            # compile html list of collected_type_choices
             collected_type_choices_html = '<ul>'
-            for choice in collection_provider.primary_collection.collected_type_choices:
+            for choice in primary_collection.collected_type_choices:
                 collected_type_choices_html += f'<li>{choice}</li>'
             collected_type_choices_html += '</ul>'
             kwargs['collected_type_choices'] = collected_type_choices_html
 
             # compile html list of status_choices
             status_choices_html = '<ul>'
-            for choice in collection_provider.primary_collection.status_choices:
+            for choice in primary_collection.status_choices:
                 status_choices_html += f'<li>{choice}</li>'
             status_choices_html += '</ul>'
             kwargs['status_choices'] = status_choices_html
 
             # compile html list of volume_choices
             volume_choices_html = '<ul>'
-            for choice in collection_provider.primary_collection.volume_choices:
+            for choice in primary_collection.volume_choices:
                 volume_choices_html += f'<li>{choice}</li>'
             volume_choices_html += '</ul>'
             kwargs['volume_choices'] = volume_choices_html
 
             # compile html list of issue_choices
             issue_choices_html = '<ul>'
-            for choice in collection_provider.primary_collection.issue_choices:
+            for choice in primary_collection.issue_choices:
                 issue_choices_html += f'<li>{choice}</li>'
             issue_choices_html += '</ul>'
             kwargs['issue_choices'] = issue_choices_html
 
             # compile html list of program_area_choices
             program_area_choices_html = '<ul>'
-            for choice in collection_provider.primary_collection.program_area_choices:
+            for choice in primary_collection.program_area_choices:
                 program_area_choices_html += f'<li>{choice}</li>'
             program_area_choices_html += '</ul>'
             kwargs['program_area_choices'] = program_area_choices_html
 
-            # get a dict of model fields so that we can set the initial value for the update form
-            fields['collected_type_choices'] = json.dumps(collection_provider.primary_collection.collected_type_choices)
-            fields['status_choices'] = json.dumps(collection_provider.primary_collection.status_choices)
-            fields['volume_choices'] = json.dumps(collection_provider.primary_collection.volume_choices)
-            fields['issue_choices'] = json.dumps(collection_provider.primary_collection.issue_choices)
-            fields['program_area_choices'] = json.dumps(collection_provider.primary_collection.program_area_choices)
+            # compile html list of school_type_choices
+            kwargs['school_type_choices'] = '<ul>{choices}</ul>'.format(choices=''.join(
+                f'<li>{choice}</li>' for choice in primary_collection.school_type_choices
+            ))
+
+            # compile html list of study_design_choices
+            kwargs['study_design_choices'] = '<ul>{choices}</ul>'.format(choices=''.join(
+                f'<li>{choice}</li>' for choice in primary_collection.study_design_choices
+            ))
+
+            kwargs['disease_choices'] = '<ul>{choices}</ul>'.format(choices=''.join(
+                f'<li>{choice}</li>' for choice in primary_collection.disease_choices
+            ))
+
+            kwargs['data_type_choices'] = '<ul>{choices}</ul>'.format(choices=''.join(
+                f'<li>{choice}</li>' for choice in primary_collection.data_type_choices
+            ))
+
+            kwargs['grade_levels_choices'] = '<ul>{choices}</ul>'.format(choices=''.join(
+                f'<li>{choice}</li>' for choice in primary_collection.grade_levels_choices
+            ))
+
+            fields['collected_type_choices'] = json.dumps(primary_collection.collected_type_choices)
+            fields['status_choices'] = json.dumps(primary_collection.status_choices)
+            fields['volume_choices'] = json.dumps(primary_collection.volume_choices)
+            fields['issue_choices'] = json.dumps(primary_collection.issue_choices)
+            fields['program_area_choices'] = json.dumps(primary_collection.program_area_choices)
+            fields['school_type_choices'] = json.dumps(primary_collection.school_type_choices)
+            fields['study_design_choices'] = json.dumps(primary_collection.study_design_choices)
+            fields['data_type_choices'] = json.dumps(primary_collection.data_type_choices)
+            fields['disease_choices'] = json.dumps(primary_collection.disease_choices)
+            fields['grade_levels_choices'] = json.dumps(primary_collection.grade_levels_choices)
 
         kwargs['form'] = CollectionProviderForm(initial=fields)
 
@@ -272,7 +223,7 @@ class CollectionProviderChangeForm(PermissionRequiredMixin, UpdateView):
         if self.object.primary_collection:
             for choices_name in ['collected_type', 'status', 'issue', 'volume', 'program_area', 'school_type', 'study_design', 'data_type', 'disease', 'grade_levels']:
                 _process_collection_choices(self.object, choices_name, form)
-        self.object.primary_collection.save()
+            self.object.primary_collection.save()
         return super().form_valid(form)
 
     def form_invalid(self, form):
