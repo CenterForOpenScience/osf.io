@@ -6,7 +6,6 @@ from api.base.settings.defaults import API_BASE
 from api_tests import utils
 from framework.auth.cas import CasResponse
 from framework.auth.core import Auth
-from osf.models import RegistrationSchema
 from osf_tests.factories import (
     AuthUserFactory,
     NodeFactory,
@@ -17,7 +16,6 @@ from osf_tests.factories import (
     CollectionProviderFactory,
     RegistrationProviderFactory,
 )
-from osf_tests.utils import mock_archive
 from tests.utils import capture_notifications
 from website import settings
 from website.search import elastic_search
@@ -155,148 +153,6 @@ class ApiSearchTestCase:
     def file_private(self, component_private, user_one):
         return utils.create_test_file(
             component_private, user_one, filename='Wavves.mp3')
-
-
-@pytest.mark.django_db
-class TestSearchRegistrations(ApiSearchTestCase):
-
-    @pytest.fixture()
-    def url_registration_search(self):
-        return f'/{API_BASE}search/registrations/'
-
-    @pytest.fixture()
-    def schema(self):
-        schema = RegistrationSchema.objects.filter(
-            name='Replication Recipe (Brandt et al., 2013): Post-Completion',
-            schema_version=SCHEMA_VERSION).first()
-        return schema
-
-    @pytest.fixture()
-    def registration(self, project, schema):
-        with mock_archive(project, autocomplete=True, autoapprove=True, schema=schema) as registration:
-            return registration
-
-    @pytest.fixture()
-    def registration_public(self, project_public, schema):
-        with mock_archive(project_public, autocomplete=True, autoapprove=True, schema=schema) as registration_public:
-            return registration_public
-
-    @pytest.fixture()
-    def registration_private(self, project_private, schema):
-        with mock_archive(project_private, autocomplete=True, autoapprove=True, schema=schema) as registration_private:
-            registration_private.is_public = False
-            registration_private.save()
-            # TODO: This shouldn't be necessary, but tests fail if we don't do
-            # this. Investigate further.
-            registration_private.update_search()
-            return registration_private
-
-    @pytest.mark.usefixtures('mock_gravy_valet_get_verified_links')
-    def test_search_registrations(
-            self, app, url_registration_search, user, user_one, user_two,
-            registration, registration_public, registration_private):
-
-        # test_search_public_registration_no_auth
-        res = app.get(url_registration_search)
-        assert res.status_code == 200
-        num_results = len(res.json['data'])
-        total = res.json['links']['meta']['total']
-        assert num_results == 2
-        assert total == 2
-        assert registration_public.title in res
-        assert registration.title in res
-
-        # test_search_public_registration_auth
-        res = app.get(url_registration_search, auth=user)
-        assert res.status_code == 200
-        num_results = len(res.json['data'])
-        total = res.json['links']['meta']['total']
-        assert num_results == 2
-        assert total == 2
-        assert registration_public.title in res
-        assert registration.title in res
-
-        # test_search_public_registration_contributor
-        res = app.get(url_registration_search, auth=user_one)
-        assert res.status_code == 200
-        num_results = len(res.json['data'])
-        total = res.json['links']['meta']['total']
-        assert num_results == 2
-        assert total == 2
-        assert registration_public.title in res
-        assert registration.title in res
-
-        # test_search_private_registration_no_auth
-        res = app.get(url_registration_search)
-        assert res.status_code == 200
-        assert registration_private.title not in res
-
-        # test_search_private_registration_auth
-        res = app.get(url_registration_search, auth=user)
-        assert res.status_code == 200
-        assert registration_private.title not in res
-
-        # test_search_private_registration_contributor
-        res = app.get(url_registration_search, auth=user_two)
-        assert res.status_code == 200
-        assert registration_private.title not in res
-
-        # test_search_registration_by_title
-        url = '{}?q={}'.format(url_registration_search, 'graduation')
-        res = app.get(url)
-        assert res.status_code == 200
-        num_results = len(res.json['data'])
-        total = res.json['links']['meta']['total']
-        assert num_results == 1
-        assert total == 1
-        assert registration.title == res.json['data'][0]['attributes']['title']
-
-        # test_search_registration_by_description
-        url = '{}?q={}'.format(url_registration_search, 'crazy')
-        res = app.get(url)
-        assert res.status_code == 200
-        num_results = len(res.json['data'])
-        total = res.json['links']['meta']['total']
-        assert num_results == 1
-        assert total == 1
-        assert registration_public.title == res.json['data'][0]['attributes']['title']
-
-        # test_search_registration_by_tags
-        url = '{}?q={}'.format(url_registration_search, 'yeezus')
-        res = app.get(url)
-        assert res.status_code == 200
-        num_results = len(res.json['data'])
-        total = res.json['links']['meta']['total']
-        assert num_results == 1
-        assert total == 1
-        assert registration_public.title == res.json['data'][0]['attributes']['title']
-
-        # test_search_registration_by_contributor
-        url = '{}?q={}'.format(url_registration_search, 'west')
-        res = app.get(url)
-        assert res.status_code == 200
-        num_results = len(res.json['data'])
-        total = res.json['links']['meta']['total']
-        assert num_results == 2
-        assert total == 2
-        assert registration_public.title in res
-        assert registration.title in res
-
-        # test_search_registration_no_results
-        url = '{}?q={}'.format(url_registration_search, '79th')
-        res = app.get(url)
-        assert res.status_code == 200
-        num_results = len(res.json['data'])
-        total = res.json['links']['meta']['total']
-        assert num_results == 0
-        assert total == 0
-
-        # test_search_registration_bad_query
-        url = '{}?q={}'.format(
-            url_registration_search,
-            'www.spam.com/help/snapchat/')
-        res = app.get(url, expect_errors=True)
-        assert res.status_code == 400
 
 
 class TestSearchUsers(ApiSearchTestCase):

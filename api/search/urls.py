@@ -5,7 +5,6 @@ from api.search import views
 app_name = 'osf'
 
 urlpatterns = [
-    re_path(r'^registrations/$', views.SearchRegistrations.as_view(), name=views.SearchRegistrations.view_name),
     re_path(r'^users/$', views.SearchUsers.as_view(), name=views.SearchUsers.view_name),
     re_path(r'^institutions/$', views.SearchInstitutions.as_view(), name=views.SearchInstitutions.view_name),
     re_path(r'^collections/$', views.SearchCollections.as_view(), name=views.SearchCollections.view_name),

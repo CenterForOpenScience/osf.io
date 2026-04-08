@@ -7,14 +7,13 @@ from api.base.views import JSONAPIBaseView
 from api.base.pagination import SearchPagination
 from api.base.parsers import SearchParser
 from api.base.settings import REST_FRAMEWORK, MAX_PAGE_SIZE
-from api.registrations.serializers import RegistrationSerializer
 from api.search.permissions import IsAuthenticatedOrReadOnlyForSearch
 from api.users.serializers import UserSerializer
 from api.institutions.serializers import InstitutionSerializer
 from api.collections.serializers import CollectionSubmissionSerializer
 
 from framework.auth.oauth_scopes import CoreScopes
-from osf.models import Institution, AbstractNode, OSFUser, CollectionSubmission
+from osf.models import Institution, OSFUser, CollectionSubmission
 
 from website.search import search
 from website.search.exceptions import MalformedQueryError
@@ -65,95 +64,6 @@ class BaseSearchView(JSONAPIBaseView, generics.ListCreateAPIView):
         except MalformedQueryError as e:
             raise ValidationError(e)
         return results
-
-
-class SearchRegistrations(BaseSearchView):
-    """
-    *Read-Only*
-
-    Registrations that have been found by the given Elasticsearch query.
-
-    <!--- Copied spiel from RegistrationDetail -->
-
-    Node Registrations.
-
-    Registrations are read-only snapshots of a project. This view is a list of all current registrations for which a user
-    has access.  A withdrawn registration will display a limited subset of information, namely, title, description,
-    created, registration, withdrawn, date_registered, withdrawal_justification, and registration supplement. All
-    other fields will be displayed as null. Additionally, the only relationships permitted to be accessed for a withdrawn
-    registration are the contributors - other relationships will return a 403.
-
-    Each resource contains the full representation of the registration, meaning additional requests to an individual
-    registrations's detail view are not necessary.  Unregistered nodes cannot be accessed through this endpoint.
-
-    <!--- Copied attributes from RegistrationDetail -->
-    ##Registration Attributes
-
-    Registrations have the "registrations" `type`.
-
-        name                            type               description
-        =======================================================================================================
-        title                           string             title of the registered project or component
-        description                     string             description of the registered node
-        category                        string             bode category, must be one of the allowed values
-        date_created                    iso8601 timestamp  timestamp that the node was created
-        date_modified                   iso8601 timestamp  timestamp when the node was last updated
-        tags                            array of strings   list of tags that describe the registered node
-        current_user_can_comment        boolean            Whether the current user is allowed to post comments
-        current_user_permissions        array of strings   list of strings representing the permissions for the current user on this node
-        fork                            boolean            is this project a fork?
-        registration                    boolean            has this project been registered? (always true - may be deprecated in future versions)
-        collection                      boolean            is this registered node a collection? (always false - may be deprecated in future versions)
-        node_license                    object             details of the license applied to the node
-        year                            string             date range of the license
-        copyright_holders               array of strings   holders of the applied license
-        public                          boolean            has this registration been made publicly-visible?
-        withdrawn                       boolean            has this registration been withdrawn?
-        date_registered                 iso8601 timestamp  timestamp that the registration was created
-        embargo_end_date                iso8601 timestamp  when the embargo on this registration will be lifted (if applicable)
-        withdrawal_justification        string             reasons for withdrawing the registration
-        pending_withdrawal              boolean            is this registration pending withdrawal?
-        pending_withdrawal_approval     boolean            is this registration pending approval?
-        pending_embargo_approval        boolean            is the associated Embargo awaiting approval by project admins?
-        registered_meta                 dictionary         registration supplementary information
-        registration_supplement         string             registration template
-
-
-    <!--- Copied relationships from RegistrationDetail -->
-    ##Relationships
-
-    ###Registered from
-
-    The registration is branched from this node.
-
-    ###Registered by
-
-    The registration was initiated by this user.
-
-    ###Other Relationships
-
-    See documentation on registered_from detail view.  A registration has many of the same properties as a node.
-
-    ##Links
-
-    See the [JSON-API spec regarding pagination](http://jsonapi.org/format/1.0/#fetching-pagination).
-
-    ## Query Params
-
-    + `q=<Str>` -- Query to search registrations for, searches across a registration's title, description, tags, and contributor names.
-
-    + `page=<Int>` -- page number of results to view, default 1
-
-    #This Request/Response
-
-    """
-
-    model_class = AbstractNode
-    serializer_class = RegistrationSerializer
-
-    doc_type = 'registration'
-    view_category = 'search'
-    view_name = 'search-registration'
 
 
 class SearchUsers(BaseSearchView):
