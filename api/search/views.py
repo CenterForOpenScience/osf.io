@@ -7,7 +7,6 @@ from api.base.views import JSONAPIBaseView
 from api.base.pagination import SearchPagination
 from api.base.parsers import SearchParser
 from api.base.settings import REST_FRAMEWORK, MAX_PAGE_SIZE
-from api.nodes.serializers import NodeSerializer
 from api.registrations.serializers import RegistrationSerializer
 from api.search.permissions import IsAuthenticatedOrReadOnlyForSearch
 from api.users.serializers import UserSerializer
@@ -66,122 +65,6 @@ class BaseSearchView(JSONAPIBaseView, generics.ListCreateAPIView):
         except MalformedQueryError as e:
             raise ValidationError(e)
         return results
-
-
-class SearchProjects(BaseSearchView):
-    """
-    *Read-Only*
-
-    Projects that have been found by the given Elasticsearch query.
-
-    <!--- Copied spiel from NodeDetail -->
-
-    On the front end, nodes are considered 'projects' or 'components'. The difference between a project and a component
-    is that a project is the top-level node, and components are children of the project. There is also a [category
-    field](/v2/#osf-node-categories) that includes 'project' as an option. The categorization essentially determines
-    which icon is displayed by the node in the front-end UI and helps with search organization. Top-level nodes may have
-    a category other than project, and children nodes may have a category of project.
-
-    ##Node Attributes
-
-    <!--- Copied Attributes from NodeDetail -->
-
-    OSF Node entities have the "nodes" `type`.
-
-        name                            type               description
-        =================================================================================
-        title                           string             title of project or component
-        description                     string             description of the node
-        category                        string             node category, must be one of the allowed values
-        date_created                    iso8601 timestamp  timestamp that the node was created
-        date_modified                   iso8601 timestamp  timestamp when the node was last updated
-        tags                            array of strings   list of tags that describe the node
-        current_user_can_comment        boolean            Whether the current user is allowed to post comments
-        current_user_permissions        array of strings   list of strings representing the permissions for the current user on this node
-        registration                    boolean            is this a registration? (always false - may be deprecated in future versions)
-        fork                            boolean            is this node a fork of another node?
-        public                          boolean            has this node been made publicly-visible?
-        preprint                        boolean            is this a preprint?
-        collection                      boolean            is this a collection? (always false - may be deprecated in future versions)
-        node_license                    object             details of the license applied to the node
-            year                        string             date range of the license
-            copyright_holders           array of strings   holders of the applied license
-
-    ##Relationships
-
-    ###Children
-
-    List of nodes that are children of this node.  New child nodes may be added through this endpoint.
-
-    ###Comments
-
-    List of comments on this node.  New comments can be left on the node through this endpoint.
-
-    ###Contributors
-
-    List of users who are contributors to this node. Contributors may have "read", "write", or "admin" permissions.
-    A node must always have at least one "admin" contributor.  Contributors may be added via this endpoint.
-
-    ###Draft Registrations
-
-    List of draft registrations of the current node.
-
-    ###Files
-
-    List of top-level folders (actually cloud-storage providers) associated with this node. This is the starting point
-    for accessing the actual files stored within this node.
-
-    ###Forked From
-
-    If this node was forked from another node, the canonical endpoint of the node that was forked from will be
-    available in the `/forked_from/links/related/href` key.  Otherwise, it will be null.
-
-    ###Logs
-
-    List of read-only log actions pertaining to the node.
-
-    ###Node Links
-
-    List of links (pointers) to other nodes on the OSF.  Node links can be added through this endpoint.
-
-    ###Parent
-
-    If this node is a child node of another node, the parent's canonical endpoint will be available in the
-    `/parent/links/related/href` key.  Otherwise, it will be null.
-
-    ###Registrations
-
-    List of registrations of the current node.
-
-    ###Root
-
-    Returns the top-level node associated with the current node.  If the current node is the top-level node, the root is
-    the current node.
-
-    ##Links
-
-        self:  the canonical api endpoint of this node
-        html:  this node's page on the OSF website
-
-        See the [JSON-API spec regarding pagination](http://jsonapi.org/format/1.0/#fetching-pagination).
-
-    ##Query Params
-
-    + `q=<Str>` -- Query to search projects for, searches across a project's title, description, tags, and contributor names.
-
-    + `page=<Int>` -- page number of results to view, default 1
-
-
-    #This Request/Response
-
-    """
-
-    model_class = AbstractNode
-    serializer_class = NodeSerializer
-
-    doc_type = 'project'
-    view_category = 'search'
-    view_name = 'search-project'
 
 
 class SearchRegistrations(BaseSearchView):
