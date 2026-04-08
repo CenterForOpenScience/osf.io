@@ -930,8 +930,6 @@ def make_url_map(app):
 
     ], prefix='/api/v1',)
 
-    ### Search ###
-
     # Web
 
     process_rules(app, [

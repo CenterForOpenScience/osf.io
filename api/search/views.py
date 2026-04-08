@@ -11,7 +11,6 @@ from api.files.serializers import FileSerializer
 from api.nodes.serializers import NodeSerializer
 from api.registrations.serializers import RegistrationSerializer
 from api.search.permissions import IsAuthenticatedOrReadOnlyForSearch
-from api.search.serializers import SearchSerializer
 from api.users.serializers import UserSerializer
 from api.institutions.serializers import InstitutionSerializer
 from api.collections.serializers import CollectionSubmissionSerializer
@@ -68,42 +67,6 @@ class BaseSearchView(JSONAPIBaseView, generics.ListCreateAPIView):
         except MalformedQueryError as e:
             raise ValidationError(e)
         return results
-
-
-class Search(BaseSearchView):
-    """
-    *Read-Only*
-
-    Objects (including projects, components, registrations, users, files, and institutions) that have been found by the given
-    Elasticsearch query. Each object is serialized with the appropriate serializer for its type (files are serialized as
-    files, users are serialized as users, etc.) and returned collectively.
-
-    ## Search Fields
-
-        <type>  # either projects, components, registrations, users, files, or institutions
-            related
-                href    # the canonical api endpoint to search within a certain object type, e.g `/v2/search/users/`
-                meta
-                    total   # the number of results found that are of the enclosing object type
-
-    ## Links
-
-    See the [JSON-API spec regarding pagination](http://jsonapi.org/format/1.0/#fetching-pagination).
-
-    ## Query Params
-
-    + `q=<Str>` -- Query to search projects, components, registrations, users, and files for.
-
-    + `page=<Int>` -- page number of results to view, default 1
-
-    # This Request/Response
-
-    """
-
-    serializer_class = SearchSerializer
-
-    view_category = 'search'
-    view_name = 'search-search'
 
 
 class SearchComponents(BaseSearchView):
