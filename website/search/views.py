@@ -3,14 +3,13 @@ from rest_framework import status as http_status
 import logging
 import time
 
-from django.db.models import Q
 from flask import request
 
 from framework.auth.decorators import must_be_logged_in
 from framework.exceptions import HTTPError
 from framework import sentry
 from website import language
-from osf.models import OSFUser, AbstractNode
+from osf.models import OSFUser
 from website.project.views.contributor import get_node_contributors_abbrev
 from website.search import exceptions
 import website.search.search as search
@@ -67,90 +66,6 @@ def search_search(**kwargs):
 
     results['time'] = round(time.time() - tick, 2)
     return results
-
-
-def conditionally_add_query_item(query, item, condition, value):
-    """ Helper for the search_projects_by_title function which will add a condition to a query
-    It will give an error if the proper search term is not used.
-    :param query: The modular ODM query that you want to modify
-    :param item:  the field to query on
-    :param condition: yes, no, or either
-    :return: the modified query
-    """
-
-    condition = condition.lower()
-
-    if condition == 'yes':
-        return query & Q(**{item: value})
-    elif condition == 'no':
-        return query & ~Q(**{item: value})
-    elif condition == 'either':
-        return query
-
-    raise HTTPError(http_status.HTTP_400_BAD_REQUEST)
-
-
-@must_be_logged_in
-def search_projects_by_title(**kwargs):
-    """ Search for nodes by title. Can pass in arguments from the URL to modify the search
-    :arg term: The substring of the title.
-    :arg category: Category of the node.
-    :arg isDeleted: yes, no, or either. Either will not add a qualifier for that argument in the search.
-    :arg isFolder: yes, no, or either. Either will not add a qualifier for that argument in the search.
-    :arg isRegistration: yes, no, or either. Either will not add a qualifier for that argument in the search.
-    :arg includePublic: yes or no. Whether the projects listed should include public projects.
-    :arg includeContributed: yes or no. Whether the search should include projects the current user has
-        contributed to.
-    :arg ignoreNode: a list of nodes that should not be included in the search.
-    :return: a list of dictionaries of projects
-
-    """
-    # TODO(fabianvf): At some point, it would be nice to do this with elastic search
-    user = kwargs['auth'].user
-
-    term = request.args.get('term', '')
-    max_results = int(request.args.get('maxResults', '10'))
-    category = request.args.get('category', 'project').lower()
-    is_deleted = request.args.get('isDeleted', 'no').lower()
-    is_collection = request.args.get('isFolder', 'no').lower()
-    is_registration = request.args.get('isRegistration', 'no').lower()
-    include_public = request.args.get('includePublic', 'yes').lower()
-    include_contributed = request.args.get('includeContributed', 'yes').lower()
-    ignore_nodes = request.args.getlist('ignoreNode', [])
-
-    matching_title = Q(
-        title__icontains=term,  # search term (case-insensitive)
-        category=category  # is a project
-    )
-
-    matching_title = conditionally_add_query_item(matching_title, 'is_deleted', is_deleted, True)
-    matching_title = conditionally_add_query_item(matching_title, 'type', is_registration, 'osf.registration')
-    matching_title = conditionally_add_query_item(matching_title, 'type', is_collection, 'osf.collection')
-
-    if len(ignore_nodes) > 0:
-        for node_id in ignore_nodes:
-            matching_title = matching_title & ~Q(_id=node_id)
-
-    my_projects = []
-    my_project_count = 0
-    public_projects = []
-
-    if include_contributed == 'yes':
-        my_projects = AbstractNode.objects.filter(
-            matching_title &
-            Q(_contributors=user)  # user is a contributor
-        )[:max_results]
-        my_project_count = my_project_count
-
-    if my_project_count < max_results and include_public == 'yes':
-        public_projects = AbstractNode.objects.filter(
-            matching_title &
-            Q(is_public=True)  # is public
-        )[:max_results - my_project_count]
-
-    results = list(my_projects) + list(public_projects)
-    ret = process_project_search_results(results, **kwargs)
-    return ret
 
 
 @must_be_logged_in
