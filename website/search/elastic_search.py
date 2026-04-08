@@ -13,14 +13,10 @@ from elasticsearch2 import (ConnectionError, Elasticsearch, NotFoundError,
 from framework.celery_tasks import app as celery_app
 from framework.database import paginated
 from osf.models import AbstractNode
-from osf.models import OSFUser
-from osf.models import BaseFileNode
 from osf.models import GuidMetadataRecord
-from osf.models import Institution
 from osf.models import Preprint
 from osf.models import SpamStatus
 from addons.wiki.models import WikiPage
-from osf.models import CollectionSubmission
 from osf.utils.sanitize import unescape_entities
 from osf.utils.workflows import CollectionSubmissionStates
 from website import settings
@@ -44,16 +40,6 @@ ALIASES = {
     'group': 'Groups',
 }
 
-DOC_TYPE_TO_MODEL = {
-    'component': AbstractNode,
-    'project': AbstractNode,
-    'registration': AbstractNode,
-    'user': OSFUser,
-    'file': BaseFileNode,
-    'institution': Institution,
-    'preprint': Preprint,
-    'collectionSubmission': CollectionSubmission,
-}
 
 # Prevent tokenizing and stop word removal.
 NOT_ANALYZED_PROPERTY = {'type': 'string', 'index': 'not_analyzed'}
