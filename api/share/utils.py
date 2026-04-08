@@ -134,12 +134,12 @@ def task__update_share(self, guid: str, is_backfill=False, osfmap_partition_name
 @celery_app.task
 def task__reindex_failed_or_not_indexed_resource_into_share(resource_type: str, start_id: int = 0, chunk_count: int = 200, chunk_size: int = 500):
     from osf.management.commands.recatalog_metadata import recatalog
-    queryset = get_not_indexed_guids_for_resource_with_no_indexed_guid(resource_type, first_guid=False)
+    queryset = get_not_indexed_guids_for_resource_with_no_indexed_guid(resource_type, only_oldest_guid=False)
     # chunk count and chunk size up to discussion what will be better with Cloud Team
     recatalog(queryset, start_id, chunk_count, chunk_size)
 
 
-def get_not_indexed_guids_for_resource_with_no_indexed_guid(resource_type: str, first_guid: bool = True):
+def get_not_indexed_guids_for_resource_with_no_indexed_guid(resource_type: str, only_oldest_guid: bool = True):
     from osf.models import Guid, Registration, Preprint, Node, OSFUser
     from addons.osfstorage.models import OsfStorageFile
     common_not_indexed_public_resource_extract_query = (
@@ -154,7 +154,7 @@ def get_not_indexed_guids_for_resource_with_no_indexed_guid(resource_type: str, 
         'files': (OsfStorageFile, Q(deleted__isnull=True), ('first_guid', 'name', 'date_last_indexed')),
     }
     resource_model, query, values_to_return = resource_mapper.get(resource_type, 'projects')
-    if first_guid:
+    if only_oldest_guid:
         model_content_type = ContentType.objects.get_for_model(resource_model)
         first_guid_sq = Guid.objects.filter(
             content_type=model_content_type,
