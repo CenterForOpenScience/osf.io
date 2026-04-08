@@ -8,11 +8,10 @@ from api.base.pagination import SearchPagination
 from api.base.parsers import SearchParser
 from api.base.settings import REST_FRAMEWORK, MAX_PAGE_SIZE
 from api.search.permissions import IsAuthenticatedOrReadOnlyForSearch
-from api.institutions.serializers import InstitutionSerializer
 from api.collections.serializers import CollectionSubmissionSerializer
 
 from framework.auth.oauth_scopes import CoreScopes
-from osf.models import Institution, CollectionSubmission
+from osf.models import CollectionSubmission
 
 from website.search import search
 from website.search.exceptions import MalformedQueryError
@@ -63,49 +62,6 @@ class BaseSearchView(JSONAPIBaseView, generics.ListCreateAPIView):
         except MalformedQueryError as e:
             raise ValidationError(e)
         return results
-
-
-class SearchInstitutions(BaseSearchView):
-    """
-    *Read-Only*
-
-    Institutions that have been found by the given Elasticsearch query.
-
-    <!-- Copied spiel from InstitutionDetail -->
-
-    ##Attributes
-
-    OSF Institutions have the "institutions" `type`.
-
-        name           type               description
-        =========================================================================
-        name           string             title of the institution
-        id             string             unique identifier in the OSF
-        logo_path      string             a path to the institution's static logo
-
-    ##Relationships
-
-    ###Nodes
-    List of nodes that have this institution as its primary institution.
-
-    ###Users
-    List of users that are affiliated with this institution.
-
-    ##Links
-
-        self:  the canonical api endpoint of this institution
-        html:  this institution's page on the OSF website
-
-    # This Request/Response
-
-    """
-
-    model_class = Institution
-    serializer_class = InstitutionSerializer
-
-    doc_type = 'institution'
-    view_category = 'search'
-    view_name = 'search-institution'
 
 
 class SearchCollections(BaseSearchView):

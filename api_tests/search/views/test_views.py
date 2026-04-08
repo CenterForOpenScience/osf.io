@@ -155,43 +155,6 @@ class ApiSearchTestCase:
             component_private, user_one, filename='Wavves.mp3')
 
 
-class TestSearchInstitutions(ApiSearchTestCase):
-
-    @pytest.fixture()
-    def url_institution_search(self):
-        return f'/{API_BASE}search/institutions/'
-
-    def test_search_institutions(
-            self, app, url_institution_search, user, institution):
-
-        # test_search_institutions_no_auth
-        res = app.get(url_institution_search)
-        assert res.status_code == 200
-        num_results = len(res.json['data'])
-        total = res.json['links']['meta']['total']
-        assert num_results == 1
-        assert total == 1
-        assert institution.name in res
-
-        # test_search_institutions_auth
-        res = app.get(url_institution_search, auth=user)
-        assert res.status_code == 200
-        num_results = len(res.json['data'])
-        total = res.json['links']['meta']['total']
-        assert num_results == 1
-        assert total == 1
-        assert institution.name in res
-
-        # test_search_institutions_by_name
-        url = '{}?q={}'.format(url_institution_search, 'Social')
-        res = app.get(url)
-        assert res.status_code == 200
-        num_results = len(res.json['data'])
-        total = res.json['links']['meta']['total']
-        assert num_results == 1
-        assert total == 1
-        assert institution.name == res.json['data'][0]['attributes']['name']
-
 class TestSearchCollections(ApiSearchTestCase):
 
     def get_ids(self, data):
