@@ -94,9 +94,22 @@ def resync_preprint_dois_v1(dry_run=True, batch_size=500, rate_limit=100, provid
         f'{"[DRY RUN] " if dry_run else ""}'
         f'Done: {queued} preprints queued, {skipped} skipped (no DOI prefix), {errored} errored'
     )
+    if not dry_run and batch_size:
+        logger.info(
+            f'Estimated remaining after this batch: ~{max(0, total - queued - skipped - errored)}. '
+            f'Re-run this command until 0 preprints remain.'
+        )
 
 
 class Command(BaseCommand):
+    help = (
+        'Resync DOIs for version-1 preprints that are missing the versioned DOI suffix (_v1). '
+        'Processes preprints in batches and queues Crossref deposit tasks. '
+        'IMPORTANT: This command must be run repeatedly until it reports 0 preprints remaining, '
+        'as each run only processes a single batch. '
+        'Check remaining count with --dry_run before and after each run.'
+    )
+
     def add_arguments(self, parser):
         super().add_arguments(parser)
         parser.add_argument(
