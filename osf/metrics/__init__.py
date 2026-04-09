@@ -22,7 +22,6 @@ from .es8_metrics import (
     Es8DownloadCountReport,
     Es8UserSummaryReport,
     Es8NodeSummaryReport,
-    Es8SpamSummaryReport,
     Es8InstitutionSummaryReport,
     Es8NewUserDomainReport,
     Es8OsfstorageFileCountReport,

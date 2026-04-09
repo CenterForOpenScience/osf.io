@@ -37,6 +37,6 @@ class TestEs8Metrics:
             timestamp=datetime(2024, 1, 1, 15, 0),
         )
 
-        assert obj.page_path == '/path/tes'
+        assert obj.page_path == '/path/test'
         assert obj.referer_domain == 'google.com'
         assert obj.hour_of_day == 15
