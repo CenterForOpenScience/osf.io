@@ -57,11 +57,14 @@ class PageviewInfo(esdsl.InnerDoc):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.page_path: str = ''
-        if self.page_url: self.page_path = urlsplit(self.page_url).path.rstrip('/')
+        if self.page_url:
+            self.page_path = urlsplit(self.page_url).path.rstrip('/')
         self.referer_domain: str = ''
-        if self.referer_url: self.referer_domain = urlsplit(self.referer_url).netloc
+        if self.referer_url:
+            self.referer_domain = urlsplit(self.referer_url).netloc
         self.hour_of_day: int = 0
-        if self.timestamp: self.hour_of_day = self.timestamp.hour
+        if self.timestamp:
+            self.hour_of_day = self.timestamp.hour
 
     # fields that should be provided
     referer_url: str

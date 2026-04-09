@@ -18,6 +18,17 @@ from .reports import (
     UserSummaryReport,
 )
 
+from .es8_metrics import (
+    Es8DownloadCountReport,
+    Es8UserSummaryReport,
+    Es8NodeSummaryReport,
+    Es8SpamSummaryReport,
+    Es8InstitutionSummaryReport,
+    Es8NewUserDomainReport,
+    Es8OsfstorageFileCountReport,
+    Es8StorageAddonUsage,
+)
+
 DAILY_REPORTS = (
     DownloadCountReport,
     InstitutionSummaryReport,
@@ -27,6 +38,13 @@ DAILY_REPORTS = (
     PreprintSummaryReport,
     StorageAddonUsage,
     UserSummaryReport,
+    Es8DownloadCountReport,
+    Es8InstitutionSummaryReport,
+    Es8NewUserDomainReport,
+    Es8NodeSummaryReport,
+    Es8OsfstorageFileCountReport,
+    Es8StorageAddonUsage,
+    Es8UserSummaryReport
 )
 
 

@@ -24,19 +24,19 @@ class TestEs8Metrics:
     def test_nested_pageview(self):
         usage = OsfCountedUsageRecord(
             pageview_info={
-                "page_url": "https://example.com",
-                "referer_url": "https://google.com",
+                'page_url': 'https://example.com',
+                'referer_url': 'https://google.com',
             }
         )
         assert usage.pageview_info is not None
 
     def test_pageview_info_autofill(self):
         obj = PageviewInfo(
-            page_url="https://example.com/path/test",
-            referer_url="https://google.com",
+            page_url='https://example.com/path/test',
+            referer_url='https://google.com',
             timestamp=datetime(2024, 1, 1, 15, 0),
         )
 
-        assert obj.page_path == "/path/test"
-        assert obj.referer_domain == "google.com"
+        assert obj.page_path == '/path/tes'
+        assert obj.referer_domain == 'google.com'
         assert obj.hour_of_day == 15
