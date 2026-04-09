@@ -947,6 +947,13 @@ class TestOsfStorageRegistrationFileAdd(AdminTestCase):
         view.post(self.request)
         self.check_message('No file found with the provided guid.')
 
+    def test_guid_is_not_file(self):
+        project = ProjectFactory()
+        self.request.POST = {'file-guid': project._id}
+        view = setup_log_view(self._view, self.request, guid=self.registration_registered_from._id)
+        view.post(self.request)
+        self.check_message('The guid provided does not correspond to a file.')
+
     def test_no_parent_registration(self):
         file = self._create_file(self.project, 'file.txt')
         file.save()
@@ -1013,6 +1020,13 @@ class TestOsfStorageRegistrationFileRemove(AdminTestCase):
         view = setup_log_view(self._view, self.request, guid=self.registration_registered_from._id)
         view.post(self.request)
         self.check_message('No file found with the provided guid.')
+
+    def test_guid_is_not_file(self):
+        project = ProjectFactory()
+        self.request.POST = {'file-guid': project._id}
+        view = setup_log_view(self._view, self.request, guid=self.registration_registered_from._id)
+        view.post(self.request)
+        self.check_message('The guid provided does not correspond to a file.')
 
     def test_file_is_removed_from_registration_osfstorage(self):
         file = self._create_file(self.project, 'file2.txt')

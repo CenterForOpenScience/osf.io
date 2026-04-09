@@ -51,6 +51,7 @@ from osf.models.admin_log_entry import (
     REINDEX_SHARE,
     REINDEX_ELASTIC,
 )
+from osf.models.files import File
 from osf.utils.permissions import ADMIN, API_CONTRIBUTOR_PERMISSIONS
 from scripts.approve_registrations import approve_past_pendings
 from website import settings, search
@@ -862,6 +863,10 @@ class NodeAddOsfStorageFileView(NodeMixin, View):
 
         file = guid.referent
         parent_node = registration.registered_from
+        if not isinstance(file, File):
+            messages.error(request, 'The guid provided does not correspond to a file.')
+            return redirect(self.get_success_url())
+
         if not parent_node:
             messages.error(request, 'The registration does not have the parent node.')
             return redirect(self.get_success_url())
@@ -895,6 +900,10 @@ class NodeRemoveOsfStorageFileView(NodeMixin, View):
             return redirect(self.get_success_url())
 
         file = guid.referent
+        if not isinstance(file, File):
+            messages.error(request, 'The guid provided does not correspond to a file.')
+            return redirect(self.get_success_url())
+
         registration.files.filter(id=file.id).delete()
         messages.success(request, 'The file was successfully removed.')
         return redirect(self.get_success_url())
