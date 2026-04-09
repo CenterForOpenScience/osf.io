@@ -421,6 +421,7 @@ class CeleryConfig:
     task_account_status_changes_queue = 'account_status_changes'
     task_external_high_queue = 'external_high'
     task_external_low_queue = 'external_low'
+    task_background_migration_queue = 'background_migration'
 
     external_high_modules = {
         'osf.tasks.log_gv_addon',
@@ -487,6 +488,10 @@ class CeleryConfig:
         'api.share.utils',
     }
 
+    background_migration_modules = {
+        'osf.management.commands.metrics_es8_migration',
+    }
+
     try:
         from kombu import Queue, Exchange
     except ImportError:
@@ -539,6 +544,12 @@ class CeleryConfig:
                 Exchange(task_external_low_queue),
                 routing_key=task_external_low_queue,
                 consumer_arguments={'x-priority': -2},
+            ),
+            Queue(
+                task_background_migration_queue,
+                Exchange(task_background_migration_queue),
+                routing_key=task_background_migration_queue,
+                consumer_arguments={'x-priority': -1},
             ),
         )
 
