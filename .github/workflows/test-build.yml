@@ -17,9 +17,9 @@ jobs:
   build-cache:
     runs-on: ubuntu-22.04
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v6
     - id: cache-objects
-      uses: actions/cache@v4
+      uses: actions/cache@v5
       with:
         path: ~/.cache
         key: reqs_${{ hashFiles('poetry.lock') }}
@@ -50,7 +50,7 @@ jobs:
           # Maps tcp port 5432 on service container to the host
           - 5432:5432
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v6
     - uses: ./.github/actions/start-build
     - name: Run tests
       run: poetry run python3 -m invoke test-ci-addons --junit
@@ -77,7 +77,7 @@ jobs:
           # Maps tcp port 5432 on service container to the host
           - 5432:5432
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v6
     - uses: ./.github/actions/start-build
     - name: Run tests
       run: poetry run python3 -m invoke test-ci-website --junit
@@ -104,7 +104,7 @@ jobs:
           # Maps tcp port 5432 on service container to the host
           - 5432:5432
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v6
       - uses: ./.github/actions/start-build
       - name: NVM & yarn install
         run: poetry run python3 -m invoke assets --dev
@@ -133,7 +133,7 @@ jobs:
           # Maps tcp port 5432 on service container to the host
           - 5432:5432
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v6
     - uses: ./.github/actions/start-build
     - name: Run tests
       run: poetry run python3 -m invoke test-ci-api2 --junit
@@ -161,7 +161,7 @@ jobs:
           # Maps tcp port 5432 on service container to the host
           - 5432:5432
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v6
     - uses: ./.github/actions/start-build
     - name: Run tests
       run: poetry run python3 -m invoke test-ci-api3-and-osf --junit
@@ -194,7 +194,7 @@ jobs:
           - 1025:1025
           - 8025:8025
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v6
     - uses: ./.github/actions/start-build
     - name: Run tests
       run: poetry run python3 -m invoke test-ci-mailhog -n 1 --junit
@@ -222,7 +222,7 @@ jobs:
           # Maps tcp port 5432 on service container to the host
           - 5432:5432
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v6
     - uses: ./.github/actions/start-build
     - name: Run tests
       run: poetry run python3 -m invoke test-ci-scripts -n 1 --junit
