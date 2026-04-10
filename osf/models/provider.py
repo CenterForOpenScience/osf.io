@@ -257,6 +257,30 @@ class AbstractProvider(TypedModel, TypedObjectIDMixin, ReviewProviderMixin, Dirt
 
         self.save()
 
+    def validate_required_metadata(self, osf_obj):
+        from jsonschema import validate, ValidationError as JsonSchemaValidationError
+        from osf.models.cedar_metadata import CedarMetadataRecord
+
+        if not self.required_metadata_template:
+            return
+
+        record = CedarMetadataRecord.objects.filter(
+            guid__in=osf_obj.guids.all(),
+            template=self.required_metadata_template,
+            is_published=True,
+        ).first()
+
+        if record is None:
+            raise ValidationError(
+                f'Object must have a published CEDAR metadata record for the required template '
+                f'"{self.required_metadata_template.schema_name}".'
+            )
+
+        try:
+            validate(record.metadata, self.required_metadata_template.template)
+        except JsonSchemaValidationError as e:
+            raise ValidationError(e.message)
+
 
 class CollectionProvider(AbstractProvider):
     DEFAULT_SUBSCRIPTIONS = [
