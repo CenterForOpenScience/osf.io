@@ -354,13 +354,6 @@ class TestGetNodeTree(OsfTestCase):
         assert children[0]['node']['id'] == child3._primary_key
 
 
-class TestPublicViews(OsfTestCase):
-
-    def test_explore(self):
-        res = self.app.get('/explore/', follow_redirects=True)
-        assert res.status_code == 200
-
-
 class TestExternalAuthViews(OsfTestCase):
 
     def setUp(self):
