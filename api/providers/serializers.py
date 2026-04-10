@@ -77,6 +77,12 @@ class ProviderSerializer(JSONAPISerializer):
         related_view_kwargs={'provider_id': '<_id>'},
     )
 
+    required_metadata_template = RelationshipField(
+        related_view='cedar-metadata-templates:cedar-metadata-template-detail',
+        related_view_kwargs={'template_id': '<required_metadata_template._id>'},
+        read_only=True,
+    )
+
     schemas = TypedRelationshipField(
         related_view='providers:registration-providers:registration-schema-list',
         related_view_kwargs={'provider_id': '<_id>'},
