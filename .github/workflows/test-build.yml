@@ -64,6 +64,14 @@ jobs:
     permissions:
       checks: write
     services:
+      elasticsearch8:
+        image: elasticsearch:8.19.11
+        ports:
+          - 9202:9200
+        env:
+          xpack.security.enabled: false
+          node.name: singlenode
+          cluster.initial_master_nodes: singlenode
       postgres:
         image: postgres
         env:
@@ -84,6 +92,8 @@ jobs:
     - name: Upload report
       if: (success() || failure())    # run this step even if previous step failed
       uses: ./.github/actions/gen-report
+      env:
+          ELASTIC8_URL: http://localhost:9202
 
   api1_and_js:
     runs-on: ubuntu-22.04
@@ -208,6 +218,14 @@ jobs:
       checks: write
     needs: build-cache
     services:
+      elasticsearch8:
+        image: elasticsearch:8.19.11
+        ports:
+          - 9202:9200
+        env:
+          xpack.security.enabled: false
+          node.name: singlenode
+          cluster.initial_master_nodes: singlenode
       postgres:
         image: postgres
 
