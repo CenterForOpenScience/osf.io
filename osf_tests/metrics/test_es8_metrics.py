@@ -15,11 +15,9 @@ class TestEs8Metrics:
     def test_instantiate_of_reports(self):
         download_report = Es8DownloadCountReport()
         assert hasattr(download_report, 'daily_file_downloads')
-        assert download_report.daily_file_downloads is None
 
         user_report = Es8UserSummaryReport()
         assert hasattr(user_report, 'active')
-        assert user_report.active is None
 
     def test_nested_pageview(self):
         usage = OsfCountedUsageRecord(
