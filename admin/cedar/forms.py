@@ -1,4 +1,4 @@
-from django.forms import ModelForm, CharField, JSONField, BooleanField
+from django.forms import ModelForm, CharField, JSONField
 
 from osf.models import CedarMetadataTemplate
 
