@@ -1,5 +1,6 @@
 import json
 import requests
+from jsonschema import validate as jsonschema_validate, ValidationError as JsonSchemaValidationError
 
 from django.apps import apps
 from django.contrib.postgres import fields
@@ -20,6 +21,7 @@ from .mixins import ReviewProviderMixin
 from .brand import Brand
 from .citation import CitationStyle
 from .licenses import NodeLicense
+from .cedar_metadata import CedarMetadataRecord
 from .storage import ProviderAssetFile
 from .subject import Subject
 from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
@@ -258,9 +260,6 @@ class AbstractProvider(TypedModel, TypedObjectIDMixin, ReviewProviderMixin, Dirt
         self.save()
 
     def validate_required_metadata(self, osf_obj):
-        from jsonschema import validate, ValidationError as JsonSchemaValidationError
-        from osf.models.cedar_metadata import CedarMetadataRecord
-
         if not self.required_metadata_template:
             return
 
@@ -277,7 +276,7 @@ class AbstractProvider(TypedModel, TypedObjectIDMixin, ReviewProviderMixin, Dirt
             )
 
         try:
-            validate(record.metadata, self.required_metadata_template.template)
+            jsonschema_validate(record.metadata, self.required_metadata_template.template)
         except JsonSchemaValidationError as e:
             raise ValidationError(e.message)
 
