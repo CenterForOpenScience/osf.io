@@ -148,7 +148,7 @@ class CrossRefClient(AbstractIdentifierClient):
         preprint_versions = preprint.get_preprint_versions(
             versioned_guids__version__lt=preprint.version,
             include_rejected=False,
-        )
+        ) if include_relation else []
         if preprint_versions:
             for previous_version in preprint_versions:
 
