@@ -263,3 +263,48 @@ class TestCrossRefEmailResponse:
 
         preprint.reload()
         assert preprint.get_identifier_value('doi') == versioned_doi
+        assert preprint.get_identifier_value('doi_unversioned') == unversioned_doi
+
+    def test_unversioned_doi_confirmation_update_does_not_store_doi_unversioned(self, app, url, preprint):
+        versioned_doi = settings.DOI_FORMAT.format(
+            prefix=preprint.provider.doi_prefix, guid=preprint._id
+        )
+        preprint.set_identifier_value(category='doi', value=versioned_doi)
+
+        base_guid = preprint.get_guid()._id
+        unversioned_doi = settings.DOI_FORMAT.format(
+            prefix=preprint.provider.doi_prefix, guid=base_guid
+        )
+        update_confirmation_xml = """
+            <?xml version="1.0" encoding="UTF-8"?>
+            <doi_batch_diagnostic status="completed" sp="cs3.crossref.org">
+               <submission_id>1390676000</submission_id>
+               <batch_id>{batch_id}</batch_id>
+               <record_diagnostic status="Success">
+                  <doi>{versioned_doi}</doi>
+                  <msg>Successfully updated</msg>
+               </record_diagnostic>
+               <record_diagnostic status="Success">
+                  <doi>{unversioned_doi}</doi>
+                  <msg>Successfully updated</msg>
+               </record_diagnostic>
+               <batch_data>
+                  <record_count>2</record_count>
+                  <success_count>2</success_count>
+                  <warning_count>0</warning_count>
+                  <failure_count>0</failure_count>
+               </batch_data>
+            </doi_batch_diagnostic>
+        """.format(
+            batch_id=preprint._id,
+            versioned_doi=versioned_doi,
+            unversioned_doi=unversioned_doi,
+        )
+
+        context_data = self.make_mailgun_payload(crossref_response=update_confirmation_xml)
+        with capture_notifications(expect_none=True):
+            app.post(url, context_data)
+
+        preprint.reload()
+        assert preprint.get_identifier_value('doi') == versioned_doi
+        assert preprint.get_identifier_value('doi_unversioned') is None
