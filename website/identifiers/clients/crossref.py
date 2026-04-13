@@ -41,13 +41,18 @@ class CrossRefClient(AbstractIdentifierClient):
         prefix = preprint.provider.doi_prefix
         return settings.DOI_FORMAT.format(prefix=prefix, guid=preprint._id)
 
-    def build_metadata(self, preprint, include_relation=True):
+    def build_unversioned_doi(self, preprint):
+        prefix = preprint.provider.doi_prefix
+        return settings.DOI_FORMAT.format(prefix=prefix, guid=preprint.get_guid()._id)
+
+    def build_metadata(self, preprint, include_relation=True, include_unversioned_doi=False):
         """Return the crossref metadata XML document for a given preprint as a string for DOI minting purposes
 
         :param preprint: the preprint, or list of preprints to build metadata for
         """
         if isinstance(preprint, (list, QuerySet)):
             preprints = preprint
+            include_unversioned_doi = False  # not supported for bulk batches
         else:
             preprints = [preprint]
 
@@ -74,6 +79,9 @@ class CrossRefClient(AbstractIdentifierClient):
         for preprint in preprints:
             body.append(self.build_posted_content(preprint, element, include_relation))
 
+        if include_unversioned_doi:
+            body.append(self.build_unversioned_posted_content(preprints[0], element))
+
         root = element.doi_batch(
             head,
             body,
@@ -82,10 +90,12 @@ class CrossRefClient(AbstractIdentifierClient):
         root.attrib['{%s}schemaLocation' % XSI] = CROSSREF_SCHEMA_LOCATION
         return lxml.etree.tostring(root)
 
-    def build_posted_content(self, preprint, element, include_relation):
+    def build_posted_content(self, preprint, element, include_relation, doi_override=None, resource_override=None):
         """Build the <posted_content> element for a single preprint
         preprint - preprint to build posted_content for
         element - namespace element to use when building parts of the XML structure
+        doi_override - if provided, use this DOI value instead of the preprint's own DOI
+        resource_override - if provided, use this URL as the <resource> instead of the default
         """
         from osf.models import SpamStatus
 
@@ -157,14 +167,26 @@ class CrossRefClient(AbstractIdentifierClient):
             posted_content.append(relations_program)
 
         minted_doi = preprint.get_identifier_value('doi')
-        doi = minted_doi or self.build_doi(preprint)
+        doi = doi_override or minted_doi or self.build_doi(preprint)
+        resource_url = resource_override if resource_override is not None else settings.DOMAIN + preprint._id
         doi_data = [
             element.doi(doi),
-            element.resource(settings.DOMAIN + preprint._id)
+            element.resource(resource_url)
         ]
         posted_content.append(element.doi_data(*doi_data))
 
         return posted_content
+
+    def build_unversioned_posted_content(self, preprint, element):
+        latest = preprint.get_guid().referent
+        base_guid = latest.get_guid()._id
+        return self.build_posted_content(
+            latest,
+            element,
+            include_relation=False,
+            doi_override=self.build_unversioned_doi(latest),
+            resource_override=settings.DOMAIN + base_guid,
+        )
 
     def _process_crossref_name(self, contributor):
         # Adapted from logic used in `api/citations/utils.py`
@@ -249,7 +271,7 @@ class CrossRefClient(AbstractIdentifierClient):
 
     def create_identifier(self, preprint, category, include_relation=True):
         if category == 'doi':
-            metadata = self.build_metadata(preprint, include_relation)
+            metadata = self.build_metadata(preprint, include_relation, include_unversioned_doi=True)
             doi = self.build_doi(preprint)
             username, password = self.get_credentials()
             logger.info(f'Sending metadata for DOI {doi}:\n{metadata}')
