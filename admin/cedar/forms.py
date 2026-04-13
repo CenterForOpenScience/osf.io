@@ -1,4 +1,4 @@
-from django.forms import ModelForm, CharField, JSONField
+from django.forms import ModelForm, CharField, JSONField, BooleanField
 
 from osf.models import CedarMetadataTemplate
 
@@ -21,4 +21,4 @@ class CedarMetadataTemplateForm(ModelForm):
 
     class Meta:
         model = CedarMetadataTemplate
-        fields = ['schema_name', 'cedar_id', 'template_version', 'template', 'active']
+        fields = ['schema_name', 'cedar_id', 'template_version', 'template', 'active', 'should_index_for_search']
