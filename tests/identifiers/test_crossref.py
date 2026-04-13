@@ -95,6 +95,18 @@ class TestCrossRefClient:
 
         assert crossref_client.build_doi(preprint) == settings.DOI_FORMAT.format(prefix=doi_prefix, guid=preprint._id)
 
+    def test_crossref_build_unversioned_doi(self, crossref_client, preprint):
+        doi_prefix = preprint.provider.doi_prefix
+        base_guid = preprint.get_guid()._id
+
+        expected = settings.DOI_FORMAT.format(prefix=doi_prefix, guid=base_guid)
+        assert crossref_client.build_unversioned_doi(preprint) == expected
+        assert '_v' not in expected
+
+    def test_crossref_build_unversioned_doi_matches_base_guid_not_versioned(self, crossref_client, preprint, preprint_version):
+        assert crossref_client.build_doi(preprint_version) != crossref_client.build_unversioned_doi(preprint_version)
+        assert crossref_client.build_unversioned_doi(preprint) == crossref_client.build_unversioned_doi(preprint_version)
+
     def test_crossref_build_doi_versioned(self, crossref_client, preprint_version):
         doi_prefix = preprint_version.provider.doi_prefix
 
@@ -337,6 +349,57 @@ class TestCrossRefClient:
         xml_without_relation = crossref_client.build_metadata(preprint, include_relation=False)
         root_without_relation = lxml.etree.fromstring(xml_without_relation)
         assert root_without_relation.find('.//{%s}intra_work_relation' % crossref.CROSSREF_RELATIONS) is None
+
+    def test_metadata_includes_unversioned_doi_entry(self, crossref_client, preprint):
+        crossref_xml = crossref_client.build_metadata(preprint, include_unversioned_doi=True)
+        root = lxml.etree.fromstring(crossref_xml)
+
+        posted_contents = root.findall('.//{%s}posted_content' % crossref.CROSSREF_NAMESPACE)
+        assert len(posted_contents) == 2
+
+        versioned_dois = posted_contents[0].findall('.//{%s}doi' % crossref.CROSSREF_NAMESPACE)
+        assert len(versioned_dois) == 1
+        assert versioned_dois[0].text == crossref_client.build_doi(preprint)
+
+        unversioned_dois = posted_contents[1].findall('.//{%s}doi' % crossref.CROSSREF_NAMESPACE)
+        assert len(unversioned_dois) == 1
+        assert unversioned_dois[0].text == crossref_client.build_unversioned_doi(preprint)
+        assert '_v' not in unversioned_dois[0].text
+
+        unversioned_resource = posted_contents[1].find('.//{%s}resource' % crossref.CROSSREF_NAMESPACE)
+        base_guid = preprint.get_guid()._id
+        assert unversioned_resource.text == settings.DOMAIN + base_guid
+
+    def test_metadata_unversioned_doi_uses_latest_version_metadata(self, crossref_client, preprint, preprint_version):
+        crossref_xml = crossref_client.build_metadata(preprint, include_unversioned_doi=True)
+        root = lxml.etree.fromstring(crossref_xml)
+
+        posted_contents = root.findall('.//{%s}posted_content' % crossref.CROSSREF_NAMESPACE)
+        assert len(posted_contents) == 2
+
+        unversioned_resource = posted_contents[1].find('.//{%s}resource' % crossref.CROSSREF_NAMESPACE)
+        base_guid = preprint.get_guid()._id
+        assert unversioned_resource.text == settings.DOMAIN + base_guid
+
+    def test_metadata_unversioned_doi_has_no_version_relations(self, crossref_client, preprint, preprint_version):
+        crossref_xml = crossref_client.build_metadata(preprint_version, include_unversioned_doi=True)
+        root = lxml.etree.fromstring(crossref_xml)
+
+        posted_contents = root.findall('.//{%s}posted_content' % crossref.CROSSREF_NAMESPACE)
+        unversioned_content = posted_contents[1]
+
+        relations = unversioned_content.findall('.//{%s}intra_work_relation' % crossref.CROSSREF_RELATIONS)
+        is_version_of_relations = [
+            r for r in relations if r.get('relationship-type') == 'isVersionOf'
+        ]
+        assert len(is_version_of_relations) == 0
+
+    def test_metadata_bulk_does_not_include_unversioned_doi(self, crossref_client, preprint, preprint_version):
+        crossref_xml = crossref_client.build_metadata([preprint, preprint_version])
+        root = lxml.etree.fromstring(crossref_xml)
+
+        posted_contents = root.findall('.//{%s}posted_content' % crossref.CROSSREF_NAMESPACE)
+        assert len(posted_contents) == 2  # one per preprint, no extras
 
     def test_metadata_for_affiliated_institutions(self, crossref_client, preprint):
         institution = InstitutionFactory()

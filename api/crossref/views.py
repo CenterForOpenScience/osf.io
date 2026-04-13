@@ -7,6 +7,7 @@ from rest_framework.views import APIView
 
 from api.crossref.permissions import RequestComesFromMailgun
 from osf.models import Preprint, NotificationTypeEnum
+from osf.models.base import Guid
 from website import settings
 from website.preprints.tasks import mint_doi_on_crossref_fail
 
@@ -48,6 +49,12 @@ class ParseCrossRefConfirmation(APIView):
                 if record.get('status').lower() == 'success' and doi:
                     msg = record.find('msg').text
                     created = bool(msg == 'Successfully added')
+                    _, version = Guid.split_guid(guid) if guid else (None, None)
+                    if not version:
+                        logger.info(f'Unversioned DOI confirmed by CrossRef (no identifier update needed): {doi}')
+                        dois_processed += 1
+                        continue
+
                     legacy_doi = preprint.get_identifier(category='legacy_doi')
                     if created or legacy_doi:
                         # Sets preprint_doi_created and saves the preprint
