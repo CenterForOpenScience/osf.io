@@ -61,13 +61,23 @@ jobs:
     steps:
     - uses: actions/checkout@v2
     - uses: ./.github/actions/start-build
+    - name: Wait for Elasticsearch
+      run: |
+        echo "Waiting for Elasticsearch..."
+        for i in {1..30}; do
+          if curl -sf http://localhost:9202/_cluster/health?wait_for_status=yellow; then
+            echo "Elasticsearch is ready"
+            exit 0
+          fi
+          sleep 2
+        done
+        echo "Elasticsearch failed"
+        exit 1
     - name: Run tests
       run: poetry run python3 -m invoke test-ci-addons --junit
     - name: Upload report
       if: (success() || failure())    # run this step even if previous step failed
       uses: ./.github/actions/gen-report
-      env:
-        ELASTIC8_URI: ${{ env.ELASTIC8_URI }}
 
   website:
     runs-on: ubuntu-22.04
@@ -103,8 +113,6 @@ jobs:
     - name: Upload report
       if: (success() || failure())    # run this step even if previous step failed
       uses: ./.github/actions/gen-report
-      env:
-        ELASTIC8_URI: ${{ env.ELASTIC8_URI }}
 
   api1_and_js:
     runs-on: ubuntu-22.04
@@ -142,8 +150,6 @@ jobs:
       - name: Upload report
         if: (success() || failure())    # run this step even if previous step failed
         uses: ./.github/actions/gen-report
-        env:
-          ELASTIC8_URI: ${{ env.ELASTIC8_URI }}
 
   api2:
     runs-on: ubuntu-22.04
@@ -179,8 +185,6 @@ jobs:
     - name: Upload report
       if: (success() || failure())    # run this step even if previous step failed
       uses: ./.github/actions/gen-report
-      env:
-        ELASTIC8_URI: ${{ env.ELASTIC8_URI }}
 
   api3_and_osf:
     runs-on: ubuntu-22.04
