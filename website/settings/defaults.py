@@ -743,6 +743,11 @@ class CeleryConfig:
             'task': 'osf.metrics.events.delete_expired_djelme_indexes',
             'schedule': crontab(minute=30, hour=7, day_of_month=5),     # Fifth day of month 2:30 a.m. EST
         },
+        'resync_preprint_dois_v1': {
+            'task': 'osf.management.commands.resync_preprint_dois_v1',
+            'schedule': crontab(minute=0, hour=5),  # Daily 12 a.m EDT
+            'kwargs': {'dry_run': False},
+        },
     }
 
 
