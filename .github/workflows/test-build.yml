@@ -37,15 +37,19 @@ jobs:
     permissions:
       checks: write
     services:
-      elasticsearch8:
-        image: elasticsearch:8.19.11
+      elasticsearch8: &ES8_SERVICE
+        image: elasticsearch:8.19.14
         ports:
           - 9202:9200
         env:
+          discovery.type: single-node
           xpack.security.enabled: false
-          node.name: singlenode
-          cluster.initial_master_nodes: singlenode
-      postgres:
+        options: >-
+          --health-cmd "curl -sf http://localhost:9200/_cluster/health?wait_for_status=yellow&timeout=30s"
+          --health-interval 10s
+          --health-timeout 30s
+          --health-retries 5
+      postgres: &POSTGRES_SERVICE
         image: postgres
         env:
           POSTGRES_PASSWORD: ${{ env.OSF_DB_PASSWORD }}
@@ -60,15 +64,6 @@ jobs:
     steps:
     - uses: actions/checkout@v2
     - uses: ./.github/actions/start-build
-    - name: Wait for Elasticsearch
-      run: |
-        echo "Waiting for ES8 health..."
-        sleep 5
-        until curl -sf http://localhost:9202/_cluster/health?wait_for_status=yellow; do
-          echo "ES8 not ready yet..."
-          sleep 5
-        done
-        echo "ES8 started successfully!"
     - name: Run tests
       run: poetry run python3 -m invoke test-ci-addons --junit
       env:
@@ -83,18 +78,7 @@ jobs:
     permissions:
       checks: write
     services:
-      postgres:
-        image: postgres
-        env:
-          POSTGRES_PASSWORD: ${{ env.OSF_DB_PASSWORD }}
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-        ports:
-          # Maps tcp port 5432 on service container to the host
-          - 5432:5432
+      postgres: *POSTGRES_SERVICE
     steps:
     - uses: actions/checkout@v2
     - uses: ./.github/actions/start-build
@@ -110,40 +94,13 @@ jobs:
     permissions:
       checks: write
     services:
-      elasticsearch8:
-        image: elasticsearch:8.19.11
-        ports:
-          - 9202:9200
-        env:
-          xpack.security.enabled: false
-          node.name: singlenode
-          cluster.initial_master_nodes: singlenode
-      postgres:
-        image: postgres
-        env:
-          POSTGRES_PASSWORD: ${{ env.OSF_DB_PASSWORD }}
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-        ports:
-          # Maps tcp port 5432 on service container to the host
-          - 5432:5432
+      elasticsearch8: *ES8_SERVICE
+      postgres: *POSTGRES_SERVICE
     steps:
       - uses: actions/checkout@v2
       - uses: ./.github/actions/start-build
       - name: NVM & yarn install
         run: poetry run python3 -m invoke assets --dev
-      - name: Wait for Elasticsearch
-        run: |
-          echo "Waiting for ES8 health..."
-          sleep 5
-          until curl -sf http://localhost:9202/_cluster/health?wait_for_status=yellow; do
-            echo "ES8 not ready yet..."
-            sleep 5
-          done
-          echo "ES8 started successfully!"
       - name: Run test
         run: poetry run python3 -m invoke test-ci-api1-and-js --junit
         env:
@@ -158,26 +115,8 @@ jobs:
     permissions:
       checks: write
     services:
-      elasticsearch8:
-        image: elasticsearch:8.19.11
-        ports:
-          - 9202:9200
-        env:
-          xpack.security.enabled: false
-          node.name: singlenode
-          cluster.initial_master_nodes: singlenode
-      postgres:
-        image: postgres
-        env:
-          POSTGRES_PASSWORD: ${{ env.OSF_DB_PASSWORD }}
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-        ports:
-          # Maps tcp port 5432 on service container to the host
-          - 5432:5432
+      elasticsearch8: *ES8_SERVICE
+      postgres: *POSTGRES_SERVICE
     steps:
     - uses: actions/checkout@v2
     - uses: ./.github/actions/start-build
@@ -204,19 +143,7 @@ jobs:
       checks: write
     needs: build-cache
     services:
-      postgres:
-        image: postgres
-
-        env:
-          POSTGRES_PASSWORD: ${{ env.OSF_DB_PASSWORD }}
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-        ports:
-          # Maps tcp port 5432 on service container to the host
-          - 5432:5432
+      postgres: *POSTGRES_SERVICE
     steps:
     - uses: actions/checkout@v2
     - uses: ./.github/actions/start-build
@@ -232,19 +159,7 @@ jobs:
       checks: write
     needs: build-cache
     services:
-      postgres:
-        image: postgres
-
-        env:
-          POSTGRES_PASSWORD: ${{ env.OSF_DB_PASSWORD }}
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-        ports:
-          # Maps tcp port 5432 on service container to the host
-          - 5432:5432
+      postgres: *POSTGRES_SERVICE
       mailhog:
         image: mailhog/mailhog
         ports:
@@ -265,19 +180,7 @@ jobs:
       checks: write
     needs: build-cache
     services:
-      postgres:
-        image: postgres
-
-        env:
-          POSTGRES_PASSWORD: ${{ env.OSF_DB_PASSWORD }}
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-        ports:
-          # Maps tcp port 5432 on service container to the host
-          - 5432:5432
+      postgres: *POSTGRES_SERVICE
     steps:
     - uses: actions/checkout@v2
     - uses: ./.github/actions/start-build
