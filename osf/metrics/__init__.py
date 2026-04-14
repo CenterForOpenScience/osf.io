@@ -17,16 +17,8 @@ from .reports import (
     StorageAddonUsage,
     UserSummaryReport,
 )
+from . import es8_metrics
 
-from .es8_metrics import (
-    Es8DownloadCountReport,
-    Es8UserSummaryReport,
-    Es8NodeSummaryReport,
-    Es8InstitutionSummaryReport,
-    Es8NewUserDomainReport,
-    Es8OsfstorageFileCountReport,
-    Es8StorageAddonUsage,
-)
 
 DAILY_REPORTS = (
     DownloadCountReport,
@@ -37,13 +29,6 @@ DAILY_REPORTS = (
     PreprintSummaryReport,
     StorageAddonUsage,
     UserSummaryReport,
-    Es8DownloadCountReport,
-    Es8InstitutionSummaryReport,
-    Es8NewUserDomainReport,
-    Es8NodeSummaryReport,
-    Es8OsfstorageFileCountReport,
-    Es8StorageAddonUsage,
-    Es8UserSummaryReport
 )
 
 
@@ -53,4 +38,5 @@ __all__ = (
     'PreprintView',
     'PreprintDownload',
     'RegistriesModerationMetrics',
+    'es8_metrics',
 )

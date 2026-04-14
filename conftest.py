@@ -6,7 +6,7 @@ import re
 from django.db import transaction
 from elasticsearch6_dsl.connections import connections
 from website import settings as osf_settings
-from elasticsearch_metrics.tests._test_util import RealElasticTestCase
+from elasticsearch_metrics.tests.util import djelme_test_backends
 from faker import Factory
 import pytest
 import responses
@@ -146,19 +146,9 @@ def _es_metrics_marker(request):
         yield
         return
 
-    connections.create_connection(
-        alias='osfmetrics_es6',
-        hosts=osf_settings.ELASTIC6_URI,
-    )
-
-    class _Es6TestCase(RealElasticTestCase, autosetup_djelme_backends=True):
-        ...
-    es6_test_case = _Es6TestCase()
-    es6_test_case.setUp()
-    try:
+    with djelme_test_backends():
         yield
-    finally:
-        es6_test_case.tearDown()
+
 
 @pytest.fixture
 def mock_share_responses():
@@ -356,6 +346,6 @@ def mock_gravy_valet_get_verified_links():
         yield mock_get_verified_links
 
 
-@pytest.fixture(autouse=True)
-def load_notification_types(db, *args, **kwargs):
-    populate_notification_types(*args, **kwargs)
+# @pytest.fixture(autouse=True)
+# def load_notification_types(db, *args, **kwargs):
+#     populate_notification_types(*args, **kwargs)

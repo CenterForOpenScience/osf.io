@@ -1,42 +1,52 @@
 from datetime import datetime
 
+from elasticsearch_metrics.tests.util import djelme_test_backends
+import pytest
+
 from osf.metrics.es8_metrics import (
-    Es8DownloadCountReport,
-    Es8UserSummaryReport,
+    PageviewInfo,
+    DownloadCountReportEs8,
     OsfCountedUsageRecord,
-    PageviewInfo
 )
 
 
 class TestEs8Metrics:
-    def test_import_all_reports(self):
-        assert True
+    """smoke tests to check that djelme records can be saved and searched"""
+    @pytest.fixture(autouse=True)
+    def _real_elastic(self):
+        with djelme_test_backends():
+            yield
 
-    def test_instantiate_of_reports(self):
-        download_report = Es8DownloadCountReport(cycle_coverage='2026.01.01')
-        assert hasattr(download_report, 'daily_file_downloads')
-
-        user_report = Es8UserSummaryReport(cycle_coverage='2026.01.01')
-        assert hasattr(user_report, 'active')
-
-    def test_nested_pageview(self):
-        usage = OsfCountedUsageRecord(
-            cycle_coverage='2026.01.01',
-            pageview_info={
-                'page_url': 'https://example.com',
-                'referer_url': 'https://google.com',
-            }
-        )
-        assert usage.pageview_info is not None
-
-    def test_pageview_info_autofill(self):
-        obj = PageviewInfo(
-            cycle_coverage='2026.01.01',
-            page_url='https://example.com/path/test',
-            referer_url='https://google.com',
+    def test_nested_pageview_autofill(self):
+        usage = OsfCountedUsageRecord.record(
             timestamp=datetime(2024, 1, 1, 15, 0),
+            sessionhour_id='blah',
+            database_iri='https://osf.example/provider',
+            item_iri='https://osf.example/itemm',
+            item_osfid='itemm',
+            item_public=True,
+            item_type='https://osf.example/Preprint',
+            platform_iri='https://osf.example',
+            user_is_authenticated=False,
+            pageview_info=PageviewInfo(
+                page_url="https://example.com/path/test",
+                referer_url="https://google.com",
+                route_name='foo.bar',
+                page_title='title title',
+            ),
         )
+        assert usage.pageview_info.page_path == "/path/test"
+        assert usage.pageview_info.referer_domain == "google.com"
+        assert usage.pageview_info.hour_of_day == 15
 
-        assert obj.page_path == '/path/test'
-        assert obj.referer_domain == 'google.com'
-        assert obj.hour_of_day == 15
+    def test_save_report(self):
+        _saved = DownloadCountReportEs8.record(
+            cycle_coverage="2026.1.1",
+            daily_file_downloads=17,
+        )
+        DownloadCountReportEs8.refresh_timeseries_indexes()
+        _response = DownloadCountReportEs8.search().execute()
+        (_fetched,) = _response
+        assert _fetched.meta.id == _saved.meta.id
+        assert _fetched.cycle_coverage == '2026.1.1'
+        assert _fetched.daily_file_downloads == 17
