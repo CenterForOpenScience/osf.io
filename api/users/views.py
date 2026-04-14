@@ -1480,6 +1480,8 @@ class ExternalLoginConfirmEmailView(generics.CreateAPIView):
 
         user.date_last_logged_in = timezone.now()
         user.external_identity[provider][provider_id] = 'VERIFIED'
+        if provider.lower() in OSFUser.SOCIAL_FIELDS:
+            user.social[provider.lower()] = provider_id
         del user.email_verifications[token]
         user.verification_key = generate_verification_key()
         user.save()
