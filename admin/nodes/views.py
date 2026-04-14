@@ -905,12 +905,11 @@ class NodeRemoveOsfStorageFileView(NodeMixin, View):
             return redirect(self.get_success_url())
 
         registration_file = registration.files.filter(id=file.id)
-        if registration_file.exists():
-            registration_file.delete()
-        else:
+        if not registration_file.exists():
             messages.error(request, 'The file with the provided guid is not part of the registration.')
             return redirect(self.get_success_url())
 
+        registration_file.delete()
         messages.success(request, 'The file was successfully removed.')
         return redirect(self.get_success_url())
 
