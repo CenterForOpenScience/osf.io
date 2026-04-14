@@ -12,7 +12,6 @@ env:
   OSF_DB_PORT: 5432
   OSF_DB_PASSWORD: postgres
   GITHUB_ACTIONS: true
-  ELASTIC8_URI: http://localhost:9202
 
 jobs:
   build-cache:
@@ -61,8 +60,20 @@ jobs:
     steps:
     - uses: actions/checkout@v2
     - uses: ./.github/actions/start-build
+    - name: Wait for Elasticsearch
+      run: |
+        echo "Waiting for ES8 health..."
+        sleep 5
+        until curl -sf http://localhost:9202/_cluster/health?wait_for_status=yellow; do
+          echo "ES8 not ready yet..."
+          sleep 5
+        done
+        
+        echo "ES8 started successfully!"
     - name: Run tests
       run: poetry run python3 -m invoke test-ci-addons --junit
+      env:
+        ELASTIC8_URI: http://localhost:9202
     - name: Upload report
       if: (success() || failure())    # run this step even if previous step failed
       uses: ./.github/actions/gen-report
@@ -73,14 +84,6 @@ jobs:
     permissions:
       checks: write
     services:
-      elasticsearch8:
-        image: elasticsearch:8.19.11
-        ports:
-          - 9202:9200
-        env:
-          xpack.security.enabled: false
-          node.name: singlenode
-          cluster.initial_master_nodes: singlenode
       postgres:
         image: postgres
         env:
@@ -108,14 +111,6 @@ jobs:
     permissions:
       checks: write
     services:
-      elasticsearch8:
-        image: elasticsearch:8.19.11
-        ports:
-          - 9202:9200
-        env:
-          xpack.security.enabled: false
-          node.name: singlenode
-          cluster.initial_master_nodes: singlenode
       postgres:
         image: postgres
         env:
@@ -145,14 +140,6 @@ jobs:
     permissions:
       checks: write
     services:
-      elasticsearch8:
-        image: elasticsearch:8.19.11
-        ports:
-          - 9202:9200
-        env:
-          xpack.security.enabled: false
-          node.name: singlenode
-          cluster.initial_master_nodes: singlenode
       postgres:
         image: postgres
         env:

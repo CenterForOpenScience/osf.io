@@ -316,7 +316,6 @@ NPLUSONE_RAISE = False
 HASHIDS_SALT = 'pinkhimalayan'
 
 # django-elasticsearch-metrics
-# DJELME_AUTOSETUP = True
 DJELME_BACKENDS = {
     'osfmetrics_es6': {
         'elasticsearch_metrics.imps.elastic6': {
