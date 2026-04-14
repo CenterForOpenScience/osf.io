@@ -862,11 +862,11 @@ class NodeAddOsfStorageFileView(NodeMixin, View):
             return redirect(self.get_success_url())
 
         file = guid.referent
-        parent_node = registration.registered_from
         if not isinstance(file, File):
             messages.error(request, 'The guid provided does not correspond to a file.')
             return redirect(self.get_success_url())
 
+        parent_node = registration.registered_from
         if not parent_node:
             messages.error(request, 'The registration does not have the parent node.')
             return redirect(self.get_success_url())
@@ -904,7 +904,13 @@ class NodeRemoveOsfStorageFileView(NodeMixin, View):
             messages.error(request, 'The guid provided does not correspond to a file.')
             return redirect(self.get_success_url())
 
-        registration.files.filter(id=file.id).delete()
+        registration_file = registration.files.filter(id=file.id)
+        if registration_file.exists():
+            registration_file.delete()
+        else:
+            messages.error(request, 'The file with the provided guid is not part of the registration.')
+            return redirect(self.get_success_url())
+
         messages.success(request, 'The file was successfully removed.')
         return redirect(self.get_success_url())
 

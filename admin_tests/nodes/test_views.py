@@ -1028,6 +1028,16 @@ class TestOsfStorageRegistrationFileRemove(AdminTestCase):
         view.post(self.request)
         self.check_message('The guid provided does not correspond to a file.')
 
+    def test_file_not_attached_to_registration(self):
+        file = self._create_file(self.project, 'file2.txt')
+        file.save()
+        file_guid = file.get_guid(create=True)
+
+        self.request.POST = {'file-guid': file_guid._id}
+        view = setup_log_view(self._view, self.request, guid=self.registration_registered_from._id)
+        view.post(self.request)
+        self.check_message('The file with the provided guid is not part of the registration.')
+
     def test_file_is_removed_from_registration_osfstorage(self):
         file = self._create_file(self.project, 'file2.txt')
         file.save()
