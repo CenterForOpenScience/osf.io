@@ -346,6 +346,6 @@ def mock_gravy_valet_get_verified_links():
         yield mock_get_verified_links
 
 
-# @pytest.fixture(autouse=True)
-# def load_notification_types(db, *args, **kwargs):
-#     populate_notification_types(*args, **kwargs)
+@pytest.fixture(autouse=True)
+def load_notification_types(db, *args, **kwargs):
+    populate_notification_types(*args, **kwargs)
