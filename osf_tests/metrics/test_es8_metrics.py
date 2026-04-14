@@ -12,6 +12,7 @@ from osf.metrics.es8_metrics import (
 
 class TestEs8Metrics:
     """smoke tests to check that djelme records can be saved and searched"""
+
     @pytest.fixture(autouse=True)
     def _real_elastic(self):
         with djelme_test_backends():
@@ -29,19 +30,19 @@ class TestEs8Metrics:
             platform_iri='https://osf.example',
             user_is_authenticated=False,
             pageview_info=PageviewInfo(
-                page_url="https://example.com/path/test",
-                referer_url="https://google.com",
+                page_url='https://example.com/path/test',
+                referer_url='https://google.com',
                 route_name='foo.bar',
                 page_title='title title',
             ),
         )
-        assert usage.pageview_info.page_path == "/path/test"
-        assert usage.pageview_info.referer_domain == "google.com"
+        assert usage.pageview_info.page_path == '/path/test'
+        assert usage.pageview_info.referer_domain == 'google.com'
         assert usage.pageview_info.hour_of_day == 15
 
     def test_save_report(self):
         _saved = DownloadCountReportEs8.record(
-            cycle_coverage="2026.1.1",
+            cycle_coverage='2026.1.1',
             daily_file_downloads=17,
         )
         DownloadCountReportEs8.refresh_timeseries_indexes()

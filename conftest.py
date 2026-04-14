@@ -5,7 +5,6 @@ import re
 
 from django.db import transaction
 from elasticsearch6_dsl.connections import connections
-from website import settings as osf_settings
 from elasticsearch_metrics.tests.util import djelme_test_backends
 from faker import Factory
 import pytest
