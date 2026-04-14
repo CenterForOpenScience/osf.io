@@ -1,8 +1,10 @@
 import datetime
 import enum
-import elasticsearch8.dsl as esdsl
-import elasticsearch_metrics.imps.elastic8 as djelme
 from urllib.parse import urlsplit
+
+import elasticsearch8.dsl as esdsl
+from elasticsearch_metrics import DAILY, MONTHLY
+import elasticsearch_metrics.imps.elastic8 as djelme
 
 from osf.metrics.utils import YearMonth
 
@@ -183,19 +185,19 @@ class UsageByStorageAddon(esdsl.InnerDoc):
 
 
 class Es8StorageAddonUsage(djelme.CyclicRecord):
-    CYCLE_TIMEDEPTH = 3
+    CYCLE_TIMEDEPTH = DAILY
 
     usage_by_addon: list[UsageByStorageAddon]
 
 
 class Es8DownloadCountReport(djelme.CyclicRecord):
-    CYCLE_TIMEDEPTH = 3
+    CYCLE_TIMEDEPTH = DAILY
 
     daily_file_downloads: int
 
 
 class Es8InstitutionSummaryReport(djelme.CyclicRecord):
-    CYCLE_TIMEDEPTH = 3
+    CYCLE_TIMEDEPTH = DAILY
     UNIQUE_TOGETHER_FIELDS = ('cycle_coverage', 'institution_id',)
 
     institution_id: str
@@ -208,7 +210,7 @@ class Es8InstitutionSummaryReport(djelme.CyclicRecord):
 
 
 class Es8NewUserDomainReport(djelme.CyclicRecord):
-    CYCLE_TIMEDEPTH = 3
+    CYCLE_TIMEDEPTH = DAILY
     UNIQUE_TOGETHER_FIELDS = ('cycle_coverage', 'domain_name',)
 
     domain_name: str
@@ -216,7 +218,7 @@ class Es8NewUserDomainReport(djelme.CyclicRecord):
 
 
 class Es8NodeSummaryReport(djelme.CyclicRecord):
-    CYCLE_TIMEDEPTH = 3
+    CYCLE_TIMEDEPTH = DAILY
 
     nodes: NodeRunningTotals
     projects: NodeRunningTotals
@@ -225,13 +227,13 @@ class Es8NodeSummaryReport(djelme.CyclicRecord):
 
 
 class Es8OsfstorageFileCountReport(djelme.CyclicRecord):
-    CYCLE_TIMEDEPTH = 3
+    CYCLE_TIMEDEPTH = DAILY
 
     files: FileRunningTotals
 
 
 class Es8PreprintSummaryReport(djelme.CyclicRecord):
-    CYCLE_TIMEDEPTH = 3
+    CYCLE_TIMEDEPTH = DAILY
 
     UNIQUE_TOGETHER_FIELDS = ('cycle_coverage', 'provider_key',)
     provider_key: str
@@ -239,7 +241,7 @@ class Es8PreprintSummaryReport(djelme.CyclicRecord):
 
 
 class Es8UserSummaryReport(djelme.CyclicRecord):
-    CYCLE_TIMEDEPTH = 3
+    CYCLE_TIMEDEPTH = DAILY
 
     active: int
     deactivated: int
@@ -250,7 +252,7 @@ class Es8UserSummaryReport(djelme.CyclicRecord):
 
 
 class Es8SpamSummaryReport(djelme.CyclicRecord):
-    CYCLE_TIMEDEPTH = 2
+    CYCLE_TIMEDEPTH = MONTHLY
 
     node_confirmed_spam: int
     node_confirmed_ham: int
@@ -266,7 +268,7 @@ class Es8SpamSummaryReport(djelme.CyclicRecord):
 
 
 class Es8InstitutionalUserReport(djelme.CyclicRecord):
-    CYCLE_TIMEDEPTH = 2
+    CYCLE_TIMEDEPTH = MONTHLY
     UNIQUE_TOGETHER_FIELDS = ('cycle_coverage', 'institution_id', 'user_id',)
 
     institution_id: str
@@ -289,7 +291,7 @@ class Es8InstitutionalUserReport(djelme.CyclicRecord):
 
 
 class Es8InstitutionMonthlySummaryReport(djelme.CyclicRecord):
-    CYCLE_TIMEDEPTH = 2
+    CYCLE_TIMEDEPTH = MONTHLY
     UNIQUE_TOGETHER_FIELDS = ('cycle_coverage', 'institution_id', )
 
     institution_id: str
@@ -306,7 +308,7 @@ class Es8InstitutionMonthlySummaryReport(djelme.CyclicRecord):
 
 
 class Es8PublicItemUsageReport(djelme.CyclicRecord):
-    CYCLE_TIMEDEPTH = 2
+    CYCLE_TIMEDEPTH = MONTHLY
     UNIQUE_TOGETHER_FIELDS = ('cycle_coverage', 'item_osfid')
 
     # where noted, fields are meant to correspond to defined terms from COUNTER
@@ -331,7 +333,7 @@ class Es8PublicItemUsageReport(djelme.CyclicRecord):
 
 
 class Es8PrivateSpamMetricsReport(djelme.CyclicRecord):
-    CYCLE_TIMEDEPTH = 2
+    CYCLE_TIMEDEPTH = MONTHLY
 
     node_oopspam_flagged: int
     node_oopspam_hammed: int
