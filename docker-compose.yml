@@ -79,26 +79,22 @@ services:
     stdin_open: true
 
   elasticsearch8:
-    image: docker.elastic.co/elasticsearch/elasticsearch:8.19.11
-    platform: linux/arm64
+    image: elasticsearch:8.19.14
     environment:
-      - ELASTIC_PASSWORD=secretsecret
-      - node.name=singlenode
       - discovery.type=single-node
-      - xpack.security.enabled=true
-      - xpack.security.http.ssl.enabled=true
-      - xpack.security.http.ssl.key=/elastic8_certs/singlenode/singlenode.key
-      - xpack.security.http.ssl.certificate=/elastic8_certs/singlenode/singlenode.crt
-      - xpack.security.http.ssl.certificate_authorities=/elastic8_certs/ca/ca.crt
-      - xpack.security.transport.ssl.enabled=true
-      - xpack.security.transport.ssl.key=/elastic8_certs/singlenode/singlenode.key
-      - xpack.security.transport.ssl.certificate=/elastic8_certs/singlenode/singlenode.crt
-      - xpack.security.transport.ssl.certificate_authorities=/elastic8_certs/ca/ca.crt
-      - xpack.security.transport.ssl.verification_mode=certificate
+      - xpack.security.enabled=false
+      - ES_JAVA_OPTS=-Xms512m -Xmx512m  # reduce memory usage
+      - xpack.ml.enabled=false
     ports:
       - 9202:9200
     volumes:
       - elasticsearch8_data_vol:/usr/share/elasticsearch/data
+    healthcheck:
+      start_period: 15s
+      test: ["CMD", "curl", "-sf", "http://localhost:9200/_cluster/health?wait_for_status=yellow&timeout=30s"]
+      interval: 10s
+      timeout: 30s
+      retries: 5
     stdin_open: true
 
   postgres:
