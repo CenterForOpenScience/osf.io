@@ -14,9 +14,11 @@ from guardian.models import (
     UserObjectPermissionBase,
 )
 from dirtyfields import DirtyFieldsMixin
+import waffle
 
 from framework.auth import Auth
 from framework.exceptions import PermissionsError
+from osf import features
 from osf.models import Identifier
 from osf.utils.fields import NonNaiveDateTimeField, LowercaseCharField
 from osf.utils.permissions import ADMIN, READ, WRITE
@@ -782,7 +784,8 @@ class Registration(AbstractNode):
             comment=comment
         )
         action.save()
-        RegistriesModerationMetrics.record_transitions(action)
+        if waffle.switch_is_active(features.ELASTICSEARCH_METRICS):
+            RegistriesModerationMetrics.record_transitions(action)
 
         moderation_notifications = {
             RegistrationModerationTriggers.SUBMIT: notify.notify_submit,

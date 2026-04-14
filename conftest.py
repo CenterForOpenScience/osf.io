@@ -10,12 +10,15 @@ from faker import Factory
 import pytest
 import responses
 import xml.etree.ElementTree as ET
+from waffle.testutils import override_switch
 
 from api_tests.share import _utils as shtrove_test_utils
 from framework.celery_tasks import app as celery_app
 from osf.external.spam import tasks as spam_tasks
 from website import settings as website_settings
 from osf.management.commands.populate_notification_types import populate_notification_types
+from osf import features
+
 
 def pytest_configure(config):
     if not os.getenv('GITHUB_ACTIONS') == 'true':
@@ -141,12 +144,15 @@ def _es_metrics_marker(request):
     """
     marker = request.node.get_closest_marker('es_metrics')
 
-    if not marker:
-        yield
-        return
-
-    with djelme_test_backends():
-        yield
+    if marker:
+        with (
+            override_switch(features.ELASTICSEARCH_METRICS, active=True),
+            djelme_test_backends(),
+        ):
+            yield
+    else:
+        with override_switch(features.ELASTICSEARCH_METRICS, active=False):
+            yield
 
 
 @pytest.fixture
