@@ -120,15 +120,6 @@ jobs:
     steps:
     - uses: actions/checkout@v2
     - uses: ./.github/actions/start-build
-    - name: Wait for Elasticsearch
-      run: |
-        echo "Waiting for ES8 health..."
-        sleep 5
-        until curl -sf http://localhost:9202/_cluster/health?wait_for_status=yellow; do
-          echo "ES8 not ready yet..."
-          sleep 5
-        done
-        echo "ES8 started successfully!"
     - name: Run tests
       run: poetry run python3 -m invoke test-ci-api2 --junit
       env:
