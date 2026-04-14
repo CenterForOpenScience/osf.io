@@ -13,14 +13,15 @@ class TestEs8Metrics:
         assert True
 
     def test_instantiate_of_reports(self):
-        download_report = Es8DownloadCountReport()
+        download_report = Es8DownloadCountReport(cycle_coverage='2026-01-01')
         assert hasattr(download_report, 'daily_file_downloads')
 
-        user_report = Es8UserSummaryReport()
+        user_report = Es8UserSummaryReport(cycle_coverage='2026-01-01')
         assert hasattr(user_report, 'active')
 
     def test_nested_pageview(self):
         usage = OsfCountedUsageRecord(
+            cycle_coverage='2026-01-01',
             pageview_info={
                 'page_url': 'https://example.com',
                 'referer_url': 'https://google.com',
@@ -30,6 +31,7 @@ class TestEs8Metrics:
 
     def test_pageview_info_autofill(self):
         obj = PageviewInfo(
+            cycle_coverage='2026-01-01',
             page_url='https://example.com/path/test',
             referer_url='https://google.com',
             timestamp=datetime(2024, 1, 1, 15, 0),
