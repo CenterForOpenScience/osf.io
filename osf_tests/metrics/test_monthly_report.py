@@ -80,6 +80,7 @@ class TestMonthlyReportKey:
 
 
 @pytest.mark.es_metrics
+@pytest.mark.django_db
 class TestLastMonthReport:
     @pytest.fixture
     def osfid(self):
