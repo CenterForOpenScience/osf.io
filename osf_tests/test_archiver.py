@@ -16,7 +16,6 @@ from website.archiver import (
     ARCHIVER_INITIATED,
 )
 from website.archiver import utils as archiver_utils
-from website.archiver import tasks as archiver_tasks
 from website.app import *  # noqa: F403
 from website.archiver import listeners
 from website.archiver.tasks import *   # noqa: F403
@@ -461,12 +460,12 @@ class TestArchiverTasks(ArchiverTestCase):
 
     def test_compact_traceback_uses_last_lines(self):
         traceback_text = '\n'.join(f'line {line_num}' for line_num in range(50))
-        compact = archiver_tasks._compact_traceback(traceback_text, max_lines=5, max_chars=1000)
+        compact = archiver_utils.compact_traceback(traceback_text, max_lines=5, max_chars=1000)
 
         assert compact == '\n'.join(f'line {line_num}' for line_num in range(45, 50))
 
     def test_compact_traceback_handles_empty(self):
-        assert archiver_tasks._compact_traceback(None) is None
+        assert archiver_utils.compact_traceback(None) is None
 
     @mock.patch('website.archiver.tasks.archive_addon.delay')
     def test_archive_node_pass(self, mock_archive_addon):
