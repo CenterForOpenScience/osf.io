@@ -144,15 +144,15 @@ def _es_metrics_marker(request):
     """
     marker = request.node.get_closest_marker('es_metrics')
 
-    if marker:
-        with (
-            override_switch(features.ELASTICSEARCH_METRICS, active=True),
-            djelme_test_backends(),
-        ):
-            yield
-    else:
-        with override_switch(features.ELASTICSEARCH_METRICS, active=False):
-            yield
+    if not marker:
+        yield
+        return
+
+    with (
+        override_switch(features.ELASTICSEARCH_METRICS, active=True),
+        djelme_test_backends(),
+    ):
+        yield
 
 
 @pytest.fixture
