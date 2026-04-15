@@ -158,6 +158,14 @@ def migrate_usage_reports(from_date, until_date):
 class Command(BaseCommand):
     def add_arguments(self, parser):
         parser.add_argument(
+            "--no-setup",
+            action="store_true",
+        )
+        parser.add_argument(
+            "--clear-state",
+            action="store_true",
+        )
+        parser.add_argument(
             "--start",
             action="store_true",
         )
@@ -171,14 +179,6 @@ class Command(BaseCommand):
         )
         parser.add_argument(
             "--usage-reports",
-            action="store_true",
-        )
-        parser.add_argument(
-            "--clear-state",
-            action="store_true",
-        )
-        parser.add_argument(
-            "--no-setup",
             action="store_true",
         )
 
@@ -203,7 +203,6 @@ class Command(BaseCommand):
             # display counts
             _es6_count = _es6_cls.search().count()
             _es8_count = _es8_cls.search().count()
-            #_es8_count = _es8_cls.search().count()
             self._write_tabbed('es6', _es6_cls, _es6_count)
             self._write_tabbed('es8', _es8_cls, _es8_count, style=self._eq_style(_es8_count, _es6_count))
             if start:  # schedule task
