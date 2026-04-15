@@ -43,7 +43,6 @@ function urlRegex() {
 }
 
 var socialRules = {
-    orcid: /orcid\.org\/([-\d]+)/i,
     researcherId: /researcherid\.com\/rid\/([-\w]+)/i,
     scholar: /scholar\.google\.com\/citations\?user=(\w+)/i,
     twitter: /twitter\.com\/(\w+)/i,
@@ -601,10 +600,6 @@ var SocialViewModel = function(urls, modes, preventUnsaved) {
         return true;
     });
 
-    self.orcid = extendLink(
-        ko.observable().extend({trimmed: true, cleanup: cleanByRule(socialRules.orcid)}),
-        self, 'orcid', 'http://orcid.org/'
-    );
     self.researcherId = extendLink(
         ko.observable().extend({trimmed: true, cleanup: cleanByRule(socialRules.researcherId)}),
         self, 'researcherId', 'http://researcherId.com/rid/'
@@ -653,7 +648,6 @@ var SocialViewModel = function(urls, modes, preventUnsaved) {
 
     self.trackedProperties = [
         self.profileWebsites,
-        self.orcid,
         self.researcherId,
         self.twitter,
         self.scholar,
@@ -675,7 +669,6 @@ var SocialViewModel = function(urls, modes, preventUnsaved) {
 
     self.values = ko.computed(function() {
         return [
-            {label: 'ORCID', text: self.orcid(), value: self.orcid.url()},
             {label: 'ResearcherID', text: self.researcherId(), value: self.researcherId.url()},
             {label: 'Twitter', text: self.twitter(), value: self.twitter.url()},
             {label: 'GitHub', text: self.github(), value: self.github.url()},

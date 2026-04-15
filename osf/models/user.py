@@ -153,6 +153,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         'schools',
         'social',
         'allow_indexing',
+        'external_identity',
     }
 
     # Overrides DirtyFieldsMixin, Foreign Keys checked by '<attribute_name>_id' rather than typical name.
@@ -163,7 +164,6 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
     #   search update for all nodes to which the user is a contributor.
 
     SOCIAL_FIELDS = {
-        'orcid': 'http://orcid.org/{}',
         'github': 'http://github.com/{}',
         'scholar': 'http://scholar.google.com/citations?user={}',
         'twitter': 'http://twitter.com/{}',
@@ -346,7 +346,6 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
     #     'twitter': <list of twitter usernames>,
     #     'github': <list of github usernames>,
     #     'linkedIn': <list of linkedin profiles>,
-    #     'orcid': <orcid for user>,
     #     'researcherID': <researcherID>,
     #     'impactStory': <impactStory identifier>,
     #     'scholar': <google scholar identifier>,
