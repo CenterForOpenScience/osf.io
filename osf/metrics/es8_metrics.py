@@ -346,3 +346,38 @@ class PrivateSpamMetricsReportEs8(djelme.CyclicRecord):
     preprint_oopspam_hammed: int
     preprint_akismet_flagged: int
     preprint_akismet_hammed: int
+
+
+###
+# data migration state
+
+class Elastic6To8State(djelme.DjelmeRecordtype):
+    """index for storing values helpful for keeping track of the elastic 6->8 data migration"""
+    UNIQUE_TOGETHER_FIELDS = ('key',)
+    key: str
+    value: str | None
+    timestamp: datetime.datetime = esdsl.mapped_field(
+        default_factory=lambda: datetime.datetime.now(datetime.UTC),
+    )
+
+    class Index:
+        name = 'osf_elastic6to8state'
+
+    @classmethod
+    def get_by_key(cls, key: str):
+        _response = cls.search().query({'term': {'key': key}})[0].execute()
+        return _response[0] if _response else None
+
+    @classmethod
+    def get_timestamp(cls, key: str) -> datetime.datetime | None:
+        _record = cls.get_by_key(key)
+        return _record.timestamp if _record else None
+
+    @classmethod
+    def get_started_at(cls):
+        return cls.get_timestamp('started_at')
+
+    @classmethod
+    def set_started_at_now(cls):
+        _record = cls.record(key='started_at')
+        return _record.timestamp

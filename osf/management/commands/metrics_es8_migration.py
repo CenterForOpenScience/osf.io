@@ -1,7 +1,6 @@
 import datetime
 import logging
 
-
 from django.core.management import call_command
 from django.core.management.base import BaseCommand
 from elasticsearch6 import helpers as es6_helpers
@@ -22,6 +21,10 @@ from osf.metrics import es8_metrics, RegistriesModerationMetrics
 
 _logger = logging.getLogger(__name__)
 
+_USAGE_MONTHS_BACK = 3
+
+_MAX_CARDINALITY_PRECISION = 40000  # https://www.elastic.co/guide/en/elasticsearch/reference/current/search-aggregations-metrics-cardinality-aggregation.html#_precision_control
+
 _UNCHANGED_RECORDTYPES = {
     # reports
     es6_reports.StorageAddonUsage: es8_metrics.StorageAddonUsageEs8,
@@ -40,7 +43,6 @@ _UNCHANGED_RECORDTYPES = {
     RegistriesModerationMetrics: es8_metrics.RegistriesModerationMetricsEs8,
 }
 
-
 def _debug_migrate(es8_client, each_new):
     for _each in each_new:
         print(_each)
@@ -49,13 +51,52 @@ def _debug_migrate(es8_client, each_new):
 def _do_migrate(es8_client, each_new):
     es8_helpers.bulk(es8_client, each_new, ..., stats_only=True)
 
-
 def _es6_scan(es6_recordtype, from_when: str, until_when: str):
     return es6_helpers.scan(
         es6_client,
         index=es6_recordtype._template_pattern,
         query={"range": {"timestamp": {"gte": from_when, "lt": until_when}}},
     )
+
+
+def _es6_usage_report_counts() -> tuple[int, int]:
+    _search = (
+        es6_reports.PublicItemUsageReport.search()
+    )
+    _search.aggs.metric(
+        'agg_item_count',
+        'cardinality',
+        field='item_osfid',
+        precision_threshold=_MAX_CARDINALITY_PRECISION,
+    )
+    _response = _search.execute()
+    _total_count = _response.hits.total
+    _item_count = (
+        _response.aggregations.agg_item_count.value
+        if 'agg_item_count' in _response.aggregations
+        else 0
+    )
+    return (_total_count, _item_count)
+
+
+def _es8_usage_report_counts() -> tuple[int, int]:
+    _search = (
+        es8_metrics.PublicItemUsageReportEs8.search()
+    )
+    _search.aggs.metric(
+        'agg_item_count',
+        'cardinality',
+        field='item_osfid',
+        precision_threshold=_MAX_CARDINALITY_PRECISION,
+    )
+    _response = _search.execute()
+    _total_count = _response.hits.total.value
+    _item_count = (
+        _response.aggregations.agg_item_count.value
+        if 'agg_item_count' in _response.aggregations
+        else 0
+    )
+    return (_total_count, _item_count)
 
 
 def _cycle_coverage_daily(report_date): ...
@@ -114,7 +155,6 @@ def migrate_usage_reports(from_date, until_date):
     # add cumulative count
     ...
 
-
 class Command(BaseCommand):
     def add_arguments(self, parser):
         parser.add_argument(
@@ -133,9 +173,22 @@ class Command(BaseCommand):
             "--usage-reports",
             action="store_true",
         )
+        parser.add_argument(
+            "--clear-state",
+            action="store_true",
+        )
+        parser.add_argument(
+            "--no-setup",
+            action="store_true",
+        )
 
-    def handle(self, *, start, unchanged, usage_events, usage_reports, **kwargs):
-        call_command('djelme_backend_setup')  # ensure all index templates
+    def handle(self, *, start, unchanged, usage_events, usage_reports, clear_state, no_setup, **kwargs):
+        self._quiet_chatty_loggers()
+        if not no_setup:
+            call_command('djelme_backend_setup')
+        if clear_state:
+            self._clear_state()
+        self._display_started_at(start=start)
         _default_all = not any((unchanged, usage_events, usage_reports))
         if unchanged or _default_all:
             self._handle_unchanged(start=start)
@@ -150,11 +203,11 @@ class Command(BaseCommand):
             # display counts
             _es6_count = _es6_cls.search().count()
             _es8_count = _es8_cls.search().count()
-            _style = (self.style.SUCCESS if (_es6_count == _es8_count) else self.style.NOTICE)
-            self.stdout.write(f'{_es6_cls.__name__} (es6):\t{_es6_count}')
-            self.stdout.write(f'{_es8_cls.__name__}:\t{_style(_es8_count)}')
+            #_es8_count = _es8_cls.search().count()
+            self._write_tabbed('es6', _es6_cls, _es6_count)
+            self._write_tabbed('es8', _es8_cls, _es8_count, style=self._eq_style(_es8_count, _es6_count))
             if start:  # schedule task
-                self.stdout.write(f'starting {_es6_cls.__name__} => {_es8_cls.__name__}')
+                self._write_tabbed('starting', _es6_cls, '=>', _es8_cls)
                 # TODO: migrate_unchanged_recordtype.apply_async(...)
             self.stdout.write('---')
 
@@ -167,24 +220,67 @@ class Command(BaseCommand):
         _es6_usage_event_count = CountedUsageEs6.search().count()
         _es6_count = _es6_pview_count + _es6_pdownload_count + _es6_usage_event_count
         _es8_count = es8_metrics.OsfCountedUsageRecord.search().count()
-        _style = (self.style.SUCCESS if (_es6_count == _es8_count) else self.style.NOTICE)
-        self.stdout.write(f'{PreprintViewEs6.__name__} (es6):\t{_es6_pview_count}')
-        self.stdout.write(f'{PreprintDownloadEs6.__name__} (es6):\t{_es6_pdownload_count}')
-        self.stdout.write(f'{CountedUsageEs6.__name__} (es6):\t{_es6_pdownload_count}')
-        self.stdout.write(f'total (es6):\t{_es6_count}')
-        self.stdout.write(f'{es8_metrics.OsfCountedUsageRecord.__name__}:\t{_style(_es8_count)}')
+        self._write_tabbed('es6', PreprintViewEs6, _es6_pview_count)
+        self._write_tabbed('es6', PreprintDownloadEs6, _es6_pdownload_count)
+        self._write_tabbed('es6', CountedUsageEs6, _es6_usage_event_count)
+        self._write_tabbed('es6', '(total to migrate)', _es6_count)
+        self._write_tabbed('es8', es8_metrics.OsfCountedUsageRecord, _es8_count, style=self._eq_style(_es8_count, _es6_count))
         if start:  # schedule (per-day?) tasks (if --start)
-            self.stdout.write(f'starting {_es6_cls.__name__} => {_es8_cls.__name__}')
+            self.stdout.write(f'starting usages => {es8_metrics.OsfCountedUsageRecord}')
             # TODO: migrate_usage_events.apply_async(...)
+        self.stdout.write('---')
 
     def _handle_usage_reports(self, *, start: bool):
-        # display total report counts
-        _es6_count = es6_reports.PublicItemUsageReport.search().count()
-        _es8_count = es8_metrics.PublicItemUsageReportEs8.search().count()
-        _style = (self.style.SUCCESS if (_es6_count == _es8_count) else self.style.NOTICE)
-        self.stdout.write(f'{es6_reports.PublicItemUsageReport.__name__} (es6):\t{_es6_count}')
-        self.stdout.write(f'{es8_metrics.PublicItemUsageReportEs8.__name__}:\t{_style(_es8_count)}')
-        # display distinct item counts
-        _item_count
+        # display counts of reports and distinct items
+        _es6_count, _es6_item_count = _es6_usage_report_counts()
+        _es8_count, _es8_item_count = _es8_usage_report_counts()
+        self._write_tabbed('es6', es6_reports.PublicItemUsageReport, _es6_count)
+        self._write_tabbed('es8', es8_metrics.PublicItemUsageReportEs8, _es8_count, style=self._eq_style(_es8_count, _es6_count))
+        self._write_tabbed('es6', es6_reports.PublicItemUsageReport, '(items)', _es6_item_count)
+        self._write_tabbed('es8', es8_metrics.PublicItemUsageReportEs8, '(items)', _es8_item_count,
+                           style=self._eq_style(_es8_item_count, _es6_item_count))
         # (if --start) schedule task per item (by composite agg on es6 public usage reports)
         # each item-task iter thru reports oldest to newest, adding cumulative counts
+        if start:  # schedule per-item tasks
+            self.stdout.write(f'starting per-item {es6_reports.PublicItemUsageReport} => {es8_metrics.PublicItemUsageReportEs8}')
+            # TODO: migrate_usage_events.apply_async(...)
+        self.stdout.write('---')
+
+    def _display_started_at(self, start):
+        _started_at = es8_metrics.Elastic6To8State.get_started_at()
+        if _started_at:
+            self.stdout.write(
+                f'osf.metrics 6->8 migration started previously, at {_started_at.isoformat()}'
+            )
+        elif start:
+            _started_at = es8_metrics.Elastic6To8State.set_started_at_now()
+            self.stdout.write(
+                f'osf.metrics 6->8 migration starting now, at {_started_at.isoformat()}'
+            )
+        else:
+            self.stdout.write(
+                'osf.metrics 6->8 migration not started nor starting (run with `--start` to start)'
+            )
+        self.stdout.write('---')
+
+    def _clear_state(self):
+        es8_metrics.Elastic6To8State.search().delete()
+
+    def _eq_style(self, num: int, should_be: int):
+        return self.style.SUCCESS if (num == should_be) else self.style.NOTICE
+
+    def _write_tabbed(self, *strables, style=None):
+        def _to_str(strable):
+            if isinstance(strable, type):
+                return strable.__name__
+            return str(strable)
+        self.stdout.write('\t'.join(map(_to_str, strables)), style)
+
+    def _quiet_chatty_loggers(self):
+        _chatty_loggers = [
+            'elasticsearch',
+            'elastic_transport',
+            'elasticsearch_metrics',
+        ]
+        for logger_name in _chatty_loggers:
+            logging.getLogger(logger_name).setLevel(logging.ERROR)
