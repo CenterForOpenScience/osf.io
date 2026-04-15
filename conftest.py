@@ -43,6 +43,8 @@ SILENT_LOGGERS = [
     'transitions.core',
     'MARKDOWN',
     'elasticsearch',
+    'elastic_transport',
+    'elasticsearch_metrics',
 ]
 for logger_name in SILENT_LOGGERS:
     logging.getLogger(logger_name).setLevel(logging.CRITICAL)
