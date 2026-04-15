@@ -11,6 +11,11 @@ from elasticsearch_metrics.imps import elastic8 as djel8me
 from elasticsearch_metrics.util.timeparts import format_timeparts
 
 from framework.celery_tasks import app as celery_app
+from osf.metrics.preprint_metrics import (
+    PreprintView as PreprintViewEs6,
+    PreprintDownload as PreprintDownloadEs6,
+)
+from osf.metrics.counted_usage import CountedAuthUsage as CountedUsageEs6
 from osf.metrics import reports as es6_reports
 from osf.metrics import es8_metrics, RegistriesModerationMetrics
 
@@ -132,7 +137,6 @@ class Command(BaseCommand):
     def handle(self, *, start, unchanged, usage_events, usage_reports, **kwargs):
         call_command('djelme_backend_setup')  # ensure all index templates
         _default_all = not any((unchanged, usage_events, usage_reports))
-
         if unchanged or _default_all:
             self._handle_unchanged(start=start)
         if usage_events or _default_all:
@@ -143,12 +147,13 @@ class Command(BaseCommand):
     def _handle_unchanged(self, *, start: bool):
         # for each (unchanged) report/event:
         for _es6_cls, _es8_cls in _UNCHANGED_RECORDTYPES.items():
+            # display counts
             _es6_count = _es6_cls.search().count()
             _es8_count = _es8_cls.search().count()
             _style = (self.style.SUCCESS if (_es6_count == _es8_count) else self.style.NOTICE)
             self.stdout.write(f'{_es6_cls.__name__} (es6):\t{_es6_count}')
             self.stdout.write(f'{_es8_cls.__name__}:\t{_style(_es8_count)}')
-            if start:
+            if start:  # schedule task
                 self.stdout.write(f'starting {_es6_cls.__name__} => {_es8_cls.__name__}')
                 # TODO: migrate_unchanged_recordtype.apply_async(...)
             self.stdout.write('---')
@@ -156,29 +161,30 @@ class Command(BaseCommand):
     def _handle_usage_events(self, *, start: bool):
         # for counted-usage events:
         # TODO: last X months only
-        # get/compare/print cardinalities
-        # schedule (per-day?) tasks (if --start)
-        _es6_pview_count = PreprintView.search().count()
-        _es6_pdownload_count = PreprintDownload.search().count()
-        _es6_usage_event_count = CountedAuthUsage.search().count()
+        # display counts for each view/download event type
+        _es6_pview_count = PreprintViewEs6.search().count()
+        _es6_pdownload_count = PreprintDownloadEs6.search().count()
+        _es6_usage_event_count = CountedUsageEs6.search().count()
         _es6_count = _es6_pview_count + _es6_pdownload_count + _es6_usage_event_count
-        _es8_count = OsfCountedUsageEvent.search().count()
+        _es8_count = es8_metrics.OsfCountedUsageRecord.search().count()
         _style = (self.style.SUCCESS if (_es6_count == _es8_count) else self.style.NOTICE)
-        self.stdout.write(f'{PreprintView.__name__} (es6):\t{_es6_pview_count}')
-        self.stdout.write(f'{PreprintDownload.__name__} (es6):\t{_es6_pdownload_count}')
-        self.stdout.write(f'{CountedAuthUsage.__name__} (es6):\t{_es6_pdownload_count}')
+        self.stdout.write(f'{PreprintViewEs6.__name__} (es6):\t{_es6_pview_count}')
+        self.stdout.write(f'{PreprintDownloadEs6.__name__} (es6):\t{_es6_pdownload_count}')
+        self.stdout.write(f'{CountedUsageEs6.__name__} (es6):\t{_es6_pdownload_count}')
         self.stdout.write(f'total (es6):\t{_es6_count}')
-        self.stdout.write(f'{OsfCountedUsageEvent.__name__}:\t{_style(_es8_count)}')
-        if start:
+        self.stdout.write(f'{es8_metrics.OsfCountedUsageRecord.__name__}:\t{_style(_es8_count)}')
+        if start:  # schedule (per-day?) tasks (if --start)
             self.stdout.write(f'starting {_es6_cls.__name__} => {_es8_cls.__name__}')
             # TODO: migrate_usage_events.apply_async(...)
 
     def _handle_usage_reports(self, *, start: bool):
-        _es6_count = PublicItemUsageReport.search().count()
-        _es8_count = PublicItemUsageReportEs8.search().count()
+        # display total report counts
+        _es6_count = es6_reports.PublicItemUsageReport.search().count()
+        _es8_count = es8_metrics.PublicItemUsageReportEs8.search().count()
         _style = (self.style.SUCCESS if (_es6_count == _es8_count) else self.style.NOTICE)
-        self.stdout.write(f'{PublicItemUsageReport.__name__} (es6):\t{_es6_count}')
-        self.stdout.write(f'{PublicItemUsageReportEs8.__name__}:\t{_style(_es8_count)}')
+        self.stdout.write(f'{es6_reports.PublicItemUsageReport.__name__} (es6):\t{_es6_count}')
+        self.stdout.write(f'{es8_metrics.PublicItemUsageReportEs8.__name__}:\t{_style(_es8_count)}')
+        # display distinct item counts
         _item_count
         # (if --start) schedule task per item (by composite agg on es6 public usage reports)
         # each item-task iter thru reports oldest to newest, adding cumulative counts
