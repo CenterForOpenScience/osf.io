@@ -16,6 +16,7 @@ from website.archiver import (
     ARCHIVER_INITIATED,
 )
 from website.archiver import utils as archiver_utils
+from website.archiver import tasks as archiver_tasks
 from website.app import *  # noqa: F403
 from website.archiver import listeners
 from website.archiver.tasks import *   # noqa: F403
@@ -457,6 +458,15 @@ class TestArchiverTasks(ArchiverTestCase):
             res = stat_addon('osfstorage', self.archive_job._id)
         assert res.target_name == 'osfstorage'
         assert res.disk_usage == 128 + 256
+
+    def test_compact_traceback_uses_last_lines(self):
+        traceback_text = '\n'.join(f'line {line_num}' for line_num in range(50))
+        compact = archiver_tasks._compact_traceback(traceback_text, max_lines=5, max_chars=1000)
+
+        assert compact == '\n'.join(f'line {line_num}' for line_num in range(45, 50))
+
+    def test_compact_traceback_handles_empty(self):
+        assert archiver_tasks._compact_traceback(None) is None
 
     @mock.patch('website.archiver.tasks.archive_addon.delay')
     def test_archive_node_pass(self, mock_archive_addon):
@@ -959,8 +969,7 @@ class TestArchiverListeners(ArchiverTestCase):
         assert call_args[1] == self.src
         assert call_args[2] == self.dst
         assert call_args[3] == self.user
-        assert call_args[3] == self.user
-        assert list(call_args[4]) == list(self.dst.archive_job.target_addons.all())
+        assert call_args[4] == self.dst.archive_job.target_info()
 
     def test_archive_callback_updates_archiving_state_when_done(self):
         proj = factories.NodeFactory()
