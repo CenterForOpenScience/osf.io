@@ -38,8 +38,9 @@ def assert_saved_with(mock_save, *, expected_doc_id=None, expected_attrs):
 
 @pytest.fixture
 def mock_save():
-    with mock.patch('elasticsearch6_dsl.Document.save', autospec=True) as mock_save:
-        yield mock_save
+    with mock.patch('elasticsearch_metrics.imps.elastic6.BaseMetric.check_index_template'):
+        with mock.patch('elasticsearch6_dsl.Document.save', autospec=True) as mock_save:
+            yield mock_save
 
 
 @pytest.mark.django_db

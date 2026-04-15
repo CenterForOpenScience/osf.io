@@ -79,15 +79,22 @@ services:
     stdin_open: true
 
   elasticsearch8:
-    image: docker.elastic.co/elasticsearch/elasticsearch:8.19.11
-    platform: linux/arm64
+    image: elasticsearch:8.19.14
     environment:
-      - xpack.security.enabled=false
       - discovery.type=single-node
+      - xpack.security.enabled=false
+      - ES_JAVA_OPTS=-Xms512m -Xmx512m  # reduce memory usage
+      - xpack.ml.enabled=false
     ports:
       - 9202:9200
     volumes:
       - elasticsearch8_data_vol:/usr/share/elasticsearch/data
+    healthcheck:
+      start_period: 15s
+      test: ["CMD", "curl", "-sf", "http://localhost:9200/_cluster/health?wait_for_status=yellow&timeout=30s"]
+      interval: 10s
+      timeout: 30s
+      retries: 5
     stdin_open: true
 
   postgres:

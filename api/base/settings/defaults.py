@@ -316,7 +316,6 @@ NPLUSONE_RAISE = False
 HASHIDS_SALT = 'pinkhimalayan'
 
 # django-elasticsearch-metrics
-DJELME_AUTOSETUP = True
 DJELME_BACKENDS = {
     'osfmetrics_es6': {
         'elasticsearch_metrics.imps.elastic6': {
@@ -327,6 +326,12 @@ DJELME_BACKENDS = {
     'osfmetrics_es8': {
         'elasticsearch_metrics.imps.elastic8': {
             'hosts': osf_settings.ELASTIC8_URI,
+            'ca_certs': osf_settings.ELASTIC8_CERT_PATH,
+            'basic_auth': (
+                (osf_settings.ELASTIC8_USERNAME, osf_settings.ELASTIC8_SECRET)
+                if osf_settings.ELASTIC8_SECRET is not None
+                else None
+            ),
         },
     },
 }

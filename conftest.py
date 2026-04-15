@@ -5,18 +5,20 @@ import re
 
 from django.db import transaction
 from elasticsearch6_dsl.connections import connections
-from website import settings as osf_settings
-from elasticsearch_metrics.tests._test_util import RealElasticTestCase
+from elasticsearch_metrics.tests.util import djelme_test_backends
 from faker import Factory
 import pytest
 import responses
 import xml.etree.ElementTree as ET
+from waffle.testutils import override_switch
 
 from api_tests.share import _utils as shtrove_test_utils
 from framework.celery_tasks import app as celery_app
 from osf.external.spam import tasks as spam_tasks
 from website import settings as website_settings
 from osf.management.commands.populate_notification_types import populate_notification_types
+from osf import features
+
 
 def pytest_configure(config):
     if not os.getenv('GITHUB_ACTIONS') == 'true':
@@ -146,19 +148,12 @@ def _es_metrics_marker(request):
         yield
         return
 
-    connections.create_connection(
-        alias='osfmetrics_es6',
-        hosts=osf_settings.ELASTIC6_URI,
-    )
-
-    class _Es6TestCase(RealElasticTestCase, autosetup_djelme_backends=True):
-        ...
-    es6_test_case = _Es6TestCase()
-    es6_test_case.setUp()
-    try:
+    with (
+        override_switch(features.ELASTICSEARCH_METRICS, active=True),
+        djelme_test_backends(),
+    ):
         yield
-    finally:
-        es6_test_case.tearDown()
+
 
 @pytest.fixture
 def mock_share_responses():

@@ -120,6 +120,8 @@ class MonthlyReport(metrics.Metric):
 
 @receiver(metrics_pre_save)
 def set_report_id(sender, instance, **kwargs):
+    if not issubclass(sender, metrics.Metric):
+        return  # skip es8 record types
     try:
         _unique_together_fields = instance.UNIQUE_TOGETHER_FIELDS
     except AttributeError:

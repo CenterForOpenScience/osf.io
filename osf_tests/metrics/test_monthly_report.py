@@ -11,8 +11,9 @@ from osf.metrics.utils import YearMonth
 class TestMonthlyReportKey:
     @pytest.fixture
     def mock_save(self):
-        with mock.patch('elasticsearch6_dsl.Document.save', autospec=True) as mock_save:
-            yield mock_save
+        with mock.patch('elasticsearch_metrics.imps.elastic6.BaseMetric.check_index_template'):
+            with mock.patch('elasticsearch6_dsl.Document.save', autospec=True) as mock_save:
+                yield mock_save
 
     def test_default(self, mock_save):
         # only one of this type of report per month
@@ -79,6 +80,7 @@ class TestMonthlyReportKey:
 
 
 @pytest.mark.es_metrics
+@pytest.mark.django_db
 class TestLastMonthReport:
     @pytest.fixture
     def osfid(self):

@@ -1,7 +1,5 @@
 import pytest
-from waffle.testutils import override_switch
 
-from osf import features
 from osf_tests.factories import RegistrationFactory, AuthUserFactory
 from osf.utils.workflows import RegistrationModerationStates, RegistrationModerationTriggers
 from osf.metrics import RegistriesModerationMetrics
@@ -16,11 +14,6 @@ class TestRegistrationModerationMetrics:
     @pytest.fixture()
     def registration(self):
         return RegistrationFactory()
-
-    @pytest.fixture(autouse=True)
-    def enable_elasticsearch_metrics(self):
-        with override_switch(features.ELASTICSEARCH_METRICS, active=True):
-            yield
 
     @pytest.mark.es_metrics
     def test_record_transitions(self, registration):
@@ -49,11 +42,6 @@ class TestRegistrationModerationMetricsView:
     @pytest.fixture()
     def registration(self):
         return RegistrationFactory()
-
-    @pytest.fixture(autouse=True)
-    def enable_elasticsearch_metrics(self):
-        with override_switch(features.ELASTICSEARCH_METRICS, active=True):
-            yield
 
     @pytest.fixture
     def user(self):
