@@ -203,11 +203,13 @@ class NodeLogSerializer(JSONAPISerializer):
         'id',
         'date',
         'action',
+        'foreign_user',
     ]
 
     id = ser.CharField(read_only=True, source='_id')
     date = VersionedDateTimeField(read_only=True)
     action = ser.CharField(read_only=True)
+    foreign_user = ser.SerializerMethodField(read_only=True)
     params = ser.SerializerMethodField(read_only=True)
     links = LinksField({'self': 'get_absolute_url'})
 
