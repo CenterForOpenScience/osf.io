@@ -89,6 +89,7 @@ class OsfCountedUsageRecord(djelme.CountedUsageRecord):
     item_osfid: str
     item_type: str
     item_public: bool
+    provider_id: str
     user_is_authenticated: bool
     action_labels: list[str]
     pageview_info: PageviewInfo

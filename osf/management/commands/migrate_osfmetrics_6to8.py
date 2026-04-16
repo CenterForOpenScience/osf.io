@@ -1,4 +1,6 @@
+import collections
 import datetime
+import functools
 import logging
 from pprint import pprint
 
@@ -10,6 +12,7 @@ from elasticsearch_metrics.registry import djelme_registry
 from elasticsearch_metrics.imps import elastic8 as djel8me
 
 from framework.celery_tasks import app as celery_app
+from osf.metadata import rdfutils
 from osf.metrics.preprint_metrics import (
     PreprintView as PreprintViewEs6,
     PreprintDownload as PreprintDownloadEs6,
@@ -18,9 +21,13 @@ from osf.metrics.counted_usage import CountedAuthUsage as CountedUsageEs6
 from osf.metrics import reports as es6_reports
 from osf.metrics import es8_metrics, RegistriesModerationMetrics
 from osf.metrics.utils import YearMonth
+from website import settings as website_settings
 
 
 _logger = logging.getLogger(__name__)
+
+###
+# constants
 
 _USAGE_MONTHS_BACK = 3
 
@@ -45,6 +52,68 @@ _UNCHANGED_RECORDTYPES = {
 }
 
 
+###
+# celery tasks
+
+
+# TODO: @celery_app.task
+def migrate_unchanged_recordtype(es6_recordtype_name: str):
+    _es6_recordtype = djelme_registry.get_recordtype("osf", es6_recordtype_name)
+    _es8_recordtype = _UNCHANGED_RECORDTYPES[_es6_recordtype]
+    _assert_field_unchangedness(_es6_recordtype, _es8_recordtype)
+
+    if issubclass(_es8_recordtype, djel8me.CyclicRecord):
+
+        def _new_es8_record(source_dict):
+            _kwargs = dict(_convert_cyclicrecord_kwargs(source_dict))
+            return _es8_recordtype(**_kwargs)
+
+    else:  # no conversion needed for event record with unchanged fields
+
+        def _new_es8_record(source_dict):
+            return _es8_recordtype(**source_dict)
+
+    def _each_new():
+        for _hit in _es6_scan_all(_es6_recordtype):
+            yield _new_es8_record(_hit["_source"])
+
+    _debug_migrate(_each_new())
+    # TODO: _do_migrate(_es8_recordtype._get_connection(), _each_new())
+
+
+# TODO: @celery_app.task
+def migrate_counted_usages(from_when: str, until_when: str):
+    # CountedAuthUsage => OsfCountedUsageRecord
+    def _each_new():
+        for _hit in _es6_scan_all(CountedUsageEs6, from_when, until_when):
+            yield _convert_counted_usage(_hit["_source"])
+
+    _debug_migrate(_each_new())
+
+
+# TODO: @celery_app.task
+def migrate_preprint_views(from_date: str, until_date: str):
+    # convert to counted-usage
+    ...
+
+
+# TODO: @celery_app.task
+def migrate_preprint_downloads(from_date: str, until_date: str):
+    # convert to counted-usage
+    ...
+
+
+# TODO: @celery_app.task
+def migrate_usage_reports(from_date, until_date):
+    # from PublicItemUsageReport to PublicItemUsageReportEs8
+    # add cumulative count
+    ...
+
+
+###
+# various helper functions
+
+
 def _delete_all(recordtype):
     # TODO: REMOVE THIS
     recordtype.search().query({"match_all": {}}).delete()
@@ -60,12 +129,25 @@ def _delete_all_es8():
 
 
 def _debug_migrate(each_new):
+    # TODO: remove this
     for _each in each_new:
         pprint(_each.to_dict())
 
 
 def _do_migrate(es8_client, each_new):
     es8_helpers.bulk(es8_client, each_new, ..., stats_only=True)
+
+
+def _date_range(
+    range_start: datetime.date,
+    range_end: datetime.date,
+    step: datetime.timedelta = datetime.timedelta(days=1),
+) -> collections.abc.Iterator[tuple[datetime.date, datetime.date]]:
+    _from_date = range_start
+    _until_date = range_start + step
+    while _from_date < range_end:
+        yield (_from_date, _until_date)
+        (_from_date, _until_date) = (_until_date, _until_date + step)
 
 
 def _es6_scan_all(es6_recordtype):
@@ -119,12 +201,6 @@ def _es8_usage_report_counts() -> tuple[int, int]:
     return (_total_count, _item_count)
 
 
-def _cycle_coverage_daily(report_date): ...
-
-
-def _cycle_coverage_monthly(report_yearmonth): ...
-
-
 def _get_es6_field_names(es6_recordtype):
     """
     adapted from DocumentBase._get_field_names in elasticsearch8.dsl
@@ -164,33 +240,6 @@ def _assert_field_unchangedness(es6_recordtype, es8_recordtype):
     assert _es6_fields == _es8_fields
 
 
-# TODO: @celery_app.task
-def migrate_unchanged_recordtype(
-    es6_recordtype_name: str,
-):
-    _es6_recordtype = djelme_registry.get_recordtype("osf", es6_recordtype_name)
-    _es8_recordtype = _UNCHANGED_RECORDTYPES[_es6_recordtype]
-    _assert_field_unchangedness(_es6_recordtype, _es8_recordtype)
-    _kwarg_converter = (
-        _each_cyclicrecord_kwarg
-        if issubclass(
-            _es6_recordtype, (es6_reports.DailyReport, es6_reports.MonthlyReport)
-        )
-        else _each_eventrecord_kwarg
-    )
-
-    def _each_new():
-        for _hit in _es6_scan_all(_es6_recordtype):
-            _es8_kwargs = dict(_kwarg_converter(_hit["_source"]))
-            yield _es8_recordtype.record(
-                **_es8_kwargs,
-                using=False,  # skip saving; save in bulk
-            )
-
-    _debug_migrate(_each_new())
-    # TODO: _do_migrate(_es8_recordtype._get_connection(), _each_new())
-
-
 def _semverish_from_yearmonth(given_yearmonth: str):
     _ym = YearMonth.from_str(given_yearmonth)
     return f"{_ym.year}.{_ym.month}"
@@ -201,38 +250,85 @@ def _semverish_from_date(given_date: str):
     return f"{_d.year}.{_d.month}.{_d.day}"
 
 
-def _each_cyclicrecord_kwarg(es6_source: dict):
+def _convert_cyclicrecord_kwargs(es6_source: dict):
     for _key, _val in es6_source.items():
         if _key == "report_yearmonth":
+            # report_yearmonth converts to cycle_coverage Y.M
             yield ("cycle_coverage", _semverish_from_yearmonth(_val))
         elif _key == "report_date":
+            # report_date converts to cycle_coverage Y.M.D
             yield ("cycle_coverage", _semverish_from_date(_val))
         elif _key != "timestamp":
             # skipping timestamp; on daily/monthly reports just copied from yearmonth/date
             yield (_key, _val)
 
 
-def _each_eventrecord_kwarg(es6_source) -> dict:
-    yield from es6_source.items()  # no changes needed
+def _convert_counted_usage(source_dict) -> es8_metrics.OsfCountedUsageRecord:
+    _item_iri = _iri_from_osfid(source_dict["item_guid"])
+    return es8_metrics.OsfCountedUsageRecord(
+        # fields from djelme.CountedUsageRecord
+        timestamp=source_dict["timestamp"],
+        sessionhour_id=source_dict["session_id"],
+        platform_iri=source_dict["platform_iri"],
+        # TODO: database_iri=provider iri
+        item_iri=_item_iri,
+        within_iris=[
+            _item_iri,  # correct mistake; make inclusive-within aggregations easier
+            *(
+                _iri_from_osfid(_within_osfid)
+                for _within_osfid in source_dict["surrounding_guids"]
+            ),
+        ],
+        # fields from OsfCountedUsageRecord
+        item_osfid=source_dict["item_guid"],
+        item_type=_convert_item_type(source_dict),
+        item_public=source_dict["item_public"],
+        provider_id=source_dict["provider_id"],
+        user_is_authenticated=source_dict["user_is_authenticated"],
+        action_labels=source_dict["action_labels"],
+        pageview_info=source_dict[
+            "pageview_info"
+        ],  # TODO: does this need the PageviewInfo object?
+    )
 
 
-@celery_app.task
-def migrate_preprint_views(from_date, until_date):
-    # convert to counted-usage
-    ...
+def _iri_from_osfid(osfid: str) -> str:
+    return f"{website_settings.DOMAIN}{osfid}"
 
 
-@celery_app.task
-def migrate_preprint_downloads(from_date, until_date):
-    # convert to counted-usage
-    ...
+def _convert_item_type(es6_usage_dict):
+    """convert model-name item types to OSFMAP item types
+
+    previous item_types use `type(osf_model).__name__.lower()`
+    """
+    _modelname = es6_usage_dict["item_type"]
+    assert isinstance(_modelname, str)
+    match _modelname:
+        case "osfuser":
+            return rdfutils.DCTERMS.Agent
+        case "preprint":
+            return rdfutils.OSF.Preprint
+        case "registration":
+            return (
+                rdfutils.OSF.RegistrationComponent
+                if es6_usage_dict.get("surrounding_guids")
+                else rdfutils.OSF.Registration
+            )
+        case "node":
+            return (
+                rdfutils.OSF.ProjectComponent
+                if es6_usage_dict.get("surrounding_guids")
+                else rdfutils.OSF.Project
+            )
+        case _ if "file" in _modelname:
+            return rdfutils.OSF.File
+        case _:
+            _logger.error(f"unknown item type: {_modelname}")
+            return _modelname  # give up
 
 
-@celery_app.task
-def migrate_usage_reports(from_date, until_date):
-    # from PublicItemUsageReport to PublicItemUsageReportEs8
-    # add cumulative count
-    ...
+###
+# the command itself
 
 
 class Command(BaseCommand):
@@ -278,7 +374,7 @@ class Command(BaseCommand):
             call_command("djelme_backend_setup")
         if clear_state:
             self._clear_state()
-        self._migration_start(start=start)
+        self._check_started_at(start_now=start)
         _default_all = not any((unchanged, usage_events, usage_reports))
         if unchanged or _default_all:
             self._handle_unchanged(start=start)
@@ -327,9 +423,18 @@ class Command(BaseCommand):
         )
         if start:  # schedule (per-day?) tasks (if --start)
             self.stdout.write(f"starting usages => {es8_metrics.OsfCountedUsageRecord}")
-            for _from_date, _until_date in _each_date_in_range(...):
-                migrate_usage_events(_from_date.isoformat(), _until_date.isoformat())
-                # TODO: migrate_usage_events.apply_async(...)
+            _started = self._migration_started_at
+            _range_start = (
+                _started - datetime.timedelta(months=_USAGE_MONTHS_BACK)
+            ).date
+            _range_end = _started.date() + datetime.timedelta(days=1)
+            for _from_date, _until_date in _date_range(_range_start, _range_end):
+                _from_str = _from_date.isoformat()
+                _until_str = _until_date.isoformat()
+                # TODO: .apply_async(...)
+                migrate_counted_usages(_from_str, _until_str)
+                migrate_preprint_views(_from_str, _until_str)
+                migrate_preprint_downloads(_from_str, _until_str)
         self.stdout.write("---")
 
     def _handle_usage_reports(self, *, start: bool):
@@ -362,13 +467,18 @@ class Command(BaseCommand):
             # TODO: migrate_usage_reports.apply_async(...)
         self.stdout.write("---")
 
-    def _migration_start(self, start):
-        _started_at = es8_metrics.Elastic6To8State.get_started_at()
+    @functools.cached_property
+    def _migration_started_at(self):
+        return es8_metrics.Elastic6To8State.get_started_at()
+
+    def _check_started_at(self, start_now):
+        _started_at = self._migration_started_at
         if _started_at:
             self.stdout.write(
                 f"osf.metrics 6->8 migration started previously, at {_started_at.isoformat()}"
             )
-        elif start:
+        elif start_now:
+            del self._migration_started_at  # clear cache
             _started_at = es8_metrics.Elastic6To8State.set_started_at_now()
             self.stdout.write(
                 f"osf.metrics 6->8 migration starting now, at {_started_at.isoformat()}"
