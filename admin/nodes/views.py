@@ -112,7 +112,8 @@ class RegistrationUpdateDateView(NodeMixin, View):
 
             node.add_log(
                 action=NodeLog.REGISTRATION_DATE_UPDATED,
-                auth=request,
+                auth=None,
+                foreign_user=NodeLog.SUPPORT_USER_LABEL,
                 params={
                     'last_date': str(last_date),
                     'new_date': str(new_date)
@@ -225,22 +226,20 @@ class NodeRemoveContributorView(NodeMixin, View):
                 message=f'User {user.pk} removed from {node.__class__.__name__.lower()} {node.pk}.',
                 action_flag=CONTRIBUTOR_REMOVED
             )
-            # Log invisibly on the OSF.
-            self.add_contributor_removed_log(node, user)
-        return redirect(self.get_success_url())
+            node.add_log(
+                action=NodeLog.CONTRIB_REMOVED,
+                auth=None,
+                foreign_user=NodeLog.SUPPORT_USER_LABEL,
+                params={
+                    'project': node.parent_id,
+                    'node': node.pk,
+                    'contributors': user.pk
+                },
+                log_date=timezone.now(),
+                should_hide=False,
+            )
 
-    def add_contributor_removed_log(self, node, user):
-        NodeLog(
-            action=NodeLog.CONTRIB_REMOVED,
-            user=None,
-            params={
-                'project': node.parent_id,
-                'node': node.pk,
-                'contributors': user.pk
-            },
-            date=timezone.now(),
-            should_hide=True,
-        ).save()
+        return redirect(self.get_success_url())
 
 
 class NodeUpdatePermissionsView(NodeMixin, View):
@@ -266,6 +265,7 @@ class NodeUpdatePermissionsView(NodeMixin, View):
         new_permissions_to_add = data.get('new-permissions', [])
 
         new_permission_indexes_to_remove = []
+        added_contributor_ids = []
         for email, permission in zip(new_emails_to_add, new_permissions_to_add):
             contributor_user = OSFUser.objects.filter(emails__address=email.lower()).first()
             if not contributor_user:
@@ -281,8 +281,10 @@ class NodeUpdatePermissionsView(NodeMixin, View):
                 auth=request,
                 user_id=contributor_user._id,
                 permissions=permission,
-                notification_type=None
+                notification_type=None,
+                log=False,
             )
+            added_contributor_ids.append(contributor_user._id)
             messages.success(self.request, f'User with email {email} was successfully added.')
 
         # should remove permissions of invalid emails because
@@ -291,6 +293,19 @@ class NodeUpdatePermissionsView(NodeMixin, View):
         for permission_index in new_permission_indexes_to_remove:
             new_permissions_to_add.pop(permission_index)
 
+        # Log support-added contributors, if any
+        if added_contributor_ids:
+            params = resource.log_params
+            params['contributors'] = added_contributor_ids
+            resource.add_log(
+                action=NodeLog.CONTRIB_ADDED,
+                auth=None,
+                foreign_user=NodeLog.SUPPORT_USER_LABEL,
+                params=params,
+                log_date=timezone.now(),
+                should_hide=False,
+            )
+
         updated_permissions = data.get('updated-permissions', [])
         all_permissions = updated_permissions + new_permissions_to_add
         has_admin = list(filter(lambda permission: ADMIN in permission, all_permissions))
@@ -298,6 +313,7 @@ class NodeUpdatePermissionsView(NodeMixin, View):
             messages.error(self.request, 'Must be at least one admin on this node.')
             return redirect(self.get_success_url())
 
+        permissions_changed = {}
         for contributor_permission in updated_permissions:
             guid, permission = contributor_permission.split('-')
             user = OSFUser.load(guid)
@@ -307,7 +323,21 @@ class NodeUpdatePermissionsView(NodeMixin, View):
                 resource.get_visible(user),
                 request,
                 save=True,
-                skip_permission=True
+                skip_permission=True,
+                log=False,
+            )
+            permissions_changed[user._id] = permission
+
+        if permissions_changed:
+            params = resource.log_params
+            params['contributors'] = permissions_changed
+            resource.add_log(
+                action=NodeLog.PERMISSIONS_UPDATED,
+                auth=None,
+                foreign_user=NodeLog.SUPPORT_USER_LABEL,
+                params=params,
+                log_date=timezone.now(),
+                should_hide=False,
             )
 
         return redirect(self.get_success_url())
@@ -332,15 +362,16 @@ class NodeDeleteView(NodeMixin, View):
                 message=f'Node {node.pk} restored.',
                 action_flag=NODE_RESTORED
             )
-            NodeLog(
+            node.add_log(
                 action=NodeLog.NODE_CREATED,
-                user=None,
+                auth=None,
+                foreign_user=NodeLog.SUPPORT_USER_LABEL,
                 params={
                     'project': node.parent_id,
                 },
-                date=timezone.now(),
-                should_hide=True,
-            ).save()
+                log_date=timezone.now(),
+                should_hide=False,
+            )
         else:
             node.is_deleted = True
             node.deleted = timezone.now()
@@ -352,15 +383,17 @@ class NodeDeleteView(NodeMixin, View):
                 message=f'Node {node.pk} removed.',
                 action_flag=NODE_REMOVED
             )
-            NodeLog(
+            node.add_log(
                 action=NodeLog.NODE_REMOVED,
-                user=None,
+                auth=None,
+                foreign_user=NodeLog.SUPPORT_USER_LABEL,
                 params={
                     'project': node.parent_id,
+                    'node': node.pk,
                 },
-                date=timezone.now(),
-                should_hide=True,
-            ).save()
+                log_date=timezone.now(),
+                should_hide=False,
+            )
         node.save()
 
         return redirect(self.get_success_url())
@@ -852,6 +885,18 @@ class NodeMakePrivate(NodeMixin, View):
 
         node.save()
 
+        node.add_log(
+            action=NodeLog.MADE_PRIVATE,
+            auth=None,
+            foreign_user=NodeLog.SUPPORT_USER_LABEL,
+            params={
+                'project': node.parent_id,
+                'node': node._primary_key,
+            },
+            log_date=timezone.now(),
+            should_hide=False,
+        )
+
         return redirect(self.get_success_url())
 
 
@@ -863,9 +908,21 @@ class NodeMakePublic(NodeMixin, View):
     def post(self, request, *args, **kwargs):
         node = self.get_object()
         try:
-            node.set_privacy('public')
+            node.set_privacy('public', auth=None, log=False)
         except NodeStateError as e:
             messages.error(request, str(e))
+        else:
+            node.add_log(
+                action=NodeLog.MADE_PUBLIC,
+                auth=None,
+                foreign_user=NodeLog.SUPPORT_USER_LABEL,
+                params={
+                    'project': node.parent_id,
+                    'node': node._primary_key,
+                },
+                log_date=timezone.now(),
+                should_hide=False,
+            )
         return redirect(self.get_success_url())
 
 
@@ -892,10 +949,26 @@ class NodeRemoveFileView(NodeMixin, View):
 
         # delete file from registration and metadata and keep it for original project
         if guid and (file := guid.referent) and (file.target == node) and not isinstance(file, TrashedFile):
+            file_id = file._id
+            file_path = getattr(file, 'materialized_path', None) or getattr(file, 'path', None) or ''
+            copied_from_id = getattr(file, 'copied_from_id', None) or getattr(getattr(file, 'copied_from', None), '_id', None)
             with transaction.atomic():
                 file.delete()
                 _update_schema_meta(file.target)
-                _remove_file_from_schema_response_blocks(node, [file._id, file.copied_from._id])
+                _remove_file_from_schema_response_blocks(node, [file_id, copied_from_id])
+            node.add_log(
+                action=NodeLog.FILE_REMOVED,
+                auth=None,
+                foreign_user=NodeLog.SUPPORT_USER_LABEL,
+                params={
+                    'project': node.parent_id,
+                    'node': node._primary_key,
+                    'pathType': 'file',
+                    'path': file_path,
+                },
+                log_date=timezone.now(),
+                should_hide=False,
+            )
         return redirect(self.get_success_url())
 
 
@@ -932,7 +1005,20 @@ class NodeAddOsfStorageFileView(NodeMixin, View):
             parent=osfstorage.get_root(),
             name=osfstorage.archive_folder_name
         ).first()
-        file.copy_under(archive_folder)
+        copied = file.copy_under(archive_folder)
+        copied_path = getattr(copied, 'materialized_path', None) or getattr(copied, 'path', None) or ''
+        registration.add_log(
+            action=NodeLog.FILE_ADDED,
+            auth=None,
+            foreign_user=NodeLog.SUPPORT_USER_LABEL,
+            params={
+                'project': registration.parent_id,
+                'node': registration._primary_key,
+                'path': copied_path,
+            },
+            log_date=timezone.now(),
+            should_hide=False,
+        )
         messages.success(request, 'The file was successfully added.')
         return redirect(self.get_success_url())
 
@@ -959,8 +1045,21 @@ class NodeRemoveOsfStorageFileView(NodeMixin, View):
         if not registration_file.exists():
             messages.error(request, 'The file with the provided guid is not part of the registration.')
             return redirect(self.get_success_url())
-
+        file_path = getattr(file, 'materialized_path', None) or getattr(file, 'path', None) or ''
         registration_file.delete()
+        registration.add_log(
+            action=NodeLog.FILE_REMOVED,
+            auth=None,
+            foreign_user=NodeLog.SUPPORT_USER_LABEL,
+            params={
+                'project': registration.parent_id,
+                'node': registration._primary_key,
+                'pathType': 'file',
+                'path': file_path,
+            },
+            log_date=timezone.now(),
+            should_hide=False,
+        )
         messages.success(request, 'The file was successfully removed.')
         return redirect(self.get_success_url())
 
