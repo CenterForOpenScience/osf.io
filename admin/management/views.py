@@ -12,6 +12,7 @@ from osf.management.commands.monthly_reporters_go import monthly_reporters_go
 from osf.management.commands.fetch_cedar_metadata_templates import ingest_cedar_metadata_templates
 from osf.management.commands.sync_doi_metadata import sync_doi_metadata, sync_doi_empty_metadata_dataarchive_registrations
 from osf.management.commands.populate_notification_types import populate_notification_types
+from osf.management.commands.remove_orcid_from_user_social import remove_orcid_from_user_social
 from scripts.find_spammy_content import manage_spammy_content
 from django.urls import reverse
 from django.shortcuts import redirect
@@ -180,4 +181,12 @@ class SyncNotificationTemplates(ManagementCommandPermissionView):
     def post(self, request):
         populate_notification_types()
         messages.success(request, 'Notification templates have been successfully synced.')
+        return redirect(reverse('management:commands'))
+
+
+class RemoveOrcidFromUserSocial(ManagementCommandPermissionView):
+
+    def post(self, request):
+        remove_orcid_from_user_social()
+        messages.success(request, 'Orcid from user social have been successfully removed.')
         return redirect(reverse('management:commands'))

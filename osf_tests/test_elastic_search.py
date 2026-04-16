@@ -1099,16 +1099,6 @@ class TestAddContributor(OsfTestCase):
         contribs = search.search_contributor(self.name4.split(' ')[0][:-1])
         assert len(contribs['users']) == 0
 
-    def test_search_profile(self):
-        orcid = '123456'
-        user = factories.UserFactory()
-        user.social['orcid'] = orcid
-        user.save()
-        contribs = search.search_contributor(orcid)
-        assert len(contribs['users']) == 1
-        assert len(contribs['users'][0]['social']) == 1
-        assert contribs['users'][0]['social']['orcid'] == user.social_links['orcid']
-
 
 @pytest.mark.enable_search
 @pytest.mark.enable_enqueue_task
