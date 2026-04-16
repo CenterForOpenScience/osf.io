@@ -1101,8 +1101,8 @@ elastic8 = ["elasticsearch8 (>=8.0.0,<9.0.0)"]
 [package.source]
 type = "git"
 url = "https://github.com/CenterForOpenScience/django-elasticsearch-metrics.git"
-reference = "e18f029c406d743d407f18fda8a133b261f9c4d2"
-resolved_reference = "e18f029c406d743d407f18fda8a133b261f9c4d2"
+reference = "d7e0483972a58b940bec843679c2a8c9b8bcb75c"
+resolved_reference = "d7e0483972a58b940bec843679c2a8c9b8bcb75c"
 
 [[package]]
 name = "django-extensions"
@@ -4711,4 +4711,4 @@ testing = ["coverage (>=5.0.3)", "zope.event", "zope.testing"]
 [metadata]
 lock-version = "2.1"
 python-versions = "^3.12"
-content-hash = "320d3eb4cd7f0f4c5d8cc698db51ee1bf4c37f8b8d41d21a86ca5cdb9b2e6b42"
+content-hash = "d149bb933fd3845714e26920360c34f3224ab0f84a789b3185cf716033a8d4bf"

@@ -351,7 +351,7 @@ class PrivateSpamMetricsReportEs8(djelme.CyclicRecord):
 ###
 # data migration state
 
-class Elastic6To8State(djelme.DjelmeRecordtype):
+class Elastic6To8State(djelme.SimpleRecord):
     """index for storing values helpful for keeping track of the elastic 6->8 data migration"""
     UNIQUE_TOGETHER_FIELDS = ('key',)
     key: str
