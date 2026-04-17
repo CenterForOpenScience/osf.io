@@ -160,6 +160,16 @@
                 <form method="post"
                       action="{% url 'management:sync_notification_templates'%}">
                     {% csrf_token %}
+
+                    <label for="run_type">Select a command behavior:</label>
+                    <select id="run_type" name="run_type">
+                        <option value="">Default: Only upload new templates</option>
+                        <option value="restore_one">Restore specific template</option>
+                        <option value="restore_all">Restore all templates</option>
+                    </select><br>
+
+                    <label>Template name (when restoring one):</label>  <input type="text" name="template_name"/><br>
+
                     <nav>
                         <input class="btn btn-success" type="submit" value="Run" />
                     </nav>
