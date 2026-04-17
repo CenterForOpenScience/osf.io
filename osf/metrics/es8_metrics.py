@@ -77,19 +77,24 @@ class PageviewInfo(esdsl.InnerDoc):
 
 class OsfCountedUsageRecord(djelme.CountedUsageRecord):
     '''
-
-    inherited fields:
-        platform_iri: str
-        database_iri: str
-        item_iri: str
-        sessionhour_id: str
-        within_iris: list[str]
+    Aim to support a COUNTER-style reporting api
+    https://cop5.projectcounter.org/en/5.1/appendices/a-glossary-of-terms.html
+    https://coprd.countermetrics.org/en/1.0.1/appendices/a-glossary.html
     '''
-    # osf-specific fields
+
+    # inherited fields:
+    #     timestamp: datetime.datetime
+    #     platform_iri: str
+    #     database_iri: str
+    #     item_iri: str
+    #     sessionhour_id: str
+    #     within_iris: list[str]
+
+    # osf-specific fields:
     item_osfid: str
     item_type: str
     item_public: bool
-    provider_id: str
+    provider_id: str | None
     user_is_authenticated: bool
     action_labels: list[str]
     pageview_info: PageviewInfo | None
@@ -108,6 +113,38 @@ class OsfCountedUsageRecord(djelme.CountedUsageRecord):
         # ensure inclusive "within"
         if self.item_iri not in self.within_iris:
             self.within_iris = [self.item_iri, *self.within_iris]
+
+    def _get_unique_together_values(self):
+        """get "unique together" values for "ON CONFLICT UPDATE" behavior
+
+        override djelme.BaseDjelmeRecord._get_unique_together_values
+        for more complex logic than UNIQUE_TOGETHER_FIELDS
+        to slightly better approximate `counter:Double-Click Filtering`
+        """
+        # note: copied from osf.metrics.counted_usage._fill_document_id
+        target_identifier = (
+            self.pageview_info.page_url
+            if self.pageview_info is not None and self.pageview_info.page_url is not None
+            else self.item_osfid
+        )
+        # slice the day into an array of 30-second windows,
+        # find this timestamp's windowslice index
+        day_start = datetime.datetime(
+            self.timestamp.year,
+            self.timestamp.month,
+            self.timestamp.day,
+            tzinfo=datetime.UTC,
+        )
+        time_in_seconds = (self.timestamp - day_start).total_seconds()
+        time_window = int(time_in_seconds / 30)  # 30-second windows
+        return (  # unique-together values:
+            self.platform_iri,
+            target_identifier,
+            self.sessionhour_id,
+            self.timestamp.date(),
+            time_window,
+            ','.join(sorted(self.action_labels)),
+        )
 
 
 class ActionLabel(enum.Enum):
