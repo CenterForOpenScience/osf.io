@@ -269,10 +269,11 @@ class TestRemoveContributor(AdminTestCase):
         assert len(list(self.node.get_admin_contributors(self.node.contributors))) == 1
         assert AdminLogEntry.objects.count() == count
 
-    def test_no_log(self):
+    def test_log(self):
+        assert not self.node.logs.filter(action=NodeLog.CONTRIB_REMOVED).exists()
         view = setup_log_view(self.view(), self.request, guid=self.node._id, user_id=self.user_2.id)
         view.post(self.request)
-        assert self.node.logs.latest().action != NodeLog.CONTRIB_REMOVED
+        assert self.node.logs.filter(action=NodeLog.CONTRIB_REMOVED).exists()
 
     def test_no_user_permissions_raises_error(self):
         guid = self.node._id

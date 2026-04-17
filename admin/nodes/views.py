@@ -226,15 +226,13 @@ class NodeRemoveContributorView(NodeMixin, View):
                 message=f'User {user.pk} removed from {node.__class__.__name__.lower()} {node.pk}.',
                 action_flag=CONTRIBUTOR_REMOVED
             )
+            params = dict(node.log_params)
+            params['contributors'] = user.pk
             node.add_log(
                 action=NodeLog.CONTRIB_REMOVED,
                 auth=None,
                 foreign_user=NodeLog.SUPPORT_USER_LABEL,
-                params={
-                    'project': node.parent_id,
-                    'node': node.pk,
-                    'contributors': user.pk
-                },
+                params=params,
                 log_date=timezone.now(),
                 should_hide=False,
             )
@@ -366,9 +364,7 @@ class NodeDeleteView(NodeMixin, View):
                 action=NodeLog.NODE_CREATED,
                 auth=None,
                 foreign_user=NodeLog.SUPPORT_USER_LABEL,
-                params={
-                    'project': node.parent_id,
-                },
+                params=dict(node.log_params),
                 log_date=timezone.now(),
                 should_hide=False,
             )
@@ -387,10 +383,7 @@ class NodeDeleteView(NodeMixin, View):
                 action=NodeLog.NODE_REMOVED,
                 auth=None,
                 foreign_user=NodeLog.SUPPORT_USER_LABEL,
-                params={
-                    'project': node.parent_id,
-                    'node': node.pk,
-                },
+                params=dict(node.log_params),
                 log_date=timezone.now(),
                 should_hide=False,
             )
