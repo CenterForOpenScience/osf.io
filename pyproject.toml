@@ -91,7 +91,7 @@ datacite = "1.1.3"
 rdflib = "7.0.0"
 colorlog = "6.8.2"
 # Metrics
-django-elasticsearch-metrics = {git ="https://github.com/CenterForOpenScience/django-elasticsearch-metrics.git", rev = "d7e0483972a58b940bec843679c2a8c9b8bcb75c"}
+django-elasticsearch-metrics = {git ="https://github.com/CenterForOpenScience/django-elasticsearch-metrics.git", rev = "445fcea0aa6b5d07523cd67e959cb14088f15bb0"}
 # Impact Metrics CSV Export
 djangorestframework-csv = "3.0.2"
 gevent = "24.2.1"

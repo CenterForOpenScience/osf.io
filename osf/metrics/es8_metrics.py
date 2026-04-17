@@ -92,9 +92,10 @@ class OsfCountedUsageRecord(djelme.CountedUsageRecord):
     provider_id: str
     user_is_authenticated: bool
     action_labels: list[str]
-    pageview_info: PageviewInfo
+    pageview_info: PageviewInfo | None
 
-    def save(self, *args, **kwargs):
+    def clean(self):
+        super().clean()
         # autofill pageview_info fields
         if self.pageview_info:
             self.pageview_info.hour_of_day = self.timestamp.hour
@@ -104,7 +105,9 @@ class OsfCountedUsageRecord(djelme.CountedUsageRecord):
             _ref_url = self.pageview_info.referer_url
             if _ref_url:
                 self.pageview_info.referer_domain = urlsplit(_ref_url).netloc
-        super().save(*args, **kwargs)
+        # ensure inclusive "within"
+        if self.item_iri not in self.within_iris:
+            self.within_iris = [self.item_iri, *self.within_iris]
 
 
 class ActionLabel(enum.Enum):
