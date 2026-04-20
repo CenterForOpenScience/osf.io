@@ -1,5 +1,6 @@
 import json
 import requests
+from jsonschema import validate as jsonschema_validate, ValidationError as JsonSchemaValidationError
 
 from django.apps import apps
 from django.contrib.postgres import fields
@@ -20,6 +21,7 @@ from .mixins import ReviewProviderMixin
 from .brand import Brand
 from .citation import CitationStyle
 from .licenses import NodeLicense
+from .cedar_metadata import CedarMetadataRecord
 from .storage import ProviderAssetFile
 from .subject import Subject
 from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
@@ -256,6 +258,27 @@ class AbstractProvider(TypedModel, TypedObjectIDMixin, ReviewProviderMixin, Dirt
                 self.access_token = data['attributes']['token']
 
         self.save()
+
+    def validate_required_metadata(self, osf_obj):
+        if not self.required_metadata_template:
+            return
+
+        record = CedarMetadataRecord.objects.filter(
+            guid__in=osf_obj.guids.all(),
+            template=self.required_metadata_template,
+            is_published=True,
+        ).first()
+
+        if record is None:
+            raise ValidationError(
+                f'Object must have a published CEDAR metadata record for the required template '
+                f'"{self.required_metadata_template.schema_name}".'
+            )
+
+        try:
+            jsonschema_validate(record.metadata, self.required_metadata_template.template)
+        except JsonSchemaValidationError as e:
+            raise ValidationError(e.message)
 
 
 class CollectionProvider(AbstractProvider):
