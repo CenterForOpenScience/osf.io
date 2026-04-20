@@ -4,7 +4,7 @@ from django import forms
 
 from framework.utils import sanitize_html
 from osf.models import CollectionProvider
-from admin.base.utils import get_nodelicense_choices, get_defaultlicense_choices, validate_slug
+from admin.base.utils import get_nodelicense_choices, get_defaultlicense_choices, validate_slug, get_cedar_template_choices
 
 
 class CollectionProviderForm(forms.ModelForm):
@@ -37,9 +37,11 @@ class CollectionProviderForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         nodelicense_choices = get_nodelicense_choices()
         defaultlicense_choices = get_defaultlicense_choices()
+        cedar_template_choices = get_cedar_template_choices()
         super().__init__(*args, **kwargs)
         self.fields['licenses_acceptable'].choices = nodelicense_choices
         self.fields['default_license'].choices = defaultlicense_choices
+        self.fields['required_metadata_template'].choices = cedar_template_choices
 
     def clean_description(self, *args, **kwargs):
         if not self.data.get('description'):
