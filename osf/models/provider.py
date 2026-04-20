@@ -167,6 +167,23 @@ class AbstractProvider(TypedModel, TypedObjectIDMixin, ReviewProviderMixin, Dirt
         related_name='required_by_providers',
     )
 
+    def validate_required_metadata(self, obj):
+        """
+        Raises ValidationError if obj does not have a CedarMetadataRecord for
+        this provider's required_metadata_template.
+        Does nothing when required_metadata_template is not set.
+        """
+        if not self.required_metadata_template_id:
+            return
+        guid = obj.guids.first()
+        if guid is None or not guid.cedar_metadata_records.filter(
+            template_id=self.required_metadata_template_id
+        ).exists():
+            raise ValidationError(
+                f'Submitted object must have a CEDAR metadata record for template '
+                f'"{self.required_metadata_template.schema_name}" to be submitted to this collection.'
+            )
+
     def __repr__(self):
         return ('(name={self.name!r}, default_license={self.default_license!r}, '
                 'allow_submissions={self.allow_submissions!r}) with id {self.id!r}').format(self=self)
