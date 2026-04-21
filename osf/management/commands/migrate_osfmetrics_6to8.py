@@ -339,7 +339,7 @@ def _convert_preprint_metric(
     return es8_metrics.OsfCountedUsageRecord.record(
         using=False,  # don't save yet; will save in bulk
         # fields used to compute a sessionhour_id:
-        timestamp=source['timestamp'],
+        timestamp=datetime.datetime.fromisoformat(source['timestamp']),
         user_id=source.get('user_id'),
         client_session_id=str(uuid.uuid4()),
         # fields from djelme.CountedUsageRecord:
