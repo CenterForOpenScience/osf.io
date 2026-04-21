@@ -32,7 +32,7 @@ from django.utils.termcolors import colorize
 from django.db.models import Model
 from django_extensions.management.commands import shell_plus
 from django_extensions.management.utils import signalcommand
-from elasticsearch_metrics.registry import registry as metrics_registry
+from elasticsearch_metrics.registry import djelme_registry
 
 
 def header(text):
@@ -160,7 +160,7 @@ class Command(shell_plus.Command):
     def get_metrics(self):
         return {
             each.__name__: each
-            for each in metrics_registry.get_metrics()
+            for each in djelme_registry.each_recordtype()
         }
 
     def get_grouped_imports(self, options):
