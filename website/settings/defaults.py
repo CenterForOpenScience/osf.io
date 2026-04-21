@@ -489,7 +489,7 @@ class CeleryConfig:
     }
 
     background_migration_modules = {
-        'osf.management.commands.metrics_es8_migration',
+        'osf.management.commands.migrate_osfmetrics_6to8',
     }
 
     try:
