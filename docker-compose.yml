@@ -72,6 +72,8 @@ services:
   # Temporary: Remove when we've upgraded to ES6
   elasticsearch6:
     image: docker.elastic.co/elasticsearch/elasticsearch:6.3.1
+    environment:
+      - ES_JAVA_OPTS=-Xms512m -Xmx512m  # reduce memory usage
     ports:
       - 9201:9200
     volumes:
@@ -91,10 +93,9 @@ services:
       - elasticsearch8_data_vol:/usr/share/elasticsearch/data
     healthcheck:
       start_period: 15s
-      test: ["CMD", "curl", "-sf", "http://localhost:9200/_cluster/health?wait_for_status=yellow&timeout=30s"]
+      test: curl -s http://localhost:9200/_cluster/health | grep -vq '"status":"red"'
       interval: 10s
-      timeout: 30s
-      retries: 5
+      retries: 30
     stdin_open: true
 
   postgres:

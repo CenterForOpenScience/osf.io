@@ -65,8 +65,8 @@ _TASK_KWARGS = dict(
         Elastic8ConnectionError,
         PostgresOperationalError,
     ),
-    max_retries=50,
-    retry_backoff=True,
+    retry_backoff=True,  # exponential backoff, with jitter
+    max_retries=20,
 )
 
 ###
@@ -87,8 +87,8 @@ def migrate_unchanged_recordtype(es6_recordtype_name: str):
         _es8_recordtype(**_convert_kwargs(_hit["_source"]))
         for _hit in _es6_scan_all(_es6_recordtype)
     )
-    # _debug_migrate(_each_new)
-    return _es8_bulk_save(_es8_recordtype, _each_new)
+    _debug_migrate(_each_new)
+    # return _es8_bulk_save(_es8_recordtype, _each_new)
 
 
 @celery_app.task(**_TASK_KWARGS)
@@ -103,8 +103,8 @@ def migrate_counted_usages(from_when: str, until_when: str):
             addl_filter={"exists": {"field": "item_guid"}},
         )
     )
-    # _debug_migrate(_each_new)
-    return _es8_bulk_save(es8_metrics.OsfCountedUsageRecord, _each_new)
+    _debug_migrate(_each_new)
+    #return _es8_bulk_save(es8_metrics.OsfCountedUsageRecord, _each_new)
 
 
 @celery_app.task(**_TASK_KWARGS)
@@ -115,8 +115,8 @@ def migrate_preprint_views(from_when: str, until_when: str):
         _convert_preprint_metric(_hit["_source"], _action_labels)
         for _hit in _es6_scan_range(PreprintView, from_when, until_when)
     )
-    # _debug_migrate(_each_new)
-    return _es8_bulk_save(es8_metrics.OsfCountedUsageRecord, _each_new)
+    _debug_migrate(_each_new)
+    # return _es8_bulk_save(es8_metrics.OsfCountedUsageRecord, _each_new)
 
 
 @celery_app.task(**_TASK_KWARGS)
@@ -127,8 +127,8 @@ def migrate_preprint_downloads(from_when: str, until_when: str):
         _convert_preprint_metric(_hit["_source"], _action_labels)
         for _hit in _es6_scan_range(PreprintDownload, from_when, until_when)
     )
-    # _debug_migrate(_each_new)
-    return _es8_bulk_save(es8_metrics.OsfCountedUsageRecord, _each_new)
+    _debug_migrate(_each_new)
+    # return _es8_bulk_save(es8_metrics.OsfCountedUsageRecord, _each_new)
 
 
 @celery_app.task(**_TASK_KWARGS)
@@ -136,14 +136,23 @@ def migrate_usage_reports(osfid: str):
     # from PublicItemUsageReport to PublicItemUsageReportEs8
     # add cumulative count
     def _each_new():
-        for _hit in _es6_scan_all(
+        _each_hit = _es6_scan_all(
             es6_reports.PublicItemUsageReport,
             query_body={"query": {"term": {"item_osfid": osfid}}},
-        ):
-            yield _convert_public_usage_report(_hit["_source"])
+        )
+        # only a few dozen of these per item; fine to hold all at once
+        _sorted_sources = sorted(
+            (_hit["_source"] for _hit in _each_hit),
+            key=lambda _s: _s["report_yearmonth"],
+        )
+        _prior_report = None
+        for _source in _sorted_sources:
+            yield (
+                _prior_report := _convert_public_usage_report(_source, _prior_report)
+            )
 
-    # _debug_migrate(_each_new)
-    return _es8_bulk_save(es8_metrics.PublicItemUsageReportEs8, _each_new)
+    _debug_migrate(_each_new())
+    # return _es8_bulk_save(es8_metrics.PublicItemUsageReportEs8, _each_new)
 
 
 ###
@@ -175,6 +184,7 @@ def _delete_all_es8():
 def _debug_migrate(each_new):
     # TODO: remove this
     for _each in each_new:
+        _each.full_clean()
         pprint(_each.to_dict(include_meta=True))
 
 
@@ -320,75 +330,89 @@ def _convert_unchanged_cyclicrecord_kwargs(es6_source: dict) -> dict:
     return dict(_each_kwarg())
 
 
-def _convert_counted_usage(source_dict) -> es8_metrics.OsfCountedUsageRecord:
-    _item_iri = _iri_from_osfid(source_dict["item_guid"])
-    _item_type = _convert_item_type(source_dict)
+def _convert_counted_usage(source: dict) -> es8_metrics.OsfCountedUsageRecord:
+    _item_iri = _iri_from_osfid(source["item_guid"])
+    _item_type = _convert_item_type(source)
     return es8_metrics.OsfCountedUsageRecord(
         # fields from djelme.CountedUsageRecord:
-        timestamp=source_dict["timestamp"],
-        sessionhour_id=source_dict["session_id"],
-        platform_iri=source_dict["platform_iri"],
-        database_iri=_convert_database_iri(source_dict.get("provider_id"), _item_type),
+        timestamp=source["timestamp"],
+        sessionhour_id=source["session_id"],
+        platform_iri=source.get("platform_iri") or website_settings.DOMAIN,
+        database_iri=_convert_database_iri(source.get("provider_id"), _item_type),
         item_iri=_item_iri,
         within_iris=[
             _iri_from_osfid(_within_osfid)
-            for _within_osfid in source_dict.get("surrounding_guids", ())
+            for _within_osfid in source.get("surrounding_guids", ())
         ],
         # fields from OsfCountedUsageRecord:
-        item_osfid=source_dict["item_guid"],
+        item_osfid=source["item_guid"],
         item_type=_item_type,
-        item_public=source_dict["item_public"],
-        provider_id=source_dict.get("provider_id"),
-        user_is_authenticated=source_dict["user_is_authenticated"],
-        action_labels=source_dict["action_labels"],
+        item_public=source["item_public"],
+        provider_id=source.get("provider_id"),
+        user_is_authenticated=source["user_is_authenticated"],
+        action_labels=source["action_labels"],
         # TODO: does this need the PageviewInfo object or is the dictionary fine?
-        pageview_info=source_dict.get("pageview_info"),
+        pageview_info=source.get("pageview_info"),
     )
 
 
 def _convert_preprint_metric(
-    source_dict, action_labels: list[str]
+    source: dict, action_labels: list[str]
 ) -> es8_metrics.OsfCountedUsageRecord:
-    _preprint_iri = _iri_from_osfid(source_dict["preprint_id"])
+    _preprint_iri = _iri_from_osfid(source["preprint_id"])
     return es8_metrics.OsfCountedUsageRecord.record(
         using=False,  # don't save yet; will save in bulk
         # fields used to compute a sessionhour_id:
-        timestamp=source_dict["timestamp"],
-        user_id=source_dict.get("user_id"),
+        timestamp=source["timestamp"],
+        user_id=source.get("user_id"),
         # fields from djelme.CountedUsageRecord:
         platform_iri=website_settings.DOMAIN,
-        database_iri=_convert_database_iri(
-            source_dict.get("provider_id"), OSF.Preprint
-        ),
+        database_iri=_convert_database_iri(source.get("provider_id"), OSF.Preprint),
         item_iri=_preprint_iri,
         within_iris=[_preprint_iri],
         # fields from OsfCountedUsageRecord:
-        item_osfid=source_dict["preprint_id"],
+        item_osfid=source["preprint_id"],
         item_type=OSF.Preprint,
         item_public=True,
-        provider_id=source_dict.get("provider_id"),
-        user_is_authenticated=bool(source_dict.get("user_id")),
+        provider_id=source.get("provider_id"),
+        user_is_authenticated=bool(source.get("user_id")),
         action_labels=action_labels,
     )
 
 
-def _convert_public_usage_report(source_dict) -> es8_metrics.PublicItemUsageReportEs8:
-    _c_views, _c_view_sess, _c_downloads, _c_download_sess = _get_cumulative_usage(
-        osfid=source_dict["item_osfid"],
-        until_when=YearMonth.from_str(source_dict["report_yearmonth"]).month_end(),
-        item_type=source_dict.get("item_type"),
-    )
+def _convert_public_usage_report(
+    source: dict,
+    prior_report: es8_metrics.PublicItemUsageReportEs8 | None,
+) -> es8_metrics.PublicItemUsageReportEs8:
+    if prior_report is None:
+        _c_views, _c_view_sess, _c_downloads, _c_download_sess = _get_cumulative_usage(
+            osfid=source["item_osfid"],
+            until_when=YearMonth.from_str(source["report_yearmonth"]).month_end(),
+            item_type=source.get("item_type"),
+        )
+    else:
+        _c_views = prior_report.cumulative_view_count + source.get("view_count", 0)
+        _c_view_sess = prior_report.cumulative_view_session_count + source.get(
+            "view_session_count", 0
+        )
+        _c_downloads = prior_report.cumulative_download_count + source.get(
+            "download_count", 0
+        )
+        _c_download_sess = prior_report.cumulative_download_session_count + source.get(
+            "download_session_count", 0
+        )
     return es8_metrics.PublicItemUsageReportEs8(
-        item_osfid=source_dict["item_osfid"],
-        item_type=source_dict.get("item_type"),
-        provider_id=source_dict.get("provider_id"),
-        platform_iri=source_dict.get("platform_iri"),
-        view_count=source_dict.get("view_count"),
-        view_session_count=source_dict.get("view_session_count"),
+        cycle_coverage=_semverish_from_yearmonth(source['report_yearmonth']),
+        item_osfid=source["item_osfid"],
+        item_type=source.get("item_type"),
+        provider_id=source.get("provider_id"),
+        platform_iri=source.get("platform_iri") or website_settings.DOMAIN,
+        view_count=source.get("view_count"),
+        view_session_count=source.get("view_session_count"),
         cumulative_view_count=_c_views,
         cumulative_view_session_count=_c_view_sess,
-        download_count=source_dict.get("download_count"),
-        download_session_count=source_dict.get("download_session_count"),
+        download_count=source.get("download_count"),
+        download_session_count=source.get("download_session_count"),
         cumulative_download_count=_c_downloads,
         cumulative_download_session_count=_c_download_sess,
     )
@@ -407,9 +431,7 @@ def _get_cumulative_usage(osfid: str, until_when, item_type: str | None):
     return (_views, _view_sess, _downloads, _download_sess)
 
 
-def _cumulative_countedusage_views(
-    osfid: str, until_when: str
-) -> tuple[int, int]:
+def _cumulative_countedusage_views(osfid: str, until_when: str) -> tuple[int, int]:
     """compute view_session_count separately to avoid double-counting
 
     (the same session may be represented in both the composite agg on `item_guid`
@@ -651,7 +673,8 @@ class Command(BaseCommand):
             )
             if start:  # schedule task
                 self._write_tabbed("starting", _es6_cls, "=>", _es8_cls)
-                migrate_unchanged_recordtype.delay(_es6_cls.__name__)
+                #migrate_unchanged_recordtype.delay(_es6_cls.__name__)
+                migrate_unchanged_recordtype(_es6_cls.__name__)
             self.stdout.write("---")
 
     def _handle_usage_events(self, *, start: bool):
@@ -681,9 +704,12 @@ class Command(BaseCommand):
             for _from_date, _until_date in _date_range(_range_start, _range_end):
                 _from_str = _from_date.isoformat()
                 _until_str = _until_date.isoformat()
-                migrate_counted_usages.delay(_from_str, _until_str)
-                migrate_preprint_views.delay(_from_str, _until_str)
-                migrate_preprint_downloads.delay(_from_str, _until_str)
+                # migrate_counted_usages.delay(_from_str, _until_str)
+                # migrate_preprint_views.delay(_from_str, _until_str)
+                # migrate_preprint_downloads.delay(_from_str, _until_str)
+                migrate_counted_usages(_from_str, _until_str)
+                migrate_preprint_views(_from_str, _until_str)
+                migrate_preprint_downloads(_from_str, _until_str)
         self.stdout.write("---")
 
     def _handle_usage_reports(self, *, start: bool):
@@ -709,7 +735,7 @@ class Command(BaseCommand):
         )
         # (if --start) schedule task per item (by composite agg on es6 public usage reports)
         # each item-task iter thru reports oldest to newest, adding cumulative counts
-        if start:  # schedule per-item tasks
+        if start:
             self.stdout.write(
                 f"starting per-item {es6_reports.PublicItemUsageReport} => {es8_metrics.PublicItemUsageReportEs8}"
             )
@@ -717,7 +743,7 @@ class Command(BaseCommand):
                 started_at=self._migration_started_at
             ):
                 migrate_usage_reports(_osfid)
-                # TODO: migrate_usage_reports.apply_async(...)
+                # TODO: migrate_usage_reports.delay(...)
         self.stdout.write("---")
 
     @functools.cached_property

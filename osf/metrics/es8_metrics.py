@@ -3,7 +3,7 @@ import enum
 from urllib.parse import urlsplit
 
 import elasticsearch8.dsl as esdsl
-from elasticsearch_metrics import DAILY, MONTHLY
+from elasticsearch_metrics import DAILY, MONTHLY, YEARLY
 import elasticsearch_metrics.imps.elastic8 as djelme
 
 from osf.metrics.utils import YearMonth
@@ -233,11 +233,17 @@ class StorageAddonUsageEs8(djelme.CyclicRecord):
 
     usage_by_addon: list[UsageByStorageAddon]
 
+    class Meta:
+        timeseries_index_timedepth = YEARLY
+
 
 class DownloadCountReportEs8(djelme.CyclicRecord):
     CYCLE_TIMEDEPTH = DAILY
 
     daily_file_downloads: int
+
+    class Meta:
+        timeseries_index_timedepth = YEARLY
 
 
 class InstitutionSummaryReportEs8(djelme.CyclicRecord):
@@ -252,6 +258,9 @@ class InstitutionSummaryReportEs8(djelme.CyclicRecord):
     registered_nodes: RegistrationRunningTotals
     registered_projects: RegistrationRunningTotals
 
+    class Meta:
+        timeseries_index_timedepth = MONTHLY
+
 
 class NewUserDomainReportEs8(djelme.CyclicRecord):
     CYCLE_TIMEDEPTH = DAILY
@@ -259,6 +268,9 @@ class NewUserDomainReportEs8(djelme.CyclicRecord):
 
     domain_name: str
     new_user_count: int
+
+    class Meta:
+        timeseries_index_timedepth = MONTHLY
 
 
 class NodeSummaryReportEs8(djelme.CyclicRecord):
@@ -269,11 +281,17 @@ class NodeSummaryReportEs8(djelme.CyclicRecord):
     registered_nodes: RegistrationRunningTotals
     registered_projects: RegistrationRunningTotals
 
+    class Meta:
+        timeseries_index_timedepth = YEARLY
+
 
 class OsfstorageFileCountReportEs8(djelme.CyclicRecord):
     CYCLE_TIMEDEPTH = DAILY
 
     files: FileRunningTotals
+
+    class Meta:
+        timeseries_index_timedepth = YEARLY
 
 
 class PreprintSummaryReportEs8(djelme.CyclicRecord):
@@ -282,6 +300,9 @@ class PreprintSummaryReportEs8(djelme.CyclicRecord):
     UNIQUE_TOGETHER_FIELDS = ('cycle_coverage', 'provider_key',)
     provider_key: str
     preprint_count: int
+
+    class Meta:
+        timeseries_index_timedepth = MONTHLY
 
 
 class UserSummaryReportEs8(djelme.CyclicRecord):
@@ -293,6 +314,9 @@ class UserSummaryReportEs8(djelme.CyclicRecord):
     new_users_daily: int
     new_users_with_institution_daily: int
     unconfirmed: int
+
+    class Meta:
+        timeseries_index_timedepth = YEARLY
 
 
 class SpamSummaryReportEs8(djelme.CyclicRecord):
@@ -309,6 +333,9 @@ class SpamSummaryReportEs8(djelme.CyclicRecord):
     preprint_flagged: int
     user_marked_as_spam: int
     user_marked_as_ham: int
+
+    class Meta:
+        timeseries_index_timedepth = YEARLY
 
 
 class InstitutionalUserReportEs8(djelme.CyclicRecord):
@@ -333,6 +360,9 @@ class InstitutionalUserReportEs8(djelme.CyclicRecord):
     public_file_count: int = esdsl.mapped_field(esdsl.Long())
     storage_byte_count: int = esdsl.mapped_field(esdsl.Long())
 
+    class Meta:
+        timeseries_index_timedepth = MONTHLY
+
 
 class InstitutionMonthlySummaryReportEs8(djelme.CyclicRecord):
     CYCLE_TIMEDEPTH = MONTHLY
@@ -349,6 +379,9 @@ class InstitutionMonthlySummaryReportEs8(djelme.CyclicRecord):
     public_file_count: int = esdsl.mapped_field(esdsl.Long())
     monthly_logged_in_user_count: int = esdsl.mapped_field(esdsl.Long())
     monthly_active_user_count: int = esdsl.mapped_field(esdsl.Long())
+
+    class Meta:
+        timeseries_index_timedepth = YEARLY
 
 
 class PublicItemUsageReportEs8(djelme.CyclicRecord):
@@ -375,6 +408,9 @@ class PublicItemUsageReportEs8(djelme.CyclicRecord):
     cumulative_download_count: int = esdsl.mapped_field(esdsl.Long())
     cumulative_download_session_count: int = esdsl.mapped_field(esdsl.Long())
 
+    class Meta:
+        timeseries_index_timedepth = MONTHLY
+
 
 class PrivateSpamMetricsReportEs8(djelme.CyclicRecord):
     CYCLE_TIMEDEPTH = MONTHLY
@@ -387,6 +423,9 @@ class PrivateSpamMetricsReportEs8(djelme.CyclicRecord):
     preprint_oopspam_hammed: int
     preprint_akismet_flagged: int
     preprint_akismet_hammed: int
+
+    class Meta:
+        timeseries_index_timedepth = YEARLY
 
 
 ###
