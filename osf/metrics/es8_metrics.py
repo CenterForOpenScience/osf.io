@@ -57,19 +57,19 @@ class PageviewInfo(esdsl.InnerDoc):
     """
 
     # fields that should be provided
-    referer_url: str
-    page_url: str
-    page_title: str
-    route_name: str = esdsl.mapped_field(esdsl.Keyword(
+    referer_url: str | None
+    page_url: str | None
+    page_title: str | None
+    route_name: str | None = esdsl.mapped_field(esdsl.Keyword(
         fields={
             'by_prefix': esdsl.Text(analyzer=route_prefix_analyzer),
         },
     ))
 
     # fields auto-filled
-    page_path: str
-    referer_domain: str
-    hour_of_day: int
+    page_path: str | None
+    referer_domain: str | None
+    hour_of_day: int | None
 
 
 ###
@@ -111,7 +111,9 @@ class OsfCountedUsageRecord(djelme.CountedUsageRecord):
             if _ref_url:
                 self.pageview_info.referer_domain = urlsplit(_ref_url).netloc
         # ensure inclusive "within"
-        if self.item_iri not in self.within_iris:
+        if not self.within_iris:
+            self.within_iris = [self.item_iri]
+        elif self.item_iri not in self.within_iris:
             self.within_iris = [self.item_iri, *self.within_iris]
 
     def _get_unique_together_values(self):
