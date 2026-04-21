@@ -1,4 +1,4 @@
-from datetime import datetime
+import datetime
 
 from elasticsearch_metrics.tests.util import djelme_test_backends
 import pytest
@@ -20,7 +20,7 @@ class TestEs8Metrics:
 
     def test_nested_pageview_autofill(self):
         usage = OsfCountedUsageRecord.record(
-            timestamp=datetime(2024, 1, 1, 15, 0),
+            timestamp=datetime.datetime(2024, 1, 1, 15, 0, tzinfo=datetime.UTC),
             sessionhour_id='blah',
             database_iri='https://osf.example/provider',
             item_iri='https://osf.example/itemm',

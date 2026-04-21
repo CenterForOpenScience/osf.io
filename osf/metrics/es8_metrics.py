@@ -133,7 +133,7 @@ class OsfCountedUsageRecord(djelme.CountedUsageRecord):
             self.timestamp.year,
             self.timestamp.month,
             self.timestamp.day,
-            tzinfo=datetime.UTC,
+            tzinfo=self.timestamp.tzinfo,
         )
         time_in_seconds = (self.timestamp - day_start).total_seconds()
         time_window = int(time_in_seconds / 30)  # 30-second windows
