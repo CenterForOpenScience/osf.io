@@ -2,6 +2,7 @@ import collections
 import datetime
 import functools
 import logging
+import uuid
 
 from django.core.management import call_command
 from django.core.management.base import BaseCommand
@@ -340,6 +341,7 @@ def _convert_preprint_metric(
         # fields used to compute a sessionhour_id:
         timestamp=source['timestamp'],
         user_id=source.get('user_id'),
+        client_session_id=str(uuid.uuid4()),
         # fields from djelme.CountedUsageRecord:
         platform_iri=website_settings.DOMAIN,
         database_iri=_convert_database_iri(source.get('provider_id'), 'preprint'),

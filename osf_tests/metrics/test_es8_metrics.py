@@ -76,7 +76,7 @@ class TestEs8Metrics:
             platform_iri='https://osf.example',
             user_is_authenticated=False,
         )
-        assert usage.pageview_info is None
+        assert not usage.pageview_info
         assert usage.item_iri in usage.within_iris
 
     def test_save_report(self):
