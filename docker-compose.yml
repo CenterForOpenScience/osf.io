@@ -78,6 +78,11 @@ services:
       - 9201:9200
     volumes:
       - elasticsearch6_data_vol:/usr/share/elasticsearch/data
+    healthcheck:
+      start_period: 15s
+      test: curl -s http://localhost:9200/_cluster/health | grep -vq '"status":"red"'
+      interval: 10s
+      retries: 30
     stdin_open: true
 
   elasticsearch8:

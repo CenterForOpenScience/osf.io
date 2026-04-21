@@ -2,7 +2,6 @@ import collections
 import datetime
 import functools
 import logging
-from pprint import pprint
 
 from django.core.management import call_command
 from django.core.management.base import BaseCommand
@@ -11,7 +10,6 @@ from elasticsearch6.exceptions import ConnectionError as Elastic6ConnectionError
 from elasticsearch6 import helpers as es6_helpers
 from elasticsearch6_dsl.connections import connections as es6_connections
 from elasticsearch8.exceptions import ConnectionError as Elastic8ConnectionError
-from elasticsearch8.dsl.connections import connections as es8_connections
 from elasticsearch_metrics.registry import djelme_registry
 from elasticsearch_metrics.imps import elastic8 as djel8me
 from psycopg2 import OperationalError as PostgresOperationalError
@@ -73,10 +71,9 @@ _TASK_KWARGS = dict(
 
 
 @celery_app.task(**_TASK_KWARGS)
-def migrate_unchanged_recordtype(es6_recordtype_name: str):
+def migrate_unchanged_recordtype(es6_recordtype_name: str, until_when: str):
     _es6_recordtype = djelme_registry.get_recordtype("osf", es6_recordtype_name)
     _es8_recordtype = _UNCHANGED_RECORDTYPES[_es6_recordtype]
-    _assert_field_unchangedness(_es6_recordtype, _es8_recordtype)
     _convert_kwargs = (
         _convert_unchanged_cyclicrecord_kwargs
         if issubclass(_es8_recordtype, djel8me.CyclicRecord)
@@ -84,7 +81,7 @@ def migrate_unchanged_recordtype(es6_recordtype_name: str):
     )
     _each_new = (
         _es8_recordtype(**_convert_kwargs(_hit["_source"]))
-        for _hit in _es6_scan_all(_es6_recordtype)
+        for _hit in _es6_scan_range(_es6_recordtype, until_when=until_when)
     )
     return _es8_bulk_save(_es8_recordtype, _each_new)
 
@@ -96,8 +93,8 @@ def migrate_counted_usages(from_when: str, until_when: str):
         _convert_counted_usage(_hit["_source"])
         for _hit in _es6_scan_range(
             CountedUsageEs6,
-            from_when,
-            until_when,
+            from_when=from_when,
+            until_when=until_when,
             addl_filter={"exists": {"field": "item_guid"}},
         )
     )
@@ -110,7 +107,9 @@ def migrate_preprint_views(from_when: str, until_when: str):
     _action_labels = ["view", "web"]
     _each_new = (
         _convert_preprint_metric(_hit["_source"], _action_labels)
-        for _hit in _es6_scan_range(PreprintView, from_when, until_when)
+        for _hit in _es6_scan_range(
+            PreprintView, from_when=from_when, until_when=until_when
+        )
     )
     return _es8_bulk_save(es8_metrics.OsfCountedUsageRecord, _each_new)
 
@@ -121,23 +120,24 @@ def migrate_preprint_downloads(from_when: str, until_when: str):
     _action_labels = ["download"]
     _each_new = (
         _convert_preprint_metric(_hit["_source"], _action_labels)
-        for _hit in _es6_scan_range(PreprintDownload, from_when, until_when)
+        for _hit in _es6_scan_range(
+            PreprintDownload, from_when=from_when, until_when=until_when
+        )
     )
     return _es8_bulk_save(es8_metrics.OsfCountedUsageRecord, _each_new)
 
 
 @celery_app.task(**_TASK_KWARGS)
-def migrate_usage_reports(osfid: str):
+def migrate_usage_reports(osfid: str, until_when: str):
     # from PublicItemUsageReport to PublicItemUsageReportEs8
     def _each_new():
         # go in sorted order to build cumulative counts
         # (only a few dozen of these per item; should be fine to sort and load all at once)
-        _each_hit = _es6_scan_all(
+        _each_hit = _es6_scan_range(
             es6_reports.PublicItemUsageReport,
-            query_body={
-                "query": {"term": {"item_osfid": osfid}},
-                "sort": "report_yearmonth",
-            },
+            until_when=until_when,
+            addl_filter={"term": {"item_osfid": osfid}},
+            sort="report_yearmonth",
         )
         _prior_report = None
         for _hit in list(_each_hit):
@@ -156,31 +156,6 @@ def migrate_usage_reports(osfid: str):
 
 def _es6_connection():
     return es6_connections.get_connection("osfmetrics_es6")
-
-
-def _es8_connection():
-    return es8_connections.get_connection("osfmetrics_es8")
-
-
-def _delete_all(recordtype):
-    # TODO: REMOVE THIS
-    recordtype.search().query({"match_all": {}}).delete()
-    recordtype.refresh()
-
-
-def _delete_all_es8():
-    # TODO: REMOVE THIS
-    for _es8_recordtype in _UNCHANGED_RECORDTYPES.values():
-        _delete_all(_es8_recordtype)
-    _delete_all(es8_metrics.PublicItemUsageReportEs8)
-    _delete_all(es8_metrics.OsfCountedUsageRecord)
-
-
-def _debug_migrate(each_new):
-    # TODO: remove this
-    for _each in each_new:
-        _each.full_clean()
-        pprint(_each.to_dict(include_meta=True))
 
 
 def _es8_bulk_save(es8_recordtype, each_new_record):
@@ -203,24 +178,29 @@ def _date_range(
         (_from_date, _until_date) = (_until_date, _until_date + step)
 
 
-def _es6_scan_all(es6_recordtype, query_body=None):
-    return es6_helpers.scan(
-        _es6_connection(),
-        index=es6_recordtype._template_pattern,
-        query=query_body,
-    )
-
-
-def _es6_scan_range(es6_recordtype, from_when: str, until_when: str, addl_filter=None):
+def _es6_scan_range(
+    es6_recordtype,
+    *,
+    from_when: str = "",
+    until_when: str,
+    addl_filter=None,
+    sort=None,
+):
+    _timestamp_range = {"lt": until_when}
+    if from_when:
+        _timestamp_range["gte"] = from_when
     _filters = [
-        {"range": {"timestamp": {"gte": from_when, "lt": until_when}}},
+        {"range": {"timestamp": _timestamp_range}},
     ]
     if addl_filter:
         _filters.append(addl_filter)
+    _query_body = {"query": {"bool": {"filter": _filters}}}
+    if sort:
+        _query_body["sort"] = sort
     return es6_helpers.scan(
         _es6_connection(),
         index=es6_recordtype._template_pattern,
-        query={"query": {"bool": {"filter": _filters}}},
+        query=_query_body,
     )
 
 
@@ -332,7 +312,9 @@ def _convert_counted_usage(source: dict) -> es8_metrics.OsfCountedUsageRecord:
         timestamp=source["timestamp"],
         sessionhour_id=source["session_id"],
         platform_iri=source.get("platform_iri") or website_settings.DOMAIN,
-        database_iri=_convert_database_iri(source.get("provider_id"), source.get("item_type")),
+        database_iri=_convert_database_iri(
+            source.get("provider_id"), source.get("item_type")
+        ),
         item_iri=_item_iri,
         within_iris=[
             _iri_from_osfid(_within_osfid)
@@ -345,7 +327,6 @@ def _convert_counted_usage(source: dict) -> es8_metrics.OsfCountedUsageRecord:
         provider_id=source.get("provider_id"),
         user_is_authenticated=source.get("user_is_authenticated"),
         action_labels=source.get("action_labels"),
-        # TODO: does this need the PageviewInfo object or is the dictionary fine?
         pageview_info=source.get("pageview_info"),
     )
 
@@ -550,10 +531,10 @@ def _convert_database_iri(provider_id: str | None, item_type: str) -> str:
             return _fallback_iri()
 
 
-def _each_usage_report_osfid(started_at, after_osfid=None):
+def _each_usage_report_osfid(until_when, after_osfid=None):
     _search = (
         es6_reports.PublicItemUsageReport.search()
-        .filter("range", timestamp={"lt": started_at})
+        .filter("range", timestamp={"lt": until_when})
         .extra(size=0)
     )
     _search.aggs.bucket(
@@ -600,6 +581,10 @@ class Command(BaseCommand):
             action="store_true",
         )
 
+    @functools.cached_property
+    def _migration_started_at(self):
+        return es8_metrics.Elastic6To8State.get_started_at()
+
     def handle(
         self,
         *,
@@ -625,10 +610,13 @@ class Command(BaseCommand):
             self._handle_usage_events(start=start, no_counts=no_counts)
         if usage_reports or _default_all:
             self._handle_usage_reports(start=start, no_counts=no_counts)
+        if not no_counts:
+            self.stdout.write("(counts may be approximate)")
 
     def _handle_unchanged(self, *, start: bool, no_counts: bool):
         # for each (unchanged) report/event:
         for _es6_cls, _es8_cls in _UNCHANGED_RECORDTYPES.items():
+            _assert_field_unchangedness(_es6_cls, _es8_cls)
             if not no_counts:
                 # display counts
                 _es6_count = _es6_cls.search().count()
@@ -641,26 +629,41 @@ class Command(BaseCommand):
                     style=self._eq_style(_es8_count, _es6_count),
                 )
             if start:  # schedule task
-                self.stdout.write(f"starting {_es6_cls.__name__} => {_es8_cls.__name__}")
-                migrate_unchanged_recordtype.delay(_es6_cls.__name__)
+                self.stdout.write(
+                    f"starting {_es6_cls.__name__} => {_es8_cls.__name__}"
+                )
+                migrate_unchanged_recordtype.delay(
+                    _es6_cls.__name__, self._migration_started_at.isoformat()
+                )
 
     def _handle_usage_events(self, *, start: bool, no_counts: bool):
         # for counted-usage events:
-        _started = self._migration_started_at
+        _started = self._migration_started_at or datetime.datetime.now()
         _range_start = (_started - datetime.timedelta(days=_USAGE_DAYS_BACK)).date()
         _range_end = _started.date() + datetime.timedelta(days=1)
         if not no_counts:
             # display counts for each view/download event type
-            _range_q = {"range": {"timestamp": {"gte": _range_start.isoformat(), "lt": _range_end.isoformat()}}}
+            _range_q = {
+                "range": {
+                    "timestamp": {
+                        "gte": _range_start.isoformat(),
+                        "lt": _range_end.isoformat(),
+                    }
+                }
+            }
             _es6_pview_count = PreprintView.search().filter(_range_q).count()
             _es6_pdownload_count = PreprintDownload.search().filter(_range_q).count()
             _es6_usage_event_count = CountedUsageEs6.search().filter(_range_q).count()
-            _es6_count = _es6_pview_count + _es6_pdownload_count + _es6_usage_event_count
+            _es6_count = (
+                _es6_pview_count + _es6_pdownload_count + _es6_usage_event_count
+            )
             _es8_count = es8_metrics.OsfCountedUsageRecord.search().count()
             self._write_tabbed("es6", PreprintView, _es6_pview_count)
             self._write_tabbed("es6", PreprintDownload, _es6_pdownload_count)
             self._write_tabbed("es6", CountedUsageEs6, _es6_usage_event_count)
-            self._write_tabbed("es6", f"(total between {_range_start} and {_range_end})", _es6_count)
+            self._write_tabbed(
+                "es6", f"(total between {_range_start} and {_range_end})", _es6_count
+            )
             self._write_tabbed(
                 "es8",
                 es8_metrics.OsfCountedUsageRecord,
@@ -668,7 +671,9 @@ class Command(BaseCommand):
                 style=self._eq_style(_es8_count, _es6_count),
             )
         if start:  # schedule (per-day?) tasks (if --start)
-            self.stdout.write(f"starting usages => {es8_metrics.OsfCountedUsageRecord.__name__}")
+            self.stdout.write(
+                f"starting usages => {es8_metrics.OsfCountedUsageRecord.__name__}"
+            )
             for _from_date, _until_date in _date_range(_range_start, _range_end):
                 _from_str = _from_date.isoformat()
                 _until_str = _until_date.isoformat()
@@ -689,7 +694,10 @@ class Command(BaseCommand):
                 style=self._eq_style(_es8_count, _es6_count),
             )
             self._write_tabbed(
-                "es6", es6_reports.PublicItemUsageReport, "osfid count:", _es6_item_count
+                "es6",
+                es6_reports.PublicItemUsageReport,
+                "osfid count:",
+                _es6_item_count,
             )
             self._write_tabbed(
                 "es8",
@@ -705,13 +713,11 @@ class Command(BaseCommand):
                 f"starting per-item {es6_reports.PublicItemUsageReport.__name__} => {es8_metrics.PublicItemUsageReportEs8.__name__}"
             )
             for _osfid in _each_usage_report_osfid(
-                started_at=self._migration_started_at
+                until_when=self._migration_started_at
             ):
-                migrate_usage_reports.delay(_osfid)
-
-    @functools.cached_property
-    def _migration_started_at(self):
-        return es8_metrics.Elastic6To8State.get_started_at()
+                migrate_usage_reports.delay(
+                    _osfid, self._migration_started_at.isoformat()
+                )
 
     def _check_started_at(self, start_now):
         _started_at = self._migration_started_at
@@ -736,9 +742,6 @@ class Command(BaseCommand):
         )
         es8_metrics.Elastic6To8State.search().query({"match_all": {}}).delete()
         es8_metrics.Elastic6To8State.refresh()
-        # TODO: REMOVE THIS
-        self.stdout.write("deleting all migration target data in es8", self.style.ERROR)
-        _delete_all_es8()
 
     def _eq_style(self, num: int, should_be: int):
         return self.style.SUCCESS if (num == should_be) else self.style.WARNING
