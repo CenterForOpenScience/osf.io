@@ -162,7 +162,7 @@ class RegistriesModerationMetricsEs8(djelme.EventRecord):
     from_state: str
     to_state: str
     user_id: str
-    comment: str
+    comment: str | None
 
     class Index:
         settings = {
@@ -170,6 +170,9 @@ class RegistriesModerationMetricsEs8(djelme.EventRecord):
             'number_of_replicas': 1,
             'refresh_interval': '1s',
         }
+
+    class Meta:
+        timeseries_recordtype_name = 'RegistriesModerationMetrics'
 
 
 ###
@@ -235,6 +238,7 @@ class StorageAddonUsageEs8(djelme.CyclicRecord):
 
     class Meta:
         timeseries_index_timedepth = YEARLY
+        timeseries_recordtype_name = 'StorageAddonUsage'
 
 
 class DownloadCountReportEs8(djelme.CyclicRecord):
@@ -244,6 +248,7 @@ class DownloadCountReportEs8(djelme.CyclicRecord):
 
     class Meta:
         timeseries_index_timedepth = YEARLY
+        timeseries_recordtype_name = 'DownloadCountReport'
 
 
 class InstitutionSummaryReportEs8(djelme.CyclicRecord):
@@ -260,6 +265,7 @@ class InstitutionSummaryReportEs8(djelme.CyclicRecord):
 
     class Meta:
         timeseries_index_timedepth = MONTHLY
+        timeseries_recordtype_name = 'InstitutionSummaryReport'
 
 
 class NewUserDomainReportEs8(djelme.CyclicRecord):
@@ -271,6 +277,7 @@ class NewUserDomainReportEs8(djelme.CyclicRecord):
 
     class Meta:
         timeseries_index_timedepth = MONTHLY
+        timeseries_recordtype_name = 'NewUserDomainReport'
 
 
 class NodeSummaryReportEs8(djelme.CyclicRecord):
@@ -283,6 +290,7 @@ class NodeSummaryReportEs8(djelme.CyclicRecord):
 
     class Meta:
         timeseries_index_timedepth = YEARLY
+        timeseries_recordtype_name = 'NodeSummaryReport'
 
 
 class OsfstorageFileCountReportEs8(djelme.CyclicRecord):
@@ -292,6 +300,7 @@ class OsfstorageFileCountReportEs8(djelme.CyclicRecord):
 
     class Meta:
         timeseries_index_timedepth = YEARLY
+        timeseries_recordtype_name = 'OsfstorageFileCountReport'
 
 
 class PreprintSummaryReportEs8(djelme.CyclicRecord):
@@ -303,6 +312,7 @@ class PreprintSummaryReportEs8(djelme.CyclicRecord):
 
     class Meta:
         timeseries_index_timedepth = MONTHLY
+        timeseries_recordtype_name = 'PreprintSummaryReport'
 
 
 class UserSummaryReportEs8(djelme.CyclicRecord):
@@ -317,6 +327,7 @@ class UserSummaryReportEs8(djelme.CyclicRecord):
 
     class Meta:
         timeseries_index_timedepth = YEARLY
+        timeseries_recordtype_name = 'UserSummaryReport'
 
 
 class SpamSummaryReportEs8(djelme.CyclicRecord):
@@ -336,6 +347,7 @@ class SpamSummaryReportEs8(djelme.CyclicRecord):
 
     class Meta:
         timeseries_index_timedepth = YEARLY
+        timeseries_recordtype_name = 'SpamSummaryReport'
 
 
 class InstitutionalUserReportEs8(djelme.CyclicRecord):
@@ -350,7 +362,7 @@ class InstitutionalUserReportEs8(djelme.CyclicRecord):
     month_last_login = YearmonthField()
     month_last_active = YearmonthField()
     account_creation_date = YearmonthField()
-    orcid_id: str
+    orcid_id: str | None
     # counts:
     public_project_count: int
     private_project_count: int
@@ -362,6 +374,7 @@ class InstitutionalUserReportEs8(djelme.CyclicRecord):
 
     class Meta:
         timeseries_index_timedepth = MONTHLY
+        timeseries_recordtype_name = 'InstitutionalUserReport'
 
 
 class InstitutionMonthlySummaryReportEs8(djelme.CyclicRecord):
@@ -382,6 +395,7 @@ class InstitutionMonthlySummaryReportEs8(djelme.CyclicRecord):
 
     class Meta:
         timeseries_index_timedepth = YEARLY
+        timeseries_recordtype_name = 'InstitutionMonthlySummaryReport'
 
 
 class PublicItemUsageReportEs8(djelme.CyclicRecord):
@@ -410,6 +424,7 @@ class PublicItemUsageReportEs8(djelme.CyclicRecord):
 
     class Meta:
         timeseries_index_timedepth = MONTHLY
+        timeseries_recordtype_name = 'PublicItemUsageReport'
 
 
 class PrivateSpamMetricsReportEs8(djelme.CyclicRecord):
@@ -426,6 +441,7 @@ class PrivateSpamMetricsReportEs8(djelme.CyclicRecord):
 
     class Meta:
         timeseries_index_timedepth = YEARLY
+        timeseries_recordtype_name = 'PrivateSpamMetricsReport'
 
 
 ###
@@ -439,9 +455,6 @@ class Elastic6To8State(djelme.SimpleRecord):
     timestamp: datetime.datetime = esdsl.mapped_field(
         default_factory=lambda: datetime.datetime.now(datetime.UTC),
     )
-
-    class Index:
-        name = 'osf_elastic6to8state'
 
     @classmethod
     def get_by_key(cls, key: str):
@@ -460,4 +473,5 @@ class Elastic6To8State(djelme.SimpleRecord):
     @classmethod
     def set_started_at_now(cls):
         _record = cls.record(key='started_at')
+        cls.refresh()
         return _record.timestamp
