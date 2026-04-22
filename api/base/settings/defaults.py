@@ -325,6 +325,7 @@ DJELME_BACKENDS = {
     },
     'osfmetrics_es8': {
         'elasticsearch_metrics.imps.elastic8': {
+            # passthru kwargs to elasticsearch8 connection constructor
             'hosts': osf_settings.ELASTIC8_URI,
             'ca_certs': osf_settings.ELASTIC8_CERT_PATH,
             'basic_auth': (
@@ -332,6 +333,8 @@ DJELME_BACKENDS = {
                 if osf_settings.ELASTIC8_SECRET is not None
                 else None
             ),
+            # djelme-specific kwargs
+            'djelme_default_index_name_prefix': osf_settings.SHARE_PROVIDER_PREPEND,
         },
     },
 }
