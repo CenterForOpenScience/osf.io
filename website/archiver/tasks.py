@@ -59,6 +59,7 @@ def create_app_context():
 
 logger = get_task_logger(__name__)
 
+
 class ArchiverSizeExceeded(Exception):
 
     def __init__(self, result):
@@ -88,12 +89,13 @@ class ArchiverTask(celery.Task):
 
     def on_failure(self, exc, task_id, args, kwargs, einfo):
         job = ArchiveJob.load(kwargs.get('job_pk'))
+        compact_traceback = utils.compact_traceback(einfo)
         if not job:
             archiver_state_exc = ArchiverStateError({
                 'exception': exc,
                 'args': args,
                 'kwargs': kwargs,
-                'einfo': einfo,
+                'einfo': compact_traceback,
             })
             sentry.log_exception(archiver_state_exc)
             raise archiver_state_exc
@@ -102,7 +104,7 @@ class ArchiverTask(celery.Task):
             # already captured
             return
 
-        src, dst, user = job.info()
+        src, dst, _ = job.info()
         errors = []
         if isinstance(exc, ArchiverSizeExceeded):
             dst.archive_status = ARCHIVER_SIZE_EXCEEDED
@@ -122,15 +124,23 @@ class ArchiverTask(celery.Task):
             }
         else:
             dst.archive_status = ARCHIVER_UNCAUGHT_ERROR
-            errors = [str(einfo)] if einfo else []
+            errors = [f'{exc.__class__.__name__}: {exc}']
+            if compact_traceback:
+                errors.append(f'Traceback tail:\n{compact_traceback}')
         dst.save()
 
+        # Always capture full exception; keep log_message payload compact.
+        sentry.log_exception(exc)
         sentry.log_message(
             f'An error occurred while archiving node: {src._id} and registration: {dst._id}',
             extra_data={
                 'source node guid': src._id,
                 'registration node guid': dst._id,
                 'task_id': task_id,
+                'task_name': self.name,
+                'exception_type': exc.__class__.__name__,
+                'exception_message': str(exc),
+                'traceback_tail': compact_traceback,
                 'errors': errors,
             },
         )

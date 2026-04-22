@@ -384,3 +384,18 @@ def _validate_updated_responses(registration, file_input_qids, updated_responses
             registration=registration,
             missing_files=missing_responses
         )
+
+
+def compact_traceback(einfo, max_lines=25, max_chars=4000):
+    """Return a short traceback tail for logs/notifications."""
+    if not einfo:
+        return None
+    traceback_text = str(einfo)
+    if not traceback_text:
+        return None
+
+    lines = traceback_text.splitlines()
+    compact = '\n'.join(lines[-max_lines:])
+    if len(compact) > max_chars:
+        compact = compact[-max_chars:]
+    return compact
