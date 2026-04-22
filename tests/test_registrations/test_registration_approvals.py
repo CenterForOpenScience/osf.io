@@ -318,3 +318,22 @@ class RegistrationApprovalModelTestCase(OsfTestCase):
             with pytest.raises(NodeStateError):
                 self.registration.registration_approval.accept()
         assert mock_notify.call_count == 0
+
+    def test_accept_rolls_back_approval_if_publish_fails(self):
+        self.registration.require_approval(self.user)
+        self.registration.save()
+        assert self.registration.is_pending_registration
+
+        with mock.patch.object(
+            self.registration.__class__,
+            'set_privacy',
+            side_effect=NodeStateError('forced publish failure')
+        ):
+            with pytest.raises(NodeStateError):
+                self.registration.registration_approval.accept()
+
+        self.registration.registration_approval.reload()
+        self.registration.reload()
+        assert self.registration.is_pending_registration
+        assert not self.registration.is_registration_approved
+        assert not self.registration.is_public

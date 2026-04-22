@@ -1,7 +1,7 @@
 from django.apps import apps
 from django.utils import timezone
 from django.conf import settings
-from django.db import models
+from django.db import models, transaction
 
 from osf.utils.fields import NonNaiveDateTimeField
 
@@ -951,31 +951,32 @@ class RegistrationApproval(SanctionCallbackMixin, EmailApprovableSanction):
         if registration.is_spammy:
             raise NodeStateError('Cannot approve a spammy registration')
 
-        super()._on_complete(event_data)
-        self.save()
-        registered_from = registration.registered_from
-        # Pass auth=None because the registration initiator may not be
-        # an admin on components (component admins had the opportunity
-        # to disapprove the registration by this point)
-        registration.set_privacy('public', auth=None, log=False)
-        for child in registration.get_descendants_recursive(primary_only=True):
-            child.set_privacy('public', auth=None, log=False)
-        # Accounts for system actions where no `User` performs the final approval
-        auth = Auth(user) if user else None
-        registered_from.add_log(
-            action=NodeLog.REGISTRATION_APPROVAL_APPROVED,
-            params={
-                'node': registered_from._id,
-                'registration': registration._id,
-                'registration_approval_id': self._id,
-            },
-            auth=auth,
-        )
-        for node in registration.root.node_and_primary_descendants():
-            self._add_success_logs(node, user)
-            node.update_search()  # update search if public
+        with transaction.atomic():
+            super()._on_complete(event_data)
+            self.save()
+            registered_from = registration.registered_from
+            # Pass auth=None because the registration initiator may not be
+            # an admin on components (component admins had the opportunity
+            # to disapprove the registration by this point)
+            registration.set_privacy('public', auth=None, log=False)
+            for child in registration.get_descendants_recursive(primary_only=True):
+                child.set_privacy('public', auth=None, log=False)
+            # Accounts for system actions where no `User` performs the final approval
+            auth = Auth(user) if user else None
+            registered_from.add_log(
+                action=NodeLog.REGISTRATION_APPROVAL_APPROVED,
+                params={
+                    'node': registered_from._id,
+                    'registration': registration._id,
+                    'registration_approval_id': self._id,
+                },
+                auth=auth,
+            )
+            for node in registration.root.node_and_primary_descendants():
+                self._add_success_logs(node, user)
+                node.update_search()  # update search if public
 
-        self.save()
+            self.save()
 
     def _on_reject(self, event_data):
         user = event_data.kwargs.get('user')
