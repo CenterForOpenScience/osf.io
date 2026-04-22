@@ -77,6 +77,7 @@ class TestApproveRegistrations(OsfTestCase):
 
     def test_spammy_registration_is_not_auto_approved_or_made_public(self):
         self.registration.registration_approval.initiation_date = timezone.now() - timedelta(days=365)
+        self.registration.is_public = False
         self.registration.spam_status = SpamStatus.FLAGGED
         self.registration.save()
 
