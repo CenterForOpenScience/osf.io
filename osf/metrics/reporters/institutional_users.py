@@ -1,4 +1,5 @@
 import dataclasses
+from typing import List
 
 from django.contrib.contenttypes.models import ContentType
 from django.db.models import Q, F, Sum
@@ -9,6 +10,7 @@ from addons.osfstorage.models import OsfStorageFile
 from osf.metrics.reports import InstitutionalUserReport
 from osf.metrics.utils import YearMonth
 from ._base import MonthlyReporter
+from osf.metrics.es8_metrics import InstitutionalUserReportEs8
 
 
 class InstitutionalUsersReporter(MonthlyReporter):
@@ -38,7 +40,7 @@ class InstitutionalUsersReporter(MonthlyReporter):
         _institution = osfdb.Institution.objects.get(pk=report_kwargs['institution_pk'])
         _user = osfdb.OSFUser.objects.get(pk=report_kwargs['user_pk'])
         _helper = _InstiUserReportHelper(_institution, _user, self.yearmonth)
-        return _helper.report
+        return _helper.reports
 
 
 # helper
@@ -47,11 +49,13 @@ class _InstiUserReportHelper:
     institution: osfdb.Institution
     user: osfdb.OSFUser
     yearmonth: YearMonth
-    report: InstitutionalUserReport = dataclasses.field(init=False)
+    reports: List[InstitutionalUserReport | InstitutionalUserReportEs8] = dataclasses.field(init=False)
 
     def __post_init__(self):
         _affiliation = self.user.get_institution_affiliation(self.institution._id)
-        self.report = InstitutionalUserReport(
+        self.reports = []
+        report_es8 = InstitutionalUserReportEs8(
+            cycle_coverage=f"{self.yearmonth:%Y.%m.%d}",
             institution_id=self.institution._id,
             user_id=self.user._id,
             user_name=self.user.fullname,
@@ -72,6 +76,25 @@ class _InstiUserReportHelper:
             published_preprint_count=self._published_preprint_queryset().count(),
             storage_byte_count=self._storage_byte_count(),
         )
+        self.reports.append(report_es8)
+        report = InstitutionalUserReport(
+            institution_id=report_es8.institution_id,
+            user_id=report_es8.user_id,
+            user_name=report_es8.user_name,
+            department_name=report_es8.department_name,
+            month_last_login=report_es8.month_last_login,
+            month_last_active=report_es8.month_last_active,
+            account_creation_date=report_es8.account_creation_date,
+            orcid_id=report_es8.orcid_id,
+            public_project_count=report_es8.public_project_count,
+            private_project_count=report_es8.private_project_count,
+            public_registration_count=report_es8.public_registration_count,
+            embargoed_registration_count=report_es8.embargoed_registration_count,
+            public_file_count=report_es8.public_file_count,
+            published_preprint_count=report_es8.published_preprint_count,
+            storage_byte_count=report_es8.storage_byte_count,
+        )
+        self.reports.append(report)
 
     @property
     def before_datetime(self):

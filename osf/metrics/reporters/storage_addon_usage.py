@@ -14,6 +14,11 @@ from osf.metrics.reports import StorageAddonUsage, RunningTotal, UsageByStorageA
 from osf.models import SpamStatus, Tag
 from website import settings
 from ._base import DailyReporter
+from osf.metrics.es8_metrics import (
+    StorageAddonUsageEs8,
+    UsageByStorageAddon as UsageByStorageAddonEs8,
+    RunningTotal as RunningTotalEs8
+)
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
@@ -125,45 +130,84 @@ class StorageAddonUsageReporter(DailyReporter):
             if 'storage' in addon_config.categories
         }
 
+        usage_by_addon_es8 = []
         usage_by_addon = []
         for short_name, addon_config in storage_addon_configs.items():
             user_counts = storage_addon_user_counts(date, addon_config.get_model('UserSettings'))
             node_counts = storage_addon_node_counts(date, addon_config.get_model('NodeSettings'))
-
-            usage_by_addon.append(
-                UsageByStorageAddon(
-                    addon_shortname=short_name,
+            usage_by_storage_addon_es_8 = UsageByStorageAddonEs8(
+                addon_shortname=short_name,
+                enabled_usersettings=RunningTotalEs8(
+                    total=user_counts.get('enabled_total', 0),
+                    total_daily=user_counts.get('enabled_daily', 0),
+                ),
+                deleted_usersettings=RunningTotalEs8(
+                    total=user_counts.get('deleted_total', 0),
+                    total_daily=user_counts.get('deleted_daily', 0),
+                ),
+                linked_usersettings=RunningTotalEs8(
+                    total=user_counts.get('linked_total', 0),
+                    total_daily=user_counts.get('linked_daily', 0),
+                ),
+                usersetting_links=RunningTotalEs8(
+                    total=user_counts.get('link_count_total', 0),
+                    total_daily=user_counts.get('link_count_daily', 0),
+                ),
+                connected_nodesettings=RunningTotalEs8(
+                    total=node_counts.get('connected_total', 0),
+                    total_daily=node_counts.get('connected_daily', 0),
+                ),
+                disconnected_nodesettings=RunningTotalEs8(
+                    total=node_counts.get('disconnected_total', 0),
+                    total_daily=node_counts.get('disconnected_daily', 0),
+                ),
+                deleted_nodesettings=RunningTotalEs8(
+                    total=node_counts.get('deleted_total', 0),
+                    total_daily=node_counts.get('deleted_daily', 0),
+                ),
+            )
+            usage_by_addon_es8.append(usage_by_storage_addon_es_8)
+            usage_by_storage_addon = UsageByStorageAddon(
+                    addon_shortname=usage_by_storage_addon_es_8.short_name,
                     enabled_usersettings=RunningTotal(
-                        total=user_counts.get('enabled_total', 0),
-                        total_daily=user_counts.get('enabled_daily', 0),
+                        total=usage_by_storage_addon_es_8.enabled_usersettings.total,
+                        total_daily=usage_by_storage_addon_es_8.enabled_usersettings.total_daily,
                     ),
                     deleted_usersettings=RunningTotal(
-                        total=user_counts.get('deleted_total', 0),
-                        total_daily=user_counts.get('deleted_daily', 0),
+                        total=usage_by_storage_addon_es_8.deleted_usersettings.total,
+                        total_daily=usage_by_storage_addon_es_8.deleted_usersettings.total_daily,
                     ),
                     linked_usersettings=RunningTotal(
-                        total=user_counts.get('linked_total', 0),
-                        total_daily=user_counts.get('linked_daily', 0),
+                        total=usage_by_storage_addon_es_8.linked_usersettings.total,
+                        total_daily=usage_by_storage_addon_es_8.linked_usersettings.total_daily,
                     ),
                     usersetting_links=RunningTotal(
-                        total=user_counts.get('link_count_total', 0),
-                        total_daily=user_counts.get('link_count_daily', 0),
+                        total=usage_by_storage_addon_es_8.usersetting_links.total,
+                        total_daily=usage_by_storage_addon_es_8.usersetting_links.total_daily,
                     ),
                     connected_nodesettings=RunningTotal(
-                        total=node_counts.get('connected_total', 0),
-                        total_daily=node_counts.get('connected_daily', 0),
+                        total=usage_by_storage_addon_es_8.connected_nodesettings.total,
+                        total_daily=usage_by_storage_addon_es_8.connected_nodesettings.total_daily,
                     ),
                     disconnected_nodesettings=RunningTotal(
-                        total=node_counts.get('disconnected_total', 0),
-                        total_daily=node_counts.get('disconnected_daily', 0),
+                        total=usage_by_storage_addon_es_8.disconnected_nodesettings.total,
+                        total_daily=usage_by_storage_addon_es_8.disconnected_nodesettings.total_daily,
                     ),
                     deleted_nodesettings=RunningTotal(
-                        total=node_counts.get('deleted_total', 0),
-                        total_daily=node_counts.get('deleted_daily', 0),
-                    ),
+                        total=usage_by_storage_addon_es_8.deleted_nodesettings.total,
+                        total_daily=usage_by_storage_addon_es_8.deleted_nodesettings.total_daily,
+                    )
                 )
-            )
-        return [StorageAddonUsage(
+            usage_by_addon.append(usage_by_storage_addon)
+        reports = []
+        report_es8 = StorageAddonUsageEs8(
+            cycle_coverage=f"{date:%Y.%m.%d}",
+            usage_by_addon=usage_by_addon,
+        )
+        reports.append(report_es8)
+        report = StorageAddonUsage(
             report_date=date,
             usage_by_addon=usage_by_addon,
-        )]
+        )
+        reports.append(report)
+        return reports
