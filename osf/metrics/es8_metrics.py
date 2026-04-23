@@ -3,7 +3,7 @@ import enum
 from urllib.parse import urlsplit
 
 import elasticsearch8.dsl as esdsl
-from elasticsearch_metrics import DAILY, MONTHLY
+from elasticsearch_metrics import DAILY, MONTHLY, YEARLY
 import elasticsearch_metrics.imps.elastic8 as djelme
 
 from osf.metrics.utils import YearMonth
@@ -57,19 +57,19 @@ class PageviewInfo(esdsl.InnerDoc):
     """
 
     # fields that should be provided
-    referer_url: str
-    page_url: str
-    page_title: str
-    route_name: str = esdsl.mapped_field(esdsl.Keyword(
+    referer_url: str | None
+    page_url: str | None
+    page_title: str | None
+    route_name: str | None = esdsl.mapped_field(esdsl.Keyword(
         fields={
             'by_prefix': esdsl.Text(analyzer=route_prefix_analyzer),
         },
     ))
 
     # fields auto-filled
-    page_path: str
-    referer_domain: str
-    hour_of_day: int
+    page_path: str | None
+    referer_domain: str | None
+    hour_of_day: int | None
 
 
 ###
@@ -77,23 +77,30 @@ class PageviewInfo(esdsl.InnerDoc):
 
 class OsfCountedUsageRecord(djelme.CountedUsageRecord):
     '''
-
-    inherited fields:
-        platform_iri: str
-        database_iri: str
-        item_iri: str
-        sessionhour_id: str
-        within_iris: list[str]
+    Aim to support a COUNTER-style reporting api
+    https://cop5.projectcounter.org/en/5.1/appendices/a-glossary-of-terms.html
+    https://coprd.countermetrics.org/en/1.0.1/appendices/a-glossary.html
     '''
-    # osf-specific fields
+
+    # inherited fields:
+    #     timestamp: datetime.datetime
+    #     platform_iri: str
+    #     database_iri: str
+    #     item_iri: str
+    #     sessionhour_id: str
+    #     within_iris: list[str]
+
+    # osf-specific fields:
     item_osfid: str
     item_type: str
     item_public: bool
+    provider_id: str | None
     user_is_authenticated: bool
     action_labels: list[str]
-    pageview_info: PageviewInfo
+    pageview_info: PageviewInfo | None
 
-    def save(self, *args, **kwargs):
+    def clean(self):
+        super().clean()
         # autofill pageview_info fields
         if self.pageview_info:
             self.pageview_info.hour_of_day = self.timestamp.hour
@@ -103,7 +110,43 @@ class OsfCountedUsageRecord(djelme.CountedUsageRecord):
             _ref_url = self.pageview_info.referer_url
             if _ref_url:
                 self.pageview_info.referer_domain = urlsplit(_ref_url).netloc
-        super().save(*args, **kwargs)
+        # ensure inclusive "within"
+        if not self.within_iris:
+            self.within_iris = [self.item_iri]
+        elif self.item_iri not in self.within_iris:
+            self.within_iris = [self.item_iri, *self.within_iris]
+
+    def _get_unique_together_values(self):
+        """get "unique together" values for "ON CONFLICT UPDATE" behavior
+
+        override djelme.BaseDjelmeRecord._get_unique_together_values
+        for more complex logic than UNIQUE_TOGETHER_FIELDS
+        to slightly better approximate `counter:Double-Click Filtering`
+        """
+        # note: copied from osf.metrics.counted_usage._fill_document_id
+        target_identifier = (
+            self.pageview_info.page_url
+            if self.pageview_info is not None and self.pageview_info.page_url is not None
+            else self.item_osfid
+        )
+        # slice the day into an array of 30-second windows,
+        # find this timestamp's windowslice index
+        day_start = datetime.datetime(
+            self.timestamp.year,
+            self.timestamp.month,
+            self.timestamp.day,
+            tzinfo=self.timestamp.tzinfo,
+        )
+        time_in_seconds = (self.timestamp - day_start).total_seconds()
+        time_window = int(time_in_seconds / 30)  # 30-second windows
+        return (  # unique-together values:
+            self.platform_iri,
+            target_identifier,
+            self.sessionhour_id,
+            self.timestamp.date(),
+            time_window,
+            ','.join(sorted(self.action_labels)),
+        )
 
 
 class ActionLabel(enum.Enum):
@@ -121,7 +164,7 @@ class RegistriesModerationMetricsEs8(djelme.EventRecord):
     from_state: str
     to_state: str
     user_id: str
-    comment: str
+    comment: str | None
 
     class Index:
         settings = {
@@ -129,6 +172,9 @@ class RegistriesModerationMetricsEs8(djelme.EventRecord):
             'number_of_replicas': 1,
             'refresh_interval': '1s',
         }
+
+    class Meta:
+        timeseries_recordtype_name = 'RegistriesModerationMetrics'
 
 
 ###
@@ -192,11 +238,19 @@ class StorageAddonUsageEs8(djelme.CyclicRecord):
 
     usage_by_addon: list[UsageByStorageAddon]
 
+    class Meta:
+        timeseries_index_timedepth = YEARLY
+        timeseries_recordtype_name = 'StorageAddonUsage'
+
 
 class DownloadCountReportEs8(djelme.CyclicRecord):
     CYCLE_TIMEDEPTH = DAILY
 
     daily_file_downloads: int
+
+    class Meta:
+        timeseries_index_timedepth = YEARLY
+        timeseries_recordtype_name = 'DownloadCountReport'
 
 
 class InstitutionSummaryReportEs8(djelme.CyclicRecord):
@@ -211,6 +265,10 @@ class InstitutionSummaryReportEs8(djelme.CyclicRecord):
     registered_nodes: RegistrationRunningTotals
     registered_projects: RegistrationRunningTotals
 
+    class Meta:
+        timeseries_index_timedepth = MONTHLY
+        timeseries_recordtype_name = 'InstitutionSummaryReport'
+
 
 class NewUserDomainReportEs8(djelme.CyclicRecord):
     CYCLE_TIMEDEPTH = DAILY
@@ -218,6 +276,10 @@ class NewUserDomainReportEs8(djelme.CyclicRecord):
 
     domain_name: str
     new_user_count: int
+
+    class Meta:
+        timeseries_index_timedepth = MONTHLY
+        timeseries_recordtype_name = 'NewUserDomainReport'
 
 
 class NodeSummaryReportEs8(djelme.CyclicRecord):
@@ -228,11 +290,19 @@ class NodeSummaryReportEs8(djelme.CyclicRecord):
     registered_nodes: RegistrationRunningTotals
     registered_projects: RegistrationRunningTotals
 
+    class Meta:
+        timeseries_index_timedepth = YEARLY
+        timeseries_recordtype_name = 'NodeSummaryReport'
+
 
 class OsfstorageFileCountReportEs8(djelme.CyclicRecord):
     CYCLE_TIMEDEPTH = DAILY
 
     files: FileRunningTotals
+
+    class Meta:
+        timeseries_index_timedepth = YEARLY
+        timeseries_recordtype_name = 'OsfstorageFileCountReport'
 
 
 class PreprintSummaryReportEs8(djelme.CyclicRecord):
@@ -241,6 +311,10 @@ class PreprintSummaryReportEs8(djelme.CyclicRecord):
     UNIQUE_TOGETHER_FIELDS = ('cycle_coverage', 'provider_key',)
     provider_key: str
     preprint_count: int
+
+    class Meta:
+        timeseries_index_timedepth = MONTHLY
+        timeseries_recordtype_name = 'PreprintSummaryReport'
 
 
 class UserSummaryReportEs8(djelme.CyclicRecord):
@@ -252,6 +326,10 @@ class UserSummaryReportEs8(djelme.CyclicRecord):
     new_users_daily: int
     new_users_with_institution_daily: int
     unconfirmed: int
+
+    class Meta:
+        timeseries_index_timedepth = YEARLY
+        timeseries_recordtype_name = 'UserSummaryReport'
 
 
 class SpamSummaryReportEs8(djelme.CyclicRecord):
@@ -269,6 +347,10 @@ class SpamSummaryReportEs8(djelme.CyclicRecord):
     user_marked_as_spam: int
     user_marked_as_ham: int
 
+    class Meta:
+        timeseries_index_timedepth = YEARLY
+        timeseries_recordtype_name = 'SpamSummaryReport'
+
 
 class InstitutionalUserReportEs8(djelme.CyclicRecord):
     CYCLE_TIMEDEPTH = MONTHLY
@@ -282,7 +364,7 @@ class InstitutionalUserReportEs8(djelme.CyclicRecord):
     month_last_login = YearmonthField()
     month_last_active = YearmonthField()
     account_creation_date = YearmonthField()
-    orcid_id: str
+    orcid_id: str | None
     # counts:
     public_project_count: int
     private_project_count: int
@@ -291,6 +373,10 @@ class InstitutionalUserReportEs8(djelme.CyclicRecord):
     published_preprint_count: int
     public_file_count: int = esdsl.mapped_field(esdsl.Long())
     storage_byte_count: int = esdsl.mapped_field(esdsl.Long())
+
+    class Meta:
+        timeseries_index_timedepth = MONTHLY
+        timeseries_recordtype_name = 'InstitutionalUserReport'
 
 
 class InstitutionMonthlySummaryReportEs8(djelme.CyclicRecord):
@@ -308,6 +394,10 @@ class InstitutionMonthlySummaryReportEs8(djelme.CyclicRecord):
     public_file_count: int = esdsl.mapped_field(esdsl.Long())
     monthly_logged_in_user_count: int = esdsl.mapped_field(esdsl.Long())
     monthly_active_user_count: int = esdsl.mapped_field(esdsl.Long())
+
+    class Meta:
+        timeseries_index_timedepth = YEARLY
+        timeseries_recordtype_name = 'InstitutionMonthlySummaryReport'
 
 
 class PublicItemUsageReportEs8(djelme.CyclicRecord):
@@ -334,6 +424,10 @@ class PublicItemUsageReportEs8(djelme.CyclicRecord):
     cumulative_download_count: int = esdsl.mapped_field(esdsl.Long())
     cumulative_download_session_count: int = esdsl.mapped_field(esdsl.Long())
 
+    class Meta:
+        timeseries_index_timedepth = MONTHLY
+        timeseries_recordtype_name = 'PublicItemUsageReport'
+
 
 class PrivateSpamMetricsReportEs8(djelme.CyclicRecord):
     CYCLE_TIMEDEPTH = MONTHLY
@@ -346,3 +440,40 @@ class PrivateSpamMetricsReportEs8(djelme.CyclicRecord):
     preprint_oopspam_hammed: int
     preprint_akismet_flagged: int
     preprint_akismet_hammed: int
+
+    class Meta:
+        timeseries_index_timedepth = YEARLY
+        timeseries_recordtype_name = 'PrivateSpamMetricsReport'
+
+
+###
+# data migration state
+
+class Elastic6To8State(djelme.SimpleRecord):
+    """index for storing values helpful for keeping track of the elastic 6->8 data migration"""
+    UNIQUE_TOGETHER_FIELDS = ('key',)
+    key: str
+    value: str | None
+    timestamp: datetime.datetime = esdsl.mapped_field(
+        default_factory=lambda: datetime.datetime.now(datetime.UTC),
+    )
+
+    @classmethod
+    def get_by_key(cls, key: str):
+        _response = cls.search().query({'term': {'key': key}})[0].execute()
+        return _response[0] if _response else None
+
+    @classmethod
+    def get_timestamp(cls, key: str) -> datetime.datetime | None:
+        _record = cls.get_by_key(key)
+        return _record.timestamp if _record else None
+
+    @classmethod
+    def get_started_at(cls):
+        return cls.get_timestamp('started_at')
+
+    @classmethod
+    def set_started_at_now(cls):
+        _record = cls.record(key='started_at')
+        cls.refresh()
+        return _record.timestamp

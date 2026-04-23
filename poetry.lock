@@ -1085,7 +1085,7 @@ Django = ">=2.0"
 
 [[package]]
 name = "django-elasticsearch-metrics"
-version = "2026.0.3"
+version = "2026.0.4"
 description = "Django app for storing time-series metrics in Elasticsearch."
 optional = false
 python-versions = ">=3.10,<4"
@@ -1101,8 +1101,8 @@ elastic8 = ["elasticsearch8 (>=8.0.0,<9.0.0)"]
 [package.source]
 type = "git"
 url = "https://github.com/CenterForOpenScience/django-elasticsearch-metrics.git"
-reference = "8025d58e23b4e0c562e1d59c98b10ec936eb56e6"
-resolved_reference = "8025d58e23b4e0c562e1d59c98b10ec936eb56e6"
+reference = "4e833670178beb682bb0d64e4f33db012cf8f014"
+resolved_reference = "4e833670178beb682bb0d64e4f33db012cf8f014"
 
 [[package]]
 name = "django-extensions"
@@ -4711,4 +4711,4 @@ testing = ["coverage (>=5.0.3)", "zope.event", "zope.testing"]
 [metadata]
 lock-version = "2.1"
 python-versions = "^3.12"
-content-hash = "ef1d6d327f5557e43482793b276ccb6c5fd07989f27367af3a3736a8547b4d1a"
+content-hash = "d08b71fd886f9c6bd3d8d6cb1eda9f08431b7e84398b107e25f0371a4111266b"
