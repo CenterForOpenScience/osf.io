@@ -230,11 +230,10 @@ def sitemap_file(path):
 
 def goodbye():
     # Redirect to dashboard if logged in
-    redirect_url = util.web_url_for('auth_login')
     if _get_current_user():
-        return redirect(redirect_url)
+        return redirect(util.web_url_for('dashboard'))
     else:
-        return redirect(redirect_url + '?goodbye=true')
+        return redirect(util.web_url_for('index'))
 
 def make_url_map(app):
     """Set up all the routes for the OSF app.
@@ -294,24 +293,14 @@ def make_url_map(app):
 
     process_rules(app, [
         Rule('/', 'get', website_views.index, notemplate),
-        Rule(
-            '/dashboard/',
-            'get',
-            website_views.dashboard,
-            notemplate
-        ),
+        Rule('/dashboard/', 'get', website_views.dashboard, notemplate),
+        Rule('/my-projects/', 'get', website_views.my_projects, notemplate),
 
         Rule(
             '/metadata/<guid>/',
             'get',
             website_views.metadata_download,
             notemplate
-        ),
-        Rule(
-            '/my-projects/',
-            'get',
-            website_views.my_projects,
-            OsfWebRenderer('my_projects.mako', trust=False)
         ),
 
         Rule(
