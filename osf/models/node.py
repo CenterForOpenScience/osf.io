@@ -1239,7 +1239,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
                                 action_flag=DOI_CREATION_FAILED
                             )
                         raise NodeStateError(
-                            'Unable to make registration public: DOI creation failed. '
+                            f'Unable to make registration {self._id} public: DOI creation failed. '
                             'This may be due to a temporary DataCite service outage. '
                             'Please try again later or contact support if the issue persists.'
                         )

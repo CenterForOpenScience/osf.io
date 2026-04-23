@@ -4,6 +4,7 @@ from django.utils import timezone
 
 from tests.base import OsfTestCase
 from osf.models import NodeLog
+from osf.models.spam import SpamStatus
 from osf_tests.factories import RegistrationFactory, UserFactory
 
 from scripts.approve_registrations import main
@@ -73,3 +74,16 @@ class TestApproveRegistrations(OsfTestCase):
         assert self.registration.registered_from.logs.filter(
                 action=NodeLog.PROJECT_REGISTERED
             ).exists()
+
+    def test_spammy_registration_is_not_auto_approved_or_made_public(self):
+        self.registration.registration_approval.initiation_date = timezone.now() - timedelta(days=365)
+        self.registration.is_public = False
+        self.registration.spam_status = SpamStatus.FLAGGED
+        self.registration.save()
+
+        main(dry_run=False)
+        self.registration.registration_approval.reload()
+        self.registration.reload()
+
+        assert not self.registration.is_registration_approved
+        assert not self.registration.is_public

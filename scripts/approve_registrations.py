@@ -38,6 +38,14 @@ def approve_past_pendings(approvals_past_pending, dry_run=True):
                 f'RegistrationApproval {registration_approval._id} is not attached to a registration'
             )
             continue
+
+        if pending_registration.is_spammy:
+            logger.warning(
+                f'Skipping RegistrationApproval {registration_approval._id} for '
+                f'spammy registration {pending_registration._id}.'
+            )
+            continue
+
         logger.warning(
             'RegistrationApproval {} automatically approved by system. Making registration {} public.'
             .format(registration_approval._id, pending_registration._id)
