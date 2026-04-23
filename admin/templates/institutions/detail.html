@@ -60,18 +60,18 @@
                 {% if perms.osf.change_institution %}
                 <a class="btn btn-primary" href={% url 'institutions:list_and_add_admin' institution.id %}>Manage Admins</a>
                 {% endif %}
-                {% if cas_login_url %}
-                    <button class="btn btn-primary" onclick="openCopyPopup('{{ cas_login_url|escapejs }}')">
-                        Copy SSO URL
-                    </button>
-                    <div id="copy-modal" class="modal">
-                        <div class="modal-content">
-                            <span class="close" onclick="closeCopyPopup()">&times;</span>
-                            <p>Value copied. You can also copy manually:</p>
-                            <textarea id="copy-input" readonly></textarea>
-                        </div>
+                <button
+                    {% if not cas_login_url %}disabled{% endif %}
+                    class="btn btn-primary" onclick="openCopyPopup('{{ cas_login_url|escapejs }}')">
+                    Copy SSO URL
+                </button>
+                <div id="copy-modal" class="modal">
+                    <div class="modal-content">
+                        <span class="close" onclick="closeCopyPopup()">&times;</span>
+                        <p>Value copied. You can also copy manually:</p>
+                        <textarea id="copy-input" readonly></textarea>
                     </div>
-                {% endif %}
+                </div>
             </div>
         </div>
 
