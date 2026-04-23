@@ -396,6 +396,8 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
 
     allow_indexing = models.BooleanField(null=True, blank=True, default=None)
 
+    new_field = models.CharField(null=True, blank=True, default='default')
+
     objects = OSFUserManager()
 
     is_active = models.BooleanField(default=False)
