@@ -450,6 +450,7 @@ class TestFileCopied(OsfTestCase):
             self.event.perform()
         assert len(notifications['emits']) == 1
         assert notifications['emits'][0]['type'] == NotificationTypeEnum.ADDON_FILE_COPIED
+        assert isinstance(notifications['emits'][0]['kwargs']['event_context']['localized_timestamp'], str)
 
 
 class TestSubscriptionManipulations(OsfTestCase):
