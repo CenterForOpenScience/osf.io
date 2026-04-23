@@ -12,7 +12,7 @@ class UserCountReporter(DailyReporter):
         report_es8 = UserSummaryReportEs8(
             cycle_coverage=f"{report_date:%Y.%m.%d}",
             active=OSFUser.objects.filter(is_active=True, date_confirmed__date__lte=report_date).count(),
-            deactivated=OSFUser.objects.filter(date_disabled__isnull=False,date_disabled__date__lte=report_date).count(),
+            deactivated=OSFUser.objects.filter(date_disabled__isnull=False, date_disabled__date__lte=report_date).count(),
             merged=OSFUser.objects.filter(date_registered__date__lte=report_date, merged_by__isnull=False).count(),
             new_users_daily=OSFUser.objects.filter(is_active=True, date_confirmed__date=report_date).count(),
             new_users_with_institution_daily=OSFUser.objects.filter(is_active=True, date_confirmed__date=report_date, institutionaffiliation__isnull=False).count(),

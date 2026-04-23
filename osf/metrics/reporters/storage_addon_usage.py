@@ -168,36 +168,36 @@ class StorageAddonUsageReporter(DailyReporter):
             )
             usage_by_addon_es8.append(usage_by_storage_addon_es_8)
             usage_by_storage_addon = UsageByStorageAddon(
-                    addon_shortname=usage_by_storage_addon_es_8.short_name,
-                    enabled_usersettings=RunningTotal(
-                        total=usage_by_storage_addon_es_8.enabled_usersettings.total,
-                        total_daily=usage_by_storage_addon_es_8.enabled_usersettings.total_daily,
-                    ),
-                    deleted_usersettings=RunningTotal(
-                        total=usage_by_storage_addon_es_8.deleted_usersettings.total,
-                        total_daily=usage_by_storage_addon_es_8.deleted_usersettings.total_daily,
-                    ),
-                    linked_usersettings=RunningTotal(
-                        total=usage_by_storage_addon_es_8.linked_usersettings.total,
-                        total_daily=usage_by_storage_addon_es_8.linked_usersettings.total_daily,
-                    ),
-                    usersetting_links=RunningTotal(
-                        total=usage_by_storage_addon_es_8.usersetting_links.total,
-                        total_daily=usage_by_storage_addon_es_8.usersetting_links.total_daily,
-                    ),
-                    connected_nodesettings=RunningTotal(
-                        total=usage_by_storage_addon_es_8.connected_nodesettings.total,
-                        total_daily=usage_by_storage_addon_es_8.connected_nodesettings.total_daily,
-                    ),
-                    disconnected_nodesettings=RunningTotal(
-                        total=usage_by_storage_addon_es_8.disconnected_nodesettings.total,
-                        total_daily=usage_by_storage_addon_es_8.disconnected_nodesettings.total_daily,
-                    ),
-                    deleted_nodesettings=RunningTotal(
-                        total=usage_by_storage_addon_es_8.deleted_nodesettings.total,
-                        total_daily=usage_by_storage_addon_es_8.deleted_nodesettings.total_daily,
-                    )
+                addon_shortname=usage_by_storage_addon_es_8.short_name,
+                enabled_usersettings=RunningTotal(
+                    total=usage_by_storage_addon_es_8.enabled_usersettings.total,
+                    total_daily=usage_by_storage_addon_es_8.enabled_usersettings.total_daily,
+                ),
+                deleted_usersettings=RunningTotal(
+                    total=usage_by_storage_addon_es_8.deleted_usersettings.total,
+                    total_daily=usage_by_storage_addon_es_8.deleted_usersettings.total_daily,
+                ),
+                linked_usersettings=RunningTotal(
+                    total=usage_by_storage_addon_es_8.linked_usersettings.total,
+                    total_daily=usage_by_storage_addon_es_8.linked_usersettings.total_daily,
+                ),
+                usersetting_links=RunningTotal(
+                    total=usage_by_storage_addon_es_8.usersetting_links.total,
+                    total_daily=usage_by_storage_addon_es_8.usersetting_links.total_daily,
+                ),
+                connected_nodesettings=RunningTotal(
+                    total=usage_by_storage_addon_es_8.connected_nodesettings.total,
+                    total_daily=usage_by_storage_addon_es_8.connected_nodesettings.total_daily,
+                ),
+                disconnected_nodesettings=RunningTotal(
+                    total=usage_by_storage_addon_es_8.disconnected_nodesettings.total,
+                    total_daily=usage_by_storage_addon_es_8.disconnected_nodesettings.total_daily,
+                ),
+                deleted_nodesettings=RunningTotal(
+                    total=usage_by_storage_addon_es_8.deleted_nodesettings.total,
+                    total_daily=usage_by_storage_addon_es_8.deleted_nodesettings.total_daily,
                 )
+            )
             usage_by_addon.append(usage_by_storage_addon)
         reports = []
         report_es8 = StorageAddonUsageEs8(

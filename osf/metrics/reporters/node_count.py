@@ -11,7 +11,7 @@ from ._base import DailyReporter
 from osf.metrics.es8_metrics import (
     NodeSummaryReportEs8,
     NodeRunningTotals as NodeRunningTotalsEs8,
-RegistrationRunningTotals as RegistrationRunningTotalsEs8
+    RegistrationRunningTotals as RegistrationRunningTotalsEs8
 )
 
 logger = logging.getLogger(__name__)
@@ -119,7 +119,7 @@ class NodeCountReporter(DailyReporter):
             ),
             # Registered Nodes - the number of registered projects and components
             registered_nodes=RegistrationRunningTotals(
-               total=report_es8.registered_nodes.total,
+                total=report_es8.registered_nodes.total,
                 public=report_es8.registered_nodes.public,
                 embargoed=report_es8.registered_nodes.embargoed,
                 embargoed_v2=report_es8.registered_nodes.embargoed_v2,
@@ -132,7 +132,7 @@ class NodeCountReporter(DailyReporter):
             ),
             # Registered Projects - the number of registered top level projects
             registered_projects=RegistrationRunningTotals(
-              total=report_es8.registered_projects.total,
+                total=report_es8.registered_projects.total,
                 public=report_es8.registered_projects.public,
                 embargoed=report_es8.registered_projects.embargoed,
                 embargoed_v2=report_es8.registered_projects.embargoed_v2,

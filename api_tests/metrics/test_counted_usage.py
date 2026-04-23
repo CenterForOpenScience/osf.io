@@ -11,6 +11,7 @@ from osf_tests.factories import (
     # UserFactory,
 )
 from api_tests.utils import create_test_file
+from elasticsearch_metrics.tests.util import djelme_test_backends
 
 
 COUNTED_USAGE_URL = '/_/metrics/events/counted_usage/'
@@ -69,6 +70,12 @@ class TestRestrictions:
 
 @pytest.mark.django_db
 class TestComputedFields:
+
+    @pytest.fixture(autouse=True)
+    def _real_elastic(self):
+        with djelme_test_backends():
+            yield
+
     @pytest.fixture(autouse=True)
     def mock_domain(self):
         domain = 'http://example.foo/'
@@ -213,6 +220,12 @@ class TestComputedFields:
 @pytest.mark.parametrize('item_public', [True, False])
 @pytest.mark.django_db
 class TestGuidFields:
+
+    @pytest.fixture(autouse=True)
+    def _real_elastic(self):
+        with djelme_test_backends():
+            yield
+
     @pytest.fixture
     def preprint(self, item_public):
         return PreprintFactory(

@@ -15,7 +15,7 @@ class DownloadCountReporter(DailyReporter):
         reports.append(report_es8)
         report = DownloadCountReport(
             daily_file_downloads=report_es8.daily_file_downloads,
-             report_date=date,
+            report_date=date,
         )
         reports.append(report)
         return reports

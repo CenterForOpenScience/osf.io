@@ -57,11 +57,11 @@ class PreprintCountReporter(DailyReporter):
             )
             reports.append(report_es8)
 
-            report =  PreprintSummaryReport(
-                    report_date=date,
-                    provider_key=report_es8.provider_key,
-                    preprint_count=report_es8.preprint_count,
-                )
+            report = PreprintSummaryReport(
+                report_date=date,
+                provider_key=report_es8.provider_key,
+                preprint_count=report_es8.preprint_count,
+            )
             reports.append(report)
             logger.info('{} Preprints counted for the provider {}'.format(resp['hits']['total'], preprint_provider.name))
 
