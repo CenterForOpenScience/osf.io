@@ -4,6 +4,7 @@ import functools
 import logging
 import uuid
 
+from django.apps import apps
 from django.core.management import call_command
 from django.core.management.base import BaseCommand
 from django.db import OperationalError as DjangoOperationalError
@@ -16,6 +17,8 @@ from elasticsearch_metrics.imps import elastic8 as djel8me
 from psycopg2 import OperationalError as PostgresOperationalError
 
 from framework.celery_tasks import app as celery_app
+from osf.metadata.rdfutils import OSF
+from osf.metadata.osfmap_utils import osfmap_type_from_model, osf_iri, is_osf_component
 from osf.metrics.preprint_metrics import (
     PreprintView,
     PreprintDownload,
@@ -131,6 +134,9 @@ def migrate_preprint_downloads(from_when: str, until_when: str):
 @celery_app.task(**_TASK_KWARGS)
 def migrate_usage_reports(osfid: str, until_when: str):
     # from PublicItemUsageReport to PublicItemUsageReportEs8
+    _osfguid = osfdb.Guid.load(osfid)
+    _item_is_component = is_osf_component(_osfguid.referent) if _osfguid else False
+
     def _each_new():
         # go in sorted order to build cumulative counts
         # (only a few dozen of these per item; should be fine to sort and load all at once)
@@ -144,7 +150,9 @@ def migrate_usage_reports(osfid: str, until_when: str):
         for _hit in list(_each_hit):
             yield (
                 _prior_report := _convert_public_usage_report(
-                    _hit['_source'], _prior_report
+                    _hit['_source'],
+                    _prior_report,
+                    item_is_component=_item_is_component,
                 )
             )
 
@@ -307,23 +315,25 @@ def _convert_unchanged_cyclicrecord_kwargs(es6_source: dict) -> dict:
 
 
 def _convert_counted_usage(source: dict) -> es8_metrics.OsfCountedUsageRecord:
-    _item_iri = _iri_from_osfid(source['item_guid'])
     return es8_metrics.OsfCountedUsageRecord(
         # fields from djelme.CountedUsageRecord:
         timestamp=source['timestamp'],
         sessionhour_id=source['session_id'],
         platform_iri=source.get('platform_iri') or website_settings.DOMAIN,
         database_iri=_convert_database_iri(
-            source.get('provider_id'), source.get('item_type')
+            provider_id=source.get('provider_id'),
+            osf_model_name=source.get('item_type'),
         ),
-        item_iri=_item_iri,
         within_iris=[
-            _iri_from_osfid(_within_osfid)
+            osf_iri(_within_osfid)
             for _within_osfid in source.get('surrounding_guids', ())
         ],
         # fields from OsfCountedUsageRecord:
         item_osfid=source['item_guid'],
-        item_type=source.get('item_type', 'osf:Object'),
+        item_type=_convert_item_type(
+            source.get('item_type'),
+            has_surrounding_items=bool(source.get('surrounding_guids')),
+        ),
         item_public=source.get('item_public'),
         provider_id=source.get('provider_id'),
         user_is_authenticated=source.get('user_is_authenticated'),
@@ -335,7 +345,6 @@ def _convert_counted_usage(source: dict) -> es8_metrics.OsfCountedUsageRecord:
 def _convert_preprint_metric(
     source: dict, action_labels: list[str]
 ) -> es8_metrics.OsfCountedUsageRecord:
-    _preprint_iri = _iri_from_osfid(source['preprint_id'])
     return es8_metrics.OsfCountedUsageRecord.record(
         using=False,  # don't save yet; will save in bulk
         # fields used to compute a sessionhour_id:
@@ -344,12 +353,13 @@ def _convert_preprint_metric(
         client_session_id=str(uuid.uuid4()),
         # fields from djelme.CountedUsageRecord:
         platform_iri=website_settings.DOMAIN,
-        database_iri=_convert_database_iri(source.get('provider_id'), 'preprint'),
-        item_iri=_preprint_iri,
-        within_iris=[_preprint_iri],
+        database_iri=_convert_database_iri(
+            provider_id=source.get('provider_id'),
+            osf_model_name='preprint',
+        ),
         # fields from OsfCountedUsageRecord:
         item_osfid=source['preprint_id'],
-        item_type='preprint',
+        item_type=OSF.Preprint,
         item_public=True,
         provider_id=source.get('provider_id'),
         user_is_authenticated=bool(source.get('user_id')),
@@ -360,12 +370,13 @@ def _convert_preprint_metric(
 def _convert_public_usage_report(
     source: dict,
     prior_report: es8_metrics.PublicItemUsageReportEs8 | None,
+    item_is_component: bool,
 ) -> es8_metrics.PublicItemUsageReportEs8:
     if prior_report is None:
         _c_views, _c_view_sess, _c_downloads, _c_download_sess = _get_cumulative_usage(
             osfid=source['item_osfid'],
             until_when=YearMonth.from_str(source['report_yearmonth']).month_end(),
-            item_type=source.get('item_type'),
+            is_preprint=(source.get('item_type') == 'preprint'),
         )
     else:
         _c_views = prior_report.cumulative_view_count + source.get('view_count', 0)
@@ -381,7 +392,10 @@ def _convert_public_usage_report(
     return es8_metrics.PublicItemUsageReportEs8(
         cycle_coverage=_semverish_from_yearmonth(source['report_yearmonth']),
         item_osfid=source['item_osfid'],
-        item_type=source.get('item_type'),
+        item_type=_convert_item_type(
+            source.get('item_type'),
+            has_surrounding_items=item_is_component,
+        ),
         provider_id=source.get('provider_id'),
         platform_iri=source.get('platform_iri') or website_settings.DOMAIN,
         view_count=source.get('view_count'),
@@ -395,8 +409,8 @@ def _convert_public_usage_report(
     )
 
 
-def _get_cumulative_usage(osfid: str, until_when, item_type: str | None):
-    if item_type == 'preprint':
+def _get_cumulative_usage(osfid: str, until_when, *, is_preprint: bool):
+    if is_preprint:
         _views = _cumulative_preprint_count(PreprintView, osfid, until_when)
         _downloads = _cumulative_preprint_count(PreprintDownload, osfid, until_when)
         _view_sess, _download_sess = 0, 0  # no session info on preprints (yet)
@@ -491,46 +505,37 @@ def _cumulative_preprint_count(preprint_metric_cls, osfid: str, until_when: str)
     return _view_count
 
 
-def _iri_from_osfid(osfid: str) -> str:
-    return f'{website_settings.DOMAIN}{osfid}'
+def _convert_item_type(osf_model_name: str | None, has_surrounding_items: bool):
+    if osf_model_name:
+        try:
+            return osfmap_type_from_model(
+                apps.get_model('osf', osf_model_name),
+                is_component=has_surrounding_items,
+            )
+        except LookupError:
+            pass
+    return OSF.Object  # fine, fallback to abstract type
 
 
-@functools.lru_cache
-def _convert_database_iri(provider_id: str | None, item_type: str) -> str:
+def _convert_database_iri(provider_id: str | None, osf_model_name: str) -> str:
     if not provider_id:
         return website_settings.DOMAIN  # osf is a provider, sure why not
 
-    def _fallback_iri():
-        return f'urn:osf.io:{provider_id}'
-
-    match item_type:  # lower-cased osf.models class names
-        case 'node' | 'osfuser':
-            # implicit 'osf' provider
+    match osf_model_name:  # lower-cased osf.models class names
+        case 'node' | 'osfuser':  # implicit untyped 'osf' provider
             return website_settings.DOMAIN
-        case 'preprint':
-            try:
-                _provider = osfdb.PreprintProvider.objects.get(_id=provider_id)
-            except osfdb.PreprintProvider.DoesNotExist:
-                _logger.error(f'unknown preprint provider {provider_id!r}')
-                return _fallback_iri()
-            else:
-                return _provider.get_semantic_iri()
-        case 'registration':
-            try:
-                _provider = osfdb.RegistrationProvider.objects.get(_id=provider_id)
-            except osfdb.RegistrationProvider.DoesNotExist:
-                _logger.error(f'unknown registration provider {provider_id!r}')
-                return _fallback_iri()
-            else:
-                return _provider.get_semantic_iri()
-        case _ if 'file' in item_type:
+        case 'preprint':  # match PreprintProvider.get_semantic_iri
+            return f'{website_settings.DOMAIN}preprints/{provider_id}'
+        case 'registration':  # match RegistrationProvider.get_semantic_iri
+            return f'{website_settings.DOMAIN}registries/{provider_id}'
+        case _ if 'file' in osf_model_name:
             # file providers are a different thing that don't really have an iri, just an id
             return f'urn:files.osf.io:{provider_id}'
         case _:  # give up gracefully
             _logger.error(
-                f'unknown item type {item_type!r} with provider {provider_id!r}'
+                f'unknown model {osf_model_name!r} with provider {provider_id!r}'
             )
-            return _fallback_iri()
+            return f'urn:osf.io:{provider_id}'
 
 
 def _each_usage_report_osfid(until_when, after_osfid=None):

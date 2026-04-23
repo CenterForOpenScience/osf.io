@@ -13,6 +13,12 @@ from api.caching.tasks import get_storage_usage_total
 from osf import models as osfdb
 from osf.metadata import gather
 from osf.metadata.definitions.datacite import DATACITE_RESOURCE_TYPES_GENERAL
+from osf.metadata.osfmap_utils import (
+    osfmap_type,
+    osf_iri,
+    is_osf_component,
+    osfid_from_iri,
+)
 from osf.metadata.rdfutils import (
     DATACITE,
     DCAT,
@@ -30,7 +36,6 @@ from osf.metadata.rdfutils import (
     SKOS,
     checksum_iri,
     format_dcterms_extent,
-    without_namespace,
     smells_like_iri,
 )
 from osf.metrics.reports import PublicItemUsageReport
@@ -319,15 +324,13 @@ class OsfmapPartition(enum.Enum):
 ##### END osfmap #####
 
 
-##### BEGIN osf-specific utils #####
-
 class OsfFocus(gather.Focus):
     def __init__(self, osf_item):
         if isinstance(osf_item, str):
             osf_item = osfdb.base.coerce_guid(osf_item).referent
         super().__init__(
             iri=osf_iri(osf_item),
-            rdftype=get_rdf_type(osf_item),
+            rdftype=osfmap_type(osf_item),
             provider_id=osf_item.provider._id if (osf_item and getattr(osf_item, 'type', '') == 'osf.registration' and osf_item.provider) else None
         )
         self.dbmodel = osf_item
@@ -335,54 +338,6 @@ class OsfFocus(gather.Focus):
             self.guid_metadata_record = osfdb.GuidMetadataRecord.objects.for_guid(osf_item)
         except osfdb.base.InvalidGuid:
             pass  # is ok for a focus to be something non-osfguidy
-
-
-def is_root(osf_node):
-    return (osf_node.root_id == osf_node.id)
-
-
-def get_rdf_type(osfguid_referent):
-    if isinstance(osfguid_referent, osfdb.Guid):
-        osfguid_referent = osfguid_referent.referent
-
-    if isinstance(osfguid_referent, osfdb.OSFUser):
-        return DCTERMS.Agent
-    if isinstance(osfguid_referent, osfdb.BaseFileNode):
-        return OSF.File
-    if isinstance(osfguid_referent, osfdb.Preprint):
-        return OSF.Preprint
-    if isinstance(osfguid_referent, osfdb.Registration):
-        return (
-            OSF.Registration
-            if is_root(osfguid_referent)
-            else OSF.RegistrationComponent
-        )
-    if isinstance(osfguid_referent, osfdb.Node):
-        return (
-            OSF.Project
-            if is_root(osfguid_referent)
-            else OSF.ProjectComponent
-        )
-    raise NotImplementedError
-
-
-def osf_iri(guid_or_model):
-    """return a rdflib.URIRef or None
-
-    @param guid_or_model: a string, Guid instance, or another osf model instance
-    @returns rdflib.URIRef or None
-    """
-    guid = osfdb.base.coerce_guid(guid_or_model)
-    return OSFIO[guid._id]
-
-
-def osfguid_from_iri(iri: str) -> str:
-    if iri.startswith(OSFIO):
-        return without_namespace(iri, OSFIO)
-    raise ValueError(f'expected iri starting with "{OSFIO}" (got "{iri}")')
-
-
-##### END osf-specific utils #####
 
 
 ##### BEGIN the gatherers #####
@@ -718,7 +673,7 @@ def gather_file_mediatype(focus):
 @gather.er(DCTERMS.hasPart, DCTERMS.isPartOf)
 def gather_parts(focus):
     if isinstance(focus.dbmodel, osfdb.AbstractNode):
-        if not is_root(focus.dbmodel) and focus.dbmodel.root.is_public:
+        if is_osf_component(focus.dbmodel) and focus.dbmodel.root.is_public:
             root_focus = OsfFocus(focus.dbmodel.root)
             yield (OSF.hasRoot, root_focus)
         child_relations = (
@@ -1130,7 +1085,7 @@ def gather_cedar_templates(focus):
 @gather.er(OSF.usage)
 def gather_last_month_usage(focus):
     _usage_report = PublicItemUsageReport.for_last_month(
-        item_osfid=osfguid_from_iri(focus.iri),
+        item_osfid=osfid_from_iri(focus.iri),
     )
     if _usage_report is not None:
         _usage_report_ref = rdflib.BNode()

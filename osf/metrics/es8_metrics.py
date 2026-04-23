@@ -1,12 +1,21 @@
 import datetime
 import enum
+import functools
 from urllib.parse import urlsplit
 
 import elasticsearch8.dsl as esdsl
 from elasticsearch_metrics import DAILY, MONTHLY, YEARLY
 import elasticsearch_metrics.imps.elastic8 as djelme
 
+from osf.metadata.osfmap_utils import (
+    osfmap_type,
+    osf_iri,
+    osfid_from_iri,
+)
+from osf.metrics.counted_usage import _get_surrounding_guids
 from osf.metrics.utils import YearMonth
+from osf import models as osfdb
+from website import settings as website_settings
 
 
 ###
@@ -99,9 +108,69 @@ class OsfCountedUsageRecord(djelme.CountedUsageRecord):
     action_labels: list[str]
     pageview_info: PageviewInfo | None
 
+    @functools.cached_property
+    def _osfid_referent(self):
+        # for use by autofill methods, if needed
+        return osfdb.Guid.load(self.item_osfid)
+
     def clean(self):
         super().clean()
-        # autofill pageview_info fields
+        self._autofill_item_iri_and_osfid()
+        self._autofill_item_public()
+        self._autofill_item_type()
+        self._autofill_provider_id()
+        self._autofill_within_iris()
+        self._autofill_pageview()
+        self._autofill_database_iri()
+
+    def _autofill_item_iri_and_osfid(self):
+        if self.item_osfid and not self.item_iri:
+            self.item_iri = osf_iri(self.item_osfid)
+        elif self.item_iri and not self.item_osfid:
+            try:
+                self.item_osfid = osfid_from_iri(self.item_iri)
+            except ValueError:
+                pass
+
+    def _autofill_item_public(self):
+        if self.item_osfid and (self.item_public is None):
+            _item = self._osfid_referent
+            # if it quacks like BaseFileNode, look at .target instead
+            _item = getattr(_item, 'target', None) or _item
+            self.item_public = (
+                _item.verified_publishable               # quacks like Preprint
+                if hasattr(_item, 'verified_publishable')
+                else getattr(_item, 'is_public', False)  # quacks like AbstractNode
+            )
+
+    def _autofill_item_type(self):
+        if self.item_osfid and not self.item_type:
+            self.item_type = osfmap_type(self._osfid_referent)
+
+    def _autofill_provider_id(self):
+        if self.item_osfid and not self.provider_id:
+            _provider = getattr(self._osfid_referent, 'provider', None)
+            if _provider is None:
+                self.provider_id = 'osf'          # quacks like Node, Comment, WikiPage
+            elif isinstance(_provider, str):
+                self.provider_id = _provider      # quacks like BaseFileNode
+            else:
+                self.provider_id = _provider._id  # quacks like Registration, Preprint, Collection
+
+    def _autofill_within_iris(self):
+        if self.item_osfid and (self.within_iris is None) and self._osfid_referent:
+            self.within_iris = [
+                osf_iri(_osfid)
+                for _osfid in _get_surrounding_guids(self._osfid_referent)
+            ]
+        # ensure inclusive "within"
+        if not self.within_iris:
+            self.within_iris = [self.item_iri]
+        if self.item_iri not in self.within_iris:
+            self.within_iris = [self.item_iri, *self.within_iris]
+
+    def _autofill_pageview(self):
+        # autofill pageview_info fields from other fields
         if self.pageview_info:
             self.pageview_info.hour_of_day = self.timestamp.hour
             _url = self.pageview_info.page_url
@@ -110,11 +179,17 @@ class OsfCountedUsageRecord(djelme.CountedUsageRecord):
             _ref_url = self.pageview_info.referer_url
             if _ref_url:
                 self.pageview_info.referer_domain = urlsplit(_ref_url).netloc
-        # ensure inclusive "within"
-        if not self.within_iris:
-            self.within_iris = [self.item_iri]
-        elif self.item_iri not in self.within_iris:
-            self.within_iris = [self.item_iri, *self.within_iris]
+
+    def _autofill_database_iri(self):
+        if self.item_osfid and not self.database_iri:
+            _provider = getattr(self._osfid_referent, 'provider', None)
+            if not _provider:
+                self.database_iri = website_settings.DOMAIN
+            elif isinstance(_provider, str):
+                # file providers are a different thing that don't really have an iri, just an id
+                self.database_iri = f'urn:files.osf.io:{self.provider_id}'
+            else:
+                self.database_iri = _provider.get_semantic_iri()
 
     def _get_unique_together_values(self):
         """get "unique together" values for "ON CONFLICT UPDATE" behavior
