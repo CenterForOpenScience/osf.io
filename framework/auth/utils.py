@@ -11,6 +11,7 @@ from django.core.exceptions import ValidationError
 
 from framework import sentry
 from website import settings
+from website.util import web_url_for
 
 logger = logging.getLogger(__name__)
 
@@ -169,3 +170,9 @@ def generate_csl_given_name(given_name, middle_names='', suffix=''):
     if suffix:
         given = f'{given}, {suffix}'
     return given
+
+def get_default_osf_logout_url():
+    """Return the default OSF logout URL.
+    """
+    next_url = web_url_for(view_name='index', _absolute=True)
+    return web_url_for(view_name='auth_logout', _absolute=True, next=next_url)

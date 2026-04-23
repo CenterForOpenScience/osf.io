@@ -84,7 +84,7 @@ def _reset_password_get(auth, uid=None, token=None, institutional=False):
         raise HTTPError(http_status.HTTP_400_BAD_REQUEST, data=error_data)
 
     # override routes.py login_url to redirect to my-projects
-    service_url = web_url_for('my_projects', _absolute=True)
+    service_url = web_url_for('dashboard', _absolute=True)
 
     return {
         'uid': user_obj._id,
@@ -176,7 +176,7 @@ def forgot_password_get(auth):
 
     #overriding the routes.py sign in url to redirect to the my-projects after login
     context = {}
-    context['login_url'] = web_url_for('my_projects', _absolute=True)
+    context['login_url'] = web_url_for('dashboard', _absolute=True)
 
     return context
 
@@ -391,7 +391,7 @@ def login_and_register_handler(auth, login=True, campaign=None, next_url=None, l
         # `/login/` or `/register/` without any parameter
         if auth.logged_in:
             data['status_code'] = http_status.HTTP_302_FOUND
-        data['next_url'] = web_url_for('my_projects', _absolute=True)
+        data['next_url'] = web_url_for('index', _absolute=True)
 
     return data
 
