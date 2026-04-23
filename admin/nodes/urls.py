@@ -8,6 +8,7 @@ urlpatterns = [
     re_path(r'^flagged_spam$', views.NodeFlaggedSpamList.as_view(), name='flagged-spam'),
     re_path(r'^known_spam$', views.NodeKnownSpamList.as_view(), name='known-spam'),
     re_path(r'^known_ham$', views.NodeKnownHamList.as_view(), name='known-ham'),
+    re_path(r'^embargo_report/$', views.EmbargoReportView.as_view(), name='embargo-report'),
     re_path(r'^doi_backlog_list/$', views.DoiBacklogListView.as_view(), name='doi-backlog-list'),
     re_path(r'^approval_backlog_list/$', views.ApprovalBacklogListView.as_view(), name='approval-backlog-list'),
     re_path(r'^confirm_approve_backlog_list/$', views.ConfirmApproveBacklogView.as_view(), name='confirm-approve-backlog-list'),
@@ -51,4 +52,7 @@ urlpatterns = [
     re_path(r'^(?P<guid>[a-z0-9]+)/system_tags/(?P<tag_id>[a-z0-9]+)/remove/$', views.NodeRemoveSystemTag.as_view(), name='remove-system-tag'),
     re_path(r'^(?P<guid>[a-z0-9]+)/update_permissions/$', views.NodeUpdatePermissionsView.as_view(), name='update-permissions'),
     re_path(r'^(?P<guid>[a-z0-9]+)/remove_file/$', views.NodeRemoveFileView.as_view(), name='remove-file'),
+    re_path(r'^(?P<guid>[a-z0-9]+)/add_osfstorage_file/$', views.NodeAddOsfStorageFileView.as_view(), name='add-osfstorage-file'),
+    re_path(r'^(?P<guid>[a-z0-9]+)/remove_osfstorage_file/$', views.NodeRemoveOsfStorageFileView.as_view(), name='remove-osfstorage-file'),
+
 ]

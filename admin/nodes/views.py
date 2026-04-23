@@ -16,13 +16,16 @@ from django.views.generic import (
     View,
     FormView,
     ListView,
+    TemplateView
 )
+from django.core.paginator import Paginator, InvalidPage
 
 from admin.base.forms import GuidForm
 from admin.base.utils import change_embargo_date
 from admin.base.views import GuidView
 from admin.nodes.forms import AddSystemTagForm, RegistrationDateForm
 from admin.notifications.views import delete_selected_notifications
+from addons.osfstorage.models import OsfStorageFolder
 from api.caching.tasks import update_storage_usage_cache
 from api.share.utils import update_share
 from framework import status
@@ -39,6 +42,7 @@ from osf.models import (
     SpamStatus,
     TrashedFile
 )
+from osf.models.sanctions import Embargo
 from osf.models.admin_log_entry import (
     update_admin_log,
     NODE_REMOVED,
@@ -50,6 +54,7 @@ from osf.models.admin_log_entry import (
     REINDEX_SHARE,
     REINDEX_ELASTIC,
 )
+from osf.models.files import File
 from osf.utils.permissions import ADMIN, API_CONTRIBUTOR_PERMISSIONS
 from scripts.approve_registrations import approve_past_pendings
 from website import settings, search
@@ -474,6 +479,54 @@ class ApprovalBacklogListView(RegistrationListView):
         }
 
 
+class EmbargoReportView(PermissionRequiredMixin, TemplateView):
+    """Report view for inspecting current and overdue embargoed registrations.
+
+    Shows:
+    - pending embargoes that should have been activated
+    - active embargoes that are past their end date
+    - upcoming active embargoes
+    """
+    template_name = 'nodes/embargo_report.html'
+    permission_required = 'osf.view_registration'
+    raise_exception = True
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        pending_embargoes = Embargo.objects.pending_embargoes().select_related('initiated_by')
+        active_embargoes = Embargo.objects.active_embargoes().select_related('initiated_by')
+
+        pending_overdue_embargoes = [
+            embargo for embargo in pending_embargoes
+            if embargo.should_be_embargoed
+        ]
+
+        overdue_embargoes = [
+            embargo for embargo in active_embargoes
+            if embargo.should_be_completed
+        ]
+
+        upcoming_queryset = active_embargoes.filter(
+            end_date__gte=timezone.now(),
+        ).order_by('end_date')
+
+        page_number = self.request.GET.get('page') or 1
+        paginator = Paginator(upcoming_queryset, 10)
+        try:
+            upcoming_page = paginator.page(page_number)
+        except InvalidPage:
+            upcoming_page = paginator.page(1)
+
+        context.update({
+            'now': timezone.now(),
+            'pending_overdue_embargoes': pending_overdue_embargoes,
+            'overdue_embargoes': overdue_embargoes,
+            'upcoming_embargoes': upcoming_page.object_list,
+            'upcoming_page': upcoming_page,
+        })
+        return context
+
+
 class ConfirmApproveBacklogView(RegistrationListView):
     template_name = 'nodes/registration_approval_list.html'
     permission_required = 'osf.view_registrationapproval'
@@ -843,6 +896,72 @@ class NodeRemoveFileView(NodeMixin, View):
                 file.delete()
                 _update_schema_meta(file.target)
                 _remove_file_from_schema_response_blocks(node, [file._id, file.copied_from._id])
+        return redirect(self.get_success_url())
+
+
+class NodeAddOsfStorageFileView(NodeMixin, View):
+    """ Allows an authorized user to add a file to osfstorage of an archived node.
+    """
+    permission_required = 'osf.change_node'
+
+    def post(self, request, *args, **kwargs):
+        registration = self.get_object()
+        guid_id = request.POST.get('file-guid', '').strip()
+        guid = Guid.load(guid_id)
+        if not guid:
+            messages.error(request, 'No file found with the provided guid.')
+            return redirect(self.get_success_url())
+
+        file = guid.referent
+        if not isinstance(file, File):
+            messages.error(request, 'The guid provided does not correspond to a file.')
+            return redirect(self.get_success_url())
+
+        parent_node = registration.registered_from
+        if not parent_node:
+            messages.error(request, 'The registration does not have the parent node.')
+            return redirect(self.get_success_url())
+
+        if not parent_node.files.filter(id=file.id).exists():
+            messages.error(request, 'The file with the provided guid is not part of the parent node.')
+            return redirect(self.get_success_url())
+
+        osfstorage = registration.get_addon('osfstorage')
+        # copy file to Archive of OSF Storage folder
+        archive_folder = OsfStorageFolder.objects.filter(
+            parent=osfstorage.get_root(),
+            name=osfstorage.archive_folder_name
+        ).first()
+        file.copy_under(archive_folder)
+        messages.success(request, 'The file was successfully added.')
+        return redirect(self.get_success_url())
+
+
+class NodeRemoveOsfStorageFileView(NodeMixin, View):
+    """ Allows an authorized user to remove a file from osfstorage of an archived node.
+    """
+    permission_required = 'osf.change_node'
+
+    def post(self, request, *args, **kwargs):
+        registration = self.get_object()
+        guid_id = request.POST.get('file-guid', '').strip()
+        guid = Guid.load(guid_id)
+        if not guid:
+            messages.error(request, 'No file found with the provided guid.')
+            return redirect(self.get_success_url())
+
+        file = guid.referent
+        if not isinstance(file, File):
+            messages.error(request, 'The guid provided does not correspond to a file.')
+            return redirect(self.get_success_url())
+
+        registration_file = registration.files.filter(id=file.id)
+        if not registration_file.exists():
+            messages.error(request, 'The file with the provided guid is not part of the registration.')
+            return redirect(self.get_success_url())
+
+        registration_file.delete()
+        messages.success(request, 'The file was successfully removed.')
         return redirect(self.get_success_url())
 
 

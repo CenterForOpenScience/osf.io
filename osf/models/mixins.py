@@ -2564,3 +2564,28 @@ class EditableFieldsMixin(TitleMixin, DescriptionMixin, CategoryMixin, Contribut
 
     class Meta:
         abstract = True
+
+
+class ShareIndexMixin(models.Model):
+    has_been_indexed = models.BooleanField(default=None, null=True, blank=True, db_index=True)
+    date_last_indexed = models.DateTimeField(null=True, blank=True)
+
+    def mark_indexing_failed(self):
+        self.has_been_indexed = False
+        from addons.osfstorage.models import OsfStorageFile
+        if isinstance(self, OsfStorageFile):
+            self.save(update_fields=['has_been_indexed'], skip_search=True)
+        else:
+            self.save(update_fields=['has_been_indexed'])
+
+    def mark_indexing_success(self):
+        self.has_been_indexed = True
+        self.date_last_indexed = timezone.now()
+        from addons.osfstorage.models import OsfStorageFile
+        if isinstance(self, OsfStorageFile):
+            self.save(update_fields=['has_been_indexed', 'date_last_indexed'], skip_search=True)
+        else:
+            self.save(update_fields=['has_been_indexed'])
+
+    class Meta:
+        abstract = True

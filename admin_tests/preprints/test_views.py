@@ -960,3 +960,42 @@ class TestPreprintReVersionView:
         preprint.refresh_from_db()
 
         assert len(preprint.get_preprint_versions()) == 2
+
+
+@pytest.mark.urls('admin.base.urls')
+class TestPreprintFixCOIView:
+
+    @pytest.fixture()
+    def plain_view(self):
+        return views.PreprintFixCOI
+
+    def test_admin_user_can_fix_coi_only_when_coi_is_set(self, user, preprint, plain_view):
+        admin_group = Group.objects.get(name='osf_admin')
+        preprint.has_coi = False
+        preprint.conflict_of_interest_statement = 'some text'
+        preprint.save()
+
+        request = RequestFactory().post(reverse('preprints:fix-coi', kwargs={'guid': preprint._id}))
+        request.user = user
+        patch_messages(request)
+
+        admin_group.permissions.add(Permission.objects.get(codename='change_preprint'))
+        user.groups.add(admin_group)
+
+        plain_view.as_view()(request, guid=preprint._id)
+        preprint.reload()
+
+        assert preprint.has_coi
+        assert preprint.conflict_of_interest_statement == 'some text'
+
+        # this case is not fixable because the preprint doesn't have COI statement set but has_coi = True
+        # which means we should add COI text by ourselves
+        preprint.has_coi = True
+        preprint.conflict_of_interest_statement = ''
+        preprint.save()
+
+        plain_view.as_view()(request, guid=preprint._id)
+        preprint.reload()
+
+        assert preprint.has_coi
+        assert preprint.conflict_of_interest_statement == ''
