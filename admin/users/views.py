@@ -50,7 +50,7 @@ from admin.users.forms import (
 from admin.nodes.views import NodeAddSystemTag, NodeRemoveSystemTag
 from admin.base.views import GuidView
 from api.users.services import send_password_reset_email
-from api.users.tasks import merge_users
+from api.users.tasks import merge_users, confirm_user_ham
 from website.settings import DOMAIN, OSF_SUPPORT_EMAIL
 from django.urls import reverse_lazy
 
@@ -264,14 +264,19 @@ class UserConfirmHamView(UserMixin, View):
 
     def post(self, request, *args, **kwargs):
         user = self.get_object()
-        user.is_registered = True  # back in the day spam users were de-registered
-        user.confirm_ham(save=True)
+
+        ham_task = confirm_user_ham.delay(user._id, initiator_guid=request.user._id)
         update_admin_log(
             user_id=request.user.id,
             object_id=user._id,
             object_repr='User',
-            message=f'Confirmed Ham: {user._id} when user {user._id} marked as spam',
-            action_flag=CONFIRM_SPAM
+            message=f'Queued Confirm HAM task for user {user._id} (task id: {ham_task.id}).',
+            action_flag=CONFIRM_HAM
+        )
+
+        messages.success(
+            request,
+            f'Confirm HAM started in the background for user {user._id}. Task id: {ham_task.id}.'
         )
         return redirect(self.get_success_url())
 

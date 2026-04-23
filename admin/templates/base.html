@@ -169,6 +169,7 @@
                       <li><a href="{% url 'nodes:ia-backlog-list' %}"><i class='fa fa-link'></i> <span>IA Backlog</span></a></li>
                       <li><a href="{% url 'nodes:doi-backlog-list' %}"><i class='fa fa-link'></i> <span>DOI Backlog</span></a></li>
                       <li><a href="{% url 'nodes:approval-backlog-list' %}"><i class='fa fa-link'></i> <span>Approval Backlog</span></a></li>
+                      <li><a href="{% url 'nodes:embargo-report' %}"><i class='fa fa-link'></i> <span>Embargo Report</span></a></li>
                   </ul>
               </div>
           {% endif %}
@@ -315,6 +316,9 @@
           {% endif %}
           {% if perms.osf.change_cedarmetadatatemplate %}
             <li><a href="{% url 'cedar_metadata_templates:list' %}"><i class='fa fa-link'></i> <span>Cedar Metadata Templates</span></a></li>
+          {% endif %}
+          {% if perms.osf.update_share_reindex %}
+              <li><a href="{% url 'share_reindex:list' %}"><i class='fa fa-link'></i> <span>Share Reindex</span></a></li>
           {% endif %}
           {% if perms.osf.change_maintenancestate %}
             <li><a href="{% url 'maintenance:display' %}"><i class='fa fa-link'></i> <span>Maintenance Alerts</span></a></li>
