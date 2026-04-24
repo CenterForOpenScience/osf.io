@@ -108,6 +108,9 @@ class OsfCountedUsageRecord(djelme.CountedUsageRecord):
     action_labels: list[str]
     pageview_info: PageviewInfo | None
 
+    class Meta:
+        timeseries_index_timedepth = MONTHLY
+
     @functools.cached_property
     def _osfid_referent(self):
         # for use by autofill methods, if needed
@@ -241,15 +244,9 @@ class RegistriesModerationMetricsEs8(djelme.EventRecord):
     user_id: str
     comment: str | None
 
-    class Index:
-        settings = {
-            'number_of_shards': 1,
-            'number_of_replicas': 1,
-            'refresh_interval': '1s',
-        }
-
     class Meta:
         timeseries_recordtype_name = 'RegistriesModerationMetrics'
+        timeseries_index_timedepth = MONTHLY
 
 
 ###
@@ -341,7 +338,7 @@ class InstitutionSummaryReportEs8(djelme.CyclicRecord):
     registered_projects: RegistrationRunningTotals
 
     class Meta:
-        timeseries_index_timedepth = MONTHLY
+        timeseries_index_timedepth = YEARLY
         timeseries_recordtype_name = 'InstitutionSummaryReport'
 
 
@@ -353,7 +350,7 @@ class NewUserDomainReportEs8(djelme.CyclicRecord):
     new_user_count: int
 
     class Meta:
-        timeseries_index_timedepth = MONTHLY
+        timeseries_index_timedepth = YEARLY
         timeseries_recordtype_name = 'NewUserDomainReport'
 
 
@@ -388,7 +385,7 @@ class PreprintSummaryReportEs8(djelme.CyclicRecord):
     preprint_count: int
 
     class Meta:
-        timeseries_index_timedepth = MONTHLY
+        timeseries_index_timedepth = YEARLY
         timeseries_recordtype_name = 'PreprintSummaryReport'
 
 
@@ -450,7 +447,7 @@ class InstitutionalUserReportEs8(djelme.CyclicRecord):
     storage_byte_count: int = esdsl.mapped_field(esdsl.Long())
 
     class Meta:
-        timeseries_index_timedepth = MONTHLY
+        timeseries_index_timedepth = YEARLY
         timeseries_recordtype_name = 'InstitutionalUserReport'
 
 
@@ -500,7 +497,7 @@ class PublicItemUsageReportEs8(djelme.CyclicRecord):
     cumulative_download_session_count: int = esdsl.mapped_field(esdsl.Long())
 
     class Meta:
-        timeseries_index_timedepth = MONTHLY
+        timeseries_index_timedepth = YEARLY
         timeseries_recordtype_name = 'PublicItemUsageReport'
 
 
