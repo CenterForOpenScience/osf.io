@@ -18,7 +18,7 @@ from framework.auth.exceptions import DuplicateEmailError, ExpiredTokenError, In
 from framework.auth.core import generate_verification_key
 from framework.auth.decorators import block_bing_preview, collect_auth, must_be_logged_in
 from framework.auth.forms import ResendConfirmationForm, ForgotPasswordForm, ResetPasswordForm
-from framework.auth.utils import ensure_external_identity_uniqueness, validate_recaptcha
+from framework.auth.utils import ensure_external_identity_uniqueness, validate_recaptcha, get_default_osf_login_url
 from framework.celery_tasks.handlers import enqueue_task
 from framework.exceptions import HTTPError
 from framework.flask import redirect  # VOL-aware redirect
@@ -389,9 +389,11 @@ def login_and_register_handler(auth, login=True, campaign=None, next_url=None, l
             data['next_url'] = request.url
     else:
         # `/login/` or `/register/` without any parameter
+        data['status_code'] = http_status.HTTP_302_FOUND
         if auth.logged_in:
-            data['status_code'] = http_status.HTTP_302_FOUND
-        data['next_url'] = web_url_for('index', _absolute=True, _angular_route=True)
+            data['next_url'] = web_url_for('dashboard', _absolute=True, _angular_route=True)
+        else:
+            data['next_url'] = cas.get_login_url(get_default_osf_login_url())
 
     return data
 

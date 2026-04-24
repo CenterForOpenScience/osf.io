@@ -171,8 +171,15 @@ def generate_csl_given_name(given_name, middle_names='', suffix=''):
         given = f'{given}, {suffix}'
     return given
 
+def get_default_osf_login_url():
+    """Return the default OSF login URL.
+    """
+    next_url = web_url_for(view_name='index', _absolute=True, _angular_route=True)
+    return web_url_for(view_name='auth_login', _absolute=True, next=next_url)
+
+
 def get_default_osf_logout_url():
     """Return the default OSF logout URL.
     """
-    next_url = web_url_for(view_name='index', _absolute=True)
+    next_url = web_url_for(view_name='index', _absolute=True, _angular_route=True)
     return web_url_for(view_name='auth_logout', _absolute=True, next=next_url)
