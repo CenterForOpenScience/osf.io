@@ -846,7 +846,7 @@ class TestAuthLogout(OsfTestCase):
         assert cas.get_logout_url(logout_url) == resp.headers['Location']
 
     def test_logout_with_angular_next_url_logged_out(self):
-        angular_url = 'http://localhost:4200/'q
+        angular_url = 'http://localhost:4200/'
         logout_url = web_url_for('auth_logout', _absolute=True, next=angular_url)
         resp = self.app.get(logout_url, auth=None)
         assert resp.status_code == http_status.HTTP_302_FOUND
