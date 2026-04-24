@@ -40,7 +40,8 @@ class InstitutionalUsersReporter(MonthlyReporter):
         _institution = osfdb.Institution.objects.get(pk=report_kwargs['institution_pk'])
         _user = osfdb.OSFUser.objects.get(pk=report_kwargs['user_pk'])
         _helper = _InstiUserReportHelper(_institution, _user, self.yearmonth)
-        return _helper.reports
+        _report = next(r for r in _helper.reports if isinstance(r, InstitutionalUserReport))
+        return _report
 
 
 # helper
@@ -55,7 +56,7 @@ class _InstiUserReportHelper:
         _affiliation = self.user.get_institution_affiliation(self.institution._id)
         self.reports = []
         report_es8 = InstitutionalUserReportEs8(
-            cycle_coverage=f"{self.yearmonth:%Y.%m.%d}",
+            cycle_coverage=f"{self.yearmonth.year}.{self.yearmonth.month}",
             institution_id=self.institution._id,
             user_id=self.user._id,
             user_name=self.user.fullname,

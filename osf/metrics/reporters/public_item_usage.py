@@ -64,7 +64,8 @@ class PublicItemUsageReporter(MonthlyReporter):
             if _guid is None or _guid.referent is None:
                 raise _SkipItem
             _obj = _guid.referent
-            _report = self._init_report(_obj)
+            _reports = self._init_report(_obj)
+            _report = next(r for r in _reports if isinstance(r, PublicItemUsageReport))
             self._fill_report_counts(_report, _obj)
             if not any((
                 _report.view_count,
@@ -139,7 +140,7 @@ class PublicItemUsageReporter(MonthlyReporter):
             raise _SkipItem
         reports = []
         report_es8 = PublicItemUsageReportEs8(
-            cycle_coverage=f"{self.yearmonth:%Y.%m.%d}",
+            cycle_coverage=f"{self.yearmonth.year}.{self.yearmonth.month}",
             item_osfid=osf_obj._id,
             item_type=[get_item_type(osf_obj)],
             provider_id=[get_provider_id(osf_obj)],

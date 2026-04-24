@@ -18,7 +18,7 @@ class PrivateSpamMetricsReporter(MonthlyReporter):
         reports = []
 
         report_es8 = PrivateSpamMetricsReportEs8(
-            cycle_coverage=f"{self.yearmonth:%Y.%m.1}",
+            cycle_coverage=f"{self.yearmonth.year}.{self.yearmonth.month}",
             report_yearmonth=str(self.yearmonth),
             node_oopspam_flagged=oopspam_client.get_flagged_count(target_month, next_month, category='node'),
             node_oopspam_hammed=oopspam_client.get_hammed_count(target_month, next_month, category='node'),

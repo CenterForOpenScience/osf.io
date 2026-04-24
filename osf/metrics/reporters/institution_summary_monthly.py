@@ -21,7 +21,9 @@ class InstitutionalSummaryMonthlyReporter(MonthlyReporter):
 
     def report(self, **report_kwargs):
         _institution = Institution.objects.get(pk=report_kwargs['institution_pk'])
-        return self.generate_report(_institution)
+        reports =  self.generate_report(_institution)
+        _report = next(r for r in reports if isinstance(r, InstitutionMonthlySummaryReport))
+        return _report
 
     def generate_report(self, institution):
         node_queryset = institution.nodes.filter(
@@ -34,7 +36,7 @@ class InstitutionalSummaryMonthlyReporter(MonthlyReporter):
         preprint_queryset = self.get_published_preprints(institution, self.yearmonth)
         reports = []
         report_es8 = InstitutionMonthlySummaryReportEs8(
-            cycle_coverage=f"{self.yearmonth:%Y.%m.%d}",
+            cycle_coverage=f"{self.yearmonth.year}.{self.yearmonth.month}",
             institution_id=institution._id,
             user_count=institution.get_institution_users().count(),
             private_project_count=self._get_count(node_queryset, 'osf.node', is_public=False),
