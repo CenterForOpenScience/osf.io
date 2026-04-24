@@ -8,7 +8,7 @@ from api.base.utils import absolute_reverse
 from osf.metrics.counted_usage import CountedAuthUsage, PageviewInfo
 from osf.metrics.es8_metrics import (
     OsfCountedUsageRecord,
-    PageviewInfo as PageviewInfoEs8
+    PageviewInfo as PageviewInfoEs8,
 )
 from website import settings as website_settings
 
