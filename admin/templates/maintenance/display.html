@@ -66,6 +66,21 @@
                 </form>
             </div>
         </div>
+
+
+    <div class="row">
+         <div class="col-md-9" style="margin-top: 15px;">
+         <form action="" method="post">
+             {% csrf_token %}
+             <input type="hidden" name="maintenance_mode" value={{maintenance_mode}}>
+             {% if maintenance_mode %}
+             <input class="btn btn-success" type="submit" value="Turn off Maintenance Mode" />
+             {% else %}
+             <input class="btn btn-danger" type="submit" value="Turn on Maintenance Mode" />
+             {% endif %}
+         </form>
+         </div>
+    </div>
     {% endif %}
 
 {% endblock content %}

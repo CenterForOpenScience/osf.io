@@ -5,6 +5,7 @@ import pstats
 from importlib import import_module
 
 from django.conf import settings
+from django.http import JsonResponse
 from django.contrib.sessions.middleware import SessionMiddleware
 from django.utils.deprecation import MiddlewareMixin
 from sentry_sdk import init
@@ -24,6 +25,7 @@ from framework.celery_tasks.handlers import (
 from .api_globals import api_globals
 from api.base import settings as api_settings
 from api.base.authentication.drf import drf_get_session_from_cookie
+from osf.models import MaintenanceMode
 
 SessionStore = import_module(settings.SESSION_ENGINE).SessionStore
 
@@ -132,3 +134,22 @@ class UnsignCookieSessionMiddleware(SessionMiddleware):
             request.session = drf_get_session_from_cookie(cookie)
         else:
             request.session = SessionStore()
+
+
+class MaintenanceModeMiddleware:
+    def __init__(self, get_response):
+        self.get_response = get_response
+
+    def __call__(self, request):
+        if request.path.endswith('/v2'):
+            return self.get_response(request)
+        if MaintenanceMode.is_under_maintenance():
+            return JsonResponse(
+                {
+                    'meta': {
+                        'maintenance_mode': True,
+                        'status_page': 'https://status.cos.io',
+                    },
+                }, status=503,
+            )
+        return self.get_response(request)
