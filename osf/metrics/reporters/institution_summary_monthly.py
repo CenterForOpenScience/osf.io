@@ -21,7 +21,7 @@ class InstitutionalSummaryMonthlyReporter(MonthlyReporter):
 
     def report(self, **report_kwargs):
         _institution = Institution.objects.get(pk=report_kwargs['institution_pk'])
-        reports =  self.generate_report(_institution)
+        reports = self.generate_report(_institution)
         _report = next(r for r in reports if isinstance(r, InstitutionMonthlySummaryReport))
         return _report
 
