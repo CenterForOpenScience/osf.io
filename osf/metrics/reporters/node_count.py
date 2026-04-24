@@ -8,7 +8,11 @@ from osf.metrics.reports import (
     RegistrationRunningTotals,
 )
 from ._base import DailyReporter
-
+from osf.metrics.es8_metrics import (
+    NodeSummaryReportEs8,
+    NodeRunningTotals as NodeRunningTotalsEs8,
+    RegistrationRunningTotals as RegistrationRunningTotalsEs8
+)
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
@@ -35,11 +39,11 @@ class NodeCountReporter(DailyReporter):
         embargo_v2_query = Q(root__embargo__end_date__date__gt=date)
 
         exclude_spam = ~Q(spam_status__in=[SpamStatus.SPAM, SpamStatus.FLAGGED])
-
-        report = NodeSummaryReport(
-            report_date=date,
+        reports = []
+        report_es8 = NodeSummaryReportEs8(
+            cycle_coverage=f"{date:%Y.%m.%d}",
             # Nodes - the number of projects and components
-            nodes=NodeRunningTotals(
+            nodes=NodeRunningTotalsEs8(
                 total=node_qs.count(),
                 total_excluding_spam=node_qs.filter(exclude_spam).count(),
                 public=node_qs.filter(public_query).count(),
@@ -50,7 +54,7 @@ class NodeCountReporter(DailyReporter):
                 private_daily=node_qs.filter(private_query & created_today_query).count(),
             ),
             # Projects - the number of top-level only projects
-            projects=NodeRunningTotals(
+            projects=NodeRunningTotalsEs8(
                 total=node_qs.get_roots().count(),
                 total_excluding_spam=node_qs.get_roots().filter(exclude_spam).count(),
                 public=node_qs.filter(public_query).get_roots().count(),
@@ -61,7 +65,7 @@ class NodeCountReporter(DailyReporter):
                 private_daily=node_qs.filter(private_query & created_today_query).get_roots().count(),
             ),
             # Registered Nodes - the number of registered projects and components
-            registered_nodes=RegistrationRunningTotals(
+            registered_nodes=RegistrationRunningTotalsEs8(
                 total=registration_qs.count(),
                 public=registration_qs.filter(public_query).count(),
                 embargoed=registration_qs.filter(private_query).count(),
@@ -75,7 +79,7 @@ class NodeCountReporter(DailyReporter):
 
             ),
             # Registered Projects - the number of registered top level projects
-            registered_projects=RegistrationRunningTotals(
+            registered_projects=RegistrationRunningTotalsEs8(
                 total=registration_qs.get_roots().count(),
                 public=registration_qs.filter(public_query).get_roots().count(),
                 embargoed=registration_qs.filter(private_query).get_roots().count(),
@@ -88,5 +92,58 @@ class NodeCountReporter(DailyReporter):
                 withdrawn_daily=registration_qs.filter(retracted_query & retracted_today_query).get_roots().count(),
             ),
         )
+        reports.append(report_es8)
+        report = NodeSummaryReport(
+            report_date=date,
+            # Nodes - the number of projects and components
+            nodes=NodeRunningTotals(
+                total=report_es8.nodes.total,
+                total_excluding_spam=report_es8.nodes.total_excluding_spam,
+                public=report_es8.nodes.public,
+                private=report_es8.nodes.private,
+                total_daily=report_es8.nodes.total_daily,
+                total_daily_excluding_spam=report_es8.nodes.total_daily_excluding_spam,
+                public_daily=report_es8.nodes.public_daily,
+                private_daily=report_es8.nodes.private_daily,
+            ),
+            # Projects - the number of top-level only projects
+            projects=NodeRunningTotals(
+                total=report_es8.projects.total,
+                total_excluding_spam=report_es8.projects.total_excluding_spam,
+                public=report_es8.projects.public,
+                private=report_es8.projects.private,
+                total_daily=report_es8.projects.total_daily,
+                total_daily_excluding_spam=report_es8.projects.total_daily_excluding_spam,
+                public_daily=report_es8.projects.public_daily,
+                private_daily=report_es8.projects.private_daily,
+            ),
+            # Registered Nodes - the number of registered projects and components
+            registered_nodes=RegistrationRunningTotals(
+                total=report_es8.registered_nodes.total,
+                public=report_es8.registered_nodes.public,
+                embargoed=report_es8.registered_nodes.embargoed,
+                embargoed_v2=report_es8.registered_nodes.embargoed_v2,
+                withdrawn=report_es8.registered_nodes.withdrawn,
+                total_daily=report_es8.registered_nodes.total_daily,
+                public_daily=report_es8.registered_nodes.public_daily,
+                embargoed_daily=report_es8.registered_nodes.embargoed_daily,
+                embargoed_v2_daily=report_es8.registered_nodes.embargoed_v2_daily,
+                withdrawn_daily=report_es8.registered_nodes.withdrawn_daily,
+            ),
+            # Registered Projects - the number of registered top level projects
+            registered_projects=RegistrationRunningTotals(
+                total=report_es8.registered_projects.total,
+                public=report_es8.registered_projects.public,
+                embargoed=report_es8.registered_projects.embargoed,
+                embargoed_v2=report_es8.registered_projects.embargoed_v2,
+                withdrawn=report_es8.registered_projects.withdrawn,
+                total_daily=report_es8.registered_projects.total_daily,
+                public_daily=report_es8.registered_projects.public_daily,
+                embargoed_daily=report_es8.registered_projects.embargoed_daily,
+                embargoed_v2_daily=report_es8.registered_projects.embargoed_v2_daily,
+                withdrawn_daily=report_es8.registered_projects.withdrawn_daily,
+            ),
+        )
+        reports.append(report)
 
-        return [report]
+        return reports

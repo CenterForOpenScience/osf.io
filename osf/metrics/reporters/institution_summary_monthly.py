@@ -6,6 +6,7 @@ from osf.models.spam import SpamStatus
 from addons.osfstorage.models import OsfStorageFile
 from osf.metrics.reports import InstitutionMonthlySummaryReport
 from ._base import MonthlyReporter
+from osf.metrics.es8_metrics import InstitutionMonthlySummaryReportEs8
 
 
 class InstitutionalSummaryMonthlyReporter(MonthlyReporter):
@@ -20,7 +21,9 @@ class InstitutionalSummaryMonthlyReporter(MonthlyReporter):
 
     def report(self, **report_kwargs):
         _institution = Institution.objects.get(pk=report_kwargs['institution_pk'])
-        return self.generate_report(_institution)
+        reports = self.generate_report(_institution)
+        _report = next(r for r in reports if isinstance(r, InstitutionMonthlySummaryReport))
+        return _report
 
     def generate_report(self, institution):
         node_queryset = institution.nodes.filter(
@@ -31,8 +34,9 @@ class InstitutionalSummaryMonthlyReporter(MonthlyReporter):
         )
 
         preprint_queryset = self.get_published_preprints(institution, self.yearmonth)
-
-        return InstitutionMonthlySummaryReport(
+        reports = []
+        report_es8 = InstitutionMonthlySummaryReportEs8(
+            cycle_coverage=f"{self.yearmonth.year}.{self.yearmonth.month}",
             institution_id=institution._id,
             user_count=institution.get_institution_users().count(),
             private_project_count=self._get_count(node_queryset, 'osf.node', is_public=False),
@@ -45,6 +49,23 @@ class InstitutionalSummaryMonthlyReporter(MonthlyReporter):
             monthly_logged_in_user_count=self.get_monthly_logged_in_user_count(institution, self.yearmonth),
             monthly_active_user_count=self.get_monthly_active_user_count(institution, self.yearmonth),
         )
+        reports.append(report_es8)
+
+        report = InstitutionMonthlySummaryReport(
+            institution_id=report_es8.institution_id,
+            user_count=report_es8.user_count,
+            private_project_count=report_es8.private_project_count,
+            public_project_count=report_es8.public_project_count,
+            public_registration_count=report_es8.public_registration_count,
+            embargoed_registration_count=report_es8.embargoed_registration_count,
+            published_preprint_count=report_es8.published_preprint_count,
+            storage_byte_count=report_es8.storage_byte_count,
+            public_file_count=report_es8.public_file_count,
+            monthly_logged_in_user_count=report_es8.monthly_logged_in_user_count,
+            monthly_active_user_count=report_es8.monthly_active_user_count,
+        )
+        reports.append(report)
+        return reports
 
     def _get_count(self, node_queryset, node_type, is_public):
         return node_queryset.filter(type=node_type, is_public=is_public, root_id=F('pk')).count()

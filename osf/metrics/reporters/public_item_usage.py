@@ -3,6 +3,9 @@ import datetime
 import typing
 
 import waffle
+
+from osf.metrics.es8_metrics import PublicItemUsageReportEs8
+
 if typing.TYPE_CHECKING:
     import elasticsearch6_dsl as edsl
 
@@ -61,7 +64,8 @@ class PublicItemUsageReporter(MonthlyReporter):
             if _guid is None or _guid.referent is None:
                 raise _SkipItem
             _obj = _guid.referent
-            _report = self._init_report(_obj)
+            _reports = self._init_report(_obj)
+            _report = next(r for r in _reports if isinstance(r, PublicItemUsageReport))
             self._fill_report_counts(_report, _obj)
             if not any((
                 _report.view_count,
@@ -131,16 +135,27 @@ class PublicItemUsageReporter(MonthlyReporter):
         )
         return _iter_composite_bucket_keys(_search, 'agg_osfid', 'osfid', after=after_osfid)
 
-    def _init_report(self, osf_obj) -> PublicItemUsageReport:
+    def _init_report(self, osf_obj) -> typing.List[PublicItemUsageReport | PublicItemUsageReportEs8]:
         if not _is_item_public(osf_obj):
             raise _SkipItem
-        return PublicItemUsageReport(
+        reports = []
+        report_es8 = PublicItemUsageReportEs8(
+            cycle_coverage=f"{self.yearmonth.year}.{self.yearmonth.month}",
             item_osfid=osf_obj._id,
             item_type=[get_item_type(osf_obj)],
             provider_id=[get_provider_id(osf_obj)],
             platform_iri=[website_settings.DOMAIN],
+        )
+        reports.append(report_es8)
+        report = PublicItemUsageReport(
+            item_osfid=report_es8.item_osfid,
+            item_type=report_es8.item_type,
+            provider_id=report_es8.provider_id,
+            platform_iri=report_es8.platform_iri,
             # leave counts null; will be set if there's data
         )
+        reports.append(report)
+        return reports
 
     def _fill_report_counts(self, report, osf_obj):
         if (
@@ -154,31 +169,43 @@ class PublicItemUsageReporter(MonthlyReporter):
             (
                 report.view_count,
                 report.view_session_count,
-            ) = self._countedusage_view_counts(osf_obj)
+            ) = self._countedusage_view_counts(osf_obj, cumulative=False)
             (
                 report.download_count,
                 report.download_session_count,
-            ) = self._countedusage_download_counts(osf_obj)
+            ) = self._countedusage_download_counts(osf_obj, cumulative=False)
 
-    def _base_usage_search(self):
+            (
+                report.cumulative_view_count,
+                report.cumulative_view_session_count,
+            ) = self._countedusage_view_counts(osf_obj, cumulative=True)
+
+            (
+                report.cumulative_download_count,
+                report.cumulative_download_session_count,
+            ) = self._countedusage_download_counts(osf_obj, cumulative=True)
+
+    def _base_usage_search(self, cumulative: bool = False):
+        timestamp_filter = {
+            'lt': self.yearmonth.month_end(),
+        }
+        if not cumulative:
+            timestamp_filter['gte'] = self.yearmonth.month_start()
         return (
             CountedAuthUsage.search()
             .filter('term', item_public=True)
-            .filter('range', timestamp={
-                'gte': self.yearmonth.month_start(),
-                'lt': self.yearmonth.month_end(),
-            })
+            .filter('range', timestamp=timestamp_filter)
             .extra(size=0)  # only aggregations, no hits
         )
 
-    def _countedusage_view_counts(self, osf_obj) -> tuple[int, int]:
+    def _countedusage_view_counts(self, osf_obj, cumulative: bool = False) -> tuple[int, int]:
         '''compute view_session_count separately to avoid double-counting
 
         (the same session may be represented in both the composite agg on `item_guid`
         and that on `surrounding_guids`)
         '''
         _search = (
-            self._base_usage_search()
+            self._base_usage_search(cumulative=cumulative)
             .query(
                 'bool',
                 filter=[
@@ -206,10 +233,10 @@ class PublicItemUsageReporter(MonthlyReporter):
         )
         return (_view_count, _view_session_count)
 
-    def _countedusage_download_counts(self, osf_obj) -> tuple[int, int]:
+    def _countedusage_download_counts(self, osf_obj, cumulative: bool = False) -> tuple[int, int]:
         '''aggregate downloads on each osfid (not including components/files)'''
         _search = (
-            self._base_usage_search()
+            self._base_usage_search(cumulative=cumulative)
             .filter('term', item_guid=osf_obj._id)
             .filter('term', action_labels=CountedAuthUsage.ActionLabel.DOWNLOAD.value)
         )

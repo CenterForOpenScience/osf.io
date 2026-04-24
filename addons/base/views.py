@@ -34,6 +34,7 @@ from framework.exceptions import HTTPError
 from framework.flask import redirect
 from framework.sentry import log_exception
 from framework.transactions.handlers import no_auto_transaction
+from osf.metrics.es8_metrics import OsfCountedUsageRecord
 from website import settings
 from addons.base import signals as file_signals
 from addons.base.utils import format_last_known_metadata, get_mfr_url
@@ -691,6 +692,15 @@ def osfstoragefile_viewed_update_metrics(self, auth, fileversion, file_node):
                 version=fileversion.identifier,
                 path=file_node.path,
             )
+            OsfCountedUsageRecord.record(
+                count=1,
+                preprint_id=resource._id,
+                user_id=getattr(auth.user, '_id', None),
+                provider_id=resource.provider._id,
+                database_iri=resource.get_semantic_iri(),
+                version=fileversion.identifier,
+                path=file_node.path,
+            )
         except es_exceptions.ConnectionError:
             log_exception()
 
@@ -715,6 +725,15 @@ def osfstoragefile_downloaded_update_metrics(self, auth, fileversion, file_node)
             PreprintDownload.record_for_preprint(
                 preprint=resource,
                 user=auth.user,
+                version=fileversion.identifier,
+                path=file_node.path,
+            )
+            OsfCountedUsageRecord.record(
+                count=1,
+                preprint_id=resource._id,
+                user_id=getattr(auth.user, '_id', None),
+                provider_id=resource.provider._id,
+                database_iri=resource.get_semantic_iri(),
                 version=fileversion.identifier,
                 path=file_node.path,
             )

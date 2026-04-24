@@ -10,7 +10,12 @@ from osf.metrics.reports import (
 )
 from osf.models import Institution
 from ._base import DailyReporter
-
+from osf.metrics.es8_metrics import (
+    InstitutionSummaryReportEs8,
+    RunningTotal as RunningTotalEs8,
+    NodeRunningTotals as NodeRunningTotalsEs8,
+    RegistrationRunningTotals as RegistrationRunningTotalsEs8
+)
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
@@ -39,16 +44,15 @@ class InstitutionSummaryReporter(DailyReporter):
                 created__date__lte=date,
                 type='osf.registration',
             )
-
-            report = InstitutionSummaryReport(
-                report_date=date,
+            report_es8 = InstitutionSummaryReportEs8(
+                cycle_coverage=f"{date:%Y.%m.%d}",
                 institution_id=institution._id,
                 institution_name=institution.name,
-                users=RunningTotal(
+                users=RunningTotalEs8(
                     total=institution.get_institution_users().filter(is_active=True).count(),
                     total_daily=institution.get_institution_users().filter(date_confirmed__date=date).count(),
                 ),
-                nodes=NodeRunningTotals(
+                nodes=NodeRunningTotalsEs8(
                     total=node_qs.count(),
                     public=node_qs.filter(public_query).count(),
                     private=node_qs.filter(private_query).count(),
@@ -58,7 +62,7 @@ class InstitutionSummaryReporter(DailyReporter):
                     private_daily=node_qs.filter(private_query & daily_query).count(),
                 ),
                 # Projects use get_roots to remove children
-                projects=NodeRunningTotals(
+                projects=NodeRunningTotalsEs8(
                     total=node_qs.get_roots().count(),
                     public=node_qs.filter(public_query).get_roots().count(),
                     private=node_qs.filter(private_query).get_roots().count(),
@@ -67,7 +71,7 @@ class InstitutionSummaryReporter(DailyReporter):
                     public_daily=node_qs.filter(public_query & daily_query).get_roots().count(),
                     private_daily=node_qs.filter(private_query & daily_query).get_roots().count(),
                 ),
-                registered_nodes=RegistrationRunningTotals(
+                registered_nodes=RegistrationRunningTotalsEs8(
                     total=registration_qs.count(),
                     public=registration_qs.filter(public_query).count(),
                     embargoed=registration_qs.filter(private_query).count(),
@@ -78,7 +82,7 @@ class InstitutionSummaryReporter(DailyReporter):
                     embargoed_daily=registration_qs.filter(private_query & daily_query).count(),
                     embargoed_v2_daily=registration_qs.filter(private_query & daily_query & embargo_v2_query).count(),
                 ),
-                registered_projects=RegistrationRunningTotals(
+                registered_projects=RegistrationRunningTotalsEs8(
                     total=registration_qs.get_roots().count(),
                     public=registration_qs.filter(public_query).get_roots().count(),
                     embargoed=registration_qs.filter(private_query).get_roots().count(),
@@ -87,7 +91,60 @@ class InstitutionSummaryReporter(DailyReporter):
                     total_daily=registration_qs.filter(daily_query).get_roots().count(),
                     public_daily=registration_qs.filter(public_query & daily_query).get_roots().count(),
                     embargoed_daily=registration_qs.filter(private_query & daily_query).get_roots().count(),
-                    embargoed_v2_daily=registration_qs.filter(private_query & daily_query & embargo_v2_query).get_roots().count(),
+                    embargoed_v2_daily=registration_qs.filter(
+                        private_query & daily_query & embargo_v2_query).get_roots().count(),
+                ),
+            )
+            reports.append(report_es8)
+
+            report = InstitutionSummaryReport(
+                report_date=date,
+                institution_id=institution._id,
+                institution_name=institution.name,
+                users=RunningTotal(
+                    total=report_es8.users.total,
+                    total_daily=report_es8.users.total_daily,
+                ),
+                nodes=NodeRunningTotals(
+                    total=report_es8.nodes.total,
+                    public=report_es8.nodes.public,
+                    private=report_es8.nodes.private,
+
+                    total_daily=report_es8.nodes.total_daily,
+                    public_daily=report_es8.nodes.public_daily,
+                    private_daily=report_es8.nodes.private_daily,
+                ),
+                # Projects use get_roots to remove children
+                projects=NodeRunningTotals(
+                    total=report_es8.projects.total,
+                    public=report_es8.projects.public,
+                    private=report_es8.projects.private,
+
+                    total_daily=report_es8.projects.total_daily,
+                    public_daily=report_es8.projects.public_daily,
+                    private_daily=report_es8.projects.private_daily,
+                ),
+                registered_nodes=RegistrationRunningTotals(
+                    total=report_es8.registered_nodes.total,
+                    public=report_es8.registered_nodes.public,
+                    embargoed=report_es8.registered_nodes.embargoed,
+                    embargoed_v2=report_es8.registered_nodes.embargoed_v2,
+
+                    total_daily=report_es8.registered_nodes.total_daily,
+                    public_daily=report_es8.registered_nodes.public_daily,
+                    embargoed_daily=report_es8.registered_nodes.embargoed_daily,
+                    embargoed_v2_daily=report_es8.registered_nodes.embargoed_v2_daily,
+                ),
+                registered_projects=RegistrationRunningTotals(
+                    total=report_es8.registered_projects.total,
+                    public=report_es8.registered_projects.public,
+                    embargoed=report_es8.registered_projects.embargoed,
+                    embargoed_v2=report_es8.registered_projects.embargoed_v2,
+
+                    total_daily=report_es8.registered_projects.total_daily,
+                    public_daily=report_es8.registered_projects.public_daily,
+                    embargoed_daily=report_es8.registered_projects.embargoed_daily,
+                    embargoed_v2_daily=report_es8.registered_projects.embargoed_v2_daily,
                 ),
             )
 
