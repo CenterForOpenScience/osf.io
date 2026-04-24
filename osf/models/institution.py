@@ -24,6 +24,7 @@ from .storage import InstitutionAssetFile
 from .validators import validate_email
 from osf.utils.fields import NonNaiveDateTimeField, LowercaseEmailField
 from website import settings as website_settings
+from urllib.parse import quote
 
 logger = logging.getLogger(__name__)
 
@@ -46,6 +47,13 @@ class SsoFilterCriteriaAction(Enum):
     CONTAINS = 'contains'  # Type 2: SSO releases a multi-value attribute, of which one value matches
     IN = 'in'  # Type 3: SSO releases a single-value attribute that have multiple valid values
 
+class SSOAvailability(Enum):
+    """Defines 3 SSO availability states for institutions.
+    """
+    PUBLIC = 'Public'  # Active, has a delegation protocol and SSO setup has been verified
+    UNAVAILABLE = 'Unavailable'  # Does not have a delegation protocol
+    HIDDEN = 'Hidden'  # 1) Inactive and has a delegation protocol, or 2) active, has a delegation protocol and SSO setup is in-progress
+
 
 class InstitutionManager(models.Manager):
 
@@ -54,6 +62,9 @@ class InstitutionManager(models.Manager):
 
     def get_all_institutions(self):
         return super().get_queryset()
+
+    def get_non_hidden_institutions(self):
+        return super().get_queryset().filter(deactivated__isnull=True, sso_availability__in=[SSOAvailability.PUBLIC.value, SSOAvailability.UNAVAILABLE.value])
 
 
 class Institution(DirtyFieldsMixin, Loggable, ObjectIDMixin, BaseModel, GuardianMixin):
@@ -77,6 +88,13 @@ class Institution(DirtyFieldsMixin, Loggable, ObjectIDMixin, BaseModel, Guardian
         max_length=15,
         blank=True,
         default=''
+    )
+
+    # Institution SSO availability
+    sso_availability = models.CharField(
+        choices=[(choice.value, choice.name) for choice in SSOAvailability],
+        max_length=15,
+        default=SSOAvailability.HIDDEN.value
     )
 
     # Default Storage Region
@@ -194,6 +212,17 @@ class Institution(DirtyFieldsMixin, Loggable, ObjectIDMixin, BaseModel, Guardian
         except InstitutionAssetFile.DoesNotExist:
             return '/static/img/institutions/banners/placeholder-banner.png'
 
+    @property
+    def cas_login_url(self):
+        if self.delegation_protocol == IntegrationType.NONE.value:
+            return None
+        if 'localhost' in website_settings.DOMAIN:
+            next_param = quote(website_settings.PROTOCOL + website_settings.LOCAL_ANGULAR_URL, safe='')
+        else:
+            next_param = quote(website_settings.DOMAIN, safe='')
+        service_url = quote(f'{website_settings.DOMAIN}login?next={next_param}', safe='')
+        return f'{website_settings.CAS_SERVER_URL}/login?campaign=institution&institutionId={self._id}&service={service_url}'
+
     def update_search(self):
         from website.search.search import update_institution
         from website.search.exceptions import SearchUnavailableError
@@ -237,6 +266,11 @@ class Institution(DirtyFieldsMixin, Loggable, ObjectIDMixin, BaseModel, Guardian
         """
         if not self.deactivated:
             self.deactivated = timezone.now()
+            if not self.delegation_protocol:
+                self.sso_availability = SSOAvailability.UNAVAILABLE.value
+            else:
+                self.sso_availability = SSOAvailability.HIDDEN.value
+
             self.save()
             # Django mangers aren't used when querying on related models. Thus, we can query
             # affiliated users and send notification emails after the institution has been deactivated.
@@ -251,6 +285,10 @@ class Institution(DirtyFieldsMixin, Loggable, ObjectIDMixin, BaseModel, Guardian
         """
         if self.deactivated:
             self.deactivated = None
+            if not self.delegation_protocol:
+                self.sso_availability = SSOAvailability.UNAVAILABLE.value
+            else:
+                self.sso_availability = SSOAvailability.HIDDEN.value
             self.save()
         else:
             message = f'Action rejected - reactivating an active institution [{self._id}].'

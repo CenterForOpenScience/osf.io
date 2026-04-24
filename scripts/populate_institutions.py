@@ -12,13 +12,13 @@ django.setup()
 
 from website import settings
 from website.app import init_app
-from osf.models import Institution
+from osf.models.institution import Institution, SSOAvailability, IntegrationType
 from website.search.search import update_institution
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
 
-ENVS = ['prod', 'stage', 'stage2', 'stage3', 'test', 'local']
+ENVS = ['prod', 'stage', 'stage2', 'stage3', 'test', 'local', 'auto_generated']
 
 # TODO: Store only the Entity IDs in OSF DB and move the URL building process to CAS
 SHIBBOLETH_SP_LOGIN = f'{settings.CAS_SERVER_URL}/Shibboleth.sso/Login?entityID={{}}'
@@ -37,7 +37,10 @@ def encode_uri_component(val):
 
 
 def update_or_create(inst_data):
-    inst = Institution.load(inst_data['_id'])
+    try:
+        inst = Institution.objects.get_all_institutions().get(_id=inst_data['_id'])
+    except Institution.DoesNotExist:
+        inst = None
     if inst:
         for key, val in inst_data.items():
             setattr(inst, key, val)
@@ -51,6 +54,53 @@ def update_or_create(inst_data):
         print(f'Added new institution: {inst._id}')
         update_institution(inst)
         return inst, True
+
+
+PROTOCOL_MAP = {
+    IntegrationType.SAML_SHIBBOLETH.value: 'SAML',
+    IntegrationType.CAS_PAC4J.value: 'CAS',
+    IntegrationType.OAUTH_PAC4J.value: 'OAuth',
+    IntegrationType.AFFILIATION_VIA_ORCID.value: 'ORCiD',
+    IntegrationType.NONE.value: 'None',
+}
+
+
+DEACTIVATED_STATES = [
+    None,
+    '2026-01-01T00:00:00+00:00',
+]
+
+
+def get_valid_sso_states(protocol, deactivated):
+    is_active = deactivated is None
+    if not protocol:
+        return [SSOAvailability.UNAVAILABLE.value]
+    if not is_active:
+        return [SSOAvailability.HIDDEN.value]
+    return [SSOAvailability.PUBLIC.value, SSOAvailability.HIDDEN.value]
+
+
+def generate_test_institutions():
+    institutions = []
+
+    for protocol in PROTOCOL_MAP.keys():
+        for deactivated in DEACTIVATED_STATES:
+            for availability in get_valid_sso_states(protocol, deactivated):
+                _id = f"{PROTOCOL_MAP[protocol]}_{availability}_{'a' if deactivated is None else 'i'}".lower()
+                institutions.append({
+                    '_id': _id,
+                    'name': f'Test Institution [{PROTOCOL_MAP[protocol] if protocol else "None"} {availability} {"Inactive" if deactivated else "Active"}]',
+                    'description': f'Description for {PROTOCOL_MAP[protocol] if protocol else "None"} {availability} {"Inactive" if deactivated else "Active"}',
+                    'login_url': SHIBBOLETH_SP_LOGIN.format(encode_uri_component(f'{_id}-entity-id')) if protocol == IntegrationType.SAML_SHIBBOLETH.value else None,
+                    'logout_url': SHIBBOLETH_SP_LOGOUT.format(encode_uri_component(f'{settings.DOMAIN}{_id}')) if protocol == IntegrationType.SAML_SHIBBOLETH.value else None,
+                    'domains': [],
+                    'email_domains': [f'{_id}.osf.io'] if not protocol else [],
+                    'delegation_protocol': protocol,
+                    'sso_availability': availability,
+                    'deactivated': deactivated,
+                })
+
+    return institutions
 
 
 def main(default_args=False):
@@ -67,7 +117,12 @@ def main(default_args=False):
     if not server_env or server_env not in ENVS:
         logger.error(f'A valid environment must be specified: {ENVS}')
         sys.exit(1)
-    institutions = INSTITUTIONS[server_env]
+
+    if server_env == 'auto_generated':
+        logger.info('Generating institutions with all combinations of protocol, availability, and deactivated states for testing purposes.')
+        institutions = generate_test_institutions()
+    else:
+        institutions = INSTITUTIONS[server_env]
 
     if not update_all and not update_ids:
         logger.error('Nothing to update or create. Please either specify a list of institutions '
@@ -101,6 +156,7 @@ INSTITUTIONS = {
                 'domains': [],
                 'email_domains': ['a2jlab.org'],
                 'delegation_protocol': '',
+                'sso_availability': 'Unavailable',
             },
             {
                 '_id': 'albion',
@@ -113,6 +169,7 @@ INSTITUTIONS = {
                 'domains': [],
                 'email_domains': [],
                 'delegation_protocol': 'saml-shib',
+                'sso_availability': 'Public',
             },
             {
                 '_id': 'asu',
@@ -125,6 +182,7 @@ INSTITUTIONS = {
                 'domains': ['osf.asu.edu'],
                 'email_domains': [],
                 'delegation_protocol': 'saml-shib',
+                'sso_availability': 'Public',
             },
             {
                 '_id': 'brown',
@@ -135,6 +193,7 @@ INSTITUTIONS = {
                 'domains': ['osf.brown.edu'],
                 'email_domains': [],
                 'delegation_protocol': 'saml-shib',
+                'sso_availability': 'Public',
             },
             {
                 '_id': 'bt',
@@ -145,6 +204,7 @@ INSTITUTIONS = {
                 'domains': ['osf.boystownhospital.org'],
                 'email_domains': [],
                 'delegation_protocol': 'saml-shib',
+                'sso_availability': 'Public',
             },
             {
                 '_id': 'bu',
@@ -155,6 +215,7 @@ INSTITUTIONS = {
                 'domains': ['osf.bu.edu'],
                 'email_domains': [],
                 'delegation_protocol': 'saml-shib',
+                'sso_availability': 'Public',
             },
             {
                 '_id': 'busara',
@@ -165,6 +226,7 @@ INSTITUTIONS = {
                 'domains': [],
                 'email_domains': ['busaracenter.org'],
                 'delegation_protocol': '',
+                'sso_availability': 'Unavailable',
             },
             {
                 '_id': 'callutheran',
@@ -175,6 +237,7 @@ INSTITUTIONS = {
                 'domains': [],
                 'email_domains': [],
                 'delegation_protocol': 'saml-shib',
+                'sso_availability': 'Public',
             },
             {
                 '_id': 'capolicylab',
@@ -185,6 +248,7 @@ INSTITUTIONS = {
                 'domains': [],
                 'email_domains': ['capolicylab.org'],
                 'delegation_protocol': '',
+                'sso_availability': 'Unavailable',
             },
             {
                 '_id': 'cfa',
@@ -195,6 +259,7 @@ INSTITUTIONS = {
                 'domains': [],
                 'email_domains': ['cfa.harvard.edu'],
                 'delegation_protocol': '',
+                'sso_availability': 'Unavailable',
             },
             {
                 '_id': 'clrn',
@@ -205,6 +270,7 @@ INSTITUTIONS = {
                 'domains': [],
                 'email_domains': ['characterlab.org'],
                 'delegation_protocol': '',
+                'sso_availability': 'Unavailable',
             },
             {
                 '_id': 'cmu',
@@ -219,6 +285,7 @@ INSTITUTIONS = {
                 'domains': ['osf.library.cmu.edu'],
                 'email_domains': [],
                 'delegation_protocol': 'saml-shib',
+                'sso_availability': 'Public',
             },
             {
                 '_id': 'colorado',
@@ -229,6 +296,7 @@ INSTITUTIONS = {
                 'domains': [],
                 'email_domains': [],
                 'delegation_protocol': 'saml-shib',
+                'sso_availability': 'Public',
             },
             {
                 '_id': 'cord',
@@ -239,6 +307,7 @@ INSTITUTIONS = {
                 'domains': ['osf.cord.edu'],
                 'email_domains': [],
                 'delegation_protocol': 'cas-pac4j',
+                'sso_availability': 'Public',
             },
             {
                 '_id': 'cornell',
@@ -249,6 +318,7 @@ INSTITUTIONS = {
                 'domains': [],
                 'email_domains': [],
                 'delegation_protocol': 'saml-shib',
+                'sso_availability': 'Public',
             },
             {
                 '_id': 'cos',
@@ -259,6 +329,7 @@ INSTITUTIONS = {
                 'domains': ['osf.cos.io'],
                 'email_domains': ['cos.io'],
                 'delegation_protocol': '',
+                'sso_availability': 'Unavailable',
             },
             {
                 '_id': 'csic',
@@ -269,6 +340,7 @@ INSTITUTIONS = {
                 'domains': [],
                 'email_domains': [],
                 'delegation_protocol': 'saml-shib',
+                'sso_availability': 'Public',
             },
             {
                 '_id': 'cwru',
@@ -279,6 +351,7 @@ INSTITUTIONS = {
                 'domains': [],
                 'email_domains': [],
                 'delegation_protocol': 'saml-shib',
+                'sso_availability': 'Public',
             },
             {
                 '_id': 'duke',
@@ -289,6 +362,7 @@ INSTITUTIONS = {
                 'domains': [],
                 'email_domains': [],
                 'delegation_protocol': 'saml-shib',
+                'sso_availability': 'Public',
             },
             {
                 '_id': 'ecu',
@@ -299,6 +373,7 @@ INSTITUTIONS = {
                 'domains': [],
                 'email_domains': [],
                 'delegation_protocol': 'saml-shib',
+                'sso_availability': 'Public',
             },
             {
                 '_id': 'esip',
@@ -309,6 +384,7 @@ INSTITUTIONS = {
                 'domains': [],
                 'email_domains': ['esipfed.org'],
                 'delegation_protocol': '',
+                'sso_availability': 'Unavailable',
             },
             {
                 '_id': 'eur',
@@ -324,6 +400,7 @@ INSTITUTIONS = {
                 'domains': [],
                 'email_domains': [],
                 'delegation_protocol': 'saml-shib',
+                'sso_availability': 'Public',
             },
             {
                 '_id': 'ferris',
@@ -334,6 +411,7 @@ INSTITUTIONS = {
                 'domains': [],
                 'email_domains': [],
                 'delegation_protocol': 'saml-shib',
+                'sso_availability': 'Public',
             },
             {
                 '_id': 'fsu',
@@ -344,6 +422,7 @@ INSTITUTIONS = {
                 'domains': ['osf.fsu.edu'],
                 'email_domains': [],
                 'delegation_protocol': 'saml-shib',
+                'sso_availability': 'Public',
             },
             {
                 '_id': 'gatech',
@@ -354,6 +433,7 @@ INSTITUTIONS = {
                 'domains': [],
                 'email_domains': [],
                 'delegation_protocol': 'saml-shib',
+                'sso_availability': 'Public',
             },
             {
                 '_id': 'gmu',
@@ -364,6 +444,7 @@ INSTITUTIONS = {
                 'domains': [],
                 'email_domains': [],
                 'delegation_protocol': 'saml-shib',
+                'sso_availability': 'Public',
             },
             {
                 '_id': 'gwu',
@@ -374,6 +455,7 @@ INSTITUTIONS = {
                 'domains': [],
                 'email_domains': [],
                 'delegation_protocol': 'saml-shib',
+                'sso_availability': 'Public',
             },
             {
                 '_id': 'harvard',
@@ -384,6 +466,7 @@ INSTITUTIONS = {
                 'domains': [],
                 'email_domains': [],
                 'delegation_protocol': 'saml-shib',
+                'sso_availability': 'Public',
             },
             {
                 '_id': 'ibhri',
@@ -394,6 +477,7 @@ INSTITUTIONS = {
                 'domains': ['osf.ibhri.org'],
                 'email_domains': ['ibhri.org'],
                 'delegation_protocol': '',
+                'sso_availability': 'Unavailable',
             },
             {
                 '_id': 'icarehb',
@@ -404,6 +488,7 @@ INSTITUTIONS = {
                 'domains': [],
                 'email_domains': ['icarehb.com'],
                 'delegation_protocol': '',
+                'sso_availability': 'Unavailable',
             },
             {
                 '_id': 'icer',
@@ -414,6 +499,7 @@ INSTITUTIONS = {
                 'domains': ['osf.icer-review.org'],
                 'email_domains': ['icer-review.org'],
                 'delegation_protocol': '',
+                'sso_availability': 'Unavailable',
             },
             {
                 '_id': 'igdore',
@@ -427,6 +513,7 @@ INSTITUTIONS = {
                 'domains': [],
                 'email_domains': ['igdore.org'],
                 'delegation_protocol': '',
+                'sso_availability': 'Unavailable',
             },
             {
                 '_id': 'iit',
@@ -437,6 +524,7 @@ INSTITUTIONS = {
                 'domains': ['osf.iit.edu'],
                 'email_domains': [],
                 'delegation_protocol': 'saml-shib',
+                'sso_availability': 'Public',
             },
             {
                 '_id': 'itb',
@@ -447,6 +535,7 @@ INSTITUTIONS = {
                 'domains': [],
                 'email_domains': [],
                 'delegation_protocol': 'saml-shib',
+                'sso_availability': 'Public',
             },
             {
                 '_id': 'jhu',
@@ -457,6 +546,7 @@ INSTITUTIONS = {
                 'domains': ['osf.data.jhu.edu'],
                 'email_domains': [],
                 'delegation_protocol': 'saml-shib',
+                'sso_availability': 'Public',
             },
             {
                 '_id': 'jmu',
@@ -467,6 +557,7 @@ INSTITUTIONS = {
                 'domains': ['osf.jmu.edu'],
                 'email_domains': [],
                 'delegation_protocol': 'saml-shib',
+                'sso_availability': 'Public',
             },
             {
                 '_id': 'jpal',
@@ -477,6 +568,7 @@ INSTITUTIONS = {
                 'domains': ['osf.povertyactionlab.org'],
                 'email_domains': ['povertyactionlab.org'],
                 'delegation_protocol': '',
+                'sso_availability': 'Unavailable',
             },
             {
                 '_id': 'kuleuven',
@@ -487,6 +579,7 @@ INSTITUTIONS = {
                 'domains': [],
                 'email_domains': [],
                 'delegation_protocol': 'saml-shib',
+                'sso_availability': 'Public',
             },
             {
                 '_id': 'ljaf',
@@ -497,6 +590,7 @@ INSTITUTIONS = {
                 'domains': [],
                 'email_domains': ['arnoldfoundation.org'],
                 'delegation_protocol': '',
+                'sso_availability': 'Unavailable',
             },
             {
                 '_id': 'mit',
@@ -507,6 +601,7 @@ INSTITUTIONS = {
                 'domains': [],
                 'email_domains': [],
                 'delegation_protocol': 'saml-shib',
+                'sso_availability': 'Public',
             },
             {
                 '_id': 'mq',
@@ -517,6 +612,7 @@ INSTITUTIONS = {
                 'domains': ['osf.mq.edu.au'],
                 'email_domains': [],
                 'delegation_protocol': 'saml-shib',
+                'sso_availability': 'Public',
             },
             {
                 '_id': 'nationalmaglab',
@@ -527,6 +623,7 @@ INSTITUTIONS = {
                 'domains': [],
                 'email_domains': [],
                 'delegation_protocol': 'saml-shib',
+                'sso_availability': 'Public',
             },
             {
                 '_id': 'nesta',
@@ -537,6 +634,7 @@ INSTITUTIONS = {
                 'domains': [],
                 'email_domains': [],
                 'delegation_protocol': 'saml-shib',
+                'sso_availability': 'Public',
             },
             {
                 '_id': 'nd',
@@ -547,6 +645,7 @@ INSTITUTIONS = {
                 'domains': ['osf.nd.edu'],
                 'email_domains': [],
                 'delegation_protocol': 'saml-shib',
+                'sso_availability': 'Public',
             },
             {
                 '_id': 'nyu',
@@ -557,6 +656,7 @@ INSTITUTIONS = {
                 'domains': ['osf.nyu.edu'],
                 'email_domains': [],
                 'delegation_protocol': 'saml-shib',
+                'sso_availability': 'Public',
             },
             {
                 '_id': 'okstate',
@@ -567,6 +667,7 @@ INSTITUTIONS = {
                 'domains': ['osf.library.okstate.edu'],
                 'email_domains': [],
                 'delegation_protocol': 'saml-shib',
+                'sso_availability': 'Public',
             },
             {
                 '_id': 'ou',
@@ -577,6 +678,7 @@ INSTITUTIONS = {
                 'domains': ['osf.ou.edu'],
                 'email_domains': [],
                 'delegation_protocol': 'saml-shib',
+                'sso_availability': 'Public',
             },
             {
                 '_id': 'oxford',
@@ -587,6 +689,7 @@ INSTITUTIONS = {
                 'domains': [],
                 'email_domains': [],
                 'delegation_protocol': 'via-orcid',
+                'sso_availability': 'Public',
                 'orcid_record_verified_source': 'ORCID Integration at the University of Oxford',
             },
             {
@@ -598,6 +701,7 @@ INSTITUTIONS = {
                 'domains': [],
                 'email_domains': [],
                 'delegation_protocol': 'saml-shib',
+                'sso_availability': 'Public',
             },
             {
                 '_id': 'purdue',
@@ -608,6 +712,7 @@ INSTITUTIONS = {
                 'domains': [],
                 'email_domains': [],
                 'delegation_protocol': 'saml-shib',
+                'sso_availability': 'Public',
             },
             {
                 '_id': 'sc',
@@ -620,6 +725,7 @@ INSTITUTIONS = {
                 'domains': ['osf.sc.edu'],
                 'email_domains': [],
                 'delegation_protocol': 'saml-shib',
+                'sso_availability': 'Public',
             },
             {
                 '_id': 'temple',
@@ -630,6 +736,7 @@ INSTITUTIONS = {
                 'domains': [],
                 'email_domains': [],
                 'delegation_protocol': 'saml-shib',
+                'sso_availability': 'Public',
             },
             {
                 '_id': 'thepolicylab',
@@ -640,6 +747,7 @@ INSTITUTIONS = {
                 'domains': [],
                 'email_domains': [],
                 'delegation_protocol': 'saml-shib',
+                'sso_availability': 'Public',
             },
             {
                 '_id': 'thelabatdc',
@@ -650,6 +758,7 @@ INSTITUTIONS = {
                 'domains': [],
                 'email_domains': ['dc.gov'],
                 'delegation_protocol': '',
+                'sso_availability': 'Unavailable',
             },
             {
                 '_id': 'theworks',
@@ -660,6 +769,7 @@ INSTITUTIONS = {
                 'domains': [],
                 'email_domains': ['theworks.info'],
                 'delegation_protocol': '',
+                'sso_availability': 'Unavailable',
             },
             {
                 '_id': 'tufts',
@@ -670,6 +780,7 @@ INSTITUTIONS = {
                 'domains': [],
                 'email_domains': [],
                 'delegation_protocol': 'saml-shib',
+                'sso_availability': 'Public',
             },
             {
                 '_id': 'ua',
@@ -680,6 +791,7 @@ INSTITUTIONS = {
                 'domains': ['osf.arizona.edu'],
                 'email_domains': [],
                 'delegation_protocol': 'saml-shib',
+                'sso_availability': 'Public',
             },
             {
                 '_id': 'ubc',
@@ -690,6 +802,7 @@ INSTITUTIONS = {
                 'domains': ['osf.openscience.ubc.ca'],
                 'email_domains': [],
                 'delegation_protocol': 'saml-shib',
+                'sso_availability': 'Public',
             },
             {
                 '_id': 'uc',
@@ -700,6 +813,7 @@ INSTITUTIONS = {
                 'domains': ['osf.uc.edu'],
                 'email_domains': [],
                 'delegation_protocol': 'saml-shib',
+                'sso_availability': 'Public',
             },
             {
                 '_id': 'ucla',
@@ -710,6 +824,7 @@ INSTITUTIONS = {
                 'domains': ['osf.ucla.edu'],
                 'email_domains': [],
                 'delegation_protocol': 'saml-shib',
+                'sso_availability': 'Public',
             },
             {
                 '_id': 'ucsd',
@@ -720,6 +835,7 @@ INSTITUTIONS = {
                 'domains': ['osf.ucsd.edu'],
                 'email_domains': [],
                 'delegation_protocol': 'saml-shib',
+                'sso_availability': 'Public',
             },
             {
                 '_id': 'ucr',
@@ -730,6 +846,7 @@ INSTITUTIONS = {
                 'domains': ['osf.ucr.edu'],
                 'email_domains': [],
                 'delegation_protocol': 'saml-shib',
+                'sso_availability': 'Public',
             },
             {
                 '_id': 'uct',
@@ -740,6 +857,7 @@ INSTITUTIONS = {
                 'domains': ['osf.uct.ac.za'],
                 'email_domains': [],
                 'delegation_protocol': 'saml-shib',
+                'sso_availability': 'Public',
             },
             {
                 '_id': 'ugent',
@@ -750,6 +868,7 @@ INSTITUTIONS = {
                 'domains': ['osf.ugent.be'],
                 'email_domains': [],
                 'delegation_protocol': 'saml-shib',
+                'sso_availability': 'Public',
             },
             {
                 '_id': 'ugoe',
@@ -760,6 +879,7 @@ INSTITUTIONS = {
                 'domains': ['osf.uni-goettingen.de'],
                 'email_domains': [],
                 'delegation_protocol': 'saml-shib',
+                'sso_availability': 'Public',
             },
             {
                 '_id': 'umb',
@@ -770,6 +890,7 @@ INSTITUTIONS = {
                 'domains': [],
                 'email_domains': [],
                 'delegation_protocol': 'saml-shib',
+                'sso_availability': 'Public',
             },
             {
                 '_id': 'umd',
@@ -780,6 +901,7 @@ INSTITUTIONS = {
                 'domains': [],
                 'email_domains': [],
                 'delegation_protocol': 'saml-shib',
+                'sso_availability': 'Public',
             },
             {
                 '_id': 'unc',
@@ -790,6 +912,7 @@ INSTITUTIONS = {
                 'domains': [],
                 'email_domains': [],
                 'delegation_protocol': 'saml-shib',
+                'sso_availability': 'Public',
             },
             {
                 '_id': 'universityofkent',
@@ -800,6 +923,7 @@ INSTITUTIONS = {
                 'domains': [],
                 'email_domains': [],
                 'delegation_protocol': 'saml-shib',
+                'sso_availability': 'Public',
             },
             {
                 '_id': 'uol',
@@ -810,6 +934,7 @@ INSTITUTIONS = {
                 'domains': [],
                 'email_domains': [],
                 'delegation_protocol': 'saml-shib',
+                'sso_availability': 'Public',
             },
             {
                 '_id': 'uom',
@@ -820,6 +945,7 @@ INSTITUTIONS = {
                 'domains': [],
                 'email_domains': [],
                 'delegation_protocol': 'saml-shib',
+                'sso_availability': 'Public',
             },
             {
                 '_id': 'usc',
@@ -830,6 +956,7 @@ INSTITUTIONS = {
                 'domains': ['osf.usc.edu'],
                 'email_domains': [],
                 'delegation_protocol': 'saml-shib',
+                'sso_availability': 'Public',
             },
             {
                 '_id': 'ush',
@@ -840,6 +967,7 @@ INSTITUTIONS = {
                 'domains': [],
                 'email_domains': ['uvers.ac.id'],
                 'delegation_protocol': '',
+                'sso_availability': 'Unavailable',
             },
             {
                 '_id': 'utdallas',
@@ -850,6 +978,7 @@ INSTITUTIONS = {
                 'domains': ['osf.utdallas.edu'],
                 'email_domains': [],
                 'delegation_protocol': 'saml-shib',
+                'sso_availability': 'Public',
             },
             {
                 '_id': 'uva',
@@ -860,6 +989,7 @@ INSTITUTIONS = {
                 'domains': ['osf.virginia.edu'],
                 'email_domains': [],
                 'delegation_protocol': 'saml-shib',
+                'sso_availability': 'Public',
             },
             {
                 '_id': 'uw',
@@ -870,6 +1000,7 @@ INSTITUTIONS = {
                 'domains': [],
                 'email_domains': [],
                 'delegation_protocol': 'saml-shib',
+                'sso_availability': 'Public',
             },
             {
                 '_id': 'uwstout',
@@ -880,6 +1011,7 @@ INSTITUTIONS = {
                 'domains': ['open.uwstout.edu'],
                 'email_domains': [],
                 'delegation_protocol': 'saml-shib',
+                'sso_availability': 'Public',
             },
             {
                 '_id': 'vcu',
@@ -890,6 +1022,7 @@ INSTITUTIONS = {
                 'domains': ['osf.research.vcu.edu'],
                 'email_domains': [],
                 'delegation_protocol': 'saml-shib',
+                'sso_availability': 'Public',
             },
             {
                 '_id': 'vt',
@@ -900,6 +1033,7 @@ INSTITUTIONS = {
                 'domains': [],
                 'email_domains': [],
                 'delegation_protocol': 'saml-shib',
+                'sso_availability': 'Public',
             },
             {
                 '_id': 'vua',
@@ -910,6 +1044,7 @@ INSTITUTIONS = {
                 'domains': ['osf.vu.nl'],
                 'email_domains': [],
                 'delegation_protocol': 'saml-shib',
+                'sso_availability': 'Public',
             },
             {
                 '_id': 'wustl',
@@ -920,6 +1055,7 @@ INSTITUTIONS = {
                 'domains': ['osf.wustl.edu'],
                 'email_domains': [],
                 'delegation_protocol': 'saml-shib',
+                'sso_availability': 'Public',
             },
         ],
     'stage': [
@@ -932,6 +1068,7 @@ INSTITUTIONS = {
                 'domains': ['staging-osf.cos.io'],
                 'email_domains': ['cos.io'],
                 'delegation_protocol': '',
+                'sso_availability': 'Unavailable',
             },
             {
                 '_id': 'nd',
@@ -942,6 +1079,7 @@ INSTITUTIONS = {
                 'domains': ['staging-osf-nd.cos.io'],
                 'email_domains': [],
                 'delegation_protocol': 'saml-shib',
+                'sso_availability': 'Public',
             },
             {
                 '_id': 'google',
@@ -952,6 +1090,7 @@ INSTITUTIONS = {
                 'domains': [],
                 'email_domains': ['gmail.com'],
                 'delegation_protocol': '',
+                'sso_availability': 'Unavailable',
             },
             {
                 '_id': 'yahoo',
@@ -961,6 +1100,7 @@ INSTITUTIONS = {
                 'domains': [],
                 'email_domains': ['yahoo.com'],
                 'delegation_protocol': '',
+                'sso_availability': 'Unavailable',
             },
             {
                 '_id': 'oxford',
@@ -971,6 +1111,7 @@ INSTITUTIONS = {
                 'domains': [],
                 'email_domains': [],
                 'delegation_protocol': 'via-orcid',
+                'sso_availability': 'Public',
                 'orcid_record_verified_source': 'ORCID Integration at the University of Oxford',
             },
             {
@@ -983,6 +1124,7 @@ INSTITUTIONS = {
                 'domains': [],
                 'email_domains': [],
                 'delegation_protocol': 'via-orcid',
+                'sso_availability': 'Public',
                 'orcid_record_verified_source': 'OSF Integration',
             },
         ],
@@ -996,6 +1138,7 @@ INSTITUTIONS = {
                 'domains': ['staging2-osf.cos.io'],
                 'email_domains': ['cos.io'],
                 'delegation_protocol': '',
+                'sso_availability': 'Unavailable',
             },
         ],
     'stage3': [
@@ -1008,6 +1151,7 @@ INSTITUTIONS = {
                 'domains': ['staging3-osf.cos.io'],
                 'email_domains': ['cos.io'],
                 'delegation_protocol': '',
+                'sso_availability': 'Unavailable',
             },
         ],
     'test': [
@@ -1020,6 +1164,7 @@ INSTITUTIONS = {
                 'domains': [],
                 'email_domains': [],
                 'delegation_protocol': '',
+                'sso_availability': 'Unavailable',
             },
             {
                 '_id': 'a2jlab',
@@ -1030,6 +1175,7 @@ INSTITUTIONS = {
                 'domains': [],
                 'email_domains': ['a2jlab.org'],
                 'delegation_protocol': '',
+                'sso_availability': 'Unavailable',
             },
             {
                 '_id': 'albion',
@@ -1042,6 +1188,7 @@ INSTITUTIONS = {
                 'domains': ['test-osf-ablbion.cos.io'],
                 'email_domains': [],
                 'delegation_protocol': 'saml-shib',
+                'sso_availability': 'Public',
             },
             {
                 '_id': 'asu',
@@ -1054,6 +1201,7 @@ INSTITUTIONS = {
                 'domains': ['test-osf-asu.cos.io'],
                 'email_domains': [],
                 'delegation_protocol': 'saml-shib',
+                'sso_availability': 'Public',
             },
             {
                 '_id': 'brown',
@@ -1064,6 +1212,7 @@ INSTITUTIONS = {
                 'domains': ['test-osf-brown.cos.io'],
                 'email_domains': [],
                 'delegation_protocol': 'saml-shib',
+                'sso_availability': 'Public',
             },
             {
                 '_id': 'bt',
@@ -1074,6 +1223,7 @@ INSTITUTIONS = {
                 'domains': ['test-osf-bt.cos.io'],
                 'email_domains': [],
                 'delegation_protocol': 'saml-shib',
+                'sso_availability': 'Public',
             },
             {
                 '_id': 'bu',
@@ -1084,6 +1234,7 @@ INSTITUTIONS = {
                 'domains': ['test-osf-bu.cos.io'],
                 'email_domains': [],
                 'delegation_protocol': 'saml-shib',
+                'sso_availability': 'Public',
             },
             {
                 '_id': 'busara',
@@ -1094,6 +1245,7 @@ INSTITUTIONS = {
                 'domains': [],
                 'email_domains': ['busaracenter.org'],
                 'delegation_protocol': '',
+                'sso_availability': 'Unavailable',
             },
             {
                 '_id': 'callutheran',
@@ -1104,6 +1256,7 @@ INSTITUTIONS = {
                 'domains': ['test-osf-callutheran.cos.io'],
                 'email_domains': [],
                 'delegation_protocol': 'saml-shib',
+                'sso_availability': 'Public',
             },
             {
                 '_id': 'callutheran2',
@@ -1114,6 +1267,7 @@ INSTITUTIONS = {
                 'domains': ['test-osf-callutheran2.cos.io'],
                 'email_domains': [],
                 'delegation_protocol': 'cas-pac4j',
+                'sso_availability': 'Public',
             },
             {
                 '_id': 'capolicylab',
@@ -1124,6 +1278,7 @@ INSTITUTIONS = {
                 'domains': [],
                 'email_domains': ['capolicylab.org'],
                 'delegation_protocol': '',
+                'sso_availability': 'Unavailable',
             },
             {
                 '_id': 'cfa',
@@ -1134,6 +1289,7 @@ INSTITUTIONS = {
                 'domains': [],
                 'email_domains': ['cfa.harvard.edu'],
                 'delegation_protocol': '',
+                'sso_availability': 'Unavailable',
             },
             {
                 '_id': 'clrn',
@@ -1144,6 +1300,7 @@ INSTITUTIONS = {
                 'domains': [],
                 'email_domains': ['characterlab.org'],
                 'delegation_protocol': '',
+                'sso_availability': 'Unavailable',
             },
             {
                 '_id': 'cmu',
@@ -1158,6 +1315,7 @@ INSTITUTIONS = {
                 'domains': ['test-osf-cmu.cos.io'],
                 'email_domains': [],
                 'delegation_protocol': 'saml-shib',
+                'sso_availability': 'Public',
             },
             {
                 '_id': 'colorado',
@@ -1168,6 +1326,7 @@ INSTITUTIONS = {
                 'domains': [],
                 'email_domains': [],
                 'delegation_protocol': 'saml-shib',
+                'sso_availability': 'Public',
             },
             {
                 '_id': 'cornell',
@@ -1178,6 +1337,7 @@ INSTITUTIONS = {
                 'domains': ['test-osf-cornell.cos.io'],
                 'email_domains': [],
                 'delegation_protocol': 'saml-shib',
+                'sso_availability': 'Public',
             },
             {
                 '_id': 'cord',
@@ -1188,6 +1348,7 @@ INSTITUTIONS = {
                 'domains': ['test-osf-cord.cos.io'],
                 'email_domains': [],
                 'delegation_protocol': 'cas-pac4j',
+                'sso_availability': 'Public',
             },
             {
                 '_id': 'cos',
@@ -1198,6 +1359,7 @@ INSTITUTIONS = {
                 'domains': ['test-osf.cos.io'],
                 'email_domains': ['cos.io'],
                 'delegation_protocol': '',
+                'sso_availability': 'Unavailable',
             },
             {
                 '_id': 'csic',
@@ -1208,6 +1370,7 @@ INSTITUTIONS = {
                 'domains': [],
                 'email_domains': [],
                 'delegation_protocol': 'saml-shib',
+                'sso_availability': 'Public',
             },
             {
                 '_id': 'cwru',
@@ -1218,6 +1381,7 @@ INSTITUTIONS = {
                 'domains': ['test-osf-cwru.cos.io'],
                 'email_domains': [],
                 'delegation_protocol': 'saml-shib',
+                'sso_availability': 'Public',
             },
             {
                 '_id': 'duke',
@@ -1228,6 +1392,7 @@ INSTITUTIONS = {
                 'domains': [],
                 'email_domains': [],
                 'delegation_protocol': 'saml-shib',
+                'sso_availability': 'Public',
             },
             {
                 '_id': 'ecu',
@@ -1238,6 +1403,7 @@ INSTITUTIONS = {
                 'domains': [],
                 'email_domains': [],
                 'delegation_protocol': 'saml-shib',
+                'sso_availability': 'Public',
             },
             {
                 '_id': 'esip',
@@ -1248,6 +1414,7 @@ INSTITUTIONS = {
                 'domains': [],
                 'email_domains': ['esipfed.org'],
                 'delegation_protocol': '',
+                'sso_availability': 'Unavailable',
             },
             {
                 '_id': 'eur',
@@ -1263,6 +1430,7 @@ INSTITUTIONS = {
                 'domains': [],
                 'email_domains': [],
                 'delegation_protocol': 'saml-shib',
+                'sso_availability': 'Public',
             },
             {
                 '_id': 'ferris',
@@ -1273,6 +1441,7 @@ INSTITUTIONS = {
                 'domains': [],
                 'email_domains': [],
                 'delegation_protocol': 'saml-shib',
+                'sso_availability': 'Public',
             },
             {
                 '_id': 'fsu',
@@ -1283,6 +1452,7 @@ INSTITUTIONS = {
                 'domains': ['test-osf-fsu.cos.io'],
                 'email_domains': [],
                 'delegation_protocol': 'saml-shib',
+                'sso_availability': 'Public',
             },
             {
                 '_id': 'gatech',
@@ -1293,6 +1463,7 @@ INSTITUTIONS = {
                 'domains': [],
                 'email_domains': [],
                 'delegation_protocol': 'saml-shib',
+                'sso_availability': 'Public',
             },
             {
                 '_id': 'gmu',
@@ -1303,6 +1474,7 @@ INSTITUTIONS = {
                 'domains': ['test-osf-gmu.cos.io'],
                 'email_domains': [],
                 'delegation_protocol': 'saml-shib',
+                'sso_availability': 'Public',
             },
             {
                 '_id': 'gwu',
@@ -1313,6 +1485,7 @@ INSTITUTIONS = {
                 'domains': ['test-osf-gwu.cos.io'],
                 'email_domains': [],
                 'delegation_protocol': 'saml-shib',
+                'sso_availability': 'Public',
             },
             {
                 '_id': 'harvard',
@@ -1323,6 +1496,7 @@ INSTITUTIONS = {
                 'domains': ['test-osf-harvard.cos.io'],
                 'email_domains': [],
                 'delegation_protocol': 'saml-shib',
+                'sso_availability': 'Public',
             },
             {
                 '_id': 'ibhri',
@@ -1333,6 +1507,7 @@ INSTITUTIONS = {
                 'domains': ['test-osf-ibhri.cos.io'],
                 'email_domains': ['ibhri.org'],
                 'delegation_protocol': '',
+                'sso_availability': 'Unavailable',
             },
             {
                 '_id': 'icarehb',
@@ -1343,6 +1518,7 @@ INSTITUTIONS = {
                 'domains': ['test-osf-icarehb.cos.io'],
                 'email_domains': ['icarehb.com'],
                 'delegation_protocol': '',
+                'sso_availability': 'Unavailable',
             },
             {
                 '_id': 'icer',
@@ -1353,6 +1529,7 @@ INSTITUTIONS = {
                 'domains': ['test-osf-icer.cos.io'],
                 'email_domains': ['icer-review.org'],
                 'delegation_protocol': '',
+                'sso_availability': 'Unavailable',
             },
             {
                 '_id': 'igdore',
@@ -1366,6 +1543,7 @@ INSTITUTIONS = {
                 'domains': ['test-osf-icer.igdore.io'],
                 'email_domains': ['igdore.org'],
                 'delegation_protocol': '',
+                'sso_availability': 'Unavailable',
             },
             {
                 '_id': 'iit',
@@ -1376,6 +1554,7 @@ INSTITUTIONS = {
                 'domains': ['test-osf-iit.cos.io'],
                 'email_domains': [],
                 'delegation_protocol': 'saml-shib',
+                'sso_availability': 'Public',
             },
             {
                 '_id': 'itb',
@@ -1386,6 +1565,7 @@ INSTITUTIONS = {
                 'domains': ['test-osf-itb.cos.io'],
                 'email_domains': [],
                 'delegation_protocol': 'saml-shib',
+                'sso_availability': 'Public',
             },
             {
                 '_id': 'jhu',
@@ -1396,6 +1576,7 @@ INSTITUTIONS = {
                 'domains': ['test-osf-jhu.cos.io'],
                 'email_domains': [],
                 'delegation_protocol': 'saml-shib',
+                'sso_availability': 'Public',
             },
             {
                 '_id': 'jmu',
@@ -1406,6 +1587,7 @@ INSTITUTIONS = {
                 'domains': ['test-osf-jmu.cos.io'],
                 'email_domains': [],
                 'delegation_protocol': 'saml-shib',
+                'sso_availability': 'Public',
             },
             {
                 '_id': 'jpal',
@@ -1416,6 +1598,7 @@ INSTITUTIONS = {
                 'domains': ['test-osf-jpal.cos.io'],
                 'email_domains': ['povertyactionlab.org'],
                 'delegation_protocol': '',
+                'sso_availability': 'Unavailable',
             },
             {
                 '_id': 'kuleuven',
@@ -1426,6 +1609,7 @@ INSTITUTIONS = {
                 'domains': [],
                 'email_domains': [],
                 'delegation_protocol': 'saml-shib',
+                'sso_availability': 'Public',
             },
             {
                 '_id': 'ljaf',
@@ -1436,6 +1620,7 @@ INSTITUTIONS = {
                 'domains': [],
                 'email_domains': ['arnoldfoundation.org'],
                 'delegation_protocol': '',
+                'sso_availability': 'Unavailable',
             },
             {
                 '_id': 'mit',
@@ -1446,6 +1631,7 @@ INSTITUTIONS = {
                 'domains': ['test-osf-mit.cos.io'],
                 'email_domains': [],
                 'delegation_protocol': 'saml-shib',
+                'sso_availability': 'Public',
             },
             {
                 '_id': 'mq',
@@ -1456,6 +1642,7 @@ INSTITUTIONS = {
                 'domains': ['test-osf-mq.cos.io'],
                 'email_domains': [],
                 'delegation_protocol': 'saml-shib',
+                'sso_availability': 'Public',
             },
             {
                 '_id': 'nationalmaglab',
@@ -1466,6 +1653,7 @@ INSTITUTIONS = {
                 'domains': ['test-osf-nationalmaglab.cos.io'],
                 'email_domains': [],
                 'delegation_protocol': 'saml-shib',
+                'sso_availability': 'Public',
             },
             {
                 '_id': 'nesta',
@@ -1476,6 +1664,7 @@ INSTITUTIONS = {
                 'domains': [],
                 'email_domains': [],
                 'delegation_protocol': 'saml-shib',
+                'sso_availability': 'Public',
             },
             {
                 '_id': 'nd',
@@ -1486,6 +1675,7 @@ INSTITUTIONS = {
                 'domains': ['test-osf-nd.cos.io'],
                 'email_domains': [],
                 'delegation_protocol': 'saml-shib',
+                'sso_availability': 'Public',
             },
             {
                 '_id': 'nyu',
@@ -1496,6 +1686,7 @@ INSTITUTIONS = {
                 'domains': ['test-osf-nyu.cos.io'],
                 'email_domains': [],
                 'delegation_protocol': 'saml-shib',
+                'sso_availability': 'Public',
             },
             {
                 '_id': 'okstate',
@@ -1506,6 +1697,7 @@ INSTITUTIONS = {
                 'domains': ['test-osf-library-okstate.cos.io'],
                 'email_domains': [],
                 'delegation_protocol': 'saml-shib',
+                'sso_availability': 'Public',
             },
             {
                 '_id': 'ou',
@@ -1516,6 +1708,7 @@ INSTITUTIONS = {
                 'domains': ['test-osf-ou.cos.io'],
                 'email_domains': [],
                 'delegation_protocol': 'saml-shib',
+                'sso_availability': 'Public',
             },
             {
                 '_id': 'oxford',
@@ -1526,6 +1719,7 @@ INSTITUTIONS = {
                 'domains': [],
                 'email_domains': [],
                 'delegation_protocol': 'via-orcid',
+                'sso_availability': 'Public',
                 'orcid_record_verified_source': 'ORCID Integration at the University of Oxford',
             },
             {
@@ -1537,6 +1731,7 @@ INSTITUTIONS = {
                 'domains': ['test-osf-pu.cos.io'],
                 'email_domains': [],
                 'delegation_protocol': 'saml-shib',
+                'sso_availability': 'Public',
             },
             {
                 '_id': 'purdue',
@@ -1547,6 +1742,7 @@ INSTITUTIONS = {
                 'domains': [],
                 'email_domains': [],
                 'delegation_protocol': 'saml-shib',
+                'sso_availability': 'Public',
             },
             {
                 '_id': 'sc',
@@ -1559,6 +1755,7 @@ INSTITUTIONS = {
                 'domains': ['test-osf-sc.cos.io'],
                 'email_domains': [],
                 'delegation_protocol': 'saml-shib',
+                'sso_availability': 'Public',
             },
             {
                 '_id': 'temple',
@@ -1569,6 +1766,7 @@ INSTITUTIONS = {
                 'domains': ['test-osf-temple.cos.io'],
                 'email_domains': [],
                 'delegation_protocol': 'saml-shib',
+                'sso_availability': 'Public',
             },
             {
                 '_id': 'thepolicylab',
@@ -1579,6 +1777,7 @@ INSTITUTIONS = {
                 'domains': ['test-osf-thepolicylab.cos.io'],
                 'email_domains': ['policylab.io'],
                 'delegation_protocol': '',
+                'sso_availability': 'Unavailable',
             },
             {
                 '_id': 'thelabatdc',
@@ -1589,6 +1788,7 @@ INSTITUTIONS = {
                 'domains': [],
                 'email_domains': ['dc.gov'],
                 'delegation_protocol': '',
+                'sso_availability': 'Unavailable',
             },
             {
                 '_id': 'theworks',
@@ -1599,6 +1799,7 @@ INSTITUTIONS = {
                 'domains': [],
                 'email_domains': ['theworks.info'],
                 'delegation_protocol': '',
+                'sso_availability': 'Unavailable',
             },
             {
                 '_id': 'tufts',
@@ -1609,6 +1810,7 @@ INSTITUTIONS = {
                 'domains': ['test-osf-tufts.cos.io'],
                 'email_domains': [],
                 'delegation_protocol': 'saml-shib',
+                'sso_availability': 'Public',
             },
             {
                 '_id': 'ua',
@@ -1619,6 +1821,7 @@ INSTITUTIONS = {
                 'domains': ['test-osf-ua.cos.io'],
                 'email_domains': [],
                 'delegation_protocol': 'saml-shib',
+                'sso_availability': 'Public',
             },
             {
                 '_id': 'ubc',
@@ -1629,6 +1832,7 @@ INSTITUTIONS = {
                 'domains': ['test-osf-ubc.cos.io'],
                 'email_domains': [],
                 'delegation_protocol': 'saml-shib',
+                'sso_availability': 'Public',
             },
             {
                 '_id': 'uc',
@@ -1639,6 +1843,7 @@ INSTITUTIONS = {
                 'domains': ['test-osf-uc.cos.io'],
                 'email_domains': [],
                 'delegation_protocol': 'saml-shib',
+                'sso_availability': 'Public',
             },
             {
                 '_id': 'ucla',
@@ -1649,6 +1854,7 @@ INSTITUTIONS = {
                 'domains': ['test-osf-ucla.cos.io'],
                 'email_domains': [],
                 'delegation_protocol': 'saml-shib',
+                'sso_availability': 'Public',
             },
             {
                 '_id': 'ucsd',
@@ -1659,6 +1865,7 @@ INSTITUTIONS = {
                 'domains': ['test-osf-ucsd.cos.io'],
                 'email_domains': [],
                 'delegation_protocol': 'saml-shib',
+                'sso_availability': 'Public',
             },
             {
                 '_id': 'ucr',
@@ -1669,6 +1876,7 @@ INSTITUTIONS = {
                 'domains': ['test-osf-ucr.cos.io'],
                 'email_domains': [],
                 'delegation_protocol': 'saml-shib',
+                'sso_availability': 'Public',
             },
             {
                 '_id': 'uct',
@@ -1679,6 +1887,7 @@ INSTITUTIONS = {
                 'domains': ['test-osf-uct.cos.io'],
                 'email_domains': [],
                 'delegation_protocol': 'saml-shib',
+                'sso_availability': 'Public',
             },
             {
                 '_id': 'umb',
@@ -1689,6 +1898,7 @@ INSTITUTIONS = {
                 'domains': ['test-osf-umb.cos.io'],
                 'email_domains': [],
                 'delegation_protocol': 'saml-shib',
+                'sso_availability': 'Public',
             },
             {
                 '_id': 'umd',
@@ -1699,6 +1909,7 @@ INSTITUTIONS = {
                 'domains': [],
                 'email_domains': [],
                 'delegation_protocol': 'saml-shib',
+                'sso_availability': 'Public',
             },
             {
                 '_id': 'ugent',
@@ -1709,6 +1920,7 @@ INSTITUTIONS = {
                 'domains': ['test-osf-ugent.cos.io'],
                 'email_domains': [],
                 'delegation_protocol': 'saml-shib',
+                'sso_availability': 'Public',
             },
             {
                 '_id': 'ugoe',
@@ -1719,6 +1931,7 @@ INSTITUTIONS = {
                 'domains': ['test-osf-ugoe.cos.io'],
                 'email_domains': [],
                 'delegation_protocol': 'saml-shib',
+                'sso_availability': 'Public',
             },
             {
                 '_id': 'uit',
@@ -1731,6 +1944,7 @@ INSTITUTIONS = {
                 'domains': ['test-osf-uit.cos.io'],
                 'email_domains': ['uit.no'],
                 'delegation_protocol': '',
+                'sso_availability': 'Unavailable',
             },
             {
                 '_id': 'unc',
@@ -1741,6 +1955,7 @@ INSTITUTIONS = {
                 'domains': ['test-osf-unc.cos.io'],
                 'email_domains': [],
                 'delegation_protocol': 'saml-shib',
+                'sso_availability': 'Public',
             },
             {
                 '_id': 'universityofkent',
@@ -1751,6 +1966,7 @@ INSTITUTIONS = {
                 'domains': ['test-osf-universityofkent.cos.io'],
                 'email_domains': [],
                 'delegation_protocol': 'saml-shib',
+                'sso_availability': 'Public',
             },
             {
                 '_id': 'uol',
@@ -1761,6 +1977,7 @@ INSTITUTIONS = {
                 'domains': [],
                 'email_domains': [],
                 'delegation_protocol': 'saml-shib',
+                'sso_availability': 'Public',
             },
             {
                 '_id': 'uom',
@@ -1771,6 +1988,7 @@ INSTITUTIONS = {
                 'domains': [],
                 'email_domains': [],
                 'delegation_protocol': 'saml-shib',
+                'sso_availability': 'Public',
             },
             {
                 '_id': 'usc',
@@ -1781,6 +1999,7 @@ INSTITUTIONS = {
                 'domains': ['test-osf-usc.cos.io'],
                 'email_domains': [],
                 'delegation_protocol': 'saml-shib',
+                'sso_availability': 'Public',
             },
             {
                 '_id': 'ush',
@@ -1791,6 +2010,7 @@ INSTITUTIONS = {
                 'domains': ['test-osf-ush.cos.io'],
                 'email_domains': ['uvers.ac.id'],
                 'delegation_protocol': '',
+                'sso_availability': 'Unavailable',
             },
             {
                 '_id': 'utdallas',
@@ -1801,6 +2021,7 @@ INSTITUTIONS = {
                 'domains': ['test-osf-utdallas.cos.io'],
                 'email_domains': [],
                 'delegation_protocol': 'saml-shib',
+                'sso_availability': 'Public',
             },
             {
                 '_id': 'uva',
@@ -1811,6 +2032,7 @@ INSTITUTIONS = {
                 'domains': ['test-osf-virginia.cos.io'],
                 'email_domains': [],
                 'delegation_protocol': 'saml-shib',
+                'sso_availability': 'Public',
             },
             {
                 '_id': 'uw',
@@ -1821,6 +2043,7 @@ INSTITUTIONS = {
                 'domains': [],
                 'email_domains': [],
                 'delegation_protocol': 'saml-shib',
+                'sso_availability': 'Public',
             },
             {
                 '_id': 'uwstout',
@@ -1831,6 +2054,7 @@ INSTITUTIONS = {
                 'domains': ['test-osf-uwstout.cos.io'],
                 'email_domains': [],
                 'delegation_protocol': 'saml-shib',
+                'sso_availability': 'Public',
             },
             {
                 '_id': 'vcu',
@@ -1841,6 +2065,7 @@ INSTITUTIONS = {
                 'domains': ['test-osf-research-vcu.cos.io'],
                 'email_domains': [],
                 'delegation_protocol': 'saml-shib',
+                'sso_availability': 'Public',
             },
             {
                 '_id': 'vt',
@@ -1851,6 +2076,7 @@ INSTITUTIONS = {
                 'domains': [],
                 'email_domains': [],
                 'delegation_protocol': 'saml-shib',
+                'sso_availability': 'Public',
             },
             {
                 '_id': 'vua',
@@ -1861,6 +2087,7 @@ INSTITUTIONS = {
                 'domains': ['test-osf-vua.cos.io'],
                 'email_domains': [],
                 'delegation_protocol': 'saml-shib',
+                'sso_availability': 'Public',
             },
             {
                 '_id': 'wustl',
@@ -1871,6 +2098,7 @@ INSTITUTIONS = {
                 'domains': ['test-osf-wustl.cos.io'],
                 'email_domains': [],
                 'delegation_protocol': 'saml-shib',
+                'sso_availability': 'Public',
             },
         ],
     'local': [
@@ -1884,6 +2112,7 @@ INSTITUTIONS = {
             'domains': [],
             'email_domains': [],
             'delegation_protocol': 'cas-pac4j',
+            'sso_availability': 'Public',
         },
         {
             '_id': 'osftype1',
@@ -1895,6 +2124,7 @@ INSTITUTIONS = {
             'domains': [],
             'email_domains': [],
             'delegation_protocol': 'via-orcid',
+            'sso_availability': 'Public',
             'orcid_record_verified_source': 'OSF Integration',
         },
         {
@@ -1907,6 +2137,7 @@ INSTITUTIONS = {
             'domains': [],
             'email_domains': [],
             'delegation_protocol': 'saml-shib',
+            'sso_availability': 'Public',
             'orcid_record_verified_source': '',
         },
         {
@@ -1920,6 +2151,7 @@ INSTITUTIONS = {
             'domains': [],
             'email_domains': [],
             'delegation_protocol': 'saml-shib',
+            'sso_availability': 'Public',
         },
         {
             '_id': 'osftype4',
@@ -1932,6 +2164,7 @@ INSTITUTIONS = {
             'domains': [],
             'email_domains': [],
             'delegation_protocol': 'saml-shib',
+            'sso_availability': 'Public',
         },
         {
             '_id': 'osftype5',
@@ -1944,6 +2177,7 @@ INSTITUTIONS = {
             'domains': [],
             'email_domains': [],
             'delegation_protocol': 'saml-shib',
+            'sso_availability': 'Public',
             'orcid_record_verified_source': '',
         },
         {
@@ -1957,6 +2191,7 @@ INSTITUTIONS = {
             'domains': [],
             'email_domains': [],
             'delegation_protocol': 'saml-shib',
+            'sso_availability': 'Public',
         },
         {
             '_id': 'osftype7',
@@ -1969,6 +2204,7 @@ INSTITUTIONS = {
             'domains': [],
             'email_domains': [],
             'delegation_protocol': 'saml-shib',
+            'sso_availability': 'Public',
         },
         {
             '_id': 'osftype8',
@@ -1981,6 +2217,7 @@ INSTITUTIONS = {
             'domains': [],
             'email_domains': [],
             'delegation_protocol': 'saml-shib',
+            'sso_availability': 'Public',
         },
         {
             '_id': 'osftype9',
@@ -1993,6 +2230,7 @@ INSTITUTIONS = {
             'domains': [],
             'email_domains': [],
             'delegation_protocol': 'saml-shib',
+            'sso_availability': 'Public',
         },
     ],
 }

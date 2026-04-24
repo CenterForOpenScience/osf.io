@@ -56,6 +56,7 @@ class InstitutionDisplay(PermissionRequiredMixin, DetailView):
         institution_dict = model_to_dict(institution)
         kwargs.setdefault('page_number', self.request.GET.get('page', '1'))
         kwargs['institution'] = institution_dict
+        kwargs['cas_login_url'] = institution.cas_login_url
         kwargs['logo_path'] = institution.logo_path
         kwargs['banner_path'] = institution.banner_path
         fields = institution_dict
@@ -116,6 +117,17 @@ class InstitutionChangeForm(PermissionRequiredMixin, UpdateView):
 
     def get_success_url(self, *args, **kwargs):
         return reverse_lazy('institutions:detail', kwargs={'institution_id': self.kwargs.get('institution_id')})
+
+    def post(self, request, *args, **kwargs):
+        # Override `post` method in `django.views.generic.edit.ProcessFormView` due to custom behavior
+        self.object = self.get_object()
+        form = self.get_form()
+        if form.is_valid():
+            return self.form_valid(form)
+        else:
+            for error in form.non_field_errors():
+                messages.error(request, error)
+            return redirect('institutions:detail', institution_id=self.kwargs.get('institution_id'))
 
 
 class InstitutionExport(PermissionRequiredMixin, View):

@@ -20,6 +20,7 @@
             <th>Name</th>
             <th>Description</th>
 			<th>Status</th>
+			<th>SSO Availability</th>
         </tr>
     </thead>
     <tbody>
@@ -37,6 +38,7 @@
 		{% else %}
 		<td>DEACTIVATED</td>
 		{% endif %}
+		<td>{{ institution.sso_availability }}</td>
     </tr>
     {% endfor %}
     </tbody>

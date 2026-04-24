@@ -73,6 +73,9 @@ class InstitutionList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin):
         base_permissions.TokenHasScope,
     )
 
+    # Adding sso_availability to MULTIPLE_VALUES_FIELDS to allow filtering institutions by multiple sso_availability values, e.g. ?filter[sso_availability]=[Unavailable,Hidden]
+    MULTIPLE_VALUES_FIELDS = ListFilterMixin.MULTIPLE_VALUES_FIELDS + ['sso_availability']
+
     required_read_scopes = [CoreScopes.INSTITUTION_READ]
     required_write_scopes = [CoreScopes.NULL]
     model_class = Institution
@@ -85,7 +88,9 @@ class InstitutionList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin):
     ordering = ('name',)
 
     def get_default_queryset(self):
-        return Institution.objects.filter(_id__isnull=False, is_deleted=False)
+        if 'filter[sso_availability]' in self.request.query_params:
+            return Institution.objects.filter(_id__isnull=False, is_deleted=False)
+        return Institution.objects.get_non_hidden_institutions().filter(_id__isnull=False, is_deleted=False)
 
     # overrides ListAPIView
     def get_queryset(self):
