@@ -99,4 +99,4 @@ class TestAuthBasicAuthentication(OsfTestCase):
         self.app.set_cookie(settings.COOKIE_NAME, str(cookie))
         res = self.app.get(self.reachable_url)
         assert res.status_code == 302
-        assert '/login/' == res.location
+        assert 'http://localhost:5000/logout/?next=http://localhost:4200/' == res.location

@@ -585,13 +585,13 @@ class TestAuthLoginAndRegisterLogic(OsfTestCase):
         assert data.get('next_url') == self.next_url
 
     def test_next_url_angular_login_with_auth(self):
-        data = login_and_register_handler(self.auth, next_url=settings.LOCAL_ANGULAR_URL)
+        data = login_and_register_handler(self.auth, next_url=settings.LOCAL_ANGULAR_DOMAIN)
         assert data.get('status_code') == http_status.HTTP_302_FOUND
-        assert data.get('next_url') == settings.LOCAL_ANGULAR_URL
+        assert data.get('next_url') == settings.LOCAL_ANGULAR_DOMAIN
 
     def test_next_url_angular_login_without_auth(self):
-        request.url = web_url_for('auth_login', next=settings.LOCAL_ANGULAR_URL, _absolute=True)
-        data = login_and_register_handler(self.no_auth, next_url=settings.LOCAL_ANGULAR_URL)
+        request.url = web_url_for('auth_login', next=settings.LOCAL_ANGULAR_DOMAIN, _absolute=True)
+        data = login_and_register_handler(self.no_auth, next_url=settings.LOCAL_ANGULAR_DOMAIN)
         assert data.get('status_code') == http_status.HTTP_302_FOUND
         assert data.get('next_url') == cas.get_login_url(request.url)
 
@@ -838,7 +838,6 @@ class TestAuthLogout(OsfTestCase):
         assert resp.status_code == http_status.HTTP_302_FOUND
         assert cas.get_logout_url(self.goodbye_url) == resp.headers['Location']
 
-    @mock.patch('framework.auth.views.settings.LOCAL_ANGULAR_URL', 'http://localhost:4200')
     def test_logout_with_angular_next_url_logged_in(self):
         angular_url = 'http://localhost:4200/'
         logout_url = web_url_for('auth_logout', _absolute=True, next=angular_url)
@@ -846,7 +845,6 @@ class TestAuthLogout(OsfTestCase):
         assert resp.status_code == http_status.HTTP_302_FOUND
         assert cas.get_logout_url(logout_url) == resp.headers['Location']
 
-    @mock.patch('framework.auth.views.settings.LOCAL_ANGULAR_URL', 'http://localhost:4200')
     def test_logout_with_angular_next_url_logged_out(self):
         angular_url = 'http://localhost:4200/'
         logout_url = web_url_for('auth_logout', _absolute=True, next=angular_url)

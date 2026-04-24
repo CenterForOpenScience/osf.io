@@ -8,8 +8,10 @@ from urllib.parse import unquote
 from django.apps import apps
 from flask import request, Response
 
+from framework import sentry
 from framework.auth import Auth
-from framework.auth.decorators import must_be_logged_in, is_contributor_or_public_resource
+from framework.auth.utils import get_default_osf_logout_url
+from framework.auth.decorators import is_contributor_or_public_resource
 from framework.auth.forms import SignInForm, ForgotPasswordForm
 from framework.exceptions import HTTPError
 from framework.flask import redirect  # VOL-aware redirect
@@ -28,7 +30,6 @@ from website.project.model import has_anonymous_link
 from osf.utils import permissions
 from osf.metadata.tools import pls_gather_metadata_file
 
-from api.waffle.utils import storage_i18n_flag_active
 
 logger = logging.getLogger(__name__)
 
@@ -132,21 +133,6 @@ def find_bookmark_collection(user):
     return Collection.objects.get(creator=user, deleted__isnull=True, is_bookmark_collection=True)
 
 
-@must_be_logged_in
-def my_projects(auth):
-    user = auth.user
-
-    region_list = get_storage_region_list(user)
-
-    bookmark_collection = find_bookmark_collection(user)
-    my_projects_id = bookmark_collection._id
-    return {'addons_enabled': user.get_addon_names(),
-            'dashboard_id': my_projects_id,
-            'storage_regions': region_list,
-            'storage_flag_is_active': storage_i18n_flag_active(),
-            }
-
-
 def validate_page_num(page, pages):
     if page < 0 or (pages and page >= pages):
         raise HTTPError(http_status.HTTP_400_BAD_REQUEST, data=dict(
@@ -165,11 +151,30 @@ def paginate(items, total, page, size):
 
 
 def index():
-    return redirect('/my-projects/')
+    """This route is handled by Angular now and web flow should not reach it at all.
+    There is alo no direct call of this view other than via `website/routes`. However,
+    we kept this view to use `web_url_for()` to build correct URL to go to Angular.
+    """
+    sentry.log_message('View "index" should not have been directly called or reached')
+    return redirect(get_default_osf_logout_url())
 
 
 def dashboard():
-    return redirect('/my-projects/')
+    """ This route is handled by Angular now and web flow should not reach it at all.
+    There is alo no direct call of this view other than via `website/routes`. However,
+    we kept this view to use `web_url_for()` to build correct URL to go to Angular.
+    """
+    sentry.log_message('View "dashboard" should not have been directly called or reached')
+    return redirect(get_default_osf_logout_url())
+
+
+def my_projects():
+    """ This route is handled by Angular now and web flow should not reach it at all.
+    There is alo no direct call of this view other than via `website/routes`. However,
+    we kept this view to use `web_url_for()` to build correct URL to go to Angular.
+    """
+    sentry.log_message('View "my_projects" should not have been directly called or reached')
+    return redirect(get_default_osf_logout_url())
 
 
 def reproducibility():
