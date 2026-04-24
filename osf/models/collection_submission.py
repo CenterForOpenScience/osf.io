@@ -470,12 +470,12 @@ class CollectionSubmission(TaxonomizableMixin, BaseModel):
                 is_published=True,
                 template__should_index_for_search=True
             ):
-                enqueue_task(share_update_cedar_metadata_record.s(self.guid, cedar_record))
+                enqueue_task(share_update_cedar_metadata_record.s(self.guid._id, cedar_record.pk))
 
             for cedar_record in self.guid.cedar_metadata_records.filter(
                 models.Q(is_published=False) | models.Q(template__should_index_for_search=True)
             ):
-                enqueue_task(share_delete_cedar_metadata_record.s(self.guid, cedar_record))
+                enqueue_task(share_delete_cedar_metadata_record.s(self.guid._id, cedar_record.pk))
 
             try:
                 update_collected_metadata(self.guid._id, collection_id=self.collection.id)

@@ -67,8 +67,14 @@ def _enqueue_update_share(osfresource):
 
 
 @celery_app.task()
-def share_update_cedar_metadata_record(osf_obj_guid, cedar_record):
-    referent = osf_obj_guid.referent
+def share_update_cedar_metadata_record(guid_id, cedar_record_pk):
+    from osf.models import CedarMetadataRecord, Guid
+
+    guid = Guid.load(guid_id)
+    referent = guid.referent
+    cedar_record = CedarMetadataRecord.objects.filter(pk=cedar_record_pk).first()
+    if not cedar_record:
+        return
 
     graph = Graph()
     full_metadata = {
@@ -93,8 +99,14 @@ def share_update_cedar_metadata_record(osf_obj_guid, cedar_record):
 
 
 @celery_app.task()
-def share_delete_cedar_metadata_record(osf_obj_guid, cedar_record):
-    referent = osf_obj_guid.referent
+def share_delete_cedar_metadata_record(guid_id, cedar_record_pk):
+    from osf.models import CedarMetadataRecord, Guid
+
+    guid = Guid.load(guid_id)
+    referent = guid.referent
+    cedar_record = CedarMetadataRecord.objects.filter(pk=cedar_record_pk).first()
+    if not cedar_record:
+        return
 
     requests.delete(
         shtrove_ingest_url(),
