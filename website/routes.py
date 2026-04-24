@@ -231,9 +231,9 @@ def sitemap_file(path):
 def goodbye():
     # Redirect to dashboard if logged in
     if _get_current_user():
-        return redirect(util.web_url_for('dashboard'))
+        return redirect(util.web_url_for('dashboard', _absolute=True, _local_angular=True))
     else:
-        return redirect(util.web_url_for('index'))
+        return redirect(util.web_url_for('index', _absolute=True, _local_angular=True))
 
 def make_url_map(app):
     """Set up all the routes for the OSF app.
