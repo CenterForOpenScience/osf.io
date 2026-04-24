@@ -125,7 +125,8 @@ class InstitutionChangeForm(PermissionRequiredMixin, UpdateView):
         if form.is_valid():
             return self.form_valid(form)
         else:
-            messages.error(request, form.errors)
+            for error in form.non_field_errors():
+                messages.error(request, error)
             return redirect('institutions:detail', institution_id=self.kwargs.get('institution_id'))
 
 
