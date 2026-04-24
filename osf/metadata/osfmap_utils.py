@@ -52,8 +52,12 @@ def osf_iri(guid_or_model):
     @param guid_or_model: a string, Guid instance, or another osf model instance
     @returns rdflib.URIRef or None
     """
-    guid = osfdb.base.coerce_guid(guid_or_model)
-    return OSFIO[guid._id]
+    _osfid: str = (
+        guid_or_model
+        if isinstance(guid_or_model, str)
+        else osfdb.base.coerce_guid(guid_or_model)._id
+    )
+    return OSFIO[_osfid]
 
 
 def osfid_from_iri(iri: str) -> str:

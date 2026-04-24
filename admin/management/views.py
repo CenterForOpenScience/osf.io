@@ -6,7 +6,7 @@ from django.contrib import messages
 from django.http import HttpResponse
 from django.utils import timezone
 from django.contrib.auth.mixins import PermissionRequiredMixin
-from django.core.management import call_command, CommandError
+from django.core.management import call_command
 
 from osf.management.commands.manage_switch_flags import manage_waffle
 from osf.management.commands.update_registration_schemas import update_registration_schemas
@@ -190,6 +190,7 @@ class MigrateOsfmetrics6to8(ManagementCommandPermissionView):
     def post(self, request):
         _command_kwargs = {
             'no_setup': True,
+            'no_color': True,
             'no_counts': request.POST.get('no_counts'),
             'clear_state': request.POST.get('clear_state'),
             'start': request.POST.get('start'),
@@ -199,5 +200,6 @@ class MigrateOsfmetrics6to8(ManagementCommandPermissionView):
         }
         _out_io = StringIO()
         call_command('migrate_osfmetrics_6to8', **_command_kwargs, stdout=_out_io)
-        messages.info(request, _out_io.getvalue())
+        for _line in _out_io.getvalue().split('\n'):
+            messages.info(request, _line)
         return redirect(reverse('management:commands'))

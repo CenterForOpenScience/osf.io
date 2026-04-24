@@ -11,7 +11,8 @@ from django.db import OperationalError as DjangoOperationalError
 from elasticsearch6.exceptions import ConnectionError as Elastic6ConnectionError
 from elasticsearch6 import helpers as es6_helpers
 from elasticsearch6_dsl.connections import connections as es6_connections
-from elasticsearch8.exceptions import ConnectionError as Elastic8ConnectionError
+from elasticsearch8.exceptions import TransportError as Elastic8TransportError
+from elasticsearch8.helpers import BulkIndexError as Elastic8BulkIndexError
 from elasticsearch_metrics.registry import djelme_registry
 from elasticsearch_metrics.imps import elastic8 as djel8me
 from psycopg2 import OperationalError as PostgresOperationalError
@@ -63,7 +64,7 @@ _TASK_KWARGS = dict(
     autoretry_for=(
         DjangoOperationalError,
         Elastic6ConnectionError,
-        Elastic8ConnectionError,
+        Elastic8TransportError,
         PostgresOperationalError,
     ),
     retry_backoff=True,  # exponential backoff, with jitter
@@ -87,7 +88,7 @@ def migrate_unchanged_recordtype(es6_recordtype_name: str, until_when: str):
         _es8_recordtype(**_convert_kwargs(_hit['_source']))
         for _hit in _es6_scan_range(_es6_recordtype, until_when=until_when)
     )
-    return _es8_bulk_save(_es8_recordtype, _each_new)
+    _es8_bulk_save(_es8_recordtype, _each_new)
 
 
 @celery_app.task(**_TASK_KWARGS)
@@ -102,7 +103,7 @@ def migrate_counted_usages(from_when: str, until_when: str):
             addl_filter={'exists': {'field': 'item_guid'}},
         )
     )
-    return _es8_bulk_save(es8_metrics.OsfCountedUsageRecord, _each_new)
+    _es8_bulk_save(es8_metrics.OsfCountedUsageRecord, _each_new)
 
 
 @celery_app.task(**_TASK_KWARGS)
@@ -115,7 +116,7 @@ def migrate_preprint_views(from_when: str, until_when: str):
             PreprintView, from_when=from_when, until_when=until_when
         )
     )
-    return _es8_bulk_save(es8_metrics.OsfCountedUsageRecord, _each_new)
+    _es8_bulk_save(es8_metrics.OsfCountedUsageRecord, _each_new)
 
 
 @celery_app.task(**_TASK_KWARGS)
@@ -128,7 +129,7 @@ def migrate_preprint_downloads(from_when: str, until_when: str):
             PreprintDownload, from_when=from_when, until_when=until_when
         )
     )
-    return _es8_bulk_save(es8_metrics.OsfCountedUsageRecord, _each_new)
+    _es8_bulk_save(es8_metrics.OsfCountedUsageRecord, _each_new)
 
 
 @celery_app.task(**_TASK_KWARGS)
@@ -156,7 +157,7 @@ def migrate_usage_reports(osfid: str, until_when: str):
                 )
             )
 
-    return _es8_bulk_save(es8_metrics.PublicItemUsageReportEs8, _each_new())
+    _es8_bulk_save(es8_metrics.PublicItemUsageReportEs8, _each_new())
 
 
 ###
@@ -168,11 +169,11 @@ def _es6_connection():
 
 
 def _es8_bulk_save(es8_recordtype, each_new_record):
-    _success_count, _fail_count = es8_recordtype.bulk(
-        each_new_record,
-        stats_only=True,
-    )
-    return _success_count
+    try:
+        es8_recordtype.bulk(each_new_record, stats_only=True)
+    except Elastic8BulkIndexError as _bulk_error:
+        # so actual errors show in celery task result
+        raise Exception(_bulk_error.errors) from _bulk_error
 
 
 def _date_range(
