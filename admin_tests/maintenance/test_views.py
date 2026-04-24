@@ -8,7 +8,7 @@ from django.contrib.auth.models import Permission
 from django.core.exceptions import PermissionDenied
 
 import website.maintenance as maintenance
-from osf.models import MaintenanceState
+from osf.models import MaintenanceState, MaintenanceMode
 from osf_tests.factories import AuthUserFactory
 
 from admin_tests.utilities import setup_view
@@ -105,3 +105,59 @@ class TestDeleteMaintenance:
 
         res = plain_view.as_view()(req)
         assert res.status_code == 200
+
+
+@pytest.mark.urls('admin.base.urls')
+class TestMaintenanceMode:
+
+    @pytest.fixture()
+    def user(self):
+        user = AuthUserFactory()
+        view_permission = Permission.objects.get(codename='change_maintenancestate')
+        user.user_permissions.add(view_permission)
+        user.save()
+        return user
+
+    @pytest.fixture()
+    def plain_view(self):
+        return views.MaintenanceDisplay
+
+    @pytest.fixture()
+    def view(self, user, plain_view):
+        req = RequestFactory().get('/fake_path')
+        req.user = user
+        view = plain_view()
+        setup_view(view, req)
+        return view
+
+    def test_get_context_data_includes_maintenance_mode(self, view):
+        MaintenanceMode(maintenance_mode=True).save()
+        context = view.get_context_data()
+        assert context['maintenance_mode'] is True
+        MaintenanceMode(maintenance_mode=False).save()
+        context = view.get_context_data()
+        assert context['maintenance_mode'] is False
+
+    def test_post_toggles_maintenance_mode_on(self, user, plain_view):
+        MaintenanceMode(maintenance_mode=False).save()
+        req = RequestFactory().post('/fake_path', data={'maintenance_mode': 'False'})
+        req.user = user
+        view = plain_view()
+        setup_view(view, req)
+        response = view.post(req)
+        # It should redirect back to the display page
+        assert response.status_code == 302
+        # The database state should now be True
+        assert MaintenanceMode.is_under_maintenance() is True
+
+    def test_post_toggles_maintenance_mode_off(self, user, plain_view):
+        MaintenanceMode(maintenance_mode=True).save()
+        req = RequestFactory().post('/fake_path', data={'maintenance_mode': 'True'})
+        req.user = user
+        view = plain_view()
+        setup_view(view, req)
+        response = view.post(req)
+        # It should redirect back to the display page
+        assert response.status_code == 302
+        # The database state should now be False
+        assert MaintenanceMode.is_under_maintenance() is False
