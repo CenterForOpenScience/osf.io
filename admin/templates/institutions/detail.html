@@ -61,7 +61,7 @@
                 <a class="btn btn-primary" href={% url 'institutions:list_and_add_admin' institution.id %}>Manage Admins</a>
                 {% endif %}
                 <button
-                    {% if not cas_login_url %}disabled{% endif %}
+                    {% if not cas_login_url or institution.deactivated is not None %}disabled{% endif %}
                     class="btn btn-primary" onclick="openCopyPopup('{{ cas_login_url|escapejs }}')">
                     Copy SSO URL
                 </button>
