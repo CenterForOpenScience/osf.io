@@ -88,7 +88,7 @@ def api_v2_url(path_str,
     return x
 
 # Move to api utils?
-def web_url_for(view_name, _absolute=False, _internal=False, _guid=False, *args, **kwargs):
+def web_url_for(view_name, _absolute=False, _internal=False, _guid=False, _angular_route=False, *args, **kwargs):
     """Reverse URL lookup for web routes (those that use the OsfWebRenderer).
     Takes the same arguments as Flask's url_for, with the addition of
     `_absolute`, which will make an absolute URL with the correct HTTP scheme
@@ -102,6 +102,11 @@ def web_url_for(view_name, _absolute=False, _internal=False, _guid=False, *args,
         # We do NOT use the url_for's _external kwarg because app.config['SERVER_NAME'] alters
         # behavior in an unknown way (currently breaks tests). /sloria /jspies
         domain = website_settings.INTERNAL_DOMAIN if _internal else website_settings.DOMAIN
+        if website_settings.LOCAL_MODE and _angular_route:
+            # We use `web_url_for()` to build URLs that actually goes to the angular
+            # container. It is not a problem for servers since web and angular shares
+            # the same domain. However, we need to handle this differently locally.
+            domain = website_settings.LOCAL_ANGULAR_DOMAIN
         return urljoin(domain, url)
     return url
 
