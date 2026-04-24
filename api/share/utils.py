@@ -4,6 +4,7 @@ SHARE/Trove accepts metadata records as "indexcards" in turtle format: https://w
 """
 from http import HTTPStatus
 import logging
+from rdflib import Graph
 
 from django.apps import apps
 from celery.utils.time import get_exponential_backoff_interval
@@ -14,6 +15,7 @@ from framework.celery_tasks.handlers import enqueue_task
 from framework.encryption import ensure_bytes
 from framework.sentry import log_exception
 from osf.external.gravy_valet.exceptions import GVException
+from osf.metadata.rdfutils import OSF
 from osf.metadata.osf_gathering import (
     OsfmapPartition,
     pls_get_magic_metadata_basket,
@@ -62,6 +64,57 @@ def _enqueue_update_share(osfresource):
         logger.warning(f'update_share skipping resource that has no guids: {osfresource}')
         return
     enqueue_task(task__update_share.s(_osfguid_value))
+
+
+@celery_app.task()
+def share_update_cedar_metadata_record(guid_id, cedar_record_pk):
+    from osf.models import CedarMetadataRecord, Guid
+
+    guid = Guid.load(guid_id)
+    referent = guid.referent
+    cedar_record = CedarMetadataRecord.objects.filter(pk=cedar_record_pk).first()
+    if not cedar_record:
+        return
+
+    graph = Graph()
+    full_metadata = {
+        '@id': referent.get_semantic_iri(),
+        OSF.hasCedarRecord: cedar_record.metadata,
+    }
+    graph.parse(data=full_metadata, format='json-ld')
+
+    serialized_data = graph.serialize(format='turtle')
+    requests.post(
+        shtrove_ingest_url(),
+        params={
+            'record_identifier': f"CedarMetadataRecord:{cedar_record.guid._id}:{cedar_record.template.cedar_id}",
+            'is_supplementary': True,
+        },
+        headers={
+            'Content-Type': 'text/turtle; charset=utf-8',
+            **_shtrove_auth_headers(referent),
+        },
+        data=ensure_bytes(serialized_data),
+    )
+
+
+@celery_app.task()
+def share_delete_cedar_metadata_record(guid_id, cedar_record_pk):
+    from osf.models import CedarMetadataRecord, Guid
+
+    guid = Guid.load(guid_id)
+    referent = guid.referent
+    cedar_record = CedarMetadataRecord.objects.filter(pk=cedar_record_pk).first()
+    if not cedar_record:
+        return
+
+    requests.delete(
+        shtrove_ingest_url(),
+        params={
+            'record_identifier': f"CedarMetadataRecord:{cedar_record.guid._id}:{cedar_record.template.cedar_id}",
+        },
+        headers=_shtrove_auth_headers(referent),
+    )
 
 
 @celery_app.task(

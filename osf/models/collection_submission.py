@@ -4,11 +4,16 @@ from django.db import models
 from django.utils import timezone
 from django.utils.functional import cached_property
 from framework import sentry
+from framework.celery_tasks.handlers import enqueue_task
 from framework.exceptions import PermissionsError
 from website.settings import DOMAIN
 
 from .base import BaseModel
 from .mixins import TaxonomizableMixin
+from api.share.utils import (
+    share_update_cedar_metadata_record,
+    share_delete_cedar_metadata_record
+)
 from osf.utils.permissions import ADMIN
 from website.util import api_v2_url
 from website.search.exceptions import SearchUnavailableError
@@ -460,6 +465,17 @@ class CollectionSubmission(TaxonomizableMixin, BaseModel):
 
             # It will automatically determine if a referent is part of the collection
             update_share(self.guid.referent)
+
+            for cedar_record in self.guid.cedar_metadata_records.filter(
+                is_published=True,
+                template__should_index_for_search=True
+            ):
+                enqueue_task(share_update_cedar_metadata_record.s(self.guid._id, cedar_record.pk))
+
+            for cedar_record in self.guid.cedar_metadata_records.filter(
+                models.Q(is_published=False) | models.Q(template__should_index_for_search=True)
+            ):
+                enqueue_task(share_delete_cedar_metadata_record.s(self.guid._id, cedar_record.pk))
 
             try:
                 update_collected_metadata(self.guid._id, collection_id=self.collection.id)
