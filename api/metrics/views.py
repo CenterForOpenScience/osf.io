@@ -8,6 +8,7 @@ from django.utils import timezone
 
 from elasticsearch6.exceptions import NotFoundError, RequestError
 from elasticsearch6_dsl.connections import get_connection
+from elasticsearch_metrics.registry import djelme_registry
 
 from framework.auth.oauth_scopes import CoreScopes
 
@@ -225,24 +226,31 @@ class RawMetricsView(GenericAPIView):
         raise ValidationError('DELETE not supported. Use GET/POST/PUT')
 
     @require_switch(ENABLE_RAW_METRICS)
-    def get(self, request, *args, **kwargs):
-        connection = get_connection()
-        url_path = kwargs['url_path']
-        return JsonResponse(connection.transport.perform_request('GET', f'/{url_path}'))
+    def get(self, request, *args, djelme_backend_name, url_path, **kwargs):
+        connection = self._get_es_connection(djelme_backend_name)
+        _response = connection.transport.perform_request('GET', f'/{url_path}')
+        return JsonResponse(_response if isinstance(_response, dict) else _response.body)
 
     @require_switch(ENABLE_RAW_METRICS)
-    def post(self, request, *args, **kwargs):
-        connection = get_connection()
-        url_path = kwargs['url_path']
+    def post(self, request, *args, djelme_backend_name, url_path, **kwargs):
+        connection = self._get_es_connection(djelme_backend_name)
         body = json.loads(request.body)
-        return JsonResponse(connection.transport.perform_request('POST', f'/{url_path}', body=body))
+        _response = connection.transport.perform_request('POST', f'/{url_path}', body=body)
+        return JsonResponse(_response if isinstance(_response, dict) else _response.body)
 
     @require_switch(ENABLE_RAW_METRICS)
-    def put(self, request, *args, **kwargs):
-        connection = get_connection()
-        url_path = kwargs['url_path']
+    def put(self, request, *args, djelme_backend_name, url_path, **kwargs):
+        connection = self._get_es_connection(djelme_backend_name)
         body = json.loads(request.body)
-        return JsonResponse(connection.transport.perform_request('PUT', f'/{url_path}', body=body))
+        _response = connection.transport.perform_request('PUT', f'/{url_path}', body=body)
+        return JsonResponse(_response if isinstance(_response, dict) else _response.body)
+
+    def _get_es_connection(self, djelme_backend_name):
+        try:
+            _backend = djelme_registry.get_backend(djelme_backend_name)
+        except LookupError:
+            raise Http404
+        return _backend.elastic_client
 
 
 class RegistriesModerationMetricsView(GenericAPIView):
