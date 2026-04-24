@@ -1,4 +1,4 @@
-from django.urls import re_path
+from django.urls import re_path, path
 
 from admin.management import views
 
@@ -19,5 +19,6 @@ urlpatterns = [
     re_path(r'^empty_metadata_dataarchive_registration_bulk_resync', views.EmptyMetadataDataarchiveRegistrationBulkResync.as_view(),
             name='empty-metadata-dataarchive-registration-bulk-resync'),
     re_path(r'^sync_notification_templates', views.SyncNotificationTemplates.as_view(),
-            name='sync_notification_templates')
+            name='sync_notification_templates'),
+    path('migrate_osfmetrics_6to8', views.MigrateOsfmetrics6to8.as_view(), name='migrate_osfmetrics_6to8'),
 ]

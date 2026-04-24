@@ -165,6 +165,29 @@
                     </nav>
                 </form>
             </section>
+            <section>
+                <h4><u>migrate osf-metrics 6to8</u></h4>
+                <p>
+                    view progress of the osf-metrics migration from elastic6 to elastic8 (or start it)
+                </p>
+                <form method="post"
+                      action="{% url 'management:migrate_osfmetrics_6to8'%}"
+                      style="display: flex; flex-direction: column;">
+                    {% csrf_token %}
+                    <label><input type="checkbox" name="no_counts"> no counts</label>
+                    <label><input type="checkbox" name="clear_state"> reset migration start time (caution)</label>
+                    <label><input type="checkbox" name="start"> start tasks (caution)</label>
+                    <fieldset>
+                        default all if unselected:
+                        <label><input type="checkbox" name="unchanged"> unchanged events and reports</label>
+                        <label><input type="checkbox" name="usage_events"> usage events</label>
+                        <label><input type="checkbox" name="usage_reports"> usage reports</label>
+                    </fieldset>
+                    <nav>
+                        <input class="btn btn-success" type="submit" value="Run" />
+                    </nav>
+                </form>
+            </section>
         </div>
     </section>
 {% endblock %}
