@@ -155,7 +155,7 @@ class TestInstitutionChangeForm(AdminTestCase):
         }
         form = InstitutionForm(data=new_data)
         assert not form.is_valid()
-        assert 'sso_availability' in form.errors
+        assert {'__all__': ['SSO availability must be set to "Unavailable" when no delegation protocol is configured.']} == form.errors
 
 
 class TestInstitutionExport(AdminTestCase):
