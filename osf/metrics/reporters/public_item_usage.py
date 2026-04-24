@@ -186,7 +186,7 @@ class PublicItemUsageReporter(MonthlyReporter):
 
     def _base_usage_search(self, cumulative: bool = False):
         timestamp_filter = {
-             'lt': self.yearmonth.month_end(),
+            'lt': self.yearmonth.month_end(),
         }
         if not cumulative:
             timestamp_filter['gte'] = self.yearmonth.month_start()
