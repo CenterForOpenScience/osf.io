@@ -4,7 +4,6 @@ from osf.external.askismet.client import AkismetClient
 from ._base import MonthlyReporter
 from osf.metrics.es8_metrics import PrivateSpamMetricsReportEs8
 
-
 class PrivateSpamMetricsReporter(MonthlyReporter):
     report_name = 'Private Spam Metrics'
 

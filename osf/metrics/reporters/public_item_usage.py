@@ -65,16 +65,16 @@ class PublicItemUsageReporter(MonthlyReporter):
                 raise _SkipItem
             _obj = _guid.referent
             _reports = self._init_report(_obj)
-            _report = next(r for r in _reports if isinstance(r, PublicItemUsageReport))
-            self._fill_report_counts(_report, _obj)
-            if not any((
-                _report.view_count,
-                _report.view_session_count,
-                _report.download_count,
-                _report.download_session_count,
-            )):
-                raise _SkipItem
-            return _report
+            for _report in _reports:
+                self._fill_report_counts(_report, _obj)
+                if not any((
+                    _report.view_count,
+                    _report.view_session_count,
+                    _report.download_count,
+                    _report.download_session_count,
+                )):
+                    raise _SkipItem
+            return _reports
         except _SkipItem:
             return None
 
