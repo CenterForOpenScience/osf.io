@@ -40,7 +40,7 @@ class TestMaintenanceModeMiddlewareIntegration(ApiTestCase):
         self.node = ProjectFactory(creator=self.admin)
 
     @mock.patch(MAINTENANCE_MOCK_PATH, return_value=True)
-    def test_middleware_blocks_post_when_maintenance_mode_on(self, mock_maintenance):
+    def test_middleware_blocks_post_if_maintenance_mode_on(self, mock_maintenance):
         url = f'/v2/nodes/{self.node._id}/'
         response = self.app.post_json(url, {}, expect_errors=True)
         assert response.status_code == 503
@@ -48,22 +48,33 @@ class TestMaintenanceModeMiddlewareIntegration(ApiTestCase):
         assert response.json['meta']['status_page'] == 'https://status.cos.io'
 
     @mock.patch(MAINTENANCE_MOCK_PATH, return_value=True)
-    def test_middleware_blocks_patch_when_maintenance_mode_on(self, mock_maintenance):
+    def test_middleware_blocks_patch_if_maintenance_mode_on(self, mock_maintenance):
         url = f'/v2/nodes/{self.node._id}/'
-        response = self.app.patch_json(url, {}, expect_errors=True)
+        original_title = self.node.title
+        payload = {
+            'data': {
+                'id': self.node._id,
+                'type': 'nodes',
+                'attributes': {'title': 'Updated Title'}
+            }
+        }
+        response = self.app.patch_json(url, payload, expect_errors=True)
         assert response.status_code == 503
         assert response.json['meta']['maintenance_mode'] is True
+        self.node.reload()
+        assert self.node.title == original_title
 
     @mock.patch(MAINTENANCE_MOCK_PATH, return_value=True)
-    def test_middleware_blocks_delete_when_maintenance_mode_on(self, mock_maintenance):
+    def test_middleware_blocks_delete_if_maintenance_mode_on(self, mock_maintenance):
         url = f'/v2/nodes/{self.node._id}/'
         response = self.app.delete(url, expect_errors=True)
-
         assert response.status_code == 503
         assert response.json['meta']['maintenance_mode'] is True
+        self.node.reload()
+        assert self.node.is_deleted is False
 
     @mock.patch(MAINTENANCE_MOCK_PATH, return_value=False)
-    def test_go_to_post_view_when_maintenance_mode_off(self, mock_maintenance):
+    def test_go_to_post_view_if_maintenance_mode_off(self, mock_maintenance):
         url = '/v2/nodes/'
         payload = {
             'data': {
@@ -75,7 +86,7 @@ class TestMaintenanceModeMiddlewareIntegration(ApiTestCase):
         assert response.status_code == 201
 
     @mock.patch(MAINTENANCE_MOCK_PATH, return_value=False)
-    def test_go_to_post_view_if_maintenance_mode_off(self, mock_maintenance):
+    def test_go_to_patch_view_if_maintenance_mode_off(self, mock_maintenance):
         url = f'/v2/nodes/{self.node._id}/'
         payload = {
             'data': {
