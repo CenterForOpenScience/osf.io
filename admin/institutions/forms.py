@@ -22,6 +22,13 @@ class InstitutionForm(forms.ModelForm):
                 if self.cleaned_data['sso_availability'] != SSOAvailability.HIDDEN.value:
                     self.add_error(None, 'SSO availability must be set to "Hidden" when the institution is deactivated.')
 
+            else:
+                if self.cleaned_data['sso_availability'] not in [
+                    SSOAvailability.PUBLIC.value,
+                    SSOAvailability.HIDDEN.value
+                ]:
+                    self.add_error(None, 'SSO availability must be set to "Public" or "Hidden" when delegation protocol is configured.')
+
 
 class InstitutionalMetricsAdminRegisterForm(forms.Form):
     """ A form that finds an existing OSF User, and grants permissions to that
