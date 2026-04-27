@@ -337,6 +337,7 @@ DJELME_BACKENDS = {
                 if osf_settings.ELASTIC8_SECRET is not None
                 else None
             ),
+            'ssl_assert_hostname': osf_settings.ELASTIC8_ASSERT_HOSTNAME,
             # djelme-specific kwargs
             'djelme_default_index_name_prefix': osf_settings.SHARE_PROVIDER_PREPEND,
         },
