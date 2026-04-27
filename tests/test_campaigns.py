@@ -238,7 +238,7 @@ class TestCampaignsCASInstitutionLogin(OsfTestCase):
         super().setUp()
         self.url_login = web_url_for('auth_login', campaign='institution')
         self.url_register = web_url_for('auth_register', campaign='institution')
-        self.service_url = web_url_for('dashboard', _absolute=True)
+        self.service_url = web_url_for('my_projects', _absolute=True)
 
     # go to CAS institution login page if not logged in
     def test_institution_not_logged_in(self):

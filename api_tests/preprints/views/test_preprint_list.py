@@ -998,6 +998,17 @@ class TestReviewsPendingPreprintIsPublishedListMatchesDetail(PreprintListMatches
         res = app.get(detail_url, auth=user_write_contrib.auth, expect_errors=True)
         assert res.json['data']['id'] == preprint_unpublished._id
 
+    def test_unpublished_invisible_to_public(
+            self, app, preprint_unpublished, preprint_published,
+            list_url, detail_url):
+        res = app.get(list_url)
+        assert len(res.json['data']) == 1
+        assert preprint_unpublished._id not in [
+            d['id'] for d in res.json['data']]
+
+        res = app.get(detail_url, expect_errors=True)
+        assert res.status_code == 403
+
 
 class TestPreprintIsValidList(PreprintIsValidListMixin):
 

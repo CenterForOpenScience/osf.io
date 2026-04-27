@@ -138,6 +138,11 @@ class CollectionProviderSerializer(ProviderSerializer):
         'name',
     ])
 
+    default_license_id = ser.SerializerMethodField(read_only=True)
+
+    def get_default_license_id(self, obj):
+        return obj.default_license._id if obj.default_license else None
+
 class RegistrationProviderSerializer(ProviderSerializer):
     class Meta:
         type_ = 'registration-providers'

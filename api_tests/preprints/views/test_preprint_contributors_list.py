@@ -205,20 +205,20 @@ class TestPreprintContributorList(NodeCRUDTestCase):
 
         # test_deleted_preprint_contributors_logged_out
         res = app.get(url_published, expect_errors=True)
-        assert res.status_code == 404
+        assert res.status_code == 410
 
         # test_deleted_preprint_contributor_non_contrib
         res = app.get(url_published, auth=user_two.auth, expect_errors=True)
-        assert res.status_code == 404
+        assert res.status_code == 410
 
         # test_deleted_preprint_contributors_read_contrib_logged_out
         preprint_published.add_contributor(user_two, permissions.READ, save=True)
         res = app.get(url_published, auth=user_two.auth, expect_errors=True)
-        assert res.status_code == 404
+        assert res.status_code == 410
 
         # test_deleted_preprint_contributors_admin
         res = app.get(url_published, auth=user.auth, expect_errors=True)
-        assert res.status_code == 404
+        assert res.status_code == 410
 
     def test_return_preprint_contributors_abandoned_preprint(
             self, app, user, user_two, preprint_published, url_published):

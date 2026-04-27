@@ -574,7 +574,7 @@ var MyProjects = {
          */
         self.setFilterHistory = function(index) {
             // if not on the myprojects version of this page, don't change state (e.g., institutions)
-            if (window.location.href.indexOf('/myprojects') === -1 ) {
+            if (window.location.href.indexOf('/my-projects') === -1 ) {
                 return;
             }
             var filter;
@@ -585,7 +585,7 @@ var MyProjects = {
             }
             // Uses replaceState instead of pushState because back buttons will not reset the filter on back without forcing a page refresh
             // A bug in history causes titles not to change despite setting them here.
-            window.history.replaceState({setFilter: index}, 'OSF | ' + filter.title, '/myprojects/' + filter.name);
+            window.history.replaceState({setFilter: index}, 'OSF | ' + filter.title, '/my-projects/' + filter.name);
         };
 
         /**
@@ -593,7 +593,7 @@ var MyProjects = {
          */
         self.getFilterIndex = function() {
             // if not on the myprojects version of this page, don't change state (e.g., institutions)
-            if (window.location.href.indexOf('/myprojects') === -1 ) {
+            if (window.location.href.indexOf('/my-projects') === -1 ) {
                 return 0;
             }
             // Cast to string undefined => "undefined" to handle upper/lower case anchors

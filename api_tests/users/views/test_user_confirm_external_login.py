@@ -34,7 +34,7 @@ class TestConfirmExternalLogin:
                 'attributes': {
                     'uid': user_one._id,
                     'token': user_one.get_confirmation_token(user_one.username),
-                    'destination': 'dashboard',
+                    'destination': 'my_projects',
                 }
             }
         }

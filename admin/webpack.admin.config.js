@@ -43,5 +43,15 @@ var config = Object.assign({}, common, {
     plugins: plugins,
     devtool: 'source-map',
 });
-config.resolve.modules.push(websiteRoot, adminRoot);
+config.resolve = Object.assign({}, config.resolve, {
+    modules: config.resolve.modules.concat([websiteRoot, adminRoot]),
+    extensions: ['*', '.es6.js', '.js', '.min.js'],
+});
+
+config.module = Object.assign({}, config.module, {
+    rules: (config.module && config.module.rules || []).concat([
+        {test: /\.es6\.js$/, exclude: [/node_modules/, /bower_components/, /vendor/], loader: 'babel-loader'},
+    ]),
+});
+
 module.exports = config;

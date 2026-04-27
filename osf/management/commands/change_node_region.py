@@ -39,11 +39,14 @@ def _update_blocks(file_block_map, original_id, cloned_id):
         block.save()
 
 def _update_schema_meta(node):
-    logger.info('Updating legacy schema information...')
-    node.registration_responses = node.schema_responses.latest('-created').all_responses
-    node.registered_meta[node.registration_schema._id] = node.expand_registration_responses()
-    node.save()
-    logger.info('Updated legacy schema information.')
+    try:
+        logger.info('Updating legacy schema information...')
+        node.registration_responses = node.schema_responses.latest('-created').all_responses
+        node.registered_meta[node.registration_schema._id] = node.expand_registration_responses()
+        node.save()
+        logger.info('Updated legacy schema information.')
+    except Exception:
+        logger.error('There is no data in schema responses to update legacy schema information.')
 
 def _copy_and_clone_versions(original_file, cloned_file, src_bucket, dest_bucket, dest_bucket_name, dest_region):
     for v in original_file.versions.order_by('identifier').all():

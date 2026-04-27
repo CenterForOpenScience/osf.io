@@ -37,6 +37,8 @@ PREPRINT_RESTORED = 71
 DOI_CREATION_FAILED = 80
 DOI_UPDATE_FAILED = 81
 
+MANUAL_ARCHIVE_RESTART = 90
+
 def update_admin_log(user_id, object_id, object_repr, message, action_flag=UNKNOWN):
     AdminLogEntry.objects.log_action(
         user_id=user_id,

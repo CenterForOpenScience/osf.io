@@ -60,6 +60,7 @@ from api.nodes.permissions import (
     AdminOrPublic,
     ExcludeWithdrawals,
     NodeLinksShowIfVersion,
+    AdminOrWriteContributor,
 )
 from api.registrations.permissions import ContributorOrModerator, ContributorOrModeratorOrPublic
 from api.registrations.serializers import (
@@ -122,7 +123,7 @@ class RegistrationMixin(NodeMixin):
             raise NotFound
 
         if node.deleted:
-            raise Gone(detail='The requested registration is no longer available.')
+            raise Gone(detail='The requested registration is no longer available.', meta={'flagged_content': node.is_spammy})
 
         if check_object_permissions:
             self.check_object_permissions(self.request, node)
@@ -697,7 +698,7 @@ class RegistrationInstitutionsRelationship(NodeInstitutionsRelationship, Registr
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
-        AdminOrPublic,
+        AdminOrWriteContributor,
     )
 
 

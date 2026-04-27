@@ -14,6 +14,7 @@
     "font-awesome-webpack": "0.0.5-beta.2",
     "jquery-datetimepicker": "^2.5.21",
     "json-loader": "^0.5.1",
+    "keen-dataviz": "^1.0.2",
     "keen-js": "^3.0.0",
     "knockout": "3.5.1",
     "less": "^4.1.2",

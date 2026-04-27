@@ -126,6 +126,33 @@ class TestGenerateSitemap:
                                              provider=provider_other)
 
     @pytest.fixture(autouse=True)
+    def project_spammed(self, user_admin_project_public):
+        project = ProjectFactory(creator=user_admin_project_public, is_public=True)
+        project.confirm_spam(save=True, train_spam_services=False)
+        return project
+
+    @pytest.fixture(autouse=True)
+    def preprint_spammed(self, project_preprint_osf, user_admin_project_public, provider_osf):
+        preprint = PreprintFactory(
+            project=project_preprint_osf,
+            creator=user_admin_project_public,
+            provider=provider_osf
+        )
+        preprint.confirm_spam(save=True, train_spam_services=False)
+        return preprint
+
+    @pytest.fixture(autouse=True)
+    def registration_spammed(self, user_admin_project_public, project_registration_public):
+        registration = RegistrationFactory(
+            project=project_registration_public,
+            creator=user_admin_project_public,
+            is_public=True
+        )
+        # Flag the registration as spam
+        registration.confirm_spam(save=True, train_spam_services=False)
+        return registration
+
+    @pytest.fixture(autouse=True)
     def all_included_links(self, user_admin_project_public, user_admin_project_private, project_registration_public,
                              project_preprint_osf, project_preprint_other,
                              registration_active, provider_other, provider_osf,
@@ -199,3 +226,23 @@ class TestGenerateSitemap:
             urls = get_all_sitemap_urls()
 
         assert urljoin(settings.DOMAIN, project_deleted.url + 'overview') not in urls
+
+    def test_spammed_project_link_not_included(self, project_spammed, create_tmp_directory):
+        with mock.patch('website.settings.STATIC_FOLDER', create_tmp_directory):
+            urls = get_all_sitemap_urls()
+
+        assert urljoin(settings.DOMAIN, project_spammed.url + 'overview') not in urls
+
+    def test_spammed_preprint_link_not_included(self, preprint_spammed, provider_osf, create_tmp_directory):
+        with mock.patch('website.settings.STATIC_FOLDER', create_tmp_directory):
+            urls = get_all_sitemap_urls()
+
+        spammed_url = urljoin(settings.DOMAIN, f'/preprints/{provider_osf._id}/{preprint_spammed._id}')
+        assert spammed_url not in urls
+
+    def test_spammed_registration_link_not_included(self, registration_spammed, create_tmp_directory):
+        with mock.patch('website.settings.STATIC_FOLDER', create_tmp_directory):
+            urls = get_all_sitemap_urls()
+
+        # Verify the spammed registration's overview page does not make it into the XML
+        assert urljoin(settings.DOMAIN, registration_spammed.url + 'overview') not in urls

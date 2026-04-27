@@ -166,6 +166,19 @@
                 </form>
             </section>
             <section>
+                <h4><u>Remove existing orcid info from user social</u></h4>
+                <p>
+                    Use this management command to remove existing orcid info from user social.
+                </p>
+                <form method="post"
+                      action="{% url 'management:remove_orcid_from_user_social'%}">
+                    {% csrf_token %}
+                    <nav>
+                        <input class="btn btn-success" type="submit" value="Run" />
+                    </nav>
+                </form>
+            </section>
+            <section>
                 <h4><u>migrate osf-metrics 6to8</u></h4>
                 <p>
                     view progress of the osf-metrics migration from elastic6 to elastic8 (or start it)

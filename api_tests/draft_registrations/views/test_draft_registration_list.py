@@ -399,6 +399,19 @@ class TestDraftRegistrationCreateWithNode(AbstractDraftRegistrationTestCase):
         draft_registration = DraftRegistration.load(res.json['data']['id'])
         assert list(draft_registration.affiliated_institutions.all()) == list(user.get_affiliated_institutions())
 
+    def test_cannot_create_draft_when_provider_disallows_submissions(
+            self, app, user, provider, payload, url_draft_registrations):
+        provider.allow_submissions = False
+        provider.save()
+
+        res = app.post_json_api(
+            url_draft_registrations,
+            payload,
+            auth=user.auth,
+            expect_errors=True,
+        )
+        assert res.status_code == 409
+
 
 class TestDraftRegistrationCreateWithoutNode(AbstractDraftRegistrationTestCase):
     @pytest.fixture()
@@ -450,6 +463,19 @@ class TestDraftRegistrationCreateWithoutNode(AbstractDraftRegistrationTestCase):
 
         draft = DraftRegistration.load(data['id'])
         assert draft.provider == non_default_provider
+
+    def test_cannot_create_draft_when_provider_disallows_submissions(
+            self, app, user, url_draft_registrations, non_default_provider, payload_with_non_default_provider):
+        non_default_provider.allow_submissions = False
+        non_default_provider.save()
+
+        res = app.post_json_api(
+            url_draft_registrations,
+            payload_with_non_default_provider,
+            auth=user.auth,
+            expect_errors=True,
+        )
+        assert res.status_code == 409
 
     def test_write_contrib(self, app, user, project_public, payload, url_draft_registrations, user_write_contrib):
         """(no node supplied, so any logged in user can create)

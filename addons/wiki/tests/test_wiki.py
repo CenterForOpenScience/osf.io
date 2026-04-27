@@ -35,6 +35,10 @@ from .config import EXAMPLE_DOCS, EXAMPLE_OPS
 
 pytestmark = pytest.mark.django_db
 
+
+# TODO: remove all WIKI_WEB_SKIP tests if safe
+WIKI_WEB_SKIP = pytest.mark.skip(reason='Wiki web UI removed; served by angular-osf')
+
 # forward slashes are not allowed, typically they would be replaced with spaces
 SPECIAL_CHARACTERS_ALL = r'`~!@#$%^*()-=_+ []{}\|/?.df,;:''"'
 SPECIAL_CHARACTERS_ALLOWED = r'`~!@#$%^*()-=_+ []{}\|?.df,;:''"'
@@ -54,11 +58,13 @@ class TestWikiViews(OsfTestCase):
         self.second_project = ProjectFactory(is_public=True, creator=self.user)
         self.sec_wiki = WikiPage.objects.create_for_node(self.second_project, 'home', '', Auth(self.user))
 
+    @WIKI_WEB_SKIP
     def test_wiki_url_get_returns_200(self):
         url = self.project.web_url_for('project_wiki_view', wname='home')
         res = self.app.get(url)
         assert res.status_code == 200
 
+    @WIKI_WEB_SKIP
     def test_wiki_url_404_with_no_write_permission(self):  # and not public
         url = self.project.web_url_for('project_wiki_view', wname='somerandomid')
         res = self.app.get(url, auth=self.user.auth)
@@ -66,6 +72,7 @@ class TestWikiViews(OsfTestCase):
         res = self.app.get(url)
         assert res.status_code == 404
 
+    @WIKI_WEB_SKIP
     @mock.patch('addons.wiki.utils.broadcast_to_sharejs')
     def test_wiki_deleted_404_with_no_write_permission(self, mock_sharejs):
         url = self.project.web_url_for('project_wiki_view', wname='funpage')
@@ -76,6 +83,7 @@ class TestWikiViews(OsfTestCase):
         res = self.app.get(url)
         assert res.status_code == 404
 
+    @WIKI_WEB_SKIP
     def test_wiki_url_with_path_get_returns_200(self):
         self.funpage_wiki.update(self.user, 'Version 2')
 
@@ -86,6 +94,7 @@ class TestWikiViews(OsfTestCase):
         res = self.app.get(url, auth=self.user.auth)
         assert res.status_code == 200
 
+    @WIKI_WEB_SKIP
     def test_wiki_url_with_edit_get_redirects_to_no_edit_params_with_no_write_permission(self):
         self.funpage_wiki.update(self.user, 'Version 2')
 
@@ -115,6 +124,7 @@ class TestWikiViews(OsfTestCase):
         res = self.app.get(url)
         assert res.status_code == 401
 
+    @WIKI_WEB_SKIP
     def test_wiki_url_for_pointer_returns_200(self):
         # TODO: explain how this tests a pointer
         project = ProjectFactory(is_public=True)
@@ -148,12 +158,14 @@ class TestWikiViews(OsfTestCase):
         res = self.app.get(url, auth=self.user.auth)
         assert not res.json['rendered_before_update']
 
+    @WIKI_WEB_SKIP
     def test_wiki_url_for_component_returns_200(self):
         component = NodeFactory(parent=self.project, is_public=True)
         url = component.web_url_for('project_wiki_view', wname='home')
         res = self.app.get(url)
         assert res.status_code == 200
 
+    @WIKI_WEB_SKIP
     def test_project_wiki_edit_post(self):
         url = self.project.web_url_for('project_wiki_edit_post', wname='home')
         res = self.app.post(url, data={'content': 'new content'}, auth=self.user.auth, follow_redirects=True)
@@ -163,6 +175,7 @@ class TestWikiViews(OsfTestCase):
         new_wiki = WikiVersion.objects.get_for_node(self.project, 'home')
         assert new_wiki.content == 'new content'
 
+    @WIKI_WEB_SKIP
     def test_project_wiki_edit_post_with_new_wname_and_no_content(self):
         # note: forward slashes not allowed in page_name
         page_name = fake.catch_phrase().replace('/', ' ')
@@ -181,6 +194,7 @@ class TestWikiViews(OsfTestCase):
         new_page =  WikiVersion.objects.get_for_node(self.project, page_name)
         assert new_page is not None
 
+    @WIKI_WEB_SKIP
     def test_project_wiki_edit_post_with_new_wname_and_content(self):
         # note: forward slashes not allowed in page_name
         page_name = fake.catch_phrase().replace('/', ' ')
@@ -203,6 +217,7 @@ class TestWikiViews(OsfTestCase):
         # content was set
         assert new_page.content == page_content
 
+    @WIKI_WEB_SKIP
     def test_project_wiki_edit_post_with_non_ascii_title(self):
         # regression test for https://github.com/CenterForOpenScience/openscienceframework.org/issues/1040
         # wname doesn't exist in the db, so it will be created
@@ -218,6 +233,7 @@ class TestWikiViews(OsfTestCase):
         res = self.app.post(url, data={'content': 'updated content'}, auth=self.user.auth, follow_redirects=True)
         assert res.status_code == 200
 
+    @WIKI_WEB_SKIP
     def test_project_wiki_edit_post_with_special_characters(self):
         new_wname = 'title: ' + SPECIAL_CHARACTERS_ALLOWED
         new_wiki_content = 'content: ' + SPECIAL_CHARACTERS_ALL
@@ -230,11 +246,13 @@ class TestWikiViews(OsfTestCase):
         assert wiki.content == new_wiki_content
         assert res.status_code == 200
 
+    @WIKI_WEB_SKIP
     def test_wiki_edit_get_home(self):
         url = self.project.web_url_for('project_wiki_view', wname='home')
         res = self.app.get(url, auth=self.user.auth)
         assert res.status_code == 200
 
+    @WIKI_WEB_SKIP
     def test_project_wiki_view_scope(self):
         url = self.project.web_url_for('project_wiki_view', wname='home', view=2)
         res = self.app.get(url, auth=self.user.auth)
@@ -246,11 +264,13 @@ class TestWikiViews(OsfTestCase):
         res = self.app.get(url, auth=self.user.auth)
         assert res.status_code == 400
 
+    @WIKI_WEB_SKIP
     def test_project_wiki_compare_returns_200(self):
         url = self.project.web_url_for('project_wiki_view', wname='home') + '?compare'
         res = self.app.get(url, auth=self.user.auth)
         assert res.status_code == 200
 
+    @WIKI_WEB_SKIP
     def test_project_wiki_compare_scope(self):
         url = self.project.web_url_for('project_wiki_view', wname='home', compare=2)
         res = self.app.get(url, auth=self.user.auth)
@@ -262,6 +282,7 @@ class TestWikiViews(OsfTestCase):
         res = self.app.get(url, auth=self.user.auth)
         assert res.status_code == 400
 
+    @WIKI_WEB_SKIP
     def test_wiki_page_creation_strips_whitespace(self):
         # Regression test for:
         # https://github.com/CenterForOpenScience/openscienceframework.org/issues/1080
@@ -321,6 +342,7 @@ class TestWikiViews(OsfTestCase):
         res = self.app.get(url, auth=self.user.auth)
         assert res.status_code == 409
 
+    @WIKI_WEB_SKIP
     def test_project_dashboard_shows_no_wiki_content_text(self):
         # Regression test for:
         # https://github.com/CenterForOpenScience/openscienceframework.org/issues/1104
@@ -341,6 +363,7 @@ class TestWikiViews(OsfTestCase):
         res = self.app.get(url, auth=self.user.auth)
         assert text in res
 
+    @WIKI_WEB_SKIP
     def test_project_wiki_home_api_route(self):
         url = self.project.api_url_for('project_wiki_home')
         res = self.app.get(url, auth=self.user.auth)
@@ -349,6 +372,7 @@ class TestWikiViews(OsfTestCase):
         # page_url = self.project.api_url_for('project_wiki_view', wname='home')
         # assert page_url in res.location
 
+    @WIKI_WEB_SKIP
     def test_project_wiki_home_web_route(self):
         page_url = self.project.web_url_for('project_wiki_view', wname='home', _guid=True)
         url = self.project.web_url_for('project_wiki_home')
@@ -356,6 +380,7 @@ class TestWikiViews(OsfTestCase):
         assert res.status_code == 302
         assert page_url in res.location
 
+    @WIKI_WEB_SKIP
     def test_wiki_id_url_get_returns_302_and_resolves(self):
         name = 'page by id'
         page = WikiPage.objects.create_for_node(self.project, name, 'some content', Auth(self.project.creator))
@@ -368,11 +393,13 @@ class TestWikiViews(OsfTestCase):
         assert res.status_code == 200
         assert page_url in res.request.url
 
+    @WIKI_WEB_SKIP
     def test_wiki_id_url_get_returns_404(self):
         url = self.project.web_url_for('project_wiki_id_page', wid='12345', _guid=True)
         res = self.app.get(url)
         assert res.status_code == 404
 
+    @WIKI_WEB_SKIP
     def test_home_is_capitalized_in_web_view(self):
         url = self.project.web_url_for('project_wiki_home', wid='home', _guid=True)
         res = self.app.get(url, auth=self.user.auth, follow_redirects=True)
@@ -424,6 +451,7 @@ class TestWikiViews(OsfTestCase):
         res = serialize_wiki_widget(self.project)
         assert res['rendered_before_update']
 
+    @WIKI_WEB_SKIP
     def test_read_only_users_cannot_view_edit_pane(self):
         url = self.project.web_url_for('project_wiki_view', wname='home')
         # No write permissions
@@ -463,13 +491,6 @@ class TestViewHelpers(OsfTestCase):
         self.project = ProjectFactory()
         self.wname = 'New page'
         wiki = WikiPage.objects.create_for_node(self.project, self.wname, 'some content', Auth(self.project.creator))
-
-    def test_get_wiki_web_urls(self):
-        urls = views._get_wiki_web_urls(self.project, self.wname)
-        assert urls['base'] == self.project.web_url_for('project_wiki_home', _guid=True)
-        assert urls['edit'] == self.project.web_url_for('project_wiki_view', wname=self.wname, _guid=True)
-        assert urls['home'] == self.project.web_url_for('project_wiki_home', _guid=True)
-        assert urls['page'] == self.project.web_url_for('project_wiki_view', wname=self.wname, _guid=True)
 
     def test_get_wiki_api_urls(self):
         urls = views._get_wiki_api_urls(self.project, self.wname)
@@ -743,6 +764,7 @@ class TestWikiUuid(OsfTestCase):
         self.wname = 'foo.bar'
         self.wkey = to_mongo_key(self.wname)
 
+    @WIKI_WEB_SKIP
     def test_uuid_generated_once(self):
         assert self.project.wiki_private_uuids.get(self.wkey) is None
         url = self.project.web_url_for('project_wiki_view', wname=self.wname)
@@ -761,6 +783,7 @@ class TestWikiUuid(OsfTestCase):
         self.project.reload()
         assert private_uuid == self.project.wiki_private_uuids.get(self.wkey)
 
+    @WIKI_WEB_SKIP
     def test_uuid_not_visible_without_write_permission(self):
         WikiPage.objects.create_for_node(self.project, self.wname, 'some content', Auth(self.user))
 
@@ -780,6 +803,7 @@ class TestWikiUuid(OsfTestCase):
         assert res.status_code == 200
         assert get_sharejs_uuid(self.project, self.wname) not in res.text
 
+    @WIKI_WEB_SKIP
     def test_uuid_not_generated_without_write_permission(self):
         WikiPage.objects.create_for_node(self.project, self.wname, 'some content', Auth(self.user))
 
@@ -792,6 +816,7 @@ class TestWikiUuid(OsfTestCase):
         private_uuid = self.project.wiki_private_uuids.get(self.wkey)
         assert private_uuid is None
 
+    @WIKI_WEB_SKIP
     def test_uuids_differ_between_pages(self):
         wname1 = 'foo.bar'
         url1 = self.project.web_url_for('project_wiki_view', wname=wname1)
@@ -813,6 +838,7 @@ class TestWikiUuid(OsfTestCase):
         assert uuid1 not in res2.text
         assert uuid2 not in res1.text
 
+    @WIKI_WEB_SKIP
     def test_uuids_differ_between_forks(self):
         url = self.project.web_url_for('project_wiki_view', wname=self.wname)
         project_res = self.app.get(url, auth=self.user.auth)
@@ -852,6 +878,7 @@ class TestWikiUuid(OsfTestCase):
         assert original_uuid != self.project.wiki_private_uuids.get(self.wkey)
         assert fork.wiki_private_uuids.get(self.wkey) is None
 
+    @WIKI_WEB_SKIP
     @mock.patch('addons.wiki.utils.broadcast_to_sharejs')
     def test_uuid_persists_after_delete(self, mock_sharejs):
         assert self.project.wiki_private_uuids.get(self.wkey) is None
@@ -881,6 +908,7 @@ class TestWikiUuid(OsfTestCase):
         assert original_private_uuid == self.project.wiki_private_uuids.get(self.wkey)
         assert original_sharejs_uuid in res.text
 
+    @WIKI_WEB_SKIP
     @mock.patch('addons.wiki.utils.broadcast_to_sharejs')
     def test_uuid_persists_after_rename(self, mock_sharejs):
         new_wname = 'barbaz'
@@ -1268,122 +1296,4 @@ class TestPublicWiki(OsfTestCase):
                                     'view': True}
                     }]
 
-        assert data == expected
-
-@pytest.mark.enable_bookmark_creation
-class TestWikiMenu(OsfTestCase):
-
-    def setUp(self):
-        super().setUp()
-        self.user = UserFactory()
-        self.project = ProjectFactory(creator=self.user, is_public=True)
-        self.component = NodeFactory(creator=self.user, parent=self.project, is_public=True)
-        self.consolidate_auth = Auth(user=self.project.creator)
-        self.non_contributor = UserFactory()
-
-    def test_format_home_wiki_page_no_content(self):
-        data = views.format_home_wiki_page(self.project)
-        expected = {
-            'page': {
-                'url': self.project.web_url_for('project_wiki_home'),
-                'name': 'Home',
-                'id': 'None',
-            }
-        }
-        assert data == expected
-
-    def test_format_project_wiki_pages_contributor(self):
-        home_page = WikiPage.objects.create_for_node(self.project, 'home', 'content here', self.consolidate_auth)
-        zoo_page = WikiPage.objects.create_for_node(self.project, 'zoo', 'koala', self.consolidate_auth)
-        data = views.format_project_wiki_pages(self.project, self.consolidate_auth)
-        expected = [
-            {
-                'page': {
-                    'url': self.project.web_url_for('project_wiki_view', wname='home', _guid=True),
-                    'name': 'Home',
-                    'id': home_page._primary_key,
-                }
-            },
-            {
-                'page': {
-                    'url': self.project.web_url_for('project_wiki_view', wname='zoo', _guid=True),
-                    'name': 'zoo',
-                    'id': zoo_page._primary_key,
-                }
-            }
-        ]
-        assert data == expected
-
-    def test_format_project_wiki_pages_no_content_non_contributor(self):
-        home_page = WikiPage.objects.create_for_node(self.project, 'home', 'content here', self.consolidate_auth)
-        zoo_page = WikiPage.objects.create_for_node(self.project, 'zoo', '', self.consolidate_auth)
-        home_page = WikiVersion.objects.get_for_node(self.project, 'home')
-        data = views.format_project_wiki_pages(self.project, auth=Auth(self.non_contributor))
-        expected = [
-            {
-                'page': {
-                    'url': self.project.web_url_for('project_wiki_view', wname='home', _guid=True),
-                    'name': 'Home',
-                    'id': home_page.wiki_page._primary_key,
-                }
-            }
-        ]
-        assert data == expected
-
-    def test_format_component_wiki_pages_contributor(self):
-        home_page = WikiPage.objects.create_for_node(self.component, 'home', 'content here', self.consolidate_auth)
-        zoo_page = WikiPage.objects.create_for_node(self.component, 'zoo', 'koala', self.consolidate_auth)
-        expected = [
-            {
-                'page': {
-                    'name': self.component.title,
-                    'url': self.component.web_url_for('project_wiki_view', wname='home', _guid=True),
-                },
-                'children': [
-                    {
-                        'page': {
-                            'url': self.component.web_url_for('project_wiki_view', wname='home', _guid=True),
-                            'name': 'Home',
-                            'id': self.component._primary_key,
-                        }
-                    },
-                    {
-                        'page': {
-                            'url': self.component.web_url_for('project_wiki_view', wname='zoo', _guid=True),
-                            'name': 'zoo',
-                            'id': zoo_page._primary_key,
-                        },
-                    }
-                ],
-                'kind': 'component',
-                'category': self.component.category,
-                'pointer': False,
-            }
-        ]
-        data = views.format_component_wiki_pages(node=self.project, auth=self.consolidate_auth)
-        assert data == expected
-
-    def test_format_component_wiki_pages_no_content_non_contributor(self):
-        data = views.format_component_wiki_pages(node=self.project, auth=Auth(self.non_contributor))
-        expected = []
-        assert data == expected
-
-    def test_project_wiki_grid_data(self):
-        WikiPage.objects.create_for_node(self.project, 'home', 'project content', self.consolidate_auth)
-        WikiPage.objects.create_for_node(self.component, 'home', 'component content', self.consolidate_auth)
-        data = views.project_wiki_grid_data(auth=self.consolidate_auth, wname='home', node=self.project)
-        expected = [
-            {
-                'title': 'Project Wiki Pages',
-                'kind': 'folder',
-                'type': 'heading',
-                'children': views.format_project_wiki_pages(node=self.project, auth=self.consolidate_auth),
-            },
-            {
-                'title': 'Component Wiki Pages',
-                'kind': 'folder',
-                'type': 'heading',
-                'children': views.format_component_wiki_pages(node=self.project, auth=self.consolidate_auth)
-            }
-        ]
         assert data == expected

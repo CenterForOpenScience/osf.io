@@ -107,20 +107,20 @@ class TestPreprintProvidersList(ApiTestCase):
 
         # Unauthenticated
         res = self.app.get(self.url, expect_errors=True)
-        assert res.status_code == 404
+        assert res.status_code == 410
 
         # Noncontrib
         res = self.app.get(self.url, auth=self.user_two.auth, expect_errors=True)
-        assert res.status_code == 404
+        assert res.status_code == 410
 
         # Write contributor
         self.preprint.add_contributor(self.user_two, WRITE, save=True)
         res = self.app.get(self.url, auth=self.user_two.auth, expect_errors=True)
-        assert res.status_code == 404
+        assert res.status_code == 410
 
         # Admin contrib
         res = self.app.get(self.url, auth=self.user.auth, expect_errors=True)
-        assert res.status_code == 404
+        assert res.status_code == 410
 
     def test_withdrawn_preprint_files(self):
         self.preprint.date_withdrawn = timezone.now()

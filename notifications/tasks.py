@@ -497,18 +497,42 @@ def send_no_addon_email(self, dry_run=False, **kwargs):
 
 @celery_app.task(bind=True, name='notifications.tasks.notifications_cleanup_task')
 def notifications_cleanup_task(self, dry_run=False, **kwargs):
-    """Remove old notifications and email tasks from the database."""
-
+    """Entry point for notifications and email tasks cleanup task."""
     cutoff_date = timezone.now() - settings.NOTIFICATIONS_CLEANUP_AGE
-    old_notifications = Notification.objects.filter(sent__lt=cutoff_date)
-    old_email_tasks = EmailTask.objects.filter(created_at__lt=cutoff_date)
-
     if dry_run:
-        notifications_count = old_notifications.count()
-        email_tasks_count = old_email_tasks.count()
+        notifications_count = Notification.objects.filter(sent__lt=cutoff_date).count()
+        email_tasks_count = EmailTask.objects.filter(created_at__lt=cutoff_date).count()
         logger.info(f'[Dry Run] Notifications Cleanup Task: {notifications_count} notifications and {email_tasks_count} email tasks would be deleted.')
         return
 
-    deleted_notifications_count, _ = old_notifications.delete()
-    deleted_email_tasks_count, _ = old_email_tasks.delete()
-    logger.info(f'Notifications Cleanup Task: Deleted {deleted_notifications_count} notifications and {deleted_email_tasks_count} email tasks older than {cutoff_date}.')
+    delete_batch.delay('osf', 'Notification', {'sent__lt': cutoff_date}, batch_size=settings.NOTIFICATIONS_CLEANUP_BATCH_SIZE)
+    delete_batch.delay('osf', 'EmailTask', {'created_at__lt': cutoff_date}, batch_size=settings.NOTIFICATIONS_CLEANUP_BATCH_SIZE)
+
+
+@celery_app.task(bind=True, name='notifications.tasks.delete_batch')
+def delete_batch(
+    self,
+    app_label,
+    model_name,
+    filters,
+    order_field='id',
+    batch_size=10000
+):
+    Model = apps.get_model(app_label, model_name)
+
+    ids = list(
+        Model.objects
+        .filter(**filters)
+        .order_by(order_field)
+        .values_list('id', flat=True)[:batch_size]
+    )
+
+    if not ids:
+        logger.info(f'{model_name} cleanup finished')
+        return
+
+    deleted, _ = Model.objects.filter(id__in=ids).delete()
+
+    logger.info(f'Deleted {deleted} rows from {model_name}')
+
+    delete_batch.delay(app_label, model_name, filters, order_field, batch_size)

@@ -7,6 +7,9 @@ from rest_framework import status as http_status
 import celery
 from celery.utils.log import get_task_logger
 
+from django.utils import timezone
+from datetime import timedelta
+
 from framework.celery_tasks import app as celery_app
 from framework.celery_tasks.utils import logged
 from framework.exceptions import HTTPError
@@ -29,9 +32,13 @@ from website.archiver import utils
 from website.archiver.utils import normalize_unicode_filenames
 from website.archiver import signals as archiver_signals
 
+from scripts.check_manual_restart_approval import delayed_manual_restart_approval
+
 from website.project import signals as project_signals
 from website import settings
 from website.app import init_addons
+
+from osf.models.admin_log_entry import AdminLogEntry, MANUAL_ARCHIVE_RESTART
 from osf.models import (
     ArchiveJob,
     AbstractNode,
@@ -51,6 +58,7 @@ def create_app_context():
 
 
 logger = get_task_logger(__name__)
+
 
 class ArchiverSizeExceeded(Exception):
 
@@ -81,12 +89,13 @@ class ArchiverTask(celery.Task):
 
     def on_failure(self, exc, task_id, args, kwargs, einfo):
         job = ArchiveJob.load(kwargs.get('job_pk'))
+        compact_traceback = utils.compact_traceback(einfo)
         if not job:
             archiver_state_exc = ArchiverStateError({
                 'exception': exc,
                 'args': args,
                 'kwargs': kwargs,
-                'einfo': einfo,
+                'einfo': compact_traceback,
             })
             sentry.log_exception(archiver_state_exc)
             raise archiver_state_exc
@@ -95,7 +104,7 @@ class ArchiverTask(celery.Task):
             # already captured
             return
 
-        src, dst, user = job.info()
+        src, dst, _ = job.info()
         errors = []
         if isinstance(exc, ArchiverSizeExceeded):
             dst.archive_status = ARCHIVER_SIZE_EXCEEDED
@@ -115,15 +124,23 @@ class ArchiverTask(celery.Task):
             }
         else:
             dst.archive_status = ARCHIVER_UNCAUGHT_ERROR
-            errors = [str(einfo)] if einfo else []
+            errors = [f'{exc.__class__.__name__}: {exc}']
+            if compact_traceback:
+                errors.append(f'Traceback tail:\n{compact_traceback}')
         dst.save()
 
+        # Always capture full exception; keep log_message payload compact.
+        sentry.log_exception(exc)
         sentry.log_message(
             f'An error occurred while archiving node: {src._id} and registration: {dst._id}',
             extra_data={
                 'source node guid': src._id,
                 'registration node guid': dst._id,
                 'task_id': task_id,
+                'task_name': self.name,
+                'exception_type': exc.__class__.__name__,
+                'exception_message': str(exc),
+                'traceback_tail': compact_traceback,
                 'errors': errors,
             },
         )
@@ -370,7 +387,21 @@ def archive_success(self, dst_pk, job_pk):
         job.save()
         dst.sanction.ask(dst.get_active_contributors_recursive(unique_users=True))
 
+    if was_manually_restarted(dst):
+        logger.info(f'Registration {dst._id} was manually restarted, scheduling approval check')
+        delayed_manual_restart_approval.delay(dst._id, delay_minutes=5)
+
     dst.update_search()
+
+
+def was_manually_restarted(registration):
+    recent_logs = AdminLogEntry.objects.filter(
+        object_id=registration.pk,
+        action_flag=MANUAL_ARCHIVE_RESTART,
+        action_time__gte=timezone.now() - timedelta(hours=48)
+    )
+
+    return recent_logs.exists()
 
 
 @celery_app.task(bind=True)

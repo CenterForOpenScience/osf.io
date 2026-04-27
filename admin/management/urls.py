@@ -20,5 +20,7 @@ urlpatterns = [
             name='empty-metadata-dataarchive-registration-bulk-resync'),
     re_path(r'^sync_notification_templates', views.SyncNotificationTemplates.as_view(),
             name='sync_notification_templates'),
+    re_path(r'^remove_orcid_from_user_social', views.RemoveOrcidFromUserSocial.as_view(),
+            name='remove_orcid_from_user_social'),
     path('migrate_osfmetrics_6to8', views.MigrateOsfmetrics6to8.as_view(), name='migrate_osfmetrics_6to8'),
 ]

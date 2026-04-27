@@ -179,6 +179,26 @@ class TestPreprintDetail:
         relationship_link = res.json['data']['relationships']['affiliated_institutions']['links']['self']['href']
         assert f'/v2/preprints/{preprint._id}/relationships/institutions/' in relationship_link
 
+    def test_spammed_preprint_detail_gone(self, app, preprint, user, url):
+        preprint.confirm_spam(save=True, train_spam_services=False)
+        url = f'/{API_BASE}preprints/{preprint._id}/'
+        res = app.get(url, expect_errors=True)
+        assert res.status_code == 410
+        error = res.json['errors'][0]
+        assert error['detail'] == 'The requested preprint is no longer available.'
+        assert 'meta' in error
+        assert error['meta']['flagged_content'] is True
+
+    def test_not_spammed_deleted_preprint_detail_gone(self, app, preprint, user, url):
+        preprint.deleted = timezone.now()
+        preprint.save()
+        res = app.get(url, expect_errors=True)
+        assert res.status_code == 410
+        error = res.json['errors'][0]
+        assert error['detail'] == 'The requested preprint is no longer available.'
+        assert 'meta' in error
+        assert not error['meta'].get('flagged_content', False)
+
 
 @pytest.mark.django_db
 class TestPreprintDelete:

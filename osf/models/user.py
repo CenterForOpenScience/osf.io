@@ -18,6 +18,7 @@ from django.conf import settings
 from django.contrib.auth.base_user import AbstractBaseUser, BaseUserManager
 from django.contrib.auth.hashers import check_password
 from django.contrib.auth.models import PermissionsMixin
+from django.core.exceptions import FieldDoesNotExist
 from django.dispatch import receiver
 from django.db import models
 from django.db.models import Count, Exists, OuterRef
@@ -52,7 +53,7 @@ from .notable_domain import NotableDomain
 from .contributor import Contributor, RecentlyAddedContributor
 from .institution import Institution
 from .institution_affiliation import InstitutionAffiliation
-from .mixins import AddonModelMixin
+from .mixins import AddonModelMixin, ShareIndexMixin
 from .spam import SpamMixin
 from .session import UserSessionMap
 from .tag import Tag
@@ -130,7 +131,7 @@ class Email(BaseModel):
         return self.address
 
 
-class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, PermissionsMixin, AddonModelMixin, SpamMixin):
+class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, PermissionsMixin, AddonModelMixin, SpamMixin, ShareIndexMixin):
     FIELD_ALIASES = {
         '_id': 'guids___id',
         'system_tags': 'tags',
@@ -152,6 +153,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         'schools',
         'social',
         'allow_indexing',
+        'external_identity',
     }
 
     # Overrides DirtyFieldsMixin, Foreign Keys checked by '<attribute_name>_id' rather than typical name.
@@ -162,7 +164,6 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
     #   search update for all nodes to which the user is a contributor.
 
     SOCIAL_FIELDS = {
-        'orcid': 'http://orcid.org/{}',
         'github': 'http://github.com/{}',
         'scholar': 'http://scholar.google.com/citations?user={}',
         'twitter': 'http://twitter.com/{}',
@@ -345,7 +346,6 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
     #     'twitter': <list of twitter usernames>,
     #     'github': <list of github usernames>,
     #     'linkedIn': <list of linkedin profiles>,
-    #     'orcid': <orcid for user>,
     #     'researcherID': <researcherID>,
     #     'impactStory': <impactStory identifier>,
     #     'scholar': <google scholar identifier>,
@@ -1460,25 +1460,53 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
 
         return True
 
-    def confirm_spam(self, domains=None, save=True, train_spam_services=False):
+    def confirm_spam(self, domains=None, save=True, train_spam_services=False, skip_resources_spam=False):
         self.deactivate_account()
         super().confirm_spam(domains=domains, save=save, train_spam_services=train_spam_services)
 
+        if skip_resources_spam:
+            return
+
         # Don't train on resources merely associated with spam user
         for node in self.nodes.filter(is_public=True, is_deleted=False):
-            node.confirm_spam(train_spam_services=train_spam_services)
+            node.confirm_spam(domains=domains, train_spam_services=train_spam_services)
         for preprint in self.preprints.filter(is_public=True, deleted__isnull=True):
-            preprint.confirm_spam(train_spam_services=train_spam_services)
+            preprint.confirm_spam(domains=domains, train_spam_services=train_spam_services)
 
     def confirm_ham(self, save=False, train_spam_services=False):
         self.reactivate_account()
         super().confirm_ham(save=save, train_spam_services=train_spam_services)
 
+        failed_ham_ids = []
+
         # Don't train on resources merely associated with spam user
         for node in self.nodes.filter():
-            node.confirm_ham(save=save, train_spam_services=train_spam_services)
+            try:
+                node.confirm_ham(save=save, train_spam_services=train_spam_services)
+            except Exception as exc:
+                sentry.log_exception(exc)
+                failed_ham_ids.append(node._id)
+                continue
+
+            if not node.is_ham or getattr(node, 'is_deleted', False):
+                failed_ham_ids.append(node._id)
+
         for preprint in self.preprints.filter():
-            preprint.confirm_ham(save=save, train_spam_services=train_spam_services)
+            try:
+                preprint.confirm_ham(save=save, train_spam_services=train_spam_services)
+            except Exception as exc:
+                sentry.log_exception(exc)
+                failed_ham_ids.append(preprint._id)
+                continue
+
+            if (
+                not preprint.is_ham
+                or getattr(preprint, 'is_deleted', False)
+                or getattr(preprint, 'deleted', None) is not None
+            ):
+                failed_ham_ids.append(preprint._id)
+
+        return failed_ham_ids
 
     @property
     def is_assumed_ham(self):
@@ -2020,14 +2048,12 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         """
         Complies with GDPR guidelines by disabling the account and removing identifying information.
         """
-
-        # Check if user has something intentionally public, like preprints or registrations
-        self._validate_no_public_entities()
-
-        # Check if user has any non-registration AbstractNodes or DraftRegistrations that they might still share with
-        # other contributors
         self._validate_and_remove_resource_for_gdpr_delete(
-            self.nodes.exclude(type='osf.registration'),  # Includes DraftNodes and other typed nodes
+            self.nodes.all(),
+            hard_delete=False
+        )
+        self._validate_and_remove_resource_for_gdpr_delete(
+            self.preprints.all(),
             hard_delete=False
         )
         self._validate_and_remove_resource_for_gdpr_delete(
@@ -2037,39 +2063,6 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
 
         # Finally delete the user's info.
         self._clear_identifying_information()
-
-    def _validate_no_public_entities(self):
-        """
-        Ensure that the user doesn't have any public facing resources like Registrations or Preprints
-        that would be left with other contributors after this deletion.
-
-        Allow GDPR deletion if the user is the sole contributor on a public Registration or Preprint.
-        """
-        from osf.models import Preprint, AbstractNode
-
-        registrations_with_others = AbstractNode.objects.annotate(
-            contrib_count=Count('_contributors', distinct=True),
-        ).filter(
-            _contributors=self,
-            deleted__isnull=True,
-            type='osf.registration',
-            contrib_count__gt=1
-        ).exists()
-
-        if registrations_with_others:
-            raise UserStateError('You cannot delete this user because they have one or more registrations.')
-
-        preprints_with_others = Preprint.objects.annotate(
-            contrib_count=Count('_contributors', distinct=True),
-        ).filter(
-            _contributors=self,
-            ever_public=True,
-            deleted__isnull=True,
-            contrib_count__gt=1
-        ).exists()
-
-        if preprints_with_others:
-            raise UserStateError('You cannot delete this user because they have one or more preprints.')
 
     def _validate_and_remove_resource_for_gdpr_delete(self, resources, hard_delete):
         """
@@ -2095,18 +2088,23 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         )
 
         shared_resources = resources.exclude(id__in=personal_resources.values_list('id'))
-        for node in shared_resources:
-            self._validate_admin_status_for_gdpr_delete(node)
-            self._validate_addons_for_gdpr_delete(node)
+        for resource in shared_resources:
+            self._validate_admin_status_for_gdpr_delete(resource)
+            self._validate_addons_for_gdpr_delete(resource)
 
         for resource in shared_resources.all():
             logger.info(f'Removing {self._id} as a contributor to {resource.__class__.__name__} (pk:{resource.pk})...')
             resource.remove_contributor(self, auth=Auth(self), log=False)
+            if getattr(resource, 'is_public', False) and hasattr(resource, 'update_search'):
+                resource.update_search()
 
-        # Delete all personal entities (excluding public registrations)
+        # Delete all personal non-public entities
         personal_to_delete = personal_resources
-        if hasattr(model, 'is_public') and hasattr(model, 'type'):
-            personal_to_delete = personal_to_delete.exclude(is_public=True, type='osf.registration')
+        try:
+            if model._meta.get_field('is_public'):
+                personal_to_delete = personal_to_delete.exclude(is_public=True)
+        except FieldDoesNotExist:
+            pass
 
         for entity in personal_to_delete.all():
             if hard_delete:
@@ -2114,7 +2112,11 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
                 entity.delete()
             else:
                 logger.info(f'Soft-deleting {entity.__class__.__name__} (pk: {entity.pk})...')
-                entity.remove_node(auth=Auth(self))
+                if hasattr(entity, 'remove_node'):
+                    entity.remove_node(auth=Auth(self))
+                else:
+                    entity.is_deleted = True
+                    entity.save()
 
     def _clear_identifying_information(self):
         '''

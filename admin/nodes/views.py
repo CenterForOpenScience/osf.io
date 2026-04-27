@@ -1,42 +1,48 @@
-import pytz
-from enum import Enum
 from datetime import datetime
-from framework import status
+from enum import Enum
 
-from django.utils import timezone
-from django.core.exceptions import PermissionDenied, ValidationError
-from django.urls import NoReverseMatch
-from django.db.models import F, Case, When, IntegerField
+import pytz
+from django.db import transaction
 from django.contrib import messages
 from django.contrib.auth.mixins import PermissionRequiredMixin
+from django.core.exceptions import PermissionDenied, ValidationError
+from django.db.models import F, Case, When, IntegerField
 from django.http import HttpResponse
+from django.shortcuts import redirect, reverse, get_object_or_404
+from django.urls import NoReverseMatch
+from django.urls import reverse_lazy
+from django.utils import timezone
 from django.views.generic import (
     View,
     FormView,
     ListView,
+    TemplateView
 )
-from django.shortcuts import redirect, reverse, get_object_or_404
-from django.urls import reverse_lazy
+from django.core.paginator import Paginator, InvalidPage
 
+from admin.base.forms import GuidForm
 from admin.base.utils import change_embargo_date
 from admin.base.views import GuidView
-from admin.base.forms import GuidForm
-from admin.notifications.views import delete_selected_notifications
 from admin.nodes.forms import AddSystemTagForm, RegistrationDateForm
-
-from api.share.utils import update_share
+from admin.notifications.views import delete_selected_notifications
+from addons.osfstorage.models import OsfStorageFolder
 from api.caching.tasks import update_storage_usage_cache
-
+from api.share.utils import update_share
+from framework import status
 from osf.exceptions import NodeStateError, RegistrationStuckError
+from osf.management.commands.change_node_region import _update_schema_meta
 from osf.models import (
+    Guid,
     OSFUser,
     NodeLog,
     AbstractNode,
     Registration,
     RegistrationProvider,
     RegistrationApproval,
-    SpamStatus
+    SpamStatus,
+    TrashedFile
 )
+from osf.models.sanctions import Embargo
 from osf.models.admin_log_entry import (
     update_admin_log,
     NODE_REMOVED,
@@ -48,10 +54,9 @@ from osf.models.admin_log_entry import (
     REINDEX_SHARE,
     REINDEX_ELASTIC,
 )
+from osf.models.files import File
 from osf.utils.permissions import ADMIN, API_CONTRIBUTOR_PERMISSIONS
-
 from scripts.approve_registrations import approve_past_pendings
-
 from website import settings, search
 from website.archiver.tasks import force_archive
 
@@ -145,7 +150,8 @@ class NodeView(NodeMixin, GuidView):
             'STORAGE_LIMITS': settings.StorageLimits,
             'node': node,
             # to edit contributors we should have guid as django prohibits _id usage as it starts with an underscore
-            'annotated_contributors': node.contributor_set.prefetch_related('user__guids').annotate(guid=F('user__guids___id')),
+            'annotated_contributors': node.contributor_set.prefetch_related('user__guids').annotate(
+                guid=F('user__guids___id')),
             'children': children,
             'permissions': API_CONTRIBUTOR_PERMISSIONS,
             'has_update_permission': self.request.user.has_perm('osf.change_node'),
@@ -205,7 +211,9 @@ class NodeRemoveContributorView(NodeMixin, View):
     def post(self, request, *args, **kwargs):
         node = self.get_object()
         user = OSFUser.objects.get(id=self.kwargs.get('user_id'))
-        if node.has_permission(user, ADMIN) and not node._get_admin_contributors_query(node._contributors.all(), require_active=False).exclude(user=user).exists():
+        if node.has_permission(user, ADMIN) and not node._get_admin_contributors_query(node._contributors.all(),
+                                                                                       require_active=False).exclude(
+                user=user).exists():
             messages.error(self.request, 'Must be at least one admin on this node.')
             return redirect(self.get_success_url())
 
@@ -469,6 +477,54 @@ class ApprovalBacklogListView(RegistrationListView):
             'queryset': queryset,
             'page': page,
         }
+
+
+class EmbargoReportView(PermissionRequiredMixin, TemplateView):
+    """Report view for inspecting current and overdue embargoed registrations.
+
+    Shows:
+    - pending embargoes that should have been activated
+    - active embargoes that are past their end date
+    - upcoming active embargoes
+    """
+    template_name = 'nodes/embargo_report.html'
+    permission_required = 'osf.view_registration'
+    raise_exception = True
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        pending_embargoes = Embargo.objects.pending_embargoes().select_related('initiated_by')
+        active_embargoes = Embargo.objects.active_embargoes().select_related('initiated_by')
+
+        pending_overdue_embargoes = [
+            embargo for embargo in pending_embargoes
+            if embargo.should_be_embargoed
+        ]
+
+        overdue_embargoes = [
+            embargo for embargo in active_embargoes
+            if embargo.should_be_completed
+        ]
+
+        upcoming_queryset = active_embargoes.filter(
+            end_date__gte=timezone.now(),
+        ).order_by('end_date')
+
+        page_number = self.request.GET.get('page') or 1
+        paginator = Paginator(upcoming_queryset, 10)
+        try:
+            upcoming_page = paginator.page(page_number)
+        except InvalidPage:
+            upcoming_page = paginator.page(1)
+
+        context.update({
+            'now': timezone.now(),
+            'pending_overdue_embargoes': pending_overdue_embargoes,
+            'overdue_embargoes': overdue_embargoes,
+            'upcoming_embargoes': upcoming_page.object_list,
+            'upcoming_page': upcoming_page,
+        })
+        return context
 
 
 class ConfirmApproveBacklogView(RegistrationListView):
@@ -813,6 +869,102 @@ class NodeMakePublic(NodeMixin, View):
         return redirect(self.get_success_url())
 
 
+class NodeRemoveFileView(NodeMixin, View):
+    """ Allows an authorized user to remove file from node.
+    """
+    permission_required = 'osf.change_node'
+
+    def post(self, request, *args, **kwargs):
+        def _remove_file_from_schema_response_blocks(registration, removed_file_id):
+            file_input_keys = registration.registration_schema.schema_blocks.filter(
+                block_type='file-input'
+            ).values_list('registration_response_key', flat=True)
+            for schema_response in registration.schema_responses.all():
+                for block in schema_response.response_blocks.filter(schema_key__in=file_input_keys):
+                    if not block.response:
+                        continue
+                    block.response = [entry for entry in block.response if entry.get('file_id') not in removed_file_id]
+                    block.save()
+
+        node = self.get_object()
+        guid_id = request.POST.get('remove-file-guid', '').strip()
+        guid = Guid.load(guid_id)
+
+        # delete file from registration and metadata and keep it for original project
+        if guid and (file := guid.referent) and (file.target == node) and not isinstance(file, TrashedFile):
+            with transaction.atomic():
+                file.delete()
+                _update_schema_meta(file.target)
+                _remove_file_from_schema_response_blocks(node, [file._id, file.copied_from._id])
+        return redirect(self.get_success_url())
+
+
+class NodeAddOsfStorageFileView(NodeMixin, View):
+    """ Allows an authorized user to add a file to osfstorage of an archived node.
+    """
+    permission_required = 'osf.change_node'
+
+    def post(self, request, *args, **kwargs):
+        registration = self.get_object()
+        guid_id = request.POST.get('file-guid', '').strip()
+        guid = Guid.load(guid_id)
+        if not guid:
+            messages.error(request, 'No file found with the provided guid.')
+            return redirect(self.get_success_url())
+
+        file = guid.referent
+        if not isinstance(file, File):
+            messages.error(request, 'The guid provided does not correspond to a file.')
+            return redirect(self.get_success_url())
+
+        parent_node = registration.registered_from
+        if not parent_node:
+            messages.error(request, 'The registration does not have the parent node.')
+            return redirect(self.get_success_url())
+
+        if not parent_node.files.filter(id=file.id).exists():
+            messages.error(request, 'The file with the provided guid is not part of the parent node.')
+            return redirect(self.get_success_url())
+
+        osfstorage = registration.get_addon('osfstorage')
+        # copy file to Archive of OSF Storage folder
+        archive_folder = OsfStorageFolder.objects.filter(
+            parent=osfstorage.get_root(),
+            name=osfstorage.archive_folder_name
+        ).first()
+        file.copy_under(archive_folder)
+        messages.success(request, 'The file was successfully added.')
+        return redirect(self.get_success_url())
+
+
+class NodeRemoveOsfStorageFileView(NodeMixin, View):
+    """ Allows an authorized user to remove a file from osfstorage of an archived node.
+    """
+    permission_required = 'osf.change_node'
+
+    def post(self, request, *args, **kwargs):
+        registration = self.get_object()
+        guid_id = request.POST.get('file-guid', '').strip()
+        guid = Guid.load(guid_id)
+        if not guid:
+            messages.error(request, 'No file found with the provided guid.')
+            return redirect(self.get_success_url())
+
+        file = guid.referent
+        if not isinstance(file, File):
+            messages.error(request, 'The guid provided does not correspond to a file.')
+            return redirect(self.get_success_url())
+
+        registration_file = registration.files.filter(id=file.id)
+        if not registration_file.exists():
+            messages.error(request, 'The file with the provided guid is not part of the registration.')
+            return redirect(self.get_success_url())
+
+        registration_file.delete()
+        messages.success(request, 'The file was successfully removed.')
+        return redirect(self.get_success_url())
+
+
 class RemoveStuckRegistrationsView(NodeMixin, View):
     """ Allows an authorized user to remove a registrations if it's stuck in the archiving process.
     """
@@ -872,6 +1024,7 @@ class ForceArchiveRegistrationsView(NodeMixin, View):
     def post(self, request, *args, **kwargs):
         # Prevents circular imports that cause admin app to hang at startup
         from osf.management.commands.force_archive import verify, DEFAULT_PERMISSIBLE_ADDONS
+        from osf.models.admin_log_entry import update_admin_log, MANUAL_ARCHIVE_RESTART
 
         registration = self.get_object()
         force_archive_params = request.POST
@@ -899,16 +1052,31 @@ class ForceArchiveRegistrationsView(NodeMixin, View):
                 messages.error(request, str(exc))
                 return redirect(self.get_success_url())
         else:
-            # For actual archiving, skip synchronous verification to avoid 502 timeouts
-            # Verification will be performed asynchronously in the task
-            force_archive_task = force_archive.delay(
-                str(registration._id),
-                permissible_addons=list(addons),
-                allow_unconfigured=allow_unconfigured,
-                skip_collisions=skip_collision,
-                delete_collisions=delete_collision,
-            )
-            messages.success(request, f'Registration archive process has started. Task id: {force_archive_task.id}.')
+            try:
+                update_admin_log(
+                    user_id=request.user.id,
+                    object_id=registration.pk,
+                    object_repr=str(registration),
+                    message=f'Manual archive restart initiated for registration {registration._id}',
+                    action_flag=MANUAL_ARCHIVE_RESTART
+                )
+                # For actual archiving, skip synchronous verification to avoid 502 timeouts
+                # Verification will be performed asynchronously in the task
+                force_archive_task = force_archive.delay(
+                    str(registration._id),
+                    permissible_addons=list(addons),
+                    allow_unconfigured=allow_unconfigured,
+                    skip_collisions=skip_collision,
+                    delete_collisions=delete_collision,
+                )
+                messages.success(
+                    request,
+                    f'Registration archive process has started. Task id: {force_archive_task.id}.'
+                )
+            except Exception as exc:
+                messages.error(request,
+                               f'This registration cannot be archived due to {exc.__class__.__name__}: {str(exc)}. '
+                               f'If the problem persists get a developer to fix it.')
 
         return redirect(self.get_success_url())
 

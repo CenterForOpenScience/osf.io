@@ -79,7 +79,7 @@ class TestAUser(OsfTestCase):
         res = self.app.get(self.user.url, follow_redirects=True)
         assert self.user.url in res.text
 
-    # `GET /login/` without parameters is redirected to `/dashboard/` page which has `@must_be_logged_in` decorator
+    # `GET /login/` without parameters is redirected to `/my-projects/` page which has `@must_be_logged_in` decorator
     # if user is not logged in, she/he is further redirected to CAS login page
     def test_is_redirected_to_cas_if_not_logged_in_at_login_page(self):
         res = self.app.resolve_redirect(self.app.get('/login/'))
@@ -87,26 +87,26 @@ class TestAUser(OsfTestCase):
         location = res.headers.get('Location')
         assert 'login?service=' in location
 
-    def test_is_redirected_to_dashboard_if_already_logged_in_at_login_page(self):
+    def test_is_redirected_to_myprojects_if_already_logged_in_at_login_page(self):
         res = self.app.get('/login/', auth=self.user.auth)
         assert res.status_code == 302
-        assert 'dashboard' in res.headers.get('Location')
+        assert 'my-projects' in res.headers.get('Location')
 
     def test_register_page(self):
         res = self.app.get('/register/')
         assert res.status_code == 200
 
-    def test_is_redirected_to_dashboard_if_already_logged_in_at_register_page(self):
+    def test_is_redirected_to_myprojects_if_already_logged_in_at_register_page(self):
         res = self.app.get('/register/', auth=self.user.auth)
         assert res.status_code == 302
-        assert 'dashboard' in res.headers.get('Location')
+        assert 'my-projects' in res.headers.get('Location')
 
     def test_sees_projects_in_her_dashboard(self):
         # the user already has a project
         project = ProjectFactory(creator=self.user)
         project.add_contributor(self.user)
         project.save()
-        res = self.app.get('/myprojects/', auth=self.user.auth)
+        res = self.app.get('/my-projects/', auth=self.user.auth)
         assert 'Projects' in res.text  # Projects heading
 
     def test_does_not_see_osffiles_in_user_addon_settings(self):
@@ -124,7 +124,7 @@ class TestAUser(OsfTestCase):
 
     def test_sees_correct_title_on_dashboard(self):
         # User goes to dashboard
-        res = self.app.get('/myprojects/', auth=self.auth, follow_redirects=True)
+        res = self.app.get('/my-projects/', auth=self.auth, follow_redirects=True)
         title = res.html.title.string
         assert 'OSF | My Projects' == title
 
@@ -179,32 +179,6 @@ class TestAUser(OsfTestCase):
         # Can see log event
         assert 'created' in res.text
 
-    def test_no_wiki_content_message(self):
-        project = ProjectFactory(creator=self.user)
-        # Goes to project's wiki, where there is no content
-        res = self.app.get(f'/{project._primary_key}/wiki/home/', auth=self.auth)
-        # Sees a message indicating no content
-        assert 'Add important information, links, or images here to describe your project.' in res.text
-        # Sees that edit panel is open by default when home wiki has no content
-        assert 'panelsUsed: ["view", "menu", "edit"]' in res.text
-
-    def test_wiki_content(self):
-        project = ProjectFactory(creator=self.user)
-        wiki_page_name = 'home'
-        wiki_content = 'Kittens'
-        wiki_page = WikiFactory(
-            user=self.user,
-            node=project,
-        )
-        WikiVersionFactory(
-            wiki_page=wiki_page,
-            content=wiki_content
-        )
-        res = self.app.get(f'/{project._primary_key}/wiki/{wiki_page_name}/', auth=self.auth)
-        assert 'Add important information, links, or images here to describe your project.' not in res.text
-        assert wiki_content in res.text
-        assert 'panelsUsed: ["view", "menu"]' in res.text
-
     def test_wiki_page_name_non_ascii(self):
         project = ProjectFactory(creator=self.user)
         non_ascii = to_mongo_key('WöRlÐé')
@@ -220,11 +194,6 @@ class TestAUser(OsfTestCase):
         res = self.app.get(project.url, follow_redirects=True)
         # Should not see wiki widget (since non-contributor and no content)
         assert 'Add important information, links, or images here to describe your project.' not in res.text
-
-    def test_wiki_does_not_exist(self):
-        project = ProjectFactory(creator=self.user)
-        res = self.app.get(f'/{project._primary_key}/wiki/not a real page yet/', auth=self.auth)
-        assert 'Add important information, links, or images here to describe your project.' in res.text
 
     def test_sees_own_profile(self):
         res = self.app.get('/profile/', auth=self.auth)

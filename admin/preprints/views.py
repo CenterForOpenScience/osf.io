@@ -50,7 +50,7 @@ from osf.models.admin_log_entry import (
 )
 from osf.utils.workflows import DefaultStates
 from osf.utils.permissions import API_CONTRIBUTOR_PERMISSIONS
-from website import search
+from website.search import search
 from website.files.utils import copy_files
 from website.preprints.tasks import on_preprint_updated
 
@@ -256,7 +256,7 @@ class PreprintReindexElastic(PreprintMixin, View):
 
     def post(self, request, *args, **kwargs):
         preprint = self.get_object()
-        search.search.update_preprint(preprint, bulk=False, async_update=False)
+        search.update_preprint(preprint, bulk=False, async_update=False)
         update_admin_log(
             user_id=self.request.user.id,
             object_id=preprint._id,
@@ -664,6 +664,22 @@ class PreprintFixEditing(PreprintMixin, View):
             dry_run=False,
             executing_through_command=False,
         )
+
+        return redirect(self.get_success_url())
+
+
+class PreprintFixCOI(PreprintMixin, View):
+    """ Allows an authorized user to manually fix conflict of interest field.
+    """
+    permission_required = 'osf.change_preprint'
+
+    def post(self, request, *args, **kwargs):
+        preprint = self.get_object()
+        if preprint.conflict_of_interest_statement and not preprint.has_coi:
+            preprint.update_has_coi(auth=request, has_coi=True, ignore_permission=True)
+            messages.success(request, 'The COI was successfully fixed.')
+        else:
+            messages.error(request, 'The COI is either already fixed or the preprint does not have conflict of interest set.')
 
         return redirect(self.get_success_url())
 

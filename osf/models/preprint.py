@@ -28,7 +28,7 @@ from .user import OSFUser
 from .provider import PreprintProvider
 from .preprintlog import PreprintLog
 from .contributor import PreprintContributor
-from .mixins import ReviewableMixin, Taggable, Loggable, GuardianMixin, AffiliatedInstitutionMixin
+from .mixins import ReviewableMixin, Taggable, Loggable, GuardianMixin, AffiliatedInstitutionMixin, ShareIndexMixin
 from .validators import validate_doi
 from osf.utils.fields import NonNaiveDateTimeField
 from osf.utils.workflows import DefaultStates, ReviewStates
@@ -176,7 +176,7 @@ def require_permission(permissions: list):
 
 
 class Preprint(DirtyFieldsMixin, VersionedGuidMixin, IdentifierMixin, ReviewableMixin, BaseModel, TitleMixin, DescriptionMixin,
-        Loggable, Taggable, ContributorMixin, GuardianMixin, SpamOverrideMixin, TaxonomizableMixin, AffiliatedInstitutionMixin):
+        Loggable, Taggable, ContributorMixin, GuardianMixin, SpamOverrideMixin, TaxonomizableMixin, AffiliatedInstitutionMixin, ShareIndexMixin):
 
     objects = PreprintManager()
     published_objects = PublishedPreprintManager()
@@ -1297,11 +1297,11 @@ class Preprint(DirtyFieldsMixin, VersionedGuidMixin, IdentifierMixin, Reviewable
         for _preprint in preprints:
             if _preprint.is_latest_version:
                 update_share(_preprint)
-        from website import search
+        from website.search import search, exceptions
         try:
-            serialize = functools.partial(search.search.update_preprint, index=index, bulk=True, async_update=False)
-            search.search.bulk_update_nodes(serialize, preprints, index=index)
-        except search.exceptions.SearchUnavailableError as e:
+            serialize = functools.partial(search.update_preprint, index=index, bulk=True, async_update=False)
+            search.bulk_update_nodes(serialize, preprints, index=index)
+        except exceptions.SearchUnavailableError as e:
             logger.exception(e)
             log_exception(e)
 
@@ -1309,10 +1309,10 @@ class Preprint(DirtyFieldsMixin, VersionedGuidMixin, IdentifierMixin, Reviewable
         # Only update share if the preprint is the latest version (i.e. has `guids`)
         if self.is_latest_version:
             update_share(self)
-        from website import search
+        from website.search import search, exceptions
         try:
-            search.search.update_preprint(self, bulk=False, async_update=True)
-        except search.exceptions.SearchUnavailableError as e:
+            search.update_preprint(self, bulk=False, async_update=True)
+        except exceptions.SearchUnavailableError as e:
             logger.exception(e)
             log_exception(e)
 

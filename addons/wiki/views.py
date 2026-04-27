@@ -13,11 +13,9 @@ from addons.wiki.utils import to_mongo_key
 from addons.wiki import settings
 from addons.wiki import utils as wiki_utils
 from addons.wiki.models import WikiPage, WikiVersion
-from osf import features
 from website.profile.utils import get_profile_image_url
 from website.project.views.node import _view_project
 from website.project.model import has_anonymous_link
-from website.ember_osf_web.decorators import ember_flag_is_active
 from website.project.decorators import (
     must_be_contributor_or_public,
     must_have_addon, must_not_be_registration,
@@ -358,7 +356,6 @@ def get_node_wiki_permissions(node, auth, **kwargs):
 
 @must_be_valid_project
 @must_have_addon('wiki', 'node')
-@ember_flag_is_active(features.EMBER_PROJECT_WIKI)
 def project_wiki_home(**kwargs):
     node = kwargs['node'] or kwargs['project']
     return redirect(node.web_url_for('project_wiki_view', wname='home', _guid=True))

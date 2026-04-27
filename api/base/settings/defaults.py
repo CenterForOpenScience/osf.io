@@ -217,6 +217,10 @@ CORS_ALLOW_HEADERS = list(default_headers) + [
 # Set dynamically on app init
 ORIGINS_WHITELIST = ()
 
+# CORS settings for flask app
+FLASK_CORS_ORIGIN_WHITELIST = CORS_ORIGIN_WHITELIST
+FLASK_CORS_ALLOW_CREDENTIALS = CORS_ALLOW_CREDENTIALS
+
 MIDDLEWARE = (
     'api.base.middleware.DjangoGlobalMiddleware',
     'api.base.middleware.CeleryTaskMiddleware',

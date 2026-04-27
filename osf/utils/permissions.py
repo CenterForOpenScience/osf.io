@@ -72,3 +72,7 @@ def check_private_key_for_anonymized_link(private_key):
     except PrivateLink.DoesNotExist:
         return False
     return link.anonymous
+
+
+def get_contributor_proposed_permissions(validated_data):
+    return validated_data.get('permission') or DEFAULT_CONTRIBUTOR_PERMISSIONS

@@ -373,3 +373,63 @@ class InstitutionalMetricsAdminRegister(PermissionRequiredMixin, FormView):
 
     def get_success_url(self):
         return reverse('institutions:register_metrics_admin', kwargs={'institution_id': self.kwargs['institution_id']})
+
+
+class InstitutionAffiliationBaseView(PermissionRequiredMixin, ListView):
+    permission_required = 'osf.change_institution'
+    template_name = 'institutions/edit_affiliations.html'
+    raise_exception = True
+
+    def get_queryset(self):
+        return Institution.objects.get(id=self.kwargs['institution_id'])
+
+    def get_context_data(self, **kwargs):
+        institution = Institution.objects.get(id=self.kwargs['institution_id'])
+        context = super().get_context_data(**kwargs)
+        context['institution'] = institution
+        context['affiliations'] = institution.get_institution_users()
+        return context
+
+
+class InstitutionListAndAddAffiliation(InstitutionAffiliationBaseView):
+
+    def get_permission_required(self):
+        if self.request.method == 'GET':
+            return ('osf.view_institution',)
+        return (self.permission_required,)
+
+    def post(self, request, *args, **kwargs):
+        institution = Institution.objects.get(id=self.kwargs['institution_id'])
+        data = dict(request.POST)
+        del data['csrfmiddlewaretoken']  # just to remove the key from the form dict
+
+        target_user = OSFUser.load(data['add-affiliation-form'][0])
+        if target_user is None:
+            messages.error(request, f'User for guid: {data["add-affiliation-form"][0]} could not be found')
+            return redirect('institutions:affiliations', institution_id=institution.id)
+
+        target_user.add_or_update_affiliated_institution(institution)
+
+        messages.success(request, f'The following user was successfully added: {target_user.fullname} ({target_user.username})')
+
+        return redirect('institutions:affiliations', institution_id=institution.id)
+
+
+class InstitutionRemoveAffiliation(InstitutionAffiliationBaseView):
+
+    def post(self, request, *args, **kwargs):
+        institution = Institution.objects.get(id=self.kwargs['institution_id'])
+        data = dict(request.POST)
+        del data['csrfmiddlewaretoken']  # just to remove the key from the form dict
+
+        to_be_removed = list(data.keys())
+        removed_affiliations = [user.replace('User-', '') for user in to_be_removed if 'User-' in user]
+        affiliated_users = OSFUser.objects.filter(id__in=removed_affiliations)
+        for user in affiliated_users:
+            user.remove_affiliated_institution(institution._id)
+
+        if affiliated_users:
+            users_names = ' ,'.join(affiliated_users.values_list('fullname', flat=True))
+            messages.success(request, f'The following users were successfully removed: {users_names}')
+
+        return redirect('institutions:affiliations', institution_id=institution.id)

@@ -32,7 +32,7 @@ class TestFindSpammyContent:
 
     @pytest.fixture
     def kombat_node(self, user):
-        return NodeFactory(title='Mortal Kombat Spam', creator=user)
+        return NodeFactory(title='Mortal Kombat Spam', creator=user, is_public=True)
 
     @pytest.fixture
     def node_two(self, user_two):
@@ -47,7 +47,7 @@ class TestFindSpammyContent:
 
     @pytest.fixture
     def kombat_registration(self, user):
-        return RegistrationFactory(title='Mortal Kombat Spam', creator=user)
+        return RegistrationFactory(title='Mortal Kombat Spam', creator=user, is_public=True)
 
     @pytest.fixture
     def registration_two(self, user_two):
@@ -55,7 +55,7 @@ class TestFindSpammyContent:
 
     @pytest.fixture
     def kombat_preprint(self, user):
-        return PreprintFactory(title='Mortal Kombat Spam', creator=user)
+        return PreprintFactory(title='Mortal Kombat Spam', creator=user, is_public=True)
 
     @pytest.fixture
     def preprint_two(self, user_two):

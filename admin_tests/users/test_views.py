@@ -218,18 +218,22 @@ class TestHamUserRestore(AdminTestCase):
     def setUp(self):
         self.user = UserFactory()
         self.request = RequestFactory().post('/fake_path')
+        patch_messages(self.request)
         self.view = views.UserConfirmHamView
         self.view = setup_log_view(self.view, self.request, guid=self.user._id)
 
-    def test_enable_user(self):
+    @mock.patch('api.users.tasks.confirm_user_ham.delay')
+    def test_enable_user(self, mock_confirm_user_ham_delay):
         self.user.is_disabled = True
         self.user.save()
         assert self.user.is_disabled
         self.view().post(self.request)
         self.user.reload()
 
-        assert not self.user.is_disabled
-        assert self.user.spam_status == SpamStatus.HAM
+        mock_confirm_user_ham_delay.assert_called_with(
+            self.user._id,
+            initiator_guid=mock.ANY,
+        )
 
 
 class TestDisableSpamUser(AdminTestCase):
@@ -672,9 +676,10 @@ class TestUserMerge(AdminTestCase):
     def setUp(self):
         super().setUp()
         self.request = RequestFactory().post('/fake_path')
+        patch_messages(self.request)
 
-    @mock.patch('osf.models.user.OSFUser.merge_user')
-    def test_merge_user(self, mock_merge_user):
+    @mock.patch('api.users.tasks.merge_users.delay')
+    def test_merge_user(self, mock_merge_users_delay):
         user = UserFactory()
         user_merged = UserFactory()
 
@@ -688,4 +693,4 @@ class TestUserMerge(AdminTestCase):
         assert valid_form.is_valid()
 
         view.form_valid(valid_form)
-        mock_merge_user.assert_called_with(user_merged)
+        mock_merge_users_delay.assert_called_with(user._id, user_merged._id)

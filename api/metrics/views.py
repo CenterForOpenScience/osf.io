@@ -44,6 +44,7 @@ from api.metrics.serializers import (
 from api.metrics.utils import (
     parse_datetimes,
     parse_date_range,
+    should_skip_counted_usage,
 )
 from api.nodes.permissions import MustBePublic
 
@@ -403,6 +404,12 @@ class CountedAuthUsageView(JSONAPIBaseView):
             },
         )
         serializer.is_valid(raise_exception=True)
+        if should_skip_counted_usage(
+            request.user,
+            item_guid=serializer.validated_data.get('item_guid'),
+            pageview_info=serializer.validated_data.get('pageview_info'),
+        ):
+            return HttpResponse(status=204)
         session_id, user_is_authenticated = self._get_session_id(
             request,
             client_session_id=serializer.validated_data.get('client_session_id'),

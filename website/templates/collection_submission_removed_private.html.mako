@@ -11,7 +11,7 @@
             % if collection_provider:
                 <a href="${domain + 'collections/' + collection_provider__id}">${collection_provider_name}</a>
             % else:
-                <a href="${domain + 'myprojects/'}">${collection_provider_name}</a>
+                <a href="${domain + 'my-projects/'}">${collection_provider_name}</a>
             % endif
             . If you wish to be associated with the collection, you will need to request addition to the collection again.
         % else:
@@ -20,7 +20,7 @@
             % if collection_provider:
                 <a href="${collections_link}">${collection_provider_name}</a>
             % else:
-                <a href="${domain + 'myprojects/'}">${collection_provider_name}</a>
+                <a href="${domain + 'my-projects/'}">${collection_provider_name}</a>
             % endif
             It will need to be re-submitted to be included in the collection again.
         % endif

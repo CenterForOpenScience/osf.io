@@ -122,10 +122,10 @@ class Collection(DirtyFieldsMixin, GuidMixin, BaseModel, GuardianMixin):
 
     @classmethod
     def bulk_update_search(cls, collection_submissions, op='update', index=None):
-        from website import search
+        from website.search import search, exceptions
         try:
-            search.search.bulk_update_collection_submissions(collection_submissions, op=op, index=index)
-        except search.exceptions.SearchUnavailableError as e:
+            search.bulk_update_collection_submissions(collection_submissions, op=op, index=index)
+        except exceptions.SearchUnavailableError as e:
             logger.exception(e)
 
     def save(self, *args, **kwargs):
