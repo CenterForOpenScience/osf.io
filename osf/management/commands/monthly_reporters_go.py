@@ -85,8 +85,8 @@ def monthly_reporter_do(reporter_key: str, yearmonth: str, report_kwargs: dict):
         framework.sentry.log_exception(exc)
         return
 
-    _report = _reporter.report(**report_kwargs)
-    if _report is not None:
+    _reports = _reporter.report(**report_kwargs)
+    for _report in _reports:
         _report.report_yearmonth = _reporter.yearmonth
         _report.save()
         _followup_task = _reporter.followup_task(_report)

@@ -111,6 +111,20 @@ class OsfCountedUsageRecord(djelme.CountedUsageRecord):
     class Meta:
         timeseries_index_timedepth = MONTHLY
 
+    class ActionLabel(enum.Enum):
+        SEARCH = 'search'  # counter:Search
+        VIEW = 'view'  # counter:Investigation
+        DOWNLOAD = 'download'  # counter:Request
+        WEB = 'web'  # counter:Regular (aka "pageview")
+        API = 'api'  # counter:TDM (aka "non-web api usage")
+
+    @classmethod
+    def record(cls, **kwargs):
+        # autofill `user_is_authenticated` before `user_id` discarded (couldn't in `clean`)
+        if 'user_is_authenticated' not in kwargs:
+            kwargs['user_is_authenticated'] = bool(kwargs.get('user_id'))
+        return super().record(**kwargs)
+
     @functools.cached_property
     def _osfid_referent(self):
         # for use by autofill methods, if needed
@@ -118,6 +132,7 @@ class OsfCountedUsageRecord(djelme.CountedUsageRecord):
 
     def clean(self):
         super().clean()
+        self._autofill_platform_iri()
         self._autofill_item_iri_and_osfid()
         self._autofill_item_public()
         self._autofill_item_type()
@@ -125,6 +140,10 @@ class OsfCountedUsageRecord(djelme.CountedUsageRecord):
         self._autofill_within_iris()
         self._autofill_pageview()
         self._autofill_database_iri()
+
+    def _autofill_platform_iri(self):
+        if self.platform_iri is None:
+            self.platform_iri = website_settings.DOMAIN
 
     def _autofill_item_iri_and_osfid(self):
         if self.item_osfid and not self.item_iri:
@@ -225,14 +244,6 @@ class OsfCountedUsageRecord(djelme.CountedUsageRecord):
             time_window,
             ','.join(sorted(self.action_labels)),
         )
-
-
-class ActionLabel(enum.Enum):
-    SEARCH = 'search'  # counter:Search
-    VIEW = 'view'  # counter:Investigation
-    DOWNLOAD = 'download'  # counter:Request
-    WEB = 'web'  # counter:Regular (aka "pageview")
-    API = 'api'  # counter:TDM (aka "non-web api usage")
 
 
 class RegistriesModerationMetricsEs8(djelme.EventRecord):
