@@ -456,6 +456,17 @@ class SanctionCallbackMixin:
         return {}
 
 
+class EmbargoManager(models.Manager):
+
+    def pending_embargoes(self):
+        """Embargoes that are still awaiting admin approval."""
+        return self.filter(state=self.model.UNAPPROVED)
+
+    def active_embargoes(self):
+        """Embargoes that have been approved and are currently in effect."""
+        return self.filter(state=self.model.APPROVED)
+
+
 class Embargo(SanctionCallbackMixin, EmailApprovableSanction):
     """Embargo object for registrations waiting to go public."""
     SANCTION_TYPE = SanctionTypes.EMBARGO
@@ -471,6 +482,8 @@ class Embargo(SanctionCallbackMixin, EmailApprovableSanction):
 
     initiated_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.CASCADE)
     for_existing_registration = models.BooleanField(default=False)
+
+    objects = EmbargoManager()
 
     @property
     def is_completed(self):
@@ -496,6 +509,17 @@ class Embargo(SanctionCallbackMixin, EmailApprovableSanction):
     @property
     def pending_registration(self):
         return not self.for_existing_registration and self.is_pending_approval
+
+    @property
+    def should_be_embargoed(self):
+        return (
+            (timezone.now() - self.initiation_date) >= osf_settings.EMBARGO_PENDING_TIME
+            and not self.is_deleted
+        )
+
+    @property
+    def should_be_completed(self):
+        return self.end_date and self.end_date < timezone.now() and not self.is_deleted
 
     def _get_registration(self):
         return self.registrations.first()
