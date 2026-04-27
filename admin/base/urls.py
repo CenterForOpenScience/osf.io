@@ -38,6 +38,7 @@ urlpatterns = [
             re_path(r'^draft_registrations/', include('admin.draft_registrations.urls', namespace='draft_registrations')),
             re_path(r'^files/', include('admin.files.urls', namespace='files')),
             re_path(r'^share_reindex/', include('admin.share_reindex.urls', namespace='share_reindex')),
+            re_path(r'^notifications/', include('admin.notifications.urls', namespace='notifications')),
         ]),
     ),
 ]

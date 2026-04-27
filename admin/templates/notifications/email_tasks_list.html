@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+{% load render_bundle from webpack_loader %}
+{% load static %}
+{% block title %}
+    <title>List of Email Tasks</title>
+{% endblock title %}
+{% block content %}
+    <h2>List of Email Tasks</h2>
+
+    {% include "util/pagination.html" with items=page status=status %}
+    <form method="get" style="margin-bottom: 15px;">
+        <input type="text" name="q" value="{{ q }}" placeholder="Search..." />
+        <button type="submit">Search</button>
+    </form>
+    <table class="table table-striped table-hover table-responsive">
+    <thead>
+        <tr>
+            <th>Task ID</th>
+            <th>User</th>
+            <th>Status</th>
+        </tr>
+    </thead>
+    <tbody>
+    {% for email_task in email_tasks %}
+    <tr>
+        <td>{{ email_task.task_id }}</td>
+        <td>{{ email_task.user }}</td>
+        <td>{{ email_task.status }}</td>
+    </tr>
+    {% endfor %}
+    </tbody>
+    </table>
+
+{% endblock content %}

@@ -1,0 +1,26 @@
+<h2>Notification Template Preview</h2>
+<h3>Rendered Template</h3>
+
+
+
+<div
+    id="preview-container"
+    style="
+        max-width: 70vw;
+        overflow: auto;
+        border: 1px solid #ccc;
+        padding: 15px;
+        background: #fff;
+    "
+>
+    {{ rendered_template|safe }}
+</div>
+<h3>Mock Data</h3>
+<form id="preview_mock" method="post">
+    <textarea
+        id="mock-data"
+        name="context"
+        rows="20"
+        style="width: 100%; max-width: 70vw; font-family: monospace; white-space: pre;"
+    >{{ context }}</textarea>
+</form>
