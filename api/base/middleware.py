@@ -141,8 +141,6 @@ class MaintenanceModeMiddleware:
         self.get_response = get_response
 
     def __call__(self, request):
-        if request.path.endswith('/v2'):
-            return self.get_response(request)
         if MaintenanceMode.is_under_maintenance():
             return JsonResponse(
                 {
