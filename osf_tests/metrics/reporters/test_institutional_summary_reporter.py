@@ -116,7 +116,7 @@ class TestInstiSummaryMonthlyReporter(TestCase):
 
         # Run the reporter for the current month (February 2018)
         reporter = InstitutionalSummaryMonthlyReporter(self._yearmonth)
-        reports_raw= list_monthly_reports(reporter)
+        reports_raw = list_monthly_reports(reporter)
         reports = [item for sublist in reports_raw for item in sublist if isinstance(item, InstitutionMonthlySummaryReport)]
         self.assertEqual(len(reports), 3)  # Reports for self._institution, institution2, institution3
 
