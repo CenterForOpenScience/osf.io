@@ -17,7 +17,7 @@ from framework.analytics import get_basic_counters
 from framework import sentry
 from .base import BaseModel, OptionalGuidMixin, ObjectIDMixin
 from .comment import CommentableMixin
-from .mixins import Taggable
+from .mixins import Taggable, ShareIndexMixin
 from .validators import validate_location
 from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
 from osf.utils.fields import NonNaiveDateTimeField
@@ -64,7 +64,7 @@ class UnableToResolveFileClass(Exception):
     pass
 
 
-class BaseFileNode(TypedModel, CommentableMixin, OptionalGuidMixin, Taggable, ObjectIDMixin, BaseModel):
+class BaseFileNode(TypedModel, CommentableMixin, OptionalGuidMixin, Taggable, ObjectIDMixin, ShareIndexMixin, BaseModel):
     """Base class for all provider-specific file models and the trashed file model.
     This class should generally not be used or created manually. Use the provider-specific
     subclasses instead.

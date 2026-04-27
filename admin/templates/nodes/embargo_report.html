@@ -1,0 +1,157 @@
+{% extends "base.html" %}
+{% load node_extras %}
+
+{% block content %}
+<div class="page-header">
+    <h1>Embargo Report</h1>
+</div>
+
+<h2>Upcoming Active Embargoes</h2>
+<table class="table table-striped table-bordered table-hover">
+    <thead>
+        <tr>
+            <th>Registration</th>
+            <th>Embargo ID</th>
+            <th>State</th>
+            <th>Embargo Start</th>
+            <th>Embargo End</th>
+            <th>Initiated By</th>
+        </tr>
+    </thead>
+    {% include "util/pagination.html" with items=upcoming_page status='' pagin=False order='' %}
+    <tbody>
+        {% for embargo in upcoming_embargoes %}
+            {% with registration=embargo.registrations.first %}
+                {% if registration %}
+                <tr>
+                    <td>
+                        <a href="{{ registration | reverse_node }}">
+                            {{ registration.title | truncatechars:30 }}
+                        </a>
+                    </td>
+                    <td>{{ embargo.id }}</td>
+                    <td>{{ embargo.state }}</td>
+                    <td>{{ embargo.initiation_date|date:"F j, Y P" }}</td>
+                    <td>{{ embargo.end_date|date:"F j, Y P" }}</td>
+                    <td>
+                        {% if embargo.initiated_by %}
+                            <a href="{{ embargo.initiated_by | reverse_user }}">
+                                {{ embargo.initiated_by.fullname }}
+                            </a>
+                        {% else %}
+                            &mdash;
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endif %}
+            {% endwith %}
+        {% empty %}
+        <tr>
+            <td colspan="6">No active embargoes found.</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<h2>Pending Embargoes Past Pending Window</h2>
+<p>These embargoes are still awaiting approval but have passed the automatic activation window.</p>
+<table class="table table-striped table-bordered table-hover">
+    <thead>
+        <tr>
+            <th>Registration</th>
+            <th>Embargo ID</th>
+            <th>State</th>
+            <th>Embargo Initiation</th>
+            <th>Embargo End</th>
+            <th>Initiated By</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for embargo in pending_overdue_embargoes %}
+            {% with registration=embargo.registrations.first %}
+                {% if registration %}
+                <tr>
+                    <td>
+                        <a href="{{ registration | reverse_node }}">
+                            {{ registration.title | truncatechars:30 }}
+                        </a>
+                    </td>
+                    <td>{{ embargo.id }}</td>
+                    <td>{{ embargo.state }}</td>
+                    <td>{{ embargo.initiation_date|date:"F j, Y P" }}</td>
+                    <td>{{ embargo.end_date|date:"F j, Y P" }}</td>
+                    <td>
+                        {% if embargo.initiated_by %}
+                            <a href="{{ embargo.initiated_by | reverse_user }}">
+                                {{ embargo.initiated_by.fullname }}
+                            </a>
+                        {% else %}
+                            &mdash;
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endif %}
+            {% endwith %}
+        {% empty %}
+        <tr>
+            <td colspan="6">No pending embargoes past the pending window.</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<h2>Active Embargoes Past Pending Window</h2>
+<p>These embargoes have an end date in the past but the embargo is still marked as active.</p>
+<table class="table table-striped table-bordered table-hover">
+    <thead>
+        <tr>
+            <th>Registration</th>
+            <th>Embargo ID</th>
+            <th>State</th>
+            <th>Embargo End</th>
+            <th>Is Registration Public?</th>
+            <th>Initiated By</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for embargo in overdue_embargoes %}
+            {% with registration=embargo.registrations.first %}
+                {% if registration %}
+                <tr>
+                    <td>
+                        <a href="{{ registration | reverse_node }}">
+                            {{ registration.title | truncatechars:30 }}
+                        </a>
+                    </td>
+                    <td>{{ embargo.id }}</td>
+                    <td>{{ embargo.state }}</td>
+                    <td>{{ embargo.end_date|date:"F j, Y P" }}</td>
+                    <td>
+                        {% if registration.is_public %}
+                            Yes
+                        {% else %}
+                            No
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if embargo.initiated_by %}
+                            <a href="{{ embargo.initiated_by | reverse_user }}">
+                                {{ embargo.initiated_by.fullname }}
+                            </a>
+                        {% else %}
+                            &mdash;
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endif %}
+            {% endwith %}
+        {% empty %}
+        <tr>
+            <td colspan="6">No overdue active embargoes found.</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+{% endblock %}
+

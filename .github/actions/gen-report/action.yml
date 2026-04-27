@@ -4,12 +4,12 @@ runs:
   using: "composite"
   steps:
   - name: Archive code coverage results
-    uses: actions/upload-artifact@v4
+    uses: actions/upload-artifact@v7
     with:
       name: ${{github.job}} HTML REPORT
       path: report.html
   - name: Generate Report
-    uses: dorny/test-reporter@v2
+    uses: dorny/test-reporter@v3
     if: success() || failure()    # run this step even if previous step failed
     with:
       name: ${{github.job}} REPORT   # Name of the check run which will be created
