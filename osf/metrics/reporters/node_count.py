@@ -7,12 +7,13 @@ from osf.metrics.reports import (
     NodeRunningTotals,
     RegistrationRunningTotals,
 )
-from ._base import DailyReporter
 from osf.metrics.es8_metrics import (
     NodeSummaryReportEs8,
     NodeRunningTotals as NodeRunningTotalsEs8,
     RegistrationRunningTotals as RegistrationRunningTotalsEs8
 )
+from osf.metrics.utils import cycle_coverage_date
+from ._base import DailyReporter
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
@@ -41,7 +42,7 @@ class NodeCountReporter(DailyReporter):
         exclude_spam = ~Q(spam_status__in=[SpamStatus.SPAM, SpamStatus.FLAGGED])
         reports = []
         report_es8 = NodeSummaryReportEs8(
-            cycle_coverage=f"{date:%Y.%m.%d}",
+            cycle_coverage=cycle_coverage_date(date),
             # Nodes - the number of projects and components
             nodes=NodeRunningTotalsEs8(
                 total=node_qs.count(),

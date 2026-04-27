@@ -1,10 +1,11 @@
 from osf.models import OSFUser
 
 from osf.metrics.reports import SpamSummaryReport
-from ._base import MonthlyReporter
 from osf.models import PreprintLog, NodeLog
 from osf.models.spam import SpamStatus
 from osf.metrics.es8_metrics import SpamSummaryReportEs8
+from osf.metrics.utils import cycle_coverage_yearmonth
+from ._base import MonthlyReporter
 
 class SpamCountReporter(MonthlyReporter):
 
@@ -14,7 +15,7 @@ class SpamCountReporter(MonthlyReporter):
         next_month = self.yearmonth.month_end()
         reports = []
         report_es8 = SpamSummaryReportEs8(
-            cycle_coverage=f"{self.yearmonth:%Y.%m}",
+            cycle_coverage=cycle_coverage_yearmonth(self.yearmonth),
             node_confirmed_spam=NodeLog.objects.filter(
                 action=NodeLog.CONFIRM_SPAM,
                 created__gt=target_month,

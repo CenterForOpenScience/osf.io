@@ -13,12 +13,13 @@ from addons.base.models import BaseOAuthUserSettings, BaseOAuthNodeSettings
 from osf.metrics.reports import StorageAddonUsage, RunningTotal, UsageByStorageAddon
 from osf.models import SpamStatus, Tag
 from website import settings
-from ._base import DailyReporter
 from osf.metrics.es8_metrics import (
     StorageAddonUsageEs8,
     UsageByStorageAddon as UsageByStorageAddonEs8,
     RunningTotal as RunningTotalEs8
 )
+from osf.metrics.utils import cycle_coverage_date
+from ._base import DailyReporter
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
@@ -201,7 +202,7 @@ class StorageAddonUsageReporter(DailyReporter):
             usage_by_addon.append(usage_by_storage_addon)
         reports = []
         report_es8 = StorageAddonUsageEs8(
-            cycle_coverage=f"{date:%Y.%m.%d}",
+            cycle_coverage=cycle_coverage_date(date),
             usage_by_addon=usage_by_addon,
         )
         reports.append(report_es8)

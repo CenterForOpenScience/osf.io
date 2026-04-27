@@ -1,7 +1,8 @@
 from osf.models import PageCounter
 from osf.metrics.reports import DownloadCountReport
-from ._base import DailyReporter
 from osf.metrics.es8_metrics import DownloadCountReportEs8
+from osf.metrics.utils import cycle_coverage_date
+from ._base import DailyReporter
 
 
 class DownloadCountReporter(DailyReporter):
@@ -9,7 +10,7 @@ class DownloadCountReporter(DailyReporter):
         download_count = int(PageCounter.get_all_downloads_on_date(date) or 0)
         reports = []
         report_es8 = DownloadCountReportEs8(
-            cycle_coverage=f"{date:%Y.%m.%d}",
+            cycle_coverage=cycle_coverage_date(date),
             daily_file_downloads=download_count,
         )
         reports.append(report_es8)

@@ -693,13 +693,15 @@ def osfstoragefile_viewed_update_metrics(self, auth, fileversion, file_node):
                 path=file_node.path,
             )
             OsfCountedUsageRecord.record(
-                count=1,
-                preprint_id=resource._id,
-                user_id=getattr(auth.user, '_id', None),
-                provider_id=resource.provider._id,
-                database_iri=resource.get_semantic_iri(),
-                version=fileversion.identifier,
-                path=file_node.path,
+                user_id=getattr(user, '_id', None),
+                item_osfid=resource._id,
+                action_labels=[
+                    OsfCountedUsageRecord.ActionLabel.VIEW.value,
+                    OsfCountedUsageRecord.ActionLabel.WEB.value,
+                ],
+                # HACK: we don't have the user request, so fabricate a one-off session id
+                # (this means no double-click filtering and inflated "unique" view counts)
+                client_session_id=str(uuid.uuid4()),
             )
         except es_exceptions.ConnectionError:
             log_exception()
@@ -729,13 +731,14 @@ def osfstoragefile_downloaded_update_metrics(self, auth, fileversion, file_node)
                 path=file_node.path,
             )
             OsfCountedUsageRecord.record(
-                count=1,
-                preprint_id=resource._id,
-                user_id=getattr(auth.user, '_id', None),
-                provider_id=resource.provider._id,
-                database_iri=resource.get_semantic_iri(),
-                version=fileversion.identifier,
-                path=file_node.path,
+                user_id=getattr(user, '_id', None),
+                item_osfid=resource._id,
+                action_labels=[
+                    OsfCountedUsageRecord.ActionLabel.DOWNLOAD.value,
+                ],
+                # HACK: we don't have the user request, so fabricate a one-off session id
+                # (this means no double-click filtering and inflated "unique" download counts)
+                client_session_id=str(uuid.uuid4()),
             )
         except es_exceptions.ConnectionError:
             log_exception()

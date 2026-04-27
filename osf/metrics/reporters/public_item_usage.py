@@ -21,7 +21,7 @@ from osf.metrics.preprint_metrics import (
     PreprintView,
 )
 from osf.metrics.reports import PublicItemUsageReport
-from osf.metrics.utils import YearMonth
+from osf.metrics.utils import YearMonth, cycle_coverage_yearmonth
 from osf import models as osfdb
 from website import settings as website_settings
 from ._base import MonthlyReporter
@@ -140,7 +140,7 @@ class PublicItemUsageReporter(MonthlyReporter):
             raise _SkipItem
         reports = []
         report_es8 = PublicItemUsageReportEs8(
-            cycle_coverage=f"{self.yearmonth.year}.{self.yearmonth.month}",
+            cycle_coverage=cycle_coverage_yearmonth(self.yearmonth),
             item_osfid=osf_obj._id,
             item_type=[get_item_type(osf_obj)],
             provider_id=[get_provider_id(osf_obj)],

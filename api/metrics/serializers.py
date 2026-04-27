@@ -73,11 +73,8 @@ class CountedAuthUsageSerializer(ser.Serializer):
             pageview_info = PageviewInfo(**pageview_info_data)
             pageview_info_es8 = PageviewInfoEs8(**pageview_info_data)
         OsfCountedUsageRecord.record(
-            platform_iri=website_settings.DOMAIN,
-            provider_id=validated_data.get('provider_id'),
             item_osfid=validated_data.get('item_guid'),
-            sessionhour_id=validated_data['session_id'],
-            user_is_authenticated=validated_data['user_is_authenticated'],
+            client_session_id=validated_data['session_id'],
             action_labels=validated_data.get('action_labels'),
             pageview_info=pageview_info_es8,
         )

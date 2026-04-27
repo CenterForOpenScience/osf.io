@@ -9,13 +9,14 @@ from osf.metrics.reports import (
     RegistrationRunningTotals,
 )
 from osf.models import Institution
-from ._base import DailyReporter
 from osf.metrics.es8_metrics import (
     InstitutionSummaryReportEs8,
     RunningTotal as RunningTotalEs8,
     NodeRunningTotals as NodeRunningTotalsEs8,
     RegistrationRunningTotals as RegistrationRunningTotalsEs8
 )
+from osf.metrics.utils import cycle_coverage_date
+from ._base import DailyReporter
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
@@ -45,7 +46,7 @@ class InstitutionSummaryReporter(DailyReporter):
                 type='osf.registration',
             )
             report_es8 = InstitutionSummaryReportEs8(
-                cycle_coverage=f"{date:%Y.%m.%d}",
+                cycle_coverage=cycle_coverage_date(date),
                 institution_id=institution._id,
                 institution_name=institution.name,
                 users=RunningTotalEs8(
