@@ -77,8 +77,9 @@ def share_update_cedar_metadata_record(guid_id, cedar_record_pk):
         return
 
     graph = Graph()
+    iri = referent.get_semantic_iri()
     full_metadata = {
-        '@id': referent.get_semantic_iri(),
+        '@id': iri,
         OSF.hasCedarRecord: cedar_record.metadata,
     }
     graph.parse(data=full_metadata, format='json-ld')
@@ -87,6 +88,7 @@ def share_update_cedar_metadata_record(guid_id, cedar_record_pk):
     requests.post(
         shtrove_ingest_url(),
         params={
+            'focus_iri': iri,
             'record_identifier': f"CedarMetadataRecord:{cedar_record.guid._id}:{cedar_record.template.cedar_id}",
             'is_supplementary': True,
         },
