@@ -394,7 +394,14 @@ class CountedAuthUsageView(JSONAPIBaseView):
     serializer_class = CountedAuthUsageSerializer
 
     def post(self, request, *args, **kwargs):
-        serializer = self.serializer_class(data=request.data)
+        serializer = self.serializer_class(
+            data=request.data,
+            context={
+                'user_id': request.user._id if request.user.is_authenticated else None,
+                'request_host': request.get_host(),
+                'request_useragent': request.META.get('HTTP_USER_AGENT', ''),
+            },
+        )
         serializer.is_valid(raise_exception=True)
         session_id, user_is_authenticated = self._get_session_id(
             request,
@@ -404,6 +411,8 @@ class CountedAuthUsageView(JSONAPIBaseView):
         return HttpResponse(status=201)
 
     def _get_session_id(self, request, client_session_id=None):
+        # NOTE: to remove after osfmetrics 6to8 migration -- logic moved to djelme
+
         # get a session id as described in the COUNTER code of practice:
         # https://cop5.projectcounter.org/en/5.0.2/07-processing/03-counting-unique-items.html
         # -- different from the "login session" tracked by `osf.models.Session` (which

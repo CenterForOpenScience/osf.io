@@ -287,7 +287,7 @@ class TestGuidFields:
             item_guid=preprint._id,
             action_labels=['view', 'web'],
         )
-        resp = app.post_json_api(COUNTED_USAGE_URL, payload)
+        resp = app.post_json_api(COUNTED_USAGE_URL, payload, headers={'User-Agent': 'blarg'})
         assert resp.status_code == 201
         assert_saved_with(
             mock_save,
@@ -306,7 +306,7 @@ class TestGuidFields:
             item_guid=preprint.primary_file.get_guid(create=True)._id,
             action_labels=['view', 'web'],
         )
-        resp = app.post_json_api(COUNTED_USAGE_URL, payload)
+        resp = app.post_json_api(COUNTED_USAGE_URL, payload, headers={'User-Agent': 'blarg'})
         assert resp.status_code == 201
         assert_saved_with(
             mock_save,
@@ -325,7 +325,7 @@ class TestGuidFields:
             item_guid=child_reg_file_guid,
             action_labels=['view', 'web'],
         )
-        resp = app.post_json_api(COUNTED_USAGE_URL, payload)
+        resp = app.post_json_api(COUNTED_USAGE_URL, payload, headers={'User-Agent': 'blarg'})
         assert resp.status_code == 201
         assert_saved_with(
             mock_save,
@@ -348,7 +348,7 @@ class TestGuidFields:
             item_guid=child_reg._id,
             action_labels=['view', 'web'],
         )
-        resp = app.post_json_api(COUNTED_USAGE_URL, payload)
+        resp = app.post_json_api(COUNTED_USAGE_URL, payload, headers={'User-Agent': 'blarg'})
         assert resp.status_code == 201
         assert_saved_with(
             mock_save,
@@ -370,7 +370,7 @@ class TestGuidFields:
             item_guid=parent_reg._id,
             action_labels=['view', 'web'],
         )
-        resp = app.post_json_api(COUNTED_USAGE_URL, payload)
+        resp = app.post_json_api(COUNTED_USAGE_URL, payload, headers={'User-Agent': 'blarg'})
         assert resp.status_code == 201
         assert_saved_with(
             mock_save,
