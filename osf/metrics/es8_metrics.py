@@ -265,7 +265,7 @@ class RegistriesModerationMetricsEs8(djelme.EventRecord):
 
 class RunningTotal(esdsl.InnerDoc):
     total: int
-    total_daily: int
+    total_daily: int | None
 
 
 class FileRunningTotals(esdsl.InnerDoc):
@@ -443,7 +443,7 @@ class InstitutionalUserReportEs8(djelme.CyclicRecord):
     # user info:
     user_id: str
     user_name: str
-    department_name: str
+    department_name: str | None
     month_last_login = YearmonthField()
     month_last_active = YearmonthField()
     account_creation_date = YearmonthField()
