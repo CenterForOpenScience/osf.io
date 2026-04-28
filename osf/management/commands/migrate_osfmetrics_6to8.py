@@ -506,7 +506,12 @@ def _cumulative_preprint_count(preprint_metric_cls, osfid: str, until_when: str)
     return _view_count
 
 
-def _convert_item_type(osf_model_name: str | None, has_surrounding_items: bool):
+def _convert_item_type(osf_model_name: str | list[str] | None, has_surrounding_items: bool):
+    if isinstance(osf_model_name, list):
+        return [
+            _convert_item_type(_model_name, has_surrounding_items)
+            for _model_name in osf_model_name
+        ]
     if osf_model_name:
         try:
             return osfmap_type_from_model(
