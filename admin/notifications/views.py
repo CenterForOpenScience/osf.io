@@ -7,6 +7,10 @@ from django.forms.models import model_to_dict
 from .forms import NotificationTypeForm
 from osf.email import _render_email_html
 import json
+from collections import defaultdict
+from mako.lexer import Lexer
+from mako.parsetree import ControlLine
+import re
 
 def delete_selected_notifications(selected_ids):
     NotificationSubscription.objects.filter(id__in=selected_ids).delete()
@@ -16,24 +20,89 @@ TEMPLATE_IDENTIFIER_BLACKLIST = {
     'True', 'False', 'len', 'str', 'int', 'float', 'list', 'dict', 'set', 'tuple',
 }
 
-def build_safe_context(template: str) -> dict:
-    from mako.lexer import Lexer
-    from mako.parsetree import DefTag
+def resolve_identifiers(identifier_structure):
+    structure = defaultdict(dict)
+    if hasattr(identifier_structure, 'nodes') and identifier_structure.nodes:
+        for node in identifier_structure.nodes:
+            if isinstance(node, ControlLine) and node.keyword == 'for':
+                match = re.match(r'for (\w+) in (.+):', node.text)
+                if match:
+                    iterator, source = match.groups()
+                    structure[node.text] = {
+                        'type': 'loop',
+                        'iterator': iterator,
+                        'source': source,
+                        'children': resolve_identifiers(node)
+                    }
+            elif hasattr(node, 'text'):
+                field_match = re.match(r"(\w+)\['(.+)'\]", node.text)
+                if field_match:
+                    source, field = field_match.groups()
+                    structure[node.text] = {
+                        'type': 'field',
+                        'source': source,
+                        'field': field
+                    }
+    return structure
 
+def generate_mock_json(structure, list_name=None):
+    item = {}
+    result = {}
+    for key, value in structure.items():
+        # simple field
+        if isinstance(value, dict) and value.get('type') == 'field':
+            field_name = value['field']
+            item[field_name] = f"mock_{field_name}"
+
+        # nested loop
+        elif isinstance(value, dict) and value.get('type') == 'loop':
+            nested_source = value['source']
+            nested_match = re.match(r"\w+\['(.+)'\]", nested_source)
+            if nested_match:
+                nested_field = nested_match.group(1)
+                item[nested_field] = [1, 2, 3, 4]
+
+        # top-level loop wrapper
+        elif key.startswith('for '):
+            match = re.match(r'for (\w+) in (.+):', key)
+            if match:
+                _, source = match.groups()
+                # Extract final field name
+                field_match = re.search(r"(\w+)\['(.+?)'\]$", source)
+                if field_match:
+                    field_name = field_match.group(1)
+                    list_name = field_match.group(2)
+                    return {field_name: generate_mock_json(value, list_name)}
+                else:
+                    list_name = source
+                return generate_mock_json(value, list_name)
+    if list_name:
+        result[list_name] = [item, item, item]
+
+    return result
+
+
+def build_safe_context(template: str) -> dict:
     templatenode = Lexer(text=template).parse()
-    identifiers_location = None
+    identifiers_location = []
     for node in templatenode.get_children():
-        if isinstance(node, DefTag):
-            identifiers_location = node.nodes
-            break
+        if hasattr(node, 'nodes'):
+            identifiers_location.extend(node.nodes)
+
     if not identifiers_location:
         identifiers_location = templatenode.get_children()
-    identifiers = [x.undeclared_identifiers() for x in identifiers_location if hasattr(x, 'undeclared_identifiers')]
+    identifier_structure = defaultdict()
+    for control_structure in identifiers_location:
+        if isinstance(control_structure, ControlLine):
+            identifier_structure[control_structure.text] = resolve_identifiers(control_structure)
 
+    identifiers = [x.undeclared_identifiers() for x in identifiers_location if hasattr(x, 'undeclared_identifiers')]
     flatten_identifiers = set()
     for indentifier_set in identifiers:
         flatten_identifiers.update(indentifier_set)
-    context = {identifier: identifier for identifier in flatten_identifiers if identifier not in TEMPLATE_IDENTIFIER_BLACKLIST}
+    mock_json = generate_mock_json(identifier_structure)
+    context = {identifier: f'mock_{identifier}' for identifier in flatten_identifiers if identifier not in TEMPLATE_IDENTIFIER_BLACKLIST}
+    context.update(mock_json)
     return context
 
 class NotificationsList(PermissionRequiredMixin, ListView):
@@ -165,6 +234,7 @@ class NotificationTypeList(PermissionRequiredMixin, ListView):
         context['notification_types'] = context['object_list']
         context['page'] = context['page_obj']
         return context
+
 class NotificationTypeDisplay(PermissionRequiredMixin, DetailView):
     model = NotificationType
     template_name = 'notifications/notification_type_detail.html'
@@ -208,7 +278,7 @@ class NotificationTypePreview(PermissionRequiredMixin, DetailView):
         else:
             if notification_type.is_digest_type:
                 inner_context = build_safe_context(notification_type.template)
-                inner_template = _render_email_html(notification_type, ctx=inner_context)
+                inner_template = _render_email_html(notification_type, ctx=inner_context, return_original_error=True)
                 safe_context = {'notifications': [inner_template]}
                 return_context = inner_context
             else:
@@ -216,11 +286,12 @@ class NotificationTypePreview(PermissionRequiredMixin, DetailView):
                 return_context = safe_context
 
         if notification_type.is_digest_type:
+            # Use user_digest template as a wrapper for digest notification preview.
             template_obj = NotificationType.objects.get(name='user_digest')
         else:
             template_obj = notification_type
         try:
-            kwargs['rendered_template'] = _render_email_html(template_obj, ctx=safe_context)
+            kwargs['rendered_template'] = _render_email_html(template_obj, ctx=safe_context, return_original_error=True)
         except Exception as e:
             kwargs['rendered_template'] = f"Error rendering template: {str(e)}"
 

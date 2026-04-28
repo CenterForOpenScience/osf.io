@@ -16,6 +16,10 @@
     {{ rendered_template|safe }}
 </div>
 <h3>Mock Data</h3>
+<div style="margin-bottom: 10px; color: #555;">
+    Edit the mock data and click "Render Preview" to see how changes affect the rendered template. <br>
+    Note: The mock data should be a JSON object matching the expected context for the template. Please ensure that the JSON is properly formatted if error occurs during rendering.
+</div>
 <form id="preview_mock" method="post">
     <textarea
         id="mock-data"
