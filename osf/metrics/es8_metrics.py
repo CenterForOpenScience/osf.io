@@ -279,11 +279,11 @@ class FileRunningTotals(esdsl.InnerDoc):
 
 class NodeRunningTotals(esdsl.InnerDoc):
     total: int
-    total_excluding_spam: int
+    total_excluding_spam: int | None
     public: int
     private: int
     total_daily: int
-    total_daily_excluding_spam: int
+    total_daily_excluding_spam: int | None
     public_daily: int
     private_daily: int
 
@@ -293,12 +293,12 @@ class RegistrationRunningTotals(esdsl.InnerDoc):
     public: int
     embargoed: int
     embargoed_v2: int
-    withdrawn: int
+    withdrawn: int | None
     total_daily: int
     public_daily: int
     embargoed_daily: int
     embargoed_v2_daily: int
-    withdrawn_daily: int
+    withdrawn_daily: int | None
 
 
 class UsageByStorageAddon(esdsl.InnerDoc):
