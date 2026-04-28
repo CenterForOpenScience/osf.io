@@ -247,6 +247,10 @@ class OsfCountedUsageRecord(djelme.CountedUsageRecord):
 
 
 class RegistriesModerationMetricsEs8(djelme.EventRecord):
+    UNIQUE_TOGETHER_FIELDS = (
+        'timestamp', 'registration_id', 'trigger', 'from_state', 'to_state', 'user_id'
+    )
+
     registration_id: str
     provider_id: str
     trigger: str
