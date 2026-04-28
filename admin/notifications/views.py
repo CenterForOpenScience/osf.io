@@ -269,12 +269,17 @@ class NotificationTypePreview(PermissionRequiredMixin, DetailView):
         notification_type = self.get_object()
         raw_context = self.request.GET.get('context')
         if raw_context:
-            if notification_type.is_digest_type:
-                safe_context = {'notifications': [json.loads(raw_context)]}
-            else:
-                safe_context = json.loads(raw_context)
+            try:
+                if notification_type.is_digest_type:
+                    safe_context = {'notifications': [json.loads(raw_context)]}
+                else:
+                    safe_context = json.loads(raw_context)
 
-            return_context = json.loads(raw_context)
+                return_context = json.loads(raw_context)
+            except json.JSONDecodeError as e:
+                kwargs['rendered_template'] = f"Error parsing JSON: {str(e)}"
+                kwargs['context'] = raw_context
+                return kwargs
         else:
             if notification_type.is_digest_type:
                 inner_context = build_safe_context(notification_type.template)
