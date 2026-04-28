@@ -37,7 +37,7 @@ class YearmonthField(esdsl.Date):
         except ValueError:
             raise ValueError(f'unsure how to deserialize "{data}" (of type {type(data)}) to YearMonth')
 
-    def serialize(self, data):
+    def serialize(self, data, skip_empty=True):
         if isinstance(data, str):
             return data
         elif isinstance(data, YearMonth):
