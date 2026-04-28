@@ -169,7 +169,7 @@ class StorageAddonUsageReporter(DailyReporter):
             )
             usage_by_addon_es8.append(usage_by_storage_addon_es_8)
             usage_by_storage_addon = UsageByStorageAddon(
-                addon_shortname=usage_by_storage_addon_es_8.short_name,
+                addon_shortname=usage_by_storage_addon_es_8.addon_shortname,
                 enabled_usersettings=RunningTotal(
                     total=usage_by_storage_addon_es_8.enabled_usersettings.total,
                     total_daily=usage_by_storage_addon_es_8.enabled_usersettings.total_daily,
