@@ -670,7 +670,7 @@ class Command(BaseCommand):
             _es6_count = (
                 _es6_pview_count + _es6_pdownload_count + _es6_usage_event_count
             )
-            _es8_count = es8_metrics.OsfCountedUsageRecord.search().count()
+            _es8_count = es8_metrics.OsfCountedUsageRecord.search().filter(_range_q).count()
             self._write_tabbed('es6', PreprintView, _es6_pview_count)
             self._write_tabbed('es6', PreprintDownload, _es6_pdownload_count)
             self._write_tabbed('es6', CountedUsageEs6, _es6_usage_event_count)
