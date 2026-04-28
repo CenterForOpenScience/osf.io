@@ -1,7 +1,10 @@
 import logging
+from framework import sentry
 from framework.celery_tasks import app as celery_app
 from django.core.management import call_command
+from django.utils import timezone
 from osf.models import Registration
+from scripts.approve_registrations import approve_past_pendings
 
 logger = logging.getLogger(__name__)
 
@@ -9,14 +12,22 @@ logger = logging.getLogger(__name__)
 @celery_app.task(name='scripts.check_manual_restart_approval')
 def check_manual_restart_approval(registration_id):
     try:
-        try:
-            registration = Registration.objects.get(_id=registration_id)
-        except Registration.DoesNotExist:
+        registration = Registration.load(registration_id)
+        if not registration:
             logger.error(f"Registration {registration_id} not found")
             return f"Registration {registration_id} not found"
 
         if registration.is_public or registration.is_registration_approved:
             return f"Registration {registration_id} already approved/public"
+
+        approval = registration.registration_approval
+        if not approval:
+            logger.info(f"Registration {registration_id} has no registration approval object")
+            return f"Registration {registration_id} has no registration approval object"
+
+        if approval.is_rejected:
+            logger.info(f"Registration {registration_id} approval was rejected")
+            return f"Registration {registration_id} approval was rejected"
 
         if registration.archiving:
             logger.info(f"Registration {registration_id} still archiving, retrying in 10 minutes")
@@ -26,20 +37,18 @@ def check_manual_restart_approval(registration_id):
             )
             return f"Registration {registration_id} still archiving, scheduled retry"
 
-        logger.info(f"Processing manual restart approval for registration {registration_id}")
+        if timezone.now() < approval.auto_approve_at:
+            logger.info(f"Registration {registration_id} not ready for auto-approval yet")
+            return f"Registration {registration_id} not ready for auto-approval yet"
 
-        call_command(
-            'process_manual_restart_approvals',
-            registration_id=registration_id,
-            dry_run=False,
-            hours_back=24,
-            verbosity=1
-        )
+        logger.info(f"Processing manual restart approval for registration {registration_id}")
+        approve_past_pendings([approval], dry_run=False)
 
         return f"Processed manual restart approval check for registration {registration_id}"
 
     except Exception as e:
         logger.error(f"Error processing manual restart approval for {registration_id}: {e}")
+        sentry.log_exception(e)
         raise
 
 

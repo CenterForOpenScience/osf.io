@@ -238,7 +238,7 @@ class Registration(AbstractNode):
 
     @property
     def archive_job(self):
-        return self.archive_jobs.first() if self.archive_jobs.count() else None
+        return self.archive_jobs.first()
 
     @property
     def sanction(self):

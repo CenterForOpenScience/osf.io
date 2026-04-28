@@ -445,21 +445,15 @@ def archive_success(self, dst_pk, job_pk):
         job.save()
         dst.sanction.ask(dst.get_active_contributors_recursive(unique_users=True))
 
-    if was_manually_restarted(dst):
-        logger.info(f'Registration {dst._id} was manually restarted, scheduling approval check')
-        delayed_manual_restart_approval.delay(dst._id, delay_minutes=5)
-
     dst.update_search()
 
 
 def was_manually_restarted(registration):
-    recent_logs = AdminLogEntry.objects.filter(
+    return AdminLogEntry.objects.filter(
         object_id=registration.pk,
         action_flag=MANUAL_ARCHIVE_RESTART,
         action_time__gte=timezone.now() - timedelta(hours=48)
-    )
-
-    return recent_logs.exists()
+    ).exists()
 
 
 @celery_app.task(bind=True)
@@ -482,6 +476,11 @@ def force_archive(self, registration_id, permissible_addons, allow_unconfigured=
             skip_collisions=skip_collisions,
             delete_collisions=delete_collisions,
         )
+        # The force-archive path bypasses `archive_success`; schedule manual restart follow-up
+        # in the force_archive so restarted registrations still get auto-approval checks
+        if was_manually_restarted(registration):
+            logger.info(f'Registration {registration._id} was manually restarted, scheduling approval check')
+            delayed_manual_restart_approval.delay(registration._id, delay_minutes=5)
         return f'Registration {registration_id} archive completed'
 
     except Exception as exc:
