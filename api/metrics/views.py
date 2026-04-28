@@ -228,25 +228,43 @@ class RawMetricsView(GenericAPIView):
 
     @require_switch(ENABLE_RAW_METRICS)
     def get(self, request, *args, djelme_backend_name, url_path, **kwargs):
-        connection = self._get_es_connection(djelme_backend_name)
-        _response = connection.transport.perform_request('GET', f'/{url_path}')
-        return JsonResponse(_response if isinstance(_response, dict) else _response.body)
+        _response_body = self._do_es_request(
+            djelme_backend_name,
+            method='GET',
+            path=url_path,
+            qp=request.GET,
+        )
+        return JsonResponse(_response_body)
 
     @require_switch(ENABLE_RAW_METRICS)
     def post(self, request, *args, djelme_backend_name, url_path, **kwargs):
-        connection = self._get_es_connection(djelme_backend_name)
-        body = json.loads(request.body)
-        _response = connection.transport.perform_request('POST', f'/{url_path}', body=body)
-        return JsonResponse(_response if isinstance(_response, dict) else _response.body)
+        _response_body = self._do_es_request(
+            djelme_backend_name,
+            method='POST',
+            path=url_path,
+            qp=request.GET,
+            body=json.loads(request.body),
+        )
+        return JsonResponse(_response_body)
 
     @require_switch(ENABLE_RAW_METRICS)
     def put(self, request, *args, djelme_backend_name, url_path, **kwargs):
-        connection = self._get_es_connection(djelme_backend_name)
-        body = json.loads(request.body)
-        _response = connection.transport.perform_request('PUT', f'/{url_path}', body=body)
-        return JsonResponse(_response if isinstance(_response, dict) else _response.body)
+        _response_body = self._do_es_request(
+            djelme_backend_name,
+            method='PUT',
+            path=url_path,
+            qp=request.GET,
+            body=json.loads(request.body),
+        )
+        return JsonResponse(_response_body)
 
-    def _get_es_connection(self, djelme_backend_name):
+    def _do_es_request(self, djelme_backend_name, method, path, qp, body=None):
+        _client = self._get_es_client(djelme_backend_name)
+        _perform_fn = getattr(_client, 'perform_request', None) or _client.transport.perform_request
+        _response = _perform_fn(method, f'/{path}', params=qp.dict(), body=body)
+        return _response if isinstance(_response, dict) else _response.body
+
+    def _get_es_client(self, djelme_backend_name):
         try:
             _backend = djelme_registry.get_backend(djelme_backend_name)
         except LookupError:
