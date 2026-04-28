@@ -82,10 +82,9 @@ class TestAUser(OsfTestCase):
     # `GET /login/` without parameters is redirected to `/my-projects/` page which has `@must_be_logged_in` decorator
     # if user is not logged in, she/he is further redirected to CAS login page
     def test_is_redirected_to_cas_if_not_logged_in_at_login_page(self):
-        res = self.app.resolve_redirect(self.app.get('/login/'))
+        res = self.app.get('/login/')
         assert res.status_code == 302
-        location = res.headers.get('Location')
-        assert 'login?service=' in location
+        assert 'login?service=' in res.headers.get('Location')
 
     def test_is_redirected_to_dashboard_if_already_logged_in_at_login_page(self):
         res = self.app.get('/login/', auth=self.user.auth)
