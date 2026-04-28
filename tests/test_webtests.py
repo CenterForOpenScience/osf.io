@@ -79,12 +79,12 @@ class TestAUser(OsfTestCase):
         res = self.app.get(self.user.url, follow_redirects=True)
         assert self.user.url in res.text
 
-    # `GET /login/` without parameters is redirected to `/my-projects/` page which has `@must_be_logged_in` decorator
-    # if user is not logged in, she/he is further redirected to CAS login page
+    # `GET /login/` (legacy BE endpoint) without parameters is redirected to `/dashboard/` (angular FE endpoint).
+    # It's impossible to test external redirects in tests, and it is angular's job to redirect correctly to CAS login.
     def test_is_redirected_to_cas_if_not_logged_in_at_login_page(self):
         res = self.app.get('/login/')
         assert res.status_code == 302
-        assert 'login?service=' in res.headers.get('Location')
+        assert 'dashboard' in res.headers.get('Location')
 
     def test_is_redirected_to_dashboard_if_already_logged_in_at_login_page(self):
         res = self.app.get('/login/', auth=self.user.auth)

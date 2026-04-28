@@ -628,7 +628,7 @@ class TestAuthLoginAndRegisterLogic(OsfTestCase):
         data = login_and_register_handler(self.no_auth, campaign='institution')
         assert data.get('status_code') == http_status.HTTP_302_FOUND
         assert data.get('next_url') == cas.get_login_url(
-            web_url_for('my_projects', _absolute=True, _angular_route=True),
+            web_url_for('dashboard', _absolute=True, _angular_route=True),
             campaign='institution'
         )
 
