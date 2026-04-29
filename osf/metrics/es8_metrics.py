@@ -90,6 +90,17 @@ class OsfCountedUsageRecord(djelme.CountedUsageRecord):
     https://cop5.projectcounter.org/en/5.1/appendices/a-glossary-of-terms.html
     https://coprd.countermetrics.org/en/1.0.1/appendices/a-glossary.html
     '''
+    UNIQUE_TOGETHER_FIELDS = (
+        'platform_iri',
+        'sessionhour_id',
+        'action_labels',
+        # include some non-field properties for more complex logic to
+        # slightly better approximate `counter:Double-Click Filtering`
+        # and allow for multiple pages describing the same item_iri
+        '_page_url_or_osfid',  # non-field property
+        '_timestamp_date',  # non-field property
+        '_timestamp_30sec_window',  # non-field property
+    )
 
     # inherited fields:
     #     timestamp: datetime.datetime
@@ -125,6 +136,34 @@ class OsfCountedUsageRecord(djelme.CountedUsageRecord):
             kwargs['user_is_authenticated'] = bool(kwargs.get('user_id'))
         return super().record(**kwargs)
 
+    @property
+    def _page_url_or_osfid(self):
+        # for UNIQUE_TOGETHER_FIELDS
+        return (
+            self.pageview_info.page_url
+            if self.pageview_info is not None and self.pageview_info.page_url is not None
+            else self.item_osfid
+        )
+
+    @property
+    def _timestamp_date(self):
+        # for UNIQUE_TOGETHER_FIELDS
+        return self.timestamp.date()
+
+    @property
+    def _timestamp_30sec_window(self):
+        # for UNIQUE_TOGETHER_FIELDS
+        # slice the day into an array of 30-second windows,
+        # find this timestamp's windowslice index
+        day_start = datetime.datetime(
+            self.timestamp.year,
+            self.timestamp.month,
+            self.timestamp.day,
+            tzinfo=self.timestamp.tzinfo,
+        )
+        time_in_seconds = (self.timestamp - day_start).total_seconds()
+        return int(time_in_seconds / 30)  # 30-second windows
+
     @functools.cached_property
     def _osfid_referent(self):
         # for use by autofill methods, if needed
@@ -132,7 +171,6 @@ class OsfCountedUsageRecord(djelme.CountedUsageRecord):
         return _osfguid.referent if _osfguid else None
 
     def clean(self):
-        super().clean()
         self._autofill_platform_iri()
         self._autofill_item_iri_and_osfid()
         self._autofill_item_public()
@@ -141,6 +179,8 @@ class OsfCountedUsageRecord(djelme.CountedUsageRecord):
         self._autofill_within_iris()
         self._autofill_pageview()
         self._autofill_database_iri()
+        self._clean_action_labels()
+        super().clean()
 
     def _autofill_platform_iri(self):
         if self.platform_iri is None:
@@ -214,37 +254,9 @@ class OsfCountedUsageRecord(djelme.CountedUsageRecord):
             else:
                 self.database_iri = _provider.get_semantic_iri()
 
-    def _get_unique_together_values(self):
-        """get "unique together" values for "ON CONFLICT UPDATE" behavior
-
-        override djelme.BaseDjelmeRecord._get_unique_together_values
-        for more complex logic than UNIQUE_TOGETHER_FIELDS
-        to slightly better approximate `counter:Double-Click Filtering`
-        """
-        # note: copied from osf.metrics.counted_usage._fill_document_id
-        target_identifier = (
-            self.pageview_info.page_url
-            if self.pageview_info is not None and self.pageview_info.page_url is not None
-            else self.item_osfid
-        )
-        # slice the day into an array of 30-second windows,
-        # find this timestamp's windowslice index
-        day_start = datetime.datetime(
-            self.timestamp.year,
-            self.timestamp.month,
-            self.timestamp.day,
-            tzinfo=self.timestamp.tzinfo,
-        )
-        time_in_seconds = (self.timestamp - day_start).total_seconds()
-        time_window = int(time_in_seconds / 30)  # 30-second windows
-        return (  # unique-together values:
-            self.platform_iri,
-            target_identifier,
-            self.sessionhour_id,
-            self.timestamp.date(),
-            time_window,
-            ','.join(sorted(self.action_labels)),
-        )
+    def _clean_action_labels(self):
+        if self.action_labels:
+            self.action_labels = sorted(self.action_labels)
 
 
 class RegistriesModerationMetricsEs8(djelme.EventRecord):
