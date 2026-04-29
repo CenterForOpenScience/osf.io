@@ -2,7 +2,6 @@ import collections
 import datetime
 import functools
 import logging
-import uuid
 
 from django.apps import apps
 from django.core.management import call_command
@@ -111,7 +110,7 @@ def migrate_preprint_views(from_when: str, until_when: str):
     # PreprintView => OsfCountedUsageEvent
     _action_labels = ['view', 'web']
     _each_new = (
-        _convert_preprint_metric(_hit['_source'], _action_labels)
+        _convert_preprint_metric(_hit, _action_labels)
         for _hit in _es6_scan_range(
             PreprintView, from_when=from_when, until_when=until_when
         )
@@ -124,7 +123,7 @@ def migrate_preprint_downloads(from_when: str, until_when: str):
     # PreprintDownload => OsfCountedUsageEvent
     _action_labels = ['download']
     _each_new = (
-        _convert_preprint_metric(_hit['_source'], _action_labels)
+        _convert_preprint_metric(_hit, _action_labels)
         for _hit in _es6_scan_range(
             PreprintDownload, from_when=from_when, until_when=until_when
         )
@@ -335,35 +334,37 @@ def _convert_counted_usage(source: dict) -> es8_metrics.OsfCountedUsageEvent:
             source.get('item_type'),
             has_surrounding_items=bool(source.get('surrounding_guids')),
         ),
-        item_public=source.get('item_public'),
-        provider_id=source.get('provider_id'),
-        user_is_authenticated=source.get('user_is_authenticated'),
+        item_public=source.get('item_public', True),
+        provider_id=source.get('provider_id', 'osf'),
+        user_is_authenticated=source.get('user_is_authenticated', False),
         action_labels=source.get('action_labels'),
         pageview_info=source.get('pageview_info'),
     )
 
 
 def _convert_preprint_metric(
-    source: dict, action_labels: list[str]
+    hit: dict, action_labels: list[str]
 ) -> es8_metrics.OsfCountedUsageEvent:
+    _source = hit['_source']
+    _doc_id = hit['_id']
     return es8_metrics.OsfCountedUsageEvent.record(
         using=False,  # don't save yet; will save in bulk
         # fields used to compute a sessionhour_id:
-        timestamp=datetime.datetime.fromisoformat(source['timestamp']),
-        user_id=source.get('user_id'),
-        client_session_id=str(uuid.uuid4()),
+        timestamp=datetime.datetime.fromisoformat(_source['timestamp']),
+        user_id=_source.get('user_id'),
+        client_session_id=_doc_id,  # unique session per event (best can do)
         # fields from djelme.CountedUsageRecord:
         platform_iri=website_settings.DOMAIN,
         database_iri=_convert_database_iri(
-            provider_id=source.get('provider_id'),
+            provider_id=_source.get('provider_id'),
             osf_model_name='preprint',
         ),
         # fields from OsfCountedUsageEvent:
-        item_osfid=source['preprint_id'],
+        item_osfid=_source['preprint_id'],
         item_type=OSF.Preprint,
         item_public=True,
-        provider_id=source.get('provider_id'),
-        user_is_authenticated=bool(source.get('user_id')),
+        provider_id=_source.get('provider_id'),
+        user_is_authenticated=bool(_source.get('user_id')),
         action_labels=action_labels,
     )
 
@@ -508,10 +509,7 @@ def _cumulative_preprint_count(preprint_metric_cls, osfid: str, until_when: str)
 
 def _convert_item_type(osf_model_name: str | list[str] | None, has_surrounding_items: bool):
     if isinstance(osf_model_name, list):
-        return [
-            _convert_item_type(_model_name, has_surrounding_items)
-            for _model_name in osf_model_name
-        ]
+        osf_model_name = osf_model_name[0] if osf_model_name else None
     if osf_model_name:
         try:
             return osfmap_type_from_model(

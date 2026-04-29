@@ -155,14 +155,14 @@ class OsfCountedUsageEvent(djelme.CountedUsageRecord):
         # for UNIQUE_TOGETHER_FIELDS
         # slice the day into an array of 30-second windows,
         # find this timestamp's windowslice index
-        day_start = datetime.datetime(
+        _day_start = datetime.datetime(
             self.timestamp.year,
             self.timestamp.month,
             self.timestamp.day,
             tzinfo=self.timestamp.tzinfo,
         )
-        time_in_seconds = (self.timestamp - day_start).total_seconds()
-        return int(time_in_seconds / 30)  # 30-second windows
+        _time_in_seconds = (self.timestamp - _day_start).total_seconds()
+        return int(_time_in_seconds / 30)  # 30-second windows
 
     @functools.cached_property
     def _osfid_referent(self):
