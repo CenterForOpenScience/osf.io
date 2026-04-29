@@ -700,7 +700,8 @@ def osfstoragefile_viewed_update_metrics(self, auth, fileversion, file_node):
                     OsfCountedUsageRecord.ActionLabel.WEB.value,
                 ],
                 # HACK: we don't have the user request, so fabricate a one-off session id
-                # (this means no double-click filtering and inflated "unique" view counts)
+                # (this means no double-click filtering for anonymous users (same as before)
+                # and potentially inflated "unique" sessionhour view counts)
                 client_session_id=str(uuid.uuid4()),
             )
         except es_exceptions.ConnectionError:
@@ -737,7 +738,8 @@ def osfstoragefile_downloaded_update_metrics(self, auth, fileversion, file_node)
                     OsfCountedUsageRecord.ActionLabel.DOWNLOAD.value,
                 ],
                 # HACK: we don't have the user request, so fabricate a one-off session id
-                # (this means no double-click filtering and inflated "unique" download counts)
+                # (this means no double-click filtering for anonymous users (same as before)
+                # and potentially inflated "unique" sessionhour view counts)
                 client_session_id=str(uuid.uuid4()),
             )
         except es_exceptions.ConnectionError:

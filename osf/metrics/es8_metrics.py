@@ -128,7 +128,8 @@ class OsfCountedUsageRecord(djelme.CountedUsageRecord):
     @functools.cached_property
     def _osfid_referent(self):
         # for use by autofill methods, if needed
-        return osfdb.Guid.load(self.item_osfid)
+        _osfguid = osfdb.Guid.load(self.item_osfid)
+        return _osfguid.referent if _osfguid else None
 
     def clean(self):
         super().clean()
