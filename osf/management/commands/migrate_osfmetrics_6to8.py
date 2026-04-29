@@ -576,6 +576,10 @@ class Command(BaseCommand):
             action='store_true',
         )
         parser.add_argument(
+            '--clear-es8-data',
+            action='store_true',
+        )
+        parser.add_argument(
             '--start',
             action='store_true',
         )
@@ -602,6 +606,7 @@ class Command(BaseCommand):
         no_setup,
         no_counts,
         clear_state,
+        clear_es8_data,
         start,
         unchanged,
         usage_events,
@@ -613,6 +618,8 @@ class Command(BaseCommand):
             call_command('djelme_backend_setup')
         if clear_state:
             self._clear_state()
+        if clear_es8_data:
+            self._clear_es8_data(unchanged, usage_events, usage_reports)
         self._check_started_at(start_now=start)
         _default_all = not any((unchanged, usage_events, usage_reports))
         if unchanged or _default_all:
@@ -753,6 +760,22 @@ class Command(BaseCommand):
         )
         es8_metrics.Elastic6To8State.search().query({'match_all': {}}).delete()
         es8_metrics.Elastic6To8State.refresh()
+
+    def _clear_es8_data(self, unchanged, usage_events, usage_reports):
+        _default_all = not any((unchanged, usage_events, usage_reports))
+        _to_clear = []
+        if _default_all or unchanged:
+            _to_clear.extend(_UNCHANGED_RECORDTYPES.values())
+        if _default_all or usage_events:
+            _to_clear.append(es8_metrics.MonthlyPublicItemUsageReportEs8)
+        if _default_all or usage_reports:
+            _to_clear.append(es8_metrics.OsfCountedUsageEvent)
+        for _es8_recordtype in _to_clear:
+            self.stdout.write(
+                f'clearing {_es8_recordtype.__name__}', self.style.NOTICE
+            )
+            _es8_recordtype.search().query({'match_all': {}}).delete()
+            _es8_recordtype.refresh()
 
     def _eq_style(self, num: int, should_be: int):
         return self.style.SUCCESS if (num == should_be) else self.style.WARNING

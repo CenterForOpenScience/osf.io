@@ -202,6 +202,7 @@ class MigrateOsfmetrics6to8(ManagementCommandPermissionView):
             'no_color': True,
             'no_counts': request.POST.get('no_counts'),
             'clear_state': request.POST.get('clear_state'),
+            'clear_es8_data': request.POST.get('clear_es8_data'),
             'start': request.POST.get('start'),
             'unchanged': request.POST.get('unchanged'),
             'usage_reports': request.POST.get('usage_reports'),
