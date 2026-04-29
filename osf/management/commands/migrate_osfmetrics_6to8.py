@@ -44,7 +44,7 @@ _MAX_CARDINALITY_PRECISION = 40000  # https://www.elastic.co/guide/en/elasticsea
 
 _UNCHANGED_RECORDTYPES = {
     # reports
-    es6_reports.StorageAddonUsage: es8_metrics.DailyStorageAddonUsageEs8,
+    es6_reports.StorageAddonUsage: es8_metrics.DailyStorageAddonUsageReportEs8,
     es6_reports.DownloadCountReport: es8_metrics.DailyDownloadCountReportEs8,
     es6_reports.InstitutionSummaryReport: es8_metrics.DailyInstitutionSummaryReportEs8,
     es6_reports.NewUserDomainReport: es8_metrics.DailyNewUserDomainReportEs8,
