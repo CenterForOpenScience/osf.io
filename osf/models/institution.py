@@ -216,12 +216,16 @@ class Institution(DirtyFieldsMixin, Loggable, ObjectIDMixin, BaseModel, Guardian
     def cas_login_url(self):
         if self.delegation_protocol == IntegrationType.NONE.value:
             return None
-        if 'localhost' in website_settings.DOMAIN:
-            next_param = quote(website_settings.PROTOCOL + website_settings.LOCAL_ANGULAR_URL, safe='')
-        else:
-            next_param = quote(website_settings.DOMAIN, safe='')
-        service_url = quote(f'{website_settings.DOMAIN}login?next={next_param}', safe='')
-        return f'{website_settings.CAS_SERVER_URL}/login?campaign=institution&institutionId={self._id}&service={service_url}'
+        # Note: admin app can't use `web_url_for()` due to out of context
+        next_url_param = quote(website_settings.DOMAIN, safe='')
+        service_url_param = quote(f'{website_settings.DOMAIN}login?next={next_url_param}', safe='')
+        institution_id_param = quote(self._id, safe='')
+        return (
+            f'{website_settings.CAS_SERVER_URL}/login'
+            f'?campaign=institution'
+            f'&institutionId={institution_id_param}'
+            f'&service={service_url_param}'
+        )
 
     def update_search(self):
         from website.search.search import update_institution
