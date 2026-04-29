@@ -34,7 +34,7 @@ from framework.exceptions import HTTPError
 from framework.flask import redirect
 from framework.sentry import log_exception
 from framework.transactions.handlers import no_auto_transaction
-from osf.metrics.es8_metrics import OsfCountedUsageRecord
+from osf.metrics.es8_metrics import OsfCountedUsageEvent
 from website import settings
 from addons.base import signals as file_signals
 from addons.base.utils import format_last_known_metadata, get_mfr_url
@@ -692,12 +692,12 @@ def osfstoragefile_viewed_update_metrics(self, auth, fileversion, file_node):
                 version=fileversion.identifier,
                 path=file_node.path,
             )
-            OsfCountedUsageRecord.record(
+            OsfCountedUsageEvent.record(
                 user_id=getattr(user, '_id', None),
                 item_osfid=resource._id,
                 action_labels=[
-                    OsfCountedUsageRecord.ActionLabel.VIEW.value,
-                    OsfCountedUsageRecord.ActionLabel.WEB.value,
+                    OsfCountedUsageEvent.ActionLabel.VIEW.value,
+                    OsfCountedUsageEvent.ActionLabel.WEB.value,
                 ],
                 # HACK: we don't have the user request, so fabricate a one-off session id
                 # (this means no double-click filtering for anonymous users (same as before)
@@ -731,11 +731,11 @@ def osfstoragefile_downloaded_update_metrics(self, auth, fileversion, file_node)
                 version=fileversion.identifier,
                 path=file_node.path,
             )
-            OsfCountedUsageRecord.record(
+            OsfCountedUsageEvent.record(
                 user_id=getattr(user, '_id', None),
                 item_osfid=resource._id,
                 action_labels=[
-                    OsfCountedUsageRecord.ActionLabel.DOWNLOAD.value,
+                    OsfCountedUsageEvent.ActionLabel.DOWNLOAD.value,
                 ],
                 # HACK: we don't have the user request, so fabricate a one-off session id
                 # (this means no double-click filtering for anonymous users (same as before)

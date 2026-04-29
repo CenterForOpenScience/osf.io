@@ -14,7 +14,7 @@ from osf.metrics.reports import StorageAddonUsage, RunningTotal, UsageByStorageA
 from osf.models import SpamStatus, Tag
 from website import settings
 from osf.metrics.es8_metrics import (
-    StorageAddonUsageEs8,
+    DailyStorageAddonUsageReportEs8,
     UsageByStorageAddon as UsageByStorageAddonEs8,
     RunningTotal as RunningTotalEs8
 )
@@ -201,7 +201,7 @@ class StorageAddonUsageReporter(DailyReporter):
             )
             usage_by_addon.append(usage_by_storage_addon)
         reports = []
-        report_es8 = StorageAddonUsageEs8(
+        report_es8 = DailyStorageAddonUsageReportEs8(
             cycle_coverage=cycle_coverage_date(date),
             usage_by_addon=usage_by_addon,
         )

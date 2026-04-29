@@ -4,7 +4,7 @@ import typing
 
 import waffle
 
-from osf.metrics.es8_metrics import PublicItemUsageReportEs8
+from osf.metrics.es8_metrics import MonthlyPublicItemUsageReportEs8
 
 if typing.TYPE_CHECKING:
     import elasticsearch6_dsl as edsl
@@ -135,11 +135,11 @@ class PublicItemUsageReporter(MonthlyReporter):
         )
         return _iter_composite_bucket_keys(_search, 'agg_osfid', 'osfid', after=after_osfid)
 
-    def _init_report(self, osf_obj) -> typing.List[PublicItemUsageReport | PublicItemUsageReportEs8]:
+    def _init_report(self, osf_obj) -> typing.List[PublicItemUsageReport | MonthlyPublicItemUsageReportEs8]:
         if not _is_item_public(osf_obj):
             raise _SkipItem
         reports = []
-        report_es8 = PublicItemUsageReportEs8(
+        report_es8 = MonthlyPublicItemUsageReportEs8(
             cycle_coverage=cycle_coverage_yearmonth(self.yearmonth),
             item_osfid=osf_obj._id,
             item_type=[get_item_type(osf_obj)],

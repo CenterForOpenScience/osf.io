@@ -8,7 +8,7 @@ from osf.metrics.reports import (
     RegistrationRunningTotals,
 )
 from osf.metrics.es8_metrics import (
-    NodeSummaryReportEs8,
+    DailyNodeSummaryReportEs8,
     NodeRunningTotals as NodeRunningTotalsEs8,
     RegistrationRunningTotals as RegistrationRunningTotalsEs8
 )
@@ -41,7 +41,7 @@ class NodeCountReporter(DailyReporter):
 
         exclude_spam = ~Q(spam_status__in=[SpamStatus.SPAM, SpamStatus.FLAGGED])
         reports = []
-        report_es8 = NodeSummaryReportEs8(
+        report_es8 = DailyNodeSummaryReportEs8(
             cycle_coverage=cycle_coverage_date(date),
             # Nodes - the number of projects and components
             nodes=NodeRunningTotalsEs8(

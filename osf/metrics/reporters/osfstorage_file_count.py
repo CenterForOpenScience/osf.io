@@ -5,7 +5,7 @@ import logging
 from osf.metrics.reports import OsfstorageFileCountReport, FileRunningTotals
 from osf.models import AbstractNode, Preprint
 from osf.metrics.es8_metrics import (
-    OsfstorageFileCountReportEs8,
+    DailyOsfstorageFileCountReportEs8,
     FileRunningTotals as FileRunningTotalsEs8
 )
 from osf.metrics.utils import cycle_coverage_date
@@ -38,7 +38,7 @@ class OsfstorageFileCountReporter(DailyReporter):
 
         reports = []
 
-        report_es8 = OsfstorageFileCountReportEs8(
+        report_es8 = DailyOsfstorageFileCountReportEs8(
             cycle_coverage=cycle_coverage_date(date),
             files=FileRunningTotalsEs8(
                 total=file_qs.count(),

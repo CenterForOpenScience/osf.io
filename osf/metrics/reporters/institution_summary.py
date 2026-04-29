@@ -10,7 +10,7 @@ from osf.metrics.reports import (
 )
 from osf.models import Institution
 from osf.metrics.es8_metrics import (
-    InstitutionSummaryReportEs8,
+    DailyInstitutionSummaryReportEs8,
     RunningTotal as RunningTotalEs8,
     NodeRunningTotals as NodeRunningTotalsEs8,
     RegistrationRunningTotals as RegistrationRunningTotalsEs8
@@ -45,7 +45,7 @@ class InstitutionSummaryReporter(DailyReporter):
                 created__date__lte=date,
                 type='osf.registration',
             )
-            report_es8 = InstitutionSummaryReportEs8(
+            report_es8 = DailyInstitutionSummaryReportEs8(
                 cycle_coverage=cycle_coverage_date(date),
                 institution_id=institution._id,
                 institution_name=institution.name,

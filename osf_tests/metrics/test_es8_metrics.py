@@ -5,8 +5,8 @@ import pytest
 
 from osf.metrics.es8_metrics import (
     PageviewInfo,
-    DownloadCountReportEs8,
-    OsfCountedUsageRecord,
+    DailyDownloadCountReportEs8,
+    OsfCountedUsageEvent,
 )
 
 
@@ -19,7 +19,7 @@ class TestEs8Metrics:
             yield
 
     def test_nested_pageview_autofill(self):
-        usage = OsfCountedUsageRecord.record(
+        usage = OsfCountedUsageEvent.record(
             timestamp=datetime.datetime(2024, 1, 1, 15, 0, tzinfo=datetime.UTC),
             sessionhour_id='blah',
             database_iri='https://osf.example/provider',
@@ -42,7 +42,7 @@ class TestEs8Metrics:
         assert usage.item_iri in usage.within_iris
 
     def test_nested_pageview_autofill_dict(self):
-        usage = OsfCountedUsageRecord.record(
+        usage = OsfCountedUsageEvent.record(
             timestamp=datetime.datetime(2024, 1, 1, 15, 0, tzinfo=datetime.UTC),
             sessionhour_id='blah',
             database_iri='https://osf.example/provider',
@@ -65,7 +65,7 @@ class TestEs8Metrics:
         assert usage.item_iri in usage.within_iris
 
     def test_none_pageview_nested_autofill(self):
-        usage = OsfCountedUsageRecord.record(
+        usage = OsfCountedUsageEvent.record(
             timestamp=datetime.datetime(2024, 1, 1, 15, 0, tzinfo=datetime.UTC),
             sessionhour_id='blah',
             database_iri='https://osf.example/provider',
@@ -80,12 +80,12 @@ class TestEs8Metrics:
         assert usage.item_iri in usage.within_iris
 
     def test_save_report(self):
-        _saved = DownloadCountReportEs8.record(
+        _saved = DailyDownloadCountReportEs8.record(
             cycle_coverage='2026.1.1',
             daily_file_downloads=17,
         )
-        DownloadCountReportEs8.refresh()
-        _response = DownloadCountReportEs8.search().execute()
+        DailyDownloadCountReportEs8.refresh()
+        _response = DailyDownloadCountReportEs8.search().execute()
         (_fetched,) = _response
         assert _fetched.meta.id == _saved.meta.id
         assert _fetched.cycle_coverage == '2026.1.1'

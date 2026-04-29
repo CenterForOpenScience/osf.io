@@ -1,7 +1,7 @@
 from osf.metrics.reports import PrivateSpamMetricsReport
 from osf.external.oopspam.client import OOPSpamClient
 from osf.external.askismet.client import AkismetClient
-from osf.metrics.es8_metrics import PrivateSpamMetricsReportEs8
+from osf.metrics.es8_metrics import MonthlyPrivateSpamMetricsReportEs8
 from osf.metrics.utils import cycle_coverage_yearmonth
 from ._base import MonthlyReporter
 
@@ -18,7 +18,7 @@ class PrivateSpamMetricsReporter(MonthlyReporter):
 
         reports = []
 
-        report_es8 = PrivateSpamMetricsReportEs8(
+        report_es8 = MonthlyPrivateSpamMetricsReportEs8(
             cycle_coverage=cycle_coverage_yearmonth(self.yearmonth),
             node_oopspam_flagged=oopspam_client.get_flagged_count(target_month, next_month, category='node'),
             node_oopspam_hammed=oopspam_client.get_hammed_count(target_month, next_month, category='node'),

@@ -7,7 +7,7 @@ from api.base.serializers import BaseAPISerializer
 from api.base.utils import absolute_reverse
 from osf.metrics.counted_usage import CountedAuthUsage, PageviewInfo
 from osf.metrics.es8_metrics import (
-    OsfCountedUsageRecord,
+    OsfCountedUsageEvent,
     PageviewInfo as PageviewInfoEs8,
 )
 from website import settings as website_settings
@@ -72,7 +72,7 @@ class CountedAuthUsageSerializer(ser.Serializer):
         if pageview_info_data := validated_data.get('pageview_info'):
             pageview_info = PageviewInfo(**pageview_info_data)
             pageview_info_es8 = PageviewInfoEs8(**pageview_info_data)
-        OsfCountedUsageRecord.record(
+        OsfCountedUsageEvent.record(
             item_osfid=validated_data['item_guid'],
             action_labels=validated_data.get('action_labels'),
             provider_id=validated_data.get('provider_id'),

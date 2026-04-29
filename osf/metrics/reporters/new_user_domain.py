@@ -3,7 +3,7 @@ from collections import Counter
 
 from osf.models import OSFUser
 from osf.metrics.reports import NewUserDomainReport
-from osf.metrics.es8_metrics import NewUserDomainReportEs8
+from osf.metrics.es8_metrics import DailyNewUserDomainReportEs8
 from osf.metrics.utils import cycle_coverage_date
 from ._base import DailyReporter
 
@@ -24,7 +24,7 @@ class NewUserDomainReporter(DailyReporter):
         )
         reports = []
         for domain_name, count in domain_names.items():
-            report_es8 = NewUserDomainReportEs8(
+            report_es8 = DailyNewUserDomainReportEs8(
                 cycle_coverage=cycle_coverage_date(date),
                 domain_name=domain_name,
                 new_user_count=count,

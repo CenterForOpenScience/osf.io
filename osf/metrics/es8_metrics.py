@@ -84,7 +84,7 @@ class PageviewInfo(esdsl.InnerDoc):
 ###
 # Event records
 
-class OsfCountedUsageRecord(djelme.CountedUsageRecord):
+class OsfCountedUsageEvent(djelme.CountedUsageRecord):
     '''
     Aim to support a COUNTER-style reporting api
     https://cop5.projectcounter.org/en/5.1/appendices/a-glossary-of-terms.html
@@ -259,7 +259,7 @@ class OsfCountedUsageRecord(djelme.CountedUsageRecord):
             self.action_labels = sorted(self.action_labels)
 
 
-class RegistriesModerationMetricsEs8(djelme.EventRecord):
+class RegistriesModerationEventEs8(djelme.EventRecord):
     UNIQUE_TOGETHER_FIELDS = (
         'timestamp', 'registration_id', 'trigger', 'from_state', 'to_state', 'user_id'
     )
@@ -273,7 +273,7 @@ class RegistriesModerationMetricsEs8(djelme.EventRecord):
     comment: str | None
 
     class Meta:
-        timeseries_recordtype_name = 'RegistriesModerationMetrics'
+        timeseries_recordtype_name = 'RegistriesModerationEvent'
         timeseries_index_timedepth = MONTHLY
 
 
@@ -333,27 +333,27 @@ class UsageByStorageAddon(esdsl.InnerDoc):
 # Cyclic reports
 
 
-class StorageAddonUsageEs8(djelme.CyclicRecord):
+class DailyStorageAddonUsageReportEs8(djelme.CyclicRecord):
     CYCLE_TIMEDEPTH = DAILY
 
     usage_by_addon: list[UsageByStorageAddon]
 
     class Meta:
         timeseries_index_timedepth = YEARLY
-        timeseries_recordtype_name = 'StorageAddonUsage'
+        timeseries_recordtype_name = 'DailyStorageAddonUsageReport'
 
 
-class DownloadCountReportEs8(djelme.CyclicRecord):
+class DailyDownloadCountReportEs8(djelme.CyclicRecord):
     CYCLE_TIMEDEPTH = DAILY
 
     daily_file_downloads: int
 
     class Meta:
         timeseries_index_timedepth = YEARLY
-        timeseries_recordtype_name = 'DownloadCountReport'
+        timeseries_recordtype_name = 'DailyDownloadCountReport'
 
 
-class InstitutionSummaryReportEs8(djelme.CyclicRecord):
+class DailyInstitutionSummaryReportEs8(djelme.CyclicRecord):
     CYCLE_TIMEDEPTH = DAILY
     UNIQUE_TOGETHER_FIELDS = ('cycle_coverage', 'institution_id',)
 
@@ -367,10 +367,10 @@ class InstitutionSummaryReportEs8(djelme.CyclicRecord):
 
     class Meta:
         timeseries_index_timedepth = YEARLY
-        timeseries_recordtype_name = 'InstitutionSummaryReport'
+        timeseries_recordtype_name = 'DailyInstitutionSummaryReport'
 
 
-class NewUserDomainReportEs8(djelme.CyclicRecord):
+class DailyNewUserDomainReportEs8(djelme.CyclicRecord):
     CYCLE_TIMEDEPTH = DAILY
     UNIQUE_TOGETHER_FIELDS = ('cycle_coverage', 'domain_name',)
 
@@ -379,10 +379,10 @@ class NewUserDomainReportEs8(djelme.CyclicRecord):
 
     class Meta:
         timeseries_index_timedepth = YEARLY
-        timeseries_recordtype_name = 'NewUserDomainReport'
+        timeseries_recordtype_name = 'DailyNewUserDomainReport'
 
 
-class NodeSummaryReportEs8(djelme.CyclicRecord):
+class DailyNodeSummaryReportEs8(djelme.CyclicRecord):
     CYCLE_TIMEDEPTH = DAILY
 
     nodes: NodeRunningTotals
@@ -392,20 +392,20 @@ class NodeSummaryReportEs8(djelme.CyclicRecord):
 
     class Meta:
         timeseries_index_timedepth = YEARLY
-        timeseries_recordtype_name = 'NodeSummaryReport'
+        timeseries_recordtype_name = 'DailyNodeSummaryReport'
 
 
-class OsfstorageFileCountReportEs8(djelme.CyclicRecord):
+class DailyOsfstorageFileCountReportEs8(djelme.CyclicRecord):
     CYCLE_TIMEDEPTH = DAILY
 
     files: FileRunningTotals
 
     class Meta:
         timeseries_index_timedepth = YEARLY
-        timeseries_recordtype_name = 'OsfstorageFileCountReport'
+        timeseries_recordtype_name = 'DailyOsfstorageFileCountReport'
 
 
-class PreprintSummaryReportEs8(djelme.CyclicRecord):
+class DailyPreprintSummaryReportEs8(djelme.CyclicRecord):
     CYCLE_TIMEDEPTH = DAILY
 
     UNIQUE_TOGETHER_FIELDS = ('cycle_coverage', 'provider_key',)
@@ -414,10 +414,10 @@ class PreprintSummaryReportEs8(djelme.CyclicRecord):
 
     class Meta:
         timeseries_index_timedepth = YEARLY
-        timeseries_recordtype_name = 'PreprintSummaryReport'
+        timeseries_recordtype_name = 'DailyPreprintSummaryReport'
 
 
-class UserSummaryReportEs8(djelme.CyclicRecord):
+class DailyUserSummaryReportEs8(djelme.CyclicRecord):
     CYCLE_TIMEDEPTH = DAILY
 
     active: int
@@ -429,10 +429,10 @@ class UserSummaryReportEs8(djelme.CyclicRecord):
 
     class Meta:
         timeseries_index_timedepth = YEARLY
-        timeseries_recordtype_name = 'UserSummaryReport'
+        timeseries_recordtype_name = 'DailyUserSummaryReport'
 
 
-class SpamSummaryReportEs8(djelme.CyclicRecord):
+class MonthlySpamSummaryReportEs8(djelme.CyclicRecord):
     CYCLE_TIMEDEPTH = MONTHLY
 
     node_confirmed_spam: int
@@ -449,10 +449,10 @@ class SpamSummaryReportEs8(djelme.CyclicRecord):
 
     class Meta:
         timeseries_index_timedepth = YEARLY
-        timeseries_recordtype_name = 'SpamSummaryReport'
+        timeseries_recordtype_name = 'MonthlySpamSummaryReport'
 
 
-class InstitutionalUserReportEs8(djelme.CyclicRecord):
+class MonthlyInstitutionalUserReportEs8(djelme.CyclicRecord):
     CYCLE_TIMEDEPTH = MONTHLY
     UNIQUE_TOGETHER_FIELDS = ('cycle_coverage', 'institution_id', 'user_id',)
 
@@ -476,10 +476,10 @@ class InstitutionalUserReportEs8(djelme.CyclicRecord):
 
     class Meta:
         timeseries_index_timedepth = YEARLY
-        timeseries_recordtype_name = 'InstitutionalUserReport'
+        timeseries_recordtype_name = 'MonthlyInstitutionalUserReport'
 
 
-class InstitutionMonthlySummaryReportEs8(djelme.CyclicRecord):
+class MonthlyInstitutionSummaryReportEs8(djelme.CyclicRecord):
     CYCLE_TIMEDEPTH = MONTHLY
     UNIQUE_TOGETHER_FIELDS = ('cycle_coverage', 'institution_id', )
 
@@ -497,10 +497,10 @@ class InstitutionMonthlySummaryReportEs8(djelme.CyclicRecord):
 
     class Meta:
         timeseries_index_timedepth = YEARLY
-        timeseries_recordtype_name = 'InstitutionMonthlySummaryReport'
+        timeseries_recordtype_name = 'MonthlyInstitutionSummaryReport'
 
 
-class PublicItemUsageReportEs8(djelme.CyclicRecord):
+class MonthlyPublicItemUsageReportEs8(djelme.CyclicRecord):
     CYCLE_TIMEDEPTH = MONTHLY
     UNIQUE_TOGETHER_FIELDS = ('cycle_coverage', 'item_osfid')
 
@@ -526,10 +526,10 @@ class PublicItemUsageReportEs8(djelme.CyclicRecord):
 
     class Meta:
         timeseries_index_timedepth = YEARLY
-        timeseries_recordtype_name = 'PublicItemUsageReport'
+        timeseries_recordtype_name = 'MonthlyPublicItemUsageReport'
 
 
-class PrivateSpamMetricsReportEs8(djelme.CyclicRecord):
+class MonthlyPrivateSpamMetricsReportEs8(djelme.CyclicRecord):
     CYCLE_TIMEDEPTH = MONTHLY
 
     node_oopspam_flagged: int
@@ -543,7 +543,7 @@ class PrivateSpamMetricsReportEs8(djelme.CyclicRecord):
 
     class Meta:
         timeseries_index_timedepth = YEARLY
-        timeseries_recordtype_name = 'PrivateSpamMetricsReport'
+        timeseries_recordtype_name = 'MonthlyPrivateSpamMetricsReport'
 
 
 ###

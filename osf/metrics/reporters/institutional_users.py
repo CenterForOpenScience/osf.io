@@ -9,7 +9,7 @@ from osf.models.spam import SpamStatus
 from addons.osfstorage.models import OsfStorageFile
 from osf.metrics.reports import InstitutionalUserReport
 from osf.metrics.utils import YearMonth, cycle_coverage_yearmonth
-from osf.metrics.es8_metrics import InstitutionalUserReportEs8
+from osf.metrics.es8_metrics import MonthlyInstitutionalUserReportEs8
 from ._base import MonthlyReporter
 
 
@@ -50,12 +50,12 @@ class _InstiUserReportHelper:
     institution: osfdb.Institution
     user: osfdb.OSFUser
     yearmonth: YearMonth
-    reports: List[InstitutionalUserReport | InstitutionalUserReportEs8] = dataclasses.field(init=False)
+    reports: List[InstitutionalUserReport | MonthlyInstitutionalUserReportEs8] = dataclasses.field(init=False)
 
     def __post_init__(self):
         _affiliation = self.user.get_institution_affiliation(self.institution._id)
         self.reports = []
-        report_es8 = InstitutionalUserReportEs8(
+        report_es8 = MonthlyInstitutionalUserReportEs8(
             cycle_coverage=cycle_coverage_yearmonth(self.yearmonth),
             institution_id=self.institution._id,
             user_id=self.user._id,

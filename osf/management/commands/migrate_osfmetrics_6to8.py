@@ -44,20 +44,20 @@ _MAX_CARDINALITY_PRECISION = 40000  # https://www.elastic.co/guide/en/elasticsea
 
 _UNCHANGED_RECORDTYPES = {
     # reports
-    es6_reports.StorageAddonUsage: es8_metrics.StorageAddonUsageEs8,
-    es6_reports.DownloadCountReport: es8_metrics.DownloadCountReportEs8,
-    es6_reports.InstitutionSummaryReport: es8_metrics.InstitutionSummaryReportEs8,
-    es6_reports.NewUserDomainReport: es8_metrics.NewUserDomainReportEs8,
-    es6_reports.NodeSummaryReport: es8_metrics.NodeSummaryReportEs8,
-    es6_reports.OsfstorageFileCountReport: es8_metrics.OsfstorageFileCountReportEs8,
-    es6_reports.PreprintSummaryReport: es8_metrics.PreprintSummaryReportEs8,
-    es6_reports.UserSummaryReport: es8_metrics.UserSummaryReportEs8,
-    es6_reports.SpamSummaryReport: es8_metrics.SpamSummaryReportEs8,
-    es6_reports.InstitutionalUserReport: es8_metrics.InstitutionalUserReportEs8,
-    es6_reports.InstitutionMonthlySummaryReport: es8_metrics.InstitutionMonthlySummaryReportEs8,
-    es6_reports.PrivateSpamMetricsReport: es8_metrics.PrivateSpamMetricsReportEs8,
+    es6_reports.StorageAddonUsage: es8_metrics.DailyStorageAddonUsageEs8,
+    es6_reports.DownloadCountReport: es8_metrics.DailyDownloadCountReportEs8,
+    es6_reports.InstitutionSummaryReport: es8_metrics.DailyInstitutionSummaryReportEs8,
+    es6_reports.NewUserDomainReport: es8_metrics.DailyNewUserDomainReportEs8,
+    es6_reports.NodeSummaryReport: es8_metrics.DailyNodeSummaryReportEs8,
+    es6_reports.OsfstorageFileCountReport: es8_metrics.DailyOsfstorageFileCountReportEs8,
+    es6_reports.PreprintSummaryReport: es8_metrics.DailyPreprintSummaryReportEs8,
+    es6_reports.UserSummaryReport: es8_metrics.DailyUserSummaryReportEs8,
+    es6_reports.SpamSummaryReport: es8_metrics.MonthlySpamSummaryReportEs8,
+    es6_reports.InstitutionalUserReport: es8_metrics.MonthlyInstitutionalUserReportEs8,
+    es6_reports.InstitutionMonthlySummaryReport: es8_metrics.MonthlyInstitutionSummaryReportEs8,
+    es6_reports.PrivateSpamMetricsReport: es8_metrics.MonthlyPrivateSpamMetricsReportEs8,
     # events
-    RegistriesModerationMetrics: es8_metrics.RegistriesModerationMetricsEs8,
+    RegistriesModerationMetrics: es8_metrics.RegistriesModerationEventEs8,
 }
 
 _TASK_KWARGS = dict(
@@ -93,7 +93,7 @@ def migrate_unchanged_recordtype(es6_recordtype_name: str, until_when: str):
 
 @celery_app.task(**_TASK_KWARGS)
 def migrate_counted_usages(from_when: str, until_when: str):
-    # CountedAuthUsage => OsfCountedUsageRecord
+    # CountedAuthUsage => OsfCountedUsageEvent
     _each_new = (
         _convert_counted_usage(_hit['_source'])
         for _hit in _es6_scan_range(
@@ -103,12 +103,12 @@ def migrate_counted_usages(from_when: str, until_when: str):
             addl_filter={'exists': {'field': 'item_guid'}},
         )
     )
-    _es8_bulk_save(es8_metrics.OsfCountedUsageRecord, _each_new)
+    _es8_bulk_save(es8_metrics.OsfCountedUsageEvent, _each_new)
 
 
 @celery_app.task(**_TASK_KWARGS)
 def migrate_preprint_views(from_when: str, until_when: str):
-    # PreprintView => OsfCountedUsageRecord
+    # PreprintView => OsfCountedUsageEvent
     _action_labels = ['view', 'web']
     _each_new = (
         _convert_preprint_metric(_hit['_source'], _action_labels)
@@ -116,12 +116,12 @@ def migrate_preprint_views(from_when: str, until_when: str):
             PreprintView, from_when=from_when, until_when=until_when
         )
     )
-    _es8_bulk_save(es8_metrics.OsfCountedUsageRecord, _each_new)
+    _es8_bulk_save(es8_metrics.OsfCountedUsageEvent, _each_new)
 
 
 @celery_app.task(**_TASK_KWARGS)
 def migrate_preprint_downloads(from_when: str, until_when: str):
-    # PreprintDownload => OsfCountedUsageRecord
+    # PreprintDownload => OsfCountedUsageEvent
     _action_labels = ['download']
     _each_new = (
         _convert_preprint_metric(_hit['_source'], _action_labels)
@@ -129,12 +129,12 @@ def migrate_preprint_downloads(from_when: str, until_when: str):
             PreprintDownload, from_when=from_when, until_when=until_when
         )
     )
-    _es8_bulk_save(es8_metrics.OsfCountedUsageRecord, _each_new)
+    _es8_bulk_save(es8_metrics.OsfCountedUsageEvent, _each_new)
 
 
 @celery_app.task(**_TASK_KWARGS)
 def migrate_usage_reports(osfid: str, until_when: str):
-    # from PublicItemUsageReport to PublicItemUsageReportEs8
+    # from PublicItemUsageReport to MonthlyPublicItemUsageReportEs8
     _osfguid = osfdb.Guid.load(osfid)
     _item_is_component = is_osf_component(_osfguid.referent) if _osfguid else False
 
@@ -157,7 +157,7 @@ def migrate_usage_reports(osfid: str, until_when: str):
                 )
             )
 
-    _es8_bulk_save(es8_metrics.PublicItemUsageReportEs8, _each_new())
+    _es8_bulk_save(es8_metrics.MonthlyPublicItemUsageReportEs8, _each_new())
 
 
 ###
@@ -233,7 +233,7 @@ def _es6_usage_report_counts() -> tuple[int, int]:
 
 
 def _es8_usage_report_counts() -> tuple[int, int]:
-    _search = es8_metrics.PublicItemUsageReportEs8.search()
+    _search = es8_metrics.MonthlyPublicItemUsageReportEs8.search()
     _search.aggs.metric(
         'agg_item_count',
         'cardinality',
@@ -315,8 +315,8 @@ def _convert_unchanged_cyclicrecord_kwargs(es6_source: dict) -> dict:
     return dict(_each_kwarg())
 
 
-def _convert_counted_usage(source: dict) -> es8_metrics.OsfCountedUsageRecord:
-    return es8_metrics.OsfCountedUsageRecord(
+def _convert_counted_usage(source: dict) -> es8_metrics.OsfCountedUsageEvent:
+    return es8_metrics.OsfCountedUsageEvent(
         # fields from djelme.CountedUsageRecord:
         timestamp=source['timestamp'],
         sessionhour_id=source['session_id'],
@@ -329,7 +329,7 @@ def _convert_counted_usage(source: dict) -> es8_metrics.OsfCountedUsageRecord:
             osf_iri(_within_osfid)
             for _within_osfid in source.get('surrounding_guids', ())
         ],
-        # fields from OsfCountedUsageRecord:
+        # fields from OsfCountedUsageEvent:
         item_osfid=source['item_guid'],
         item_type=_convert_item_type(
             source.get('item_type'),
@@ -345,8 +345,8 @@ def _convert_counted_usage(source: dict) -> es8_metrics.OsfCountedUsageRecord:
 
 def _convert_preprint_metric(
     source: dict, action_labels: list[str]
-) -> es8_metrics.OsfCountedUsageRecord:
-    return es8_metrics.OsfCountedUsageRecord.record(
+) -> es8_metrics.OsfCountedUsageEvent:
+    return es8_metrics.OsfCountedUsageEvent.record(
         using=False,  # don't save yet; will save in bulk
         # fields used to compute a sessionhour_id:
         timestamp=datetime.datetime.fromisoformat(source['timestamp']),
@@ -358,7 +358,7 @@ def _convert_preprint_metric(
             provider_id=source.get('provider_id'),
             osf_model_name='preprint',
         ),
-        # fields from OsfCountedUsageRecord:
+        # fields from OsfCountedUsageEvent:
         item_osfid=source['preprint_id'],
         item_type=OSF.Preprint,
         item_public=True,
@@ -370,9 +370,9 @@ def _convert_preprint_metric(
 
 def _convert_public_usage_report(
     source: dict,
-    prior_report: es8_metrics.PublicItemUsageReportEs8 | None,
+    prior_report: es8_metrics.MonthlyPublicItemUsageReportEs8 | None,
     item_is_component: bool,
-) -> es8_metrics.PublicItemUsageReportEs8:
+) -> es8_metrics.MonthlyPublicItemUsageReportEs8:
     if prior_report is None:
         _c_views, _c_view_sess, _c_downloads, _c_download_sess = _get_cumulative_usage(
             osfid=source['item_osfid'],
@@ -390,7 +390,7 @@ def _convert_public_usage_report(
         _c_download_sess = prior_report.cumulative_download_session_count + source.get(
             'download_session_count', 0
         )
-    return es8_metrics.PublicItemUsageReportEs8(
+    return es8_metrics.MonthlyPublicItemUsageReportEs8(
         cycle_coverage=_semverish_from_yearmonth(source['report_yearmonth']),
         item_osfid=source['item_osfid'],
         item_type=_convert_item_type(
@@ -670,7 +670,7 @@ class Command(BaseCommand):
             _es6_count = (
                 _es6_pview_count + _es6_pdownload_count + _es6_usage_event_count
             )
-            _es8_count = es8_metrics.OsfCountedUsageRecord.search().filter(_range_q).count()
+            _es8_count = es8_metrics.OsfCountedUsageEvent.search().filter(_range_q).count()
             self._write_tabbed('es6', PreprintView, _es6_pview_count)
             self._write_tabbed('es6', PreprintDownload, _es6_pdownload_count)
             self._write_tabbed('es6', CountedUsageEs6, _es6_usage_event_count)
@@ -679,13 +679,13 @@ class Command(BaseCommand):
             )
             self._write_tabbed(
                 'es8',
-                es8_metrics.OsfCountedUsageRecord,
+                es8_metrics.OsfCountedUsageEvent,
                 _es8_count,
                 style=self._eq_style(_es8_count, _es6_count),
             )
         if start:  # schedule (per-day?) tasks (if --start)
             self.stdout.write(
-                f'starting usages => {es8_metrics.OsfCountedUsageRecord.__name__}'
+                f'starting usages => {es8_metrics.OsfCountedUsageEvent.__name__}'
             )
             for _from_date, _until_date in _date_range(_range_start, _range_end):
                 _from_str = _from_date.isoformat()
@@ -702,7 +702,7 @@ class Command(BaseCommand):
             self._write_tabbed('es6', es6_reports.PublicItemUsageReport, _es6_count)
             self._write_tabbed(
                 'es8',
-                es8_metrics.PublicItemUsageReportEs8,
+                es8_metrics.MonthlyPublicItemUsageReportEs8,
                 _es8_count,
                 style=self._eq_style(_es8_count, _es6_count),
             )
@@ -714,7 +714,7 @@ class Command(BaseCommand):
             )
             self._write_tabbed(
                 'es8',
-                es8_metrics.PublicItemUsageReportEs8,
+                es8_metrics.MonthlyPublicItemUsageReportEs8,
                 '(items)',
                 _es8_item_count,
                 style=self._eq_style(_es8_item_count, _es6_item_count),
@@ -723,7 +723,7 @@ class Command(BaseCommand):
         # each item-task iter thru reports oldest to newest, adding cumulative counts
         if start:
             self.stdout.write(
-                f'starting per-item {es6_reports.PublicItemUsageReport.__name__} => {es8_metrics.PublicItemUsageReportEs8.__name__}'
+                f'starting per-item {es6_reports.PublicItemUsageReport.__name__} => {es8_metrics.MonthlyPublicItemUsageReportEs8.__name__}'
             )
             for _osfid in _each_usage_report_osfid(
                 until_when=self._migration_started_at
