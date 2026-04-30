@@ -21,6 +21,7 @@ from osf.metadata.osf_gathering import (
     pls_get_magic_metadata_basket,
 )
 from osf.metadata.serializers import get_metadata_serializer
+from osf.models import CedarMetadataRecord
 from website import settings
 
 
@@ -89,7 +90,7 @@ def share_update_cedar_metadata_record(guid_id, cedar_record_pk):
         shtrove_ingest_url(),
         params={
             'focus_iri': iri,
-            'record_identifier': f"CedarMetadataRecord:{cedar_record.guid._id}:{cedar_record.template.cedar_id}",
+            'record_identifier': _shtrove_cedar_record_identifier(cedar_record),
             'is_supplementary': True,
         },
         headers={
@@ -113,7 +114,7 @@ def share_delete_cedar_metadata_record(guid_id, cedar_record_pk):
     requests.delete(
         shtrove_ingest_url(),
         params={
-            'record_identifier': f"CedarMetadataRecord:{cedar_record.guid._id}:{cedar_record.template.cedar_id}",
+            'record_identifier': _shtrove_cedar_record_identifier(cedar_record),
         },
         headers=_shtrove_auth_headers(referent),
     )
@@ -232,6 +233,10 @@ def _shtrove_record_identifier(osf_item, osfmap_partition: OsfmapPartition):
         if osfmap_partition.is_supplementary
         else _id
     )
+
+
+def _shtrove_cedar_record_identifier(cedar_record: CedarMetadataRecord) -> str:
+    return f'{cedar_record.guid._id}/CedarMetadataRecord:{cedar_record.template.cedar_id}'
 
 
 def _shtrove_auth_headers(osf_item):
