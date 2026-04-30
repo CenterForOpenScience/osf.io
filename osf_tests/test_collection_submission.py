@@ -1,3 +1,4 @@
+from unittest import mock
 import pytest
 
 from osf_tests.factories import (
@@ -8,11 +9,12 @@ from transitions import MachineError
 
 from osf_tests.factories import NodeFactory, CollectionFactory, CollectionProviderFactory
 
-from osf.models import CollectionSubmission, NotificationTypeEnum
+from osf.models import CollectionSubmission, NotificationTypeEnum, CedarMetadataRecord, CedarMetadataTemplate
 from osf.utils.workflows import CollectionSubmissionStates
 from framework.exceptions import PermissionsError
 from api_tests.utils import UserRoles
 from django.utils import timezone
+from website import settings
 
 from tests.utils import capture_notifications
 
@@ -145,6 +147,38 @@ def configure_test_auth(node, user_role, provider=None):
         node.add_contributor(user, user_role.get_permissions_string())
 
     return user
+
+
+@pytest.fixture()
+def unmoderated_collection_submission_public(node, unmoderated_collection):
+    unmoderated_collection.is_public = True
+    unmoderated_collection.save()
+    collection_submission = CollectionSubmission(
+        guid=node.guids.first(),
+        collection=unmoderated_collection,
+        creator=node.creator,
+    )
+    with capture_notifications():
+        collection_submission.save()
+    assert not collection_submission.is_moderated
+    return collection_submission
+
+
+@pytest.fixture()
+def cedar_template_json():
+    return {'t_key_1': 't_value_1', 't_key_2': 't_value_2', 't_key_3': 't_value_3'}
+
+
+@pytest.fixture()
+def cedar_template(cedar_template_json):
+    return CedarMetadataTemplate.objects.create(
+        schema_name='cedar_test_schema_name',
+        cedar_id='cedar_test_id',
+        template_version=1,
+        template=cedar_template_json,
+        active=True,
+        should_index_for_search=True
+    )
 
 
 @pytest.mark.django_db
@@ -574,3 +608,122 @@ class TestHybridModeratedCollectionSubmission:
         with capture_notifications():
             hybrid_moderated_collection_submission.cancel(user=user, comment='Test Comment')
         assert hybrid_moderated_collection_submission.state == CollectionSubmissionStates.IN_PROGRESS
+
+
+@pytest.mark.django_db
+@pytest.mark.enable_enqueue_task
+@mock.patch.object(settings, 'SHARE_ENABLED', True)
+@mock.patch.object(settings, 'USE_CELERY', False)  # run tasks synchronously
+class TestCollectionSubmissionWithCedarRecord:
+
+    @mock.patch('api.share.utils.pls_send_trove_record')
+    @mock.patch('api.share.utils.share_update_cedar_metadata_record')
+    @mock.patch('api.share.utils.share_delete_cedar_metadata_record')
+    def test_unindexable_template_and_unpublished_record_calls_records_deletion(
+        self,
+        mock_delete,
+        mock_create,
+        mock_pls,
+        unmoderated_collection_submission_public,
+        cedar_template,
+        cedar_template_json
+    ):
+        cedar_template.should_index_for_search = False
+        cedar_template.save()
+        CedarMetadataRecord.objects.create(
+            guid=unmoderated_collection_submission_public.guid,
+            template=cedar_template,
+            metadata=cedar_template_json,
+            is_published=False,
+        )
+        obj = mock.Mock()
+        obj.status_code = 200
+        mock_pls.return_value = obj
+        unmoderated_collection_submission_public.save()
+
+        assert not mock_create.s.called
+        assert mock_delete.s.called
+
+    @mock.patch('api.share.utils.pls_send_trove_record')
+    @mock.patch('api.share.utils.share_update_cedar_metadata_record')
+    @mock.patch('api.share.utils.share_delete_cedar_metadata_record')
+    def test_indexable_template_and_unpublished_record_calls_records_deletion(
+        self,
+        mock_delete,
+        mock_create,
+        mock_pls,
+        unmoderated_collection_submission_public,
+        cedar_template,
+        cedar_template_json
+    ):
+        cedar_template.should_index_for_search = True
+        cedar_template.save()
+        CedarMetadataRecord.objects.create(
+            guid=unmoderated_collection_submission_public.guid,
+            template=cedar_template,
+            metadata=cedar_template_json,
+            is_published=False,
+        )
+        obj = mock.Mock()
+        obj.status_code = 200
+        mock_pls.return_value = obj
+        unmoderated_collection_submission_public.save()
+
+        assert not mock_create.s.called
+        assert mock_delete.s.called
+
+    @mock.patch('api.share.utils.pls_send_trove_record')
+    @mock.patch('api.share.utils.share_update_cedar_metadata_record')
+    @mock.patch('api.share.utils.share_delete_cedar_metadata_record')
+    def test_unindexable_template_and_published_record_calls_records_deletion(
+        self,
+        mock_delete,
+        mock_create,
+        mock_pls,
+        unmoderated_collection_submission_public,
+        cedar_template,
+        cedar_template_json
+    ):
+        cedar_template.should_index_for_search = False
+        cedar_template.save()
+        CedarMetadataRecord.objects.create(
+            guid=unmoderated_collection_submission_public.guid,
+            template=cedar_template,
+            metadata=cedar_template_json,
+            is_published=True,
+        )
+        obj = mock.Mock()
+        obj.status_code = 200
+        mock_pls.return_value = obj
+        unmoderated_collection_submission_public.save()
+
+        assert not mock_create.s.called
+        assert mock_delete.s.called
+
+    @mock.patch('api.share.utils.pls_send_trove_record')
+    @mock.patch('api.share.utils.share_update_cedar_metadata_record')
+    @mock.patch('api.share.utils.share_delete_cedar_metadata_record')
+    def test_indexable_template_and_published_record_call_shtrove(
+        self,
+        mock_delete,
+        mock_create,
+        mock_pls,
+        unmoderated_collection_submission_public,
+        cedar_template,
+        cedar_template_json
+    ):
+        cedar_template.should_index_for_search = True
+        cedar_template.save()
+        CedarMetadataRecord.objects.create(
+            guid=unmoderated_collection_submission_public.guid,
+            template=cedar_template,
+            metadata=cedar_template_json,
+            is_published=True,
+        )
+        obj = mock.Mock()
+        obj.status_code = 200
+        mock_pls.return_value = obj
+        unmoderated_collection_submission_public.save()
+
+        assert mock_create.s.called
+        assert not mock_delete.s.called

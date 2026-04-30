@@ -7,6 +7,7 @@ import logging
 from rdflib import Graph
 
 from django.apps import apps
+from django.db.models import Q
 from celery.utils.time import get_exponential_backoff_interval
 import requests
 
@@ -21,7 +22,6 @@ from osf.metadata.osf_gathering import (
     pls_get_magic_metadata_basket,
 )
 from osf.metadata.serializers import get_metadata_serializer
-from osf.models import CedarMetadataRecord
 from website import settings
 
 
@@ -67,6 +67,29 @@ def _enqueue_update_share(osfresource):
     enqueue_task(task__update_share.s(_osfguid_value))
 
 
+def retry_shtrove_request(self_celery_task, _response):
+    try:
+        _response.raise_for_status()
+    except Exception as e:
+        log_exception(e)
+        if _response.status_code == HTTPStatus.TOO_MANY_REQUESTS:
+            retry_after = _response.headers.get('Retry-After')
+            try:
+                countdown = int(retry_after)
+            except (TypeError, ValueError):
+                retries = getattr(self_celery_task.request, 'retries', 0)
+                countdown = get_exponential_backoff_interval(
+                    factor=4,
+                    retries=retries,
+                    maximum=2 * 60,
+                    full_jitter=True,
+                )
+            raise self_celery_task.retry(exc=e, countdown=countdown)
+
+        if HTTPStatus(_response.status_code).is_server_error:
+            raise self_celery_task.retry(exc=e)
+
+
 def cedar_record_to_turtle(referent, cedar_record):
     graph = Graph()
     iri = referent.get_semantic_iri()
@@ -79,8 +102,8 @@ def cedar_record_to_turtle(referent, cedar_record):
     return graph.serialize(format='turtle')
 
 
-@celery_app.task()
-def share_update_cedar_metadata_record(guid_id, cedar_record_pk):
+@celery_app.task(bind=True)
+def share_update_cedar_metadata_record(self, guid_id, cedar_record_pk):
     from osf.models import CedarMetadataRecord, Guid
 
     guid = Guid.load(guid_id)
@@ -90,7 +113,7 @@ def share_update_cedar_metadata_record(guid_id, cedar_record_pk):
         return
 
     serialized_data = cedar_record_to_turtle(referent, cedar_record)
-    requests.post(
+    response = requests.post(
         shtrove_ingest_url(),
         params={
             'focus_iri': referent.get_semantic_iri(),
@@ -103,25 +126,26 @@ def share_update_cedar_metadata_record(guid_id, cedar_record_pk):
         },
         data=ensure_bytes(serialized_data),
     )
+    retry_shtrove_request(self, response)
 
 
-@celery_app.task()
-def share_delete_cedar_metadata_record(guid_id, cedar_record_pk):
+@celery_app.task(bind=True)
+def share_delete_cedar_metadata_record(self, guid_id, cedar_record_pk):
     from osf.models import CedarMetadataRecord, Guid
-
     guid = Guid.load(guid_id)
     referent = guid.referent
     cedar_record = CedarMetadataRecord.objects.filter(pk=cedar_record_pk).first()
     if not cedar_record:
         return
 
-    requests.delete(
+    response = requests.delete(
         shtrove_ingest_url(),
         params={
             'record_identifier': _shtrove_cedar_record_identifier(cedar_record),
         },
         headers=_shtrove_auth_headers(referent),
     )
+    retry_shtrove_request(self, response)
 
 
 @celery_app.task(
@@ -154,36 +178,29 @@ def task__update_share(self, guid: str, is_backfill=False, osfmap_partition_name
         log_exception(e)
         raise self.retry(exc=e)
 
-    try:
-        _response.raise_for_status()
-    except Exception as e:
-        log_exception(e)
-        if _response.status_code == HTTPStatus.TOO_MANY_REQUESTS:
-            retry_after = _response.headers.get('Retry-After')
-            try:
-                countdown = int(retry_after)
-            except (TypeError, ValueError):
-                retries = getattr(self.request, 'retries', 0)
-                countdown = get_exponential_backoff_interval(
-                    factor=4,
-                    retries=retries,
-                    maximum=2 * 60,
-                    full_jitter=True,
-                )
-            raise self.retry(exc=e, countdown=countdown)
+    retry_shtrove_request(self, _response)
+    # success response
+    if _is_deletion:
+        return
 
-        if HTTPStatus(_response.status_code).is_server_error:
-            raise self.retry(exc=e)
-    else:  # success response
-        if not _is_deletion:
-            # enqueue followup task for supplementary metadata
-            _next_partition = _next_osfmap_partition(_osfmap_partition)
-            if _next_partition is not None:
-                task__update_share.delay(
-                    guid,
-                    is_backfill=is_backfill,
-                    osfmap_partition_name=_next_partition.name,
-                )
+    # enqueue followup task for supplementary metadata
+    _next_partition = _next_osfmap_partition(_osfmap_partition)
+    if _next_partition is not None:
+        task__update_share.delay(
+            guid,
+            is_backfill=is_backfill,
+            osfmap_partition_name=_next_partition.name,
+        )
+        for cedar_record in _osfid_instance.cedar_metadata_records.filter(
+            is_published=True,
+            template__should_index_for_search=True,
+        ):
+            enqueue_task(share_update_cedar_metadata_record.s(_osfid_instance._id, cedar_record.pk))
+
+        for cedar_record in _osfid_instance.cedar_metadata_records.filter(
+            Q(is_published=False) | Q(template__should_index_for_search=False),
+        ):
+            enqueue_task(share_delete_cedar_metadata_record.s(_osfid_instance._id, cedar_record.pk))
 
 
 def pls_send_trove_record(osf_item, *, is_backfill: bool, osfmap_partition: OsfmapPartition):
@@ -239,7 +256,7 @@ def _shtrove_record_identifier(osf_item, osfmap_partition: OsfmapPartition):
     )
 
 
-def _shtrove_cedar_record_identifier(cedar_record: CedarMetadataRecord) -> str:
+def _shtrove_cedar_record_identifier(cedar_record) -> str:
     return f'{cedar_record.guid._id}/CedarMetadataRecord:{cedar_record.template.cedar_id}'
 
 
