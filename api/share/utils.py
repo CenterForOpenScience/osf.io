@@ -67,6 +67,18 @@ def _enqueue_update_share(osfresource):
     enqueue_task(task__update_share.s(_osfguid_value))
 
 
+def cedar_record_to_turtle(referent, cedar_record):
+    graph = Graph()
+    iri = referent.get_semantic_iri()
+    full_metadata = {
+        '@id': iri,
+        OSF.hasCedarRecord: cedar_record.metadata,
+    }
+    graph.parse(data=full_metadata, format='json-ld')
+
+    return graph.serialize(format='turtle')
+
+
 @celery_app.task()
 def share_update_cedar_metadata_record(guid_id, cedar_record_pk):
     from osf.models import CedarMetadataRecord, Guid
@@ -77,19 +89,11 @@ def share_update_cedar_metadata_record(guid_id, cedar_record_pk):
     if not cedar_record:
         return
 
-    graph = Graph()
-    iri = referent.get_semantic_iri()
-    full_metadata = {
-        '@id': iri,
-        OSF.hasCedarRecord: cedar_record.metadata,
-    }
-    graph.parse(data=full_metadata, format='json-ld')
-
-    serialized_data = graph.serialize(format='turtle')
+    serialized_data = cedar_record_to_turtle(referent, cedar_record)
     requests.post(
         shtrove_ingest_url(),
         params={
-            'focus_iri': iri,
+            'focus_iri': referent.get_semantic_iri(),
             'record_identifier': _shtrove_cedar_record_identifier(cedar_record),
             'is_supplementary': True,
         },
