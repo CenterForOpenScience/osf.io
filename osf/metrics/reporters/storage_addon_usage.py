@@ -134,8 +134,13 @@ class StorageAddonUsageReporter(DailyReporter):
         usage_by_addon_es8 = []
         usage_by_addon = []
         for short_name, addon_config in storage_addon_configs.items():
-            user_counts = storage_addon_user_counts(date, addon_config.get_model('UserSettings'))
-            node_counts = storage_addon_node_counts(date, addon_config.get_model('NodeSettings'))
+            try:
+                _UserSettings = addon_config.get_model('UserSettings')
+                _NodeSettings = addon_config.get_model('NodeSettings')
+            except LookupError:
+                continue
+            user_counts = storage_addon_user_counts(date, _UserSettings)
+            node_counts = storage_addon_node_counts(date, _NodeSettings)
             usage_by_storage_addon_es_8 = UsageByStorageAddonEs8(
                 addon_shortname=short_name,
                 enabled_usersettings=RunningTotalEs8(
