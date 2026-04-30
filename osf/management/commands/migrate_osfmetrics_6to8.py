@@ -669,9 +669,14 @@ class Command(BaseCommand):
                     }
                 }
             }
+            _es6_usage_count_q = {
+                'bool': {
+                    'filter': [_range_q, {'exists': {'field': 'item_guid'}}],
+                },
+            }
             _es6_pview_count = PreprintView.search().filter(_range_q).count()
             _es6_pdownload_count = PreprintDownload.search().filter(_range_q).count()
-            _es6_usage_event_count = CountedUsageEs6.search().filter(_range_q).count()
+            _es6_usage_event_count = CountedUsageEs6.search().filter(_es6_usage_count_q).count()
             _es6_count = (
                 _es6_pview_count + _es6_pdownload_count + _es6_usage_event_count
             )
@@ -720,7 +725,7 @@ class Command(BaseCommand):
             self._write_tabbed(
                 'es8',
                 es8_metrics.MonthlyPublicItemUsageReportEs8,
-                '(items)',
+                'osfid count:',
                 _es8_item_count,
                 style=self._eq_style(_es8_item_count, _es6_item_count),
             )
