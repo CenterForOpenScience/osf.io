@@ -13,6 +13,7 @@ from osf.models import CollectionSubmission, NotificationTypeEnum, CedarMetadata
 from osf.utils.workflows import CollectionSubmissionStates
 from framework.exceptions import PermissionsError
 from api_tests.utils import UserRoles
+from api.share.utils import cedar_record_to_turtle, _shtrove_cedar_record_identifier
 from django.utils import timezone
 from website import settings
 
@@ -630,7 +631,7 @@ class TestCollectionSubmissionWithCedarRecord:
     ):
         cedar_template.should_index_for_search = False
         cedar_template.save()
-        CedarMetadataRecord.objects.create(
+        record = CedarMetadataRecord.objects.create(
             guid=unmoderated_collection_submission_public.guid,
             template=cedar_template,
             metadata=cedar_template_json,
@@ -643,6 +644,11 @@ class TestCollectionSubmissionWithCedarRecord:
 
         assert not mock_create.s.called
         assert mock_delete.s.called
+        mock_delete.s.assert_called_with(
+            record.guid._id,
+            record._id,
+            record.template.cedar_id
+        )
 
     @mock.patch('api.share.utils.pls_send_trove_record')
     @mock.patch('api.share.utils.share_update_cedar_metadata_record')
@@ -658,7 +664,7 @@ class TestCollectionSubmissionWithCedarRecord:
     ):
         cedar_template.should_index_for_search = True
         cedar_template.save()
-        CedarMetadataRecord.objects.create(
+        record = CedarMetadataRecord.objects.create(
             guid=unmoderated_collection_submission_public.guid,
             template=cedar_template,
             metadata=cedar_template_json,
@@ -671,6 +677,11 @@ class TestCollectionSubmissionWithCedarRecord:
 
         assert not mock_create.s.called
         assert mock_delete.s.called
+        mock_delete.s.assert_called_with(
+            record.guid._id,
+            record._id,
+            record.template.cedar_id
+        )
 
     @mock.patch('api.share.utils.pls_send_trove_record')
     @mock.patch('api.share.utils.share_update_cedar_metadata_record')
@@ -686,7 +697,7 @@ class TestCollectionSubmissionWithCedarRecord:
     ):
         cedar_template.should_index_for_search = False
         cedar_template.save()
-        CedarMetadataRecord.objects.create(
+        record = CedarMetadataRecord.objects.create(
             guid=unmoderated_collection_submission_public.guid,
             template=cedar_template,
             metadata=cedar_template_json,
@@ -699,6 +710,11 @@ class TestCollectionSubmissionWithCedarRecord:
 
         assert not mock_create.s.called
         assert mock_delete.s.called
+        mock_delete.s.assert_called_with(
+            record.guid._id,
+            record._id,
+            record.template.cedar_id
+        )
 
     @mock.patch('api.share.utils.pls_send_trove_record')
     @mock.patch('api.share.utils.share_update_cedar_metadata_record')
@@ -714,7 +730,7 @@ class TestCollectionSubmissionWithCedarRecord:
     ):
         cedar_template.should_index_for_search = True
         cedar_template.save()
-        CedarMetadataRecord.objects.create(
+        record = CedarMetadataRecord.objects.create(
             guid=unmoderated_collection_submission_public.guid,
             template=cedar_template,
             metadata=cedar_template_json,
@@ -726,4 +742,178 @@ class TestCollectionSubmissionWithCedarRecord:
         unmoderated_collection_submission_public.save()
 
         assert mock_create.s.called
+        mock_create.s.assert_called_with(unmoderated_collection_submission_public.guid._id, record.pk)
         assert not mock_delete.s.called
+
+    def test_share_update_cedar_metadata_record(self, unmoderated_collection_submission_public, cedar_template):
+        metadata = {
+            '@context': {
+                'pav': 'http://purl.org/pav/',
+                'url': 'http://schema.org/url',
+                'xsd': 'http://www.w3.org/2001/XMLSchema#',
+                'name': 'http://schema.org/name',
+                'oslc': 'http://open-services.net/ns/core#',
+                'rdfs': 'http://www.w3.org/2000/01/rdf-schema#',
+                'skos': 'http://www.w3.org/2004/02/skos/core#',
+                'author': 'http://schema.org/author',
+                'funder': 'https://schema.metadatacenter.org/properties/c35f0660-2072-46a3-8e0d-532e40d94919',
+                'schema': 'http://schema.org/',
+                'license': 'http://schema.org/license',
+                'citation': 'http://schema.org/citation',
+                'keywords': 'http://schema.org/keywords',
+                'identifier': 'http://schema.org/identifier',
+                'rdfs:label': {
+                    '@type': 'xsd:string'
+                },
+                'description': 'http://schema.org/description',
+                'schema:name': {
+                    '@type': 'xsd:string'
+                },
+                'pav:createdBy': {
+                    '@type': '@id'
+                },
+                'pav:createdOn': {
+                    '@type': 'xsd:dateTime'
+                },
+                'skos:notation': {
+                    '@type': 'xsd:string'
+                },
+                'oslc:modifiedBy': {
+                    '@type': '@id'
+                },
+                'pav:derivedFrom': {
+                    '@type': '@id'
+                },
+                'schema:isBasedOn': {
+                    '@type': '@id'
+                },
+                'variableMeasured': 'http://schema.org/variableMeasured',
+                'pav:lastUpdatedOn': {
+                    '@type': 'xsd:dateTime'
+                },
+                'schema:description': {
+                    '@type': 'xsd:string'
+                },
+                'About this template': 'https://repo.metadatacenter.org/template-fields/bc66544c-e100-439e-9e80-9b35537368e5'
+            },
+            'name': {
+                '@value': 'name'
+            },
+            'description': {
+                '@value': 'description'
+            },
+            'variableMeasured': [
+                {
+                    '@value': 'variable'
+                }
+            ],
+            'author': [
+                {
+                    '@value': None
+                }
+            ],
+            'citation': {
+                '@value': None
+            },
+            'license': {
+                '@value': None
+            },
+            'funder': [
+                {
+                    '@value': '1111111'
+                }
+            ],
+            'url': {},
+            'keywords': {
+                '@value': None
+            },
+            'identifier': {}
+        }
+        record = CedarMetadataRecord.objects.create(
+            guid=unmoderated_collection_submission_public.guid,
+            template=cedar_template,
+            metadata=metadata,
+            is_published=True,
+        )
+        result = cedar_record_to_turtle(record.guid.referent, record)
+        vocab_url = '<https://osf.io/vocab/2022/>'
+        schema_url = '<http://schema.org/>'
+        schema_metadata_url = '<https://schema.metadatacenter.org/properties/>'
+        urls_to_find = {
+            vocab_url: None,
+            schema_url: None,
+            schema_metadata_url: None
+        }
+        for url in urls_to_find.keys():
+            urls_to_find[url] = result[result.index(url) - 3]
+
+        # fetch urls from result and assign ns prefixes based on order of appearance in result to make test resilient to changes in order of namespace declaration in turtle output
+        ns1 = list(filter(lambda url: urls_to_find[url] == '1', urls_to_find.keys()))[0]
+        ns2 = list(filter(lambda url: urls_to_find[url] == '2', urls_to_find.keys()))[0]
+        ns3 = list(filter(lambda url: urls_to_find[url] == '3', urls_to_find.keys()))[0]
+        vocab_n = urls_to_find[vocab_url]
+        schema_n = urls_to_find[schema_url]
+        schema_metadata_n = urls_to_find[schema_metadata_url]
+        # compose expected result dynamically based on ordering of prefixes
+        # however ns attributes are strictly attached to specific prefix
+        expected = (
+            f'@prefix ns1: {ns1} .\n'
+            f'@prefix ns2: {ns2} .\n'
+            f'@prefix ns3: {ns3} .\n\n'
+            f'<http://localhost:5000/{unmoderated_collection_submission_public.guid._id}> ns{vocab_n}:hasCedarRecord [ ns{schema_n}:description "description" ;\n'
+            f'            ns{schema_n}:identifier [ ] ;\n'
+            f'            ns{schema_n}:name "name" ;\n'
+            f'            ns{schema_n}:url [ ] ;\n'
+            f'            ns{schema_n}:variableMeasured "variable" ;\n'
+            f'            ns{schema_metadata_n}:c35f0660-2072-46a3-8e0d-532e40d94919 "1111111" ] .\n\n'
+        )
+
+        assert result == expected
+
+    def test_cedar_record_identifier_on_create(self, unmoderated_collection_submission_public, cedar_template):
+        cedar_template.should_index_for_search = True
+        cedar_template.save()
+
+        with mock.patch('api.share.utils.pls_send_trove_record'):
+            with mock.patch('api.share.utils.share_update_cedar_metadata_record'):
+                with mock.patch('api.share.utils.share_delete_cedar_metadata_record'):
+                    to_create_record = CedarMetadataRecord.objects.create(
+                        guid=unmoderated_collection_submission_public.guid,
+                        template=cedar_template,
+                        metadata=cedar_template.template,
+                        is_published=True,
+                    )
+
+        with mock.patch('api.share.utils.pls_send_trove_record'):
+            with mock.patch('api.share.utils.share_delete_cedar_metadata_record'):
+                with mock.patch('api.share.utils._shtrove_cedar_record_identifier') as mock_identifier:
+                    unmoderated_collection_submission_public.save()
+                    mock_identifier.assert_called_with(
+                        to_create_record._id,
+                        to_create_record.template.cedar_id
+                    )
+                    assert (
+                        _shtrove_cedar_record_identifier(to_create_record._id, to_create_record.template.cedar_id) ==
+                        f'{to_create_record._id}/CedarMetadataRecord:{to_create_record.template.cedar_id}'
+                    )
+
+    def test_cedar_record_identifier_on_delete(self, unmoderated_collection_submission_public, cedar_template):
+        with mock.patch('api.share.utils.pls_send_trove_record'):
+            with mock.patch('api.share.utils.share_update_cedar_metadata_record'):
+                with mock.patch('api.share.utils.share_delete_cedar_metadata_record'):
+                    to_delete_record = CedarMetadataRecord.objects.create(
+                        guid=unmoderated_collection_submission_public.guid,
+                        template=cedar_template,
+                        metadata=cedar_template.template,
+                        is_published=False,
+                    )
+
+        with mock.patch('api.share.utils.pls_send_trove_record'):
+            with mock.patch('api.share.utils.share_update_cedar_metadata_record'):
+                with mock.patch('api.share.utils._shtrove_cedar_record_identifier') as mock_identifier:
+                    unmoderated_collection_submission_public.save()
+                    mock_identifier.assert_called_with(to_delete_record._id, to_delete_record.template.cedar_id)
+                    assert (
+                        _shtrove_cedar_record_identifier(to_delete_record._id, to_delete_record.template.cedar_id) ==
+                        f'{to_delete_record._id}/CedarMetadataRecord:{to_delete_record.template.cedar_id}'
+                    )

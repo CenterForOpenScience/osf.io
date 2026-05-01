@@ -103,10 +103,10 @@ def cedar_record_to_turtle(referent, cedar_record):
 
 
 @celery_app.task(bind=True)
-def share_update_cedar_metadata_record(self, guid_id, cedar_record_pk):
-    from osf.models import CedarMetadataRecord, Guid
+def share_update_cedar_metadata_record(self, referent_id, cedar_record_pk):
+    from osf.models import Guid, CedarMetadataRecord
 
-    guid = Guid.load(guid_id)
+    guid = Guid.load(referent_id)
     referent = guid.referent
     cedar_record = CedarMetadataRecord.objects.filter(pk=cedar_record_pk).first()
     if not cedar_record:
@@ -117,7 +117,7 @@ def share_update_cedar_metadata_record(self, guid_id, cedar_record_pk):
         shtrove_ingest_url(),
         params={
             'focus_iri': referent.get_semantic_iri(),
-            'record_identifier': _shtrove_cedar_record_identifier(cedar_record),
+            'record_identifier': _shtrove_cedar_record_identifier(cedar_record._id, cedar_record.template.cedar_id),
             'is_supplementary': True,
         },
         headers={
@@ -130,18 +130,18 @@ def share_update_cedar_metadata_record(self, guid_id, cedar_record_pk):
 
 
 @celery_app.task(bind=True)
-def share_delete_cedar_metadata_record(self, guid_id, cedar_record_pk):
-    from osf.models import CedarMetadataRecord, Guid
-    guid = Guid.load(guid_id)
-    referent = guid.referent
-    cedar_record = CedarMetadataRecord.objects.filter(pk=cedar_record_pk).first()
-    if not cedar_record:
-        return
-
+def share_delete_cedar_metadata_record(
+    self,
+    cedar_referent___id,
+    cedar_record___id,
+    cedar_template_cedar_id,
+):
+    from osf.models import Guid
+    referent = Guid.load(cedar_referent___id).referent
     response = requests.delete(
         shtrove_ingest_url(),
         params={
-            'record_identifier': _shtrove_cedar_record_identifier(cedar_record),
+            'record_identifier': _shtrove_cedar_record_identifier(cedar_record___id, cedar_template_cedar_id),
         },
         headers=_shtrove_auth_headers(referent),
     )
@@ -200,7 +200,13 @@ def task__update_share(self, guid: str, is_backfill=False, osfmap_partition_name
         for cedar_record in _osfid_instance.cedar_metadata_records.filter(
             Q(is_published=False) | Q(template__should_index_for_search=False),
         ):
-            enqueue_task(share_delete_cedar_metadata_record.s(_osfid_instance._id, cedar_record.pk))
+            enqueue_task(
+                share_delete_cedar_metadata_record.s(
+                    cedar_record.guid._id,
+                    cedar_record._id,
+                    cedar_record.template.cedar_id,
+                ),
+            )
 
 
 def pls_send_trove_record(osf_item, *, is_backfill: bool, osfmap_partition: OsfmapPartition):
@@ -256,8 +262,8 @@ def _shtrove_record_identifier(osf_item, osfmap_partition: OsfmapPartition):
     )
 
 
-def _shtrove_cedar_record_identifier(cedar_record) -> str:
-    return f'{cedar_record.guid._id}/CedarMetadataRecord:{cedar_record.template.cedar_id}'
+def _shtrove_cedar_record_identifier(cedar_record___id, template_cedar_id) -> str:
+    return f'{cedar_record___id}/CedarMetadataRecord:{template_cedar_id}'
 
 
 def _shtrove_auth_headers(osf_item):
