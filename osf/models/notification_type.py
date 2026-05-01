@@ -160,6 +160,7 @@ class NotificationType(models.Model):
             NotificationTypeEnum.ADDON_FILE_COPIED.value,
             NotificationTypeEnum.ADDON_FILE_MOVED.value,
             NotificationTypeEnum.ADDON_FILE_RENAMED.value,
+            NotificationTypeEnum.ADDON_FILE_REMOVED.value,
             NotificationTypeEnum.FILE_ADDED.value,
             NotificationTypeEnum.FILE_REMOVED.value,
             NotificationTypeEnum.FILE_UPDATED.value,
