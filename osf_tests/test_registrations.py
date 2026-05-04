@@ -395,7 +395,7 @@ class TestRegisterNode:
             with pytest.raises(NodeStateError) as exc_info:
                 registration.set_privacy(Node.PUBLIC, auth=auth, log=False)
 
-            assert 'Unable to make registration public: DOI creation failed' in str(exc_info.value)
+            assert f'Unable to make registration {registration._id} public: DOI creation failed' in str(exc_info.value)
             assert registration.is_public is False
 
             mock_client.create_identifier.assert_called_once()
