@@ -21,7 +21,7 @@ class TestMetricsReports:
 
     @pytest.fixture
     def mock_search(self):
-        with mock.patch('elasticsearch6.Elasticsearch.search', autospec=True) as mock_search:
+        with mock.patch('elasticsearch8.Elasticsearch.search', autospec=True) as mock_search:
             yield mock_search
 
     def test_report_names(self, app, mock_domain):
@@ -44,11 +44,11 @@ class TestMetricsReports:
 
     @pytest.mark.parametrize('report_name', expected_report_names)
     def test_recent_reports(self, app, mock_domain, mock_search, report_name):
-        mock_search.return_value = {
+        mock_search.return_value.body = {
             'hits': {
                 'hits': [
-                    {'_id': 'hi-by', '_source': {'report_date': '1234-12-12', 'hello': 'goodbye'}},
-                    {'_id': 'doof', '_source': {'report_date': '1234-12-11', 'hello': 'upwa'}},
+                    {'_id': 'hi-by', '_source': {'report_date': '1234-12-12', 'hello': 'goodbye', 'created': '1235-12-13T01:00:00Z'}},
+                    {'_id': 'doof', '_source': {'report_date': '1234-12-11', 'hello': 'upwa', 'created': '1235-12-12T01:00:00Z'}},
                 ],
             },
         }
@@ -58,17 +58,19 @@ class TestMetricsReports:
         assert resp.json['data'] == [
             {
                 'id': 'hi-by',
-                'type': f'daily-report:{report_name}',
+                'type': f'cyclic-report:{report_name}',
                 'attributes': {
                     'report_date': '1234-12-12',
                     'hello': 'goodbye',
+                    'created': '1235-12-13T01:00:00Z',
                 },
             }, {
                 'id': 'doof',
-                'type': f'daily-report:{report_name}',
+                'type': f'cyclic-report:{report_name}',
                 'attributes': {
                     'report_date': '1234-12-11',
                     'hello': 'upwa',
+                    'created': '1235-12-12T01:00:00Z',
                 },
             }
         ]
@@ -84,12 +86,12 @@ class TestMetricsReports:
         assert resp.unicode_body == CSV_REPORTS
 
 
-TSV_REPORTS = '''report_date	hello
-1234-12-12	goodbye
-1234-12-11	upwa
+TSV_REPORTS = '''report_date	created	hello
+1234-12-12	1235-12-13 01:00:00+00:00	goodbye
+1234-12-11	1235-12-12 01:00:00+00:00	upwa
 '''.replace('\n', '\r\n')
 
-CSV_REPORTS = '''report_date,hello
-1234-12-12,goodbye
-1234-12-11,upwa
+CSV_REPORTS = '''report_date,created,hello
+1234-12-12,1235-12-13 01:00:00+00:00,goodbye
+1234-12-11,1235-12-12 01:00:00+00:00,upwa
 '''.replace('\n', '\r\n')

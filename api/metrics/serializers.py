@@ -1,26 +1,12 @@
 import logging
-import datetime
 
 from rest_framework import serializers as ser
 
-from api.base.serializers import BaseAPISerializer
 from api.base.utils import absolute_reverse
-from osf.metrics.counted_usage import CountedAuthUsage, PageviewInfo
-from osf.metrics.es8_metrics import (
-    OsfCountedUsageEvent,
-    PageviewInfo as PageviewInfoEs8,
-)
-from website import settings as website_settings
+from osf.metrics.es8_metrics import OsfCountedUsageEvent
+
 
 logger = logging.getLogger(__name__)
-
-
-class PreprintMetricSerializer(BaseAPISerializer):
-
-    query = ser.DictField()
-
-    class Meta:
-        type_ = 'preprint_metrics'
 
 
 class RawMetricsSerializer():
@@ -30,9 +16,9 @@ class RawMetricsSerializer():
 
 def validate_action_label(label):
     try:
-        CountedAuthUsage.ActionLabel(label)
+        OsfCountedUsageEvent.ActionLabel(label)
     except ValueError:
-        valid_labels = ', '.join(label.value for label in CountedAuthUsage.ActionLabel)
+        valid_labels = ', '.join(label.value for label in OsfCountedUsageEvent.ActionLabel)
         raise ser.ValidationError(
             f'Invalid value in action_labels! Valid labels: {valid_labels}',
         )
@@ -67,30 +53,16 @@ class CountedAuthUsageSerializer(ser.Serializer):
         return data
 
     def create(self, validated_data):
-        pageview_info = None
-        pageview_info_es8 = None
-        if pageview_info_data := validated_data.get('pageview_info'):
-            pageview_info = PageviewInfo(**pageview_info_data)
-            pageview_info_es8 = PageviewInfoEs8(**pageview_info_data)
-        OsfCountedUsageEvent.record(
+        return OsfCountedUsageEvent.record(
             item_osfid=validated_data['item_guid'],
             action_labels=validated_data.get('action_labels'),
             provider_id=validated_data.get('provider_id'),
-            pageview_info=pageview_info_es8,
+            pageview_info=validated_data.get('pageview_info'),
             # used to create a COUNTER session-hour id, not stored:
             client_session_id=validated_data.get('client_session_id'),
             user_id=self.context.get('user_id'),
             request_host=self.context.get('request_host'),
             request_useragent=self.context.get('request_useragent'),
-        )
-        return CountedAuthUsage.record(
-            platform_iri=website_settings.DOMAIN,
-            provider_id=validated_data.get('provider_id'),
-            item_guid=validated_data.get('item_guid'),
-            session_id=validated_data['session_id'],  # must be provided by the view
-            user_is_authenticated=validated_data['user_is_authenticated'],  # must be provided by the view
-            action_labels=validated_data.get('action_labels'),
-            pageview_info=pageview_info,
         )
 
 
@@ -109,44 +81,16 @@ class ReportNameSerializer(ser.BaseSerializer):
         }
 
 
-class DailyReportSerializer(ser.BaseSerializer):
+class CyclicReportSerializer(ser.BaseSerializer):
     def to_representation(self, instance):
         # TODO: detangle datamodel (osf.metrics.reports) from api serialization
         # (don't use `to_dict` here)
         report_as_dict = instance.to_dict()
         report_name = self.context['report_name']
-        report_date = report_as_dict['report_date']
-
-        if isinstance(report_date, datetime.datetime):
-            report_date = report_date.date()
-        if isinstance(report_date, datetime.date):
-            report_date = str(report_date)
-
         return {
             'id': instance.meta.id,
-            'type': f'daily-report:{report_name}',
-            'attributes': {
-                **report_as_dict,
-                'report_date': report_date,
-            },
-        }
-
-
-class MonthlyReportSerializer(ser.BaseSerializer):
-    def to_representation(self, instance):
-        # TODO: detangle datamodel (osf.metrics.reports) from api serialization
-        # (don't use `to_dict` here)
-        report_as_dict = instance.to_dict()
-        report_name = self.context['report_name']
-        report_yearmonth = report_as_dict['report_yearmonth']
-
-        return {
-            'id': instance.meta.id,
-            'type': f'monthly-report:{report_name}',
-            'attributes': {
-                **report_as_dict,
-                'report_month': report_yearmonth,
-            },
+            'type': f'cyclic-report:{report_name}',
+            'attributes': report_as_dict,
         }
 
 
@@ -158,28 +102,28 @@ class NodeAnalyticsSerializer(ser.BaseSerializer):
                 'path': bucket['key'],
                 'route': bucket['route-for-path'].buckets[0]['key'],
                 'title': bucket['title-for-path'].buckets[0]['key'],
-                'count': bucket['doc_count'],
+                'count': bucket['unique-count'].value,
             }
             for bucket in aggs['popular-pages'].buckets
         ]
         unique_visits = [
             {
                 'date': bucket['key'].date(),
-                'count': bucket['doc_count'],
+                'count': bucket['unique-count'].value,
             }
             for bucket in aggs['unique-visits'].buckets
         ]
         time_of_day = [
             {
                 'hour': bucket['key'],
-                'count': bucket['doc_count'],
+                'count': bucket['unique-count'].value,
             }
             for bucket in aggs['time-of-day'].buckets
         ]
         referer_domain = [
             {
                 'referer_domain': bucket['key'],
-                'count': bucket['doc_count'],
+                'count': bucket['unique-count'].value,
             }
             for bucket in aggs['referer-domain'].buckets
         ]

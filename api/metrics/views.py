@@ -4,10 +4,7 @@ import logging
 from enum import Enum
 
 from django.http import JsonResponse, HttpResponse, Http404
-from django.utils import timezone
 
-from elasticsearch6.exceptions import NotFoundError, RequestError
-from elasticsearch6_dsl.connections import get_connection
 from elasticsearch_metrics.registry import djelme_registry
 
 from framework.auth.oauth_scopes import CoreScopes
@@ -18,11 +15,11 @@ from rest_framework.response import Response
 from rest_framework.generics import GenericAPIView
 from rest_framework.settings import api_settings as drf_api_settings
 
+from api.base.elasticsearch_dsl_views import ElasticsearchListView
 from api.base.views import JSONAPIBaseView
 from api.base.permissions import TokenHasScope
 from api.base.waffle_decorators import require_switch
 from api.metrics.permissions import (
-    IsPreprintMetricsUser,
     IsRawMetricsUser,
     IsRegistriesModerationMetricsUser,
 )
@@ -31,10 +28,8 @@ from api.metrics.renderers import (
     MetricsReportsTsvRenderer,
 )
 from api.metrics.serializers import (
-    PreprintMetricSerializer,
     RawMetricsSerializer,
-    DailyReportSerializer,
-    MonthlyReportSerializer,
+    CyclicReportSerializer,
     ReportNameSerializer,
     NodeAnalyticsSerializer,
     UserVisitsSerializer,
@@ -42,169 +37,47 @@ from api.metrics.serializers import (
     CountedAuthUsageSerializer,
 )
 from api.metrics.utils import (
-    parse_datetimes,
     parse_date_range,
     should_skip_counted_usage,
 )
 from api.nodes.permissions import MustBePublic
 
 from osf.features import ENABLE_RAW_METRICS
-from osf.metrics import (
-    utils,
-    reports,
-    PreprintDownload,
-    PreprintView,
-    RegistriesModerationMetrics,
-    CountedAuthUsage,
+from osf.metrics.es8_metrics import (
+    BaseDailyReport,
+    BaseMonthlyReport,
+    OsfCountedUsageEvent,
+    RegistriesModerationEventEs8,
+    DailyDownloadCountReportEs8,
+    DailyInstitutionSummaryReportEs8,
+    DailyNodeSummaryReportEs8,
+    DailyOsfstorageFileCountReportEs8,
+    DailyPreprintSummaryReportEs8,
+    DailyStorageAddonUsageReportEs8,
+    DailyUserSummaryReportEs8,
+    DailyNewUserDomainReportEs8,
+    MonthlySpamSummaryReportEs8,
 )
 from osf.metrics.openapi import get_metrics_openapi_json_dict
 from osf.models import AbstractNode
+from osf.utils.workflows import RegistrationModerationTriggers, RegistrationModerationStates
 
 
 logger = logging.getLogger(__name__)
 
 
-class PreprintMetricMixin(JSONAPIBaseView):
-    permission_classes = (
-        drf_permissions.IsAuthenticated,
-        drf_permissions.IsAdminUser,
-        IsPreprintMetricsUser,
-        TokenHasScope,
-    )
+VIEWABLE_REPORTS = {
+    'download_count': DailyDownloadCountReportEs8,
+    'institution_summary': DailyInstitutionSummaryReportEs8,
+    'node_summary': DailyNodeSummaryReportEs8,
+    'osfstorage_file_count': DailyOsfstorageFileCountReportEs8,
+    'preprint_summary': DailyPreprintSummaryReportEs8,
+    'storage_addon_usage': DailyStorageAddonUsageReportEs8,
+    'user_summary': DailyUserSummaryReportEs8,
+    'spam_summary': MonthlySpamSummaryReportEs8,
+    'new_user_domains': DailyNewUserDomainReportEs8,
+}
 
-    required_read_scopes = [CoreScopes.METRICS_BASIC]
-    required_write_scopes = [CoreScopes.METRICS_RESTRICTED]
-
-    serializer_class = PreprintMetricSerializer
-
-    @property
-    def metric_type(self):
-        raise NotImplementedError
-
-    @property
-    def metric(self):
-        raise NotImplementedError
-
-    def add_search(self, search, query_params, **kwargs):
-        """
-        get list of guids from the kwargs
-        use that in a query to narrow down metrics results
-        """
-        preprint_guid_string = query_params.get('guids')
-        if not preprint_guid_string:
-            raise ValidationError(
-                'To gather metrics for preprints, you must provide one or more preprint ' +
-                'guids in the `guids` query parameter.',
-            )
-        preprint_guids = preprint_guid_string.split(',')
-
-        return search.filter('terms', preprint_id=preprint_guids)
-
-    def format_response(self, response, query_params):
-        data = []
-        if getattr(response, 'aggregations') and response.aggregations:
-            for result in response.aggregations.dates.buckets:
-                guid_results = {}
-                for preprint_result in result.preprints.buckets:
-                    guid_results[preprint_result['key']] = preprint_result['total']['value']
-                    # return 0 for the guids with no results for consistent payloads
-                guids = query_params['guids'].split(',')
-                if guid_results.keys() != guids:
-                    for guid in guids:
-                        if not guid_results.get(guid):
-                            guid_results[guid] = 0
-                result_dict = {result.key_as_string: guid_results}
-                data.append(result_dict)
-
-        return {
-            'metric_type': self.metric_type,
-            'data': data,
-        }
-
-    def execute_search(self, search, query=None):
-        try:
-            # There's a bug in the ES python library the prevents us from updating the search object, so lets just make
-            # the raw query. If we have it.
-            if query:
-                es = get_connection(search._using)
-                response = search._response_class(
-                    search,
-                    es.search(
-                        index=search._index,
-                        body=query,
-                    ),
-                )
-            else:
-                response = search.execute()
-        except NotFoundError:
-            # _get_relevant_indices returned 1 or more indices
-            # that doesn't exist. Fall back to unoptimized query
-            search = search.index().index(self.metric._default_index())
-            response = search.execute()
-        return response
-
-    def get(self, *args, **kwargs):
-        query_params = getattr(self.request, 'query_params', self.request.GET)
-
-        interval = query_params.get('interval', 'day')
-
-        start_datetime, end_datetime = parse_datetimes(query_params)
-
-        search = self.metric.search(after=start_datetime)
-        search = search.filter('range', timestamp={'gte': start_datetime, 'lt': end_datetime})
-        search.aggs.bucket('dates', 'date_histogram', field='timestamp', interval=interval) \
-            .bucket('preprints', 'terms', field='preprint_id') \
-            .metric('total', 'sum', field='count')
-        search = self.add_search(search, query_params, **kwargs)
-        response = self.execute_search(search)
-        resp_dict = self.format_response(response, query_params)
-
-        return JsonResponse(resp_dict)
-
-    def post(self, request, *args, **kwargs):
-        """
-        For a bit of future proofing, accept custom elasticsearch aggregation queries in JSON form.
-        Caution - this could be slow if a very large query is executed, so use with care!
-        """
-        search = self.metric.search()
-        query = request.data.get('query')
-
-        try:
-            results = self.execute_search(search, query)
-        except RequestError as e:
-            if e.args:
-                raise ValidationError(e.info['error']['root_cause'][0]['reason'])
-            raise ValidationError('Malformed elasticsearch query.')
-
-        return JsonResponse(results.to_dict())
-
-
-class PreprintViewMetrics(PreprintMetricMixin):
-
-    view_category = 'preprint-metrics'
-    view_name = 'preprint-view-metrics'
-
-    @property
-    def metric_type(self):
-        return 'views'
-
-    @property
-    def metric(self):
-        return PreprintView
-
-
-class PreprintDownloadMetrics(PreprintMetricMixin):
-
-    view_category = 'preprint-metrics'
-    view_name = 'preprint-download-metrics'
-
-    @property
-    def metric_type(self):
-        return 'downloads'
-
-    @property
-    def metric(self):
-        return PreprintDownload
 
 class RawMetricsView(GenericAPIView):
 
@@ -287,21 +160,85 @@ class RegistriesModerationMetricsView(GenericAPIView):
     view_name = 'raw-metrics-view'
 
     def get(self, request, *args, **kwargs):
-        return JsonResponse(RegistriesModerationMetrics.get_registries_info())
+        _search = RegistriesModerationEventEs8.search().update_from_dict(self._build_es_query())
+        _search_response = _search.execute()
+        _providers_agg_json = (
+            _search_response.aggregations['providers'].to_dict()
+            if _search_response.aggregations
+            else {}
+        )
+        return JsonResponse(_providers_agg_json)
+
+    def _build_es_query(self):
+        _submit_trigger = RegistrationModerationTriggers.SUBMIT.db_name
+        _reject_trigger = RegistrationModerationTriggers.REJECT_SUBMISSION.db_name
+        _accept_withdrawal_trigger = RegistrationModerationTriggers.ACCEPT_WITHDRAWAL.db_name
+        _accepted_state = RegistrationModerationStates.ACCEPTED.db_name
+        _embargo_state = RegistrationModerationStates.EMBARGO.db_name
+        _rejected_state = RegistrationModerationStates.REJECTED.db_name
+        _withdrawn_state = RegistrationModerationStates.WITHDRAWN.db_name
+        return {
+            'aggs': {
+                'providers': {
+                    'terms': {'field': 'provider_id'},
+                    'aggs': {
+                        'transitions_without_comments': {
+                            'missing': {'field': 'comment'},
+                        },
+                        'transitions_with_comments': {
+                            'filter': {'exists': {'field': 'comment'}},
+                        },
+                        'submissions': {
+                            'filter': {'term': {'trigger': _submit_trigger}},
+                        },
+                        'accepted_with_embargo': {
+                            'filter': {
+                                'bool': {
+                                    'must': [
+                                        {'term': {'to_state': _embargo_state}},
+                                        {'term': {'trigger': _submit_trigger}},
+                                    ],
+                                },
+                            },
+                        },
+                        'accepted_without_embargo': {
+                            'filter': {
+                                'bool': {
+                                    'must': [
+                                        {'term': {'to_state': _accepted_state}},
+                                        {'term': {'trigger': _submit_trigger}},
+                                    ],
+                                },
+                            },
+                        },
+                        'rejected': {
+                            'filter': {
+                                'bool': {
+                                    'must': [
+                                        {'term': {'to_state': _rejected_state}},
+                                        {'term': {'trigger': _reject_trigger}},
+                                    ],
+                                },
+                            },
+                        },
+                        'withdrawn': {
+                            'filter': {
+                                'bool': {
+                                    'must': [
+                                        {'term': {'to_state': _withdrawn_state}},
+                                        {'term': {'trigger': _accept_withdrawal_trigger}},
+                                    ],
+                                },
+                            },
+                        },
+                    },
+                },
+            },
+        }
 
 
-VIEWABLE_REPORTS = {
-    'download_count': reports.DownloadCountReport,
-    'institution_summary': reports.InstitutionSummaryReport,
-    'node_summary': reports.NodeSummaryReport,
-    'osfstorage_file_count': reports.OsfstorageFileCountReport,
-    'preprint_summary': reports.PreprintSummaryReport,
-    'storage_addon_usage': reports.StorageAddonUsage,
-    'user_summary': reports.UserSummaryReport,
-    'spam_summary': reports.SpamSummaryReport,
-    'new_user_domains': reports.NewUserDomainReport,
-}
-
+###
+# reports
 
 class ReportNameList(JSONAPIBaseView):
     permission_classes = (
@@ -325,6 +262,51 @@ class ReportNameList(JSONAPIBaseView):
         return Response({'data': serializer.data})
 
 
+class ReportList(ElasticsearchListView):
+    view_category = 'metrics'
+    view_name = 'report-list'
+
+    permission_classes = (
+        TokenHasScope,
+        drf_permissions.IsAuthenticatedOrReadOnly,
+    )
+
+    required_read_scopes = [CoreScopes.ALWAYS_PUBLIC]
+    required_write_scopes = [CoreScopes.NULL]
+
+    serializer_class = CyclicReportSerializer
+    renderer_classes = (
+        *drf_api_settings.DEFAULT_RENDERER_CLASSES,
+        *ElasticsearchListView.FILE_RENDERER_CLASSES,
+    )
+
+    default_ordering = '-cycle_coverage'
+    ordering_fields = frozenset((
+        'cycle_coverage',
+    ))
+
+    def get_default_search(self):
+        _report_name = self.kwargs['report_name']
+        try:
+            _report_cls = VIEWABLE_REPORTS[_report_name]
+        except KeyError:
+            return Response(
+                {
+                    'errors': [{
+                        'title': 'unknown report name',
+                        'detail': f'unknown report: "{_report_name}"',
+                    }],
+                },
+                status=404,
+            )
+        return _report_cls.search()
+
+    def get_serializer_context(self):
+        return {
+            **super().get_serializer_context(),
+            'report_name': self.kwargs['report_name'],
+        }
+
 class RecentReportList(JSONAPIBaseView):
     MAX_COUNT = 10000
     DEFAULT_DAYS_BACK = 13
@@ -340,7 +322,7 @@ class RecentReportList(JSONAPIBaseView):
     view_category = 'metrics'
     view_name = 'recent-report-list'
 
-    serializer_class = DailyReportSerializer
+    serializer_class = CyclicReportSerializer
     renderer_classes = (
         *drf_api_settings.DEFAULT_RENDERER_CLASSES,
         MetricsReportsCsvRenderer,
@@ -360,23 +342,15 @@ class RecentReportList(JSONAPIBaseView):
                 },
                 status=404,
             )
-        is_daily = issubclass(report_class, reports.DailyReport)
+        is_daily = issubclass(report_class, BaseDailyReport)
         days_back = request.GET.get('days_back', self.DEFAULT_DAYS_BACK if is_daily else None)
-        is_monthly = issubclass(report_class, reports.MonthlyReport)
+        is_monthly = issubclass(report_class, BaseMonthlyReport)
 
-        if is_daily:
-            serializer_class = DailyReportSerializer
-            range_field_name = 'report_date'
-        elif is_monthly:
-            serializer_class = MonthlyReportSerializer
-            range_field_name = 'report_yearmonth'
-        else:
-            raise ValueError(f'report class must subclass DailyReport or MonthlyReport: {report_class}')
         range_filter = parse_date_range(request.GET, is_monthly=is_monthly)
         search_recent = (
             report_class.search()
-            .filter('range', **{range_field_name: range_filter})
-            .sort(range_field_name)
+            .filter('range', cycle_coverage=range_filter)
+            .sort('-cycle_coverage')
             [:self.MAX_COUNT]
         )
         if days_back:
@@ -384,7 +358,7 @@ class RecentReportList(JSONAPIBaseView):
 
         report_date_range = parse_date_range(request.GET)
         search_response = search_recent.execute()
-        serializer = serializer_class(
+        serializer = self.serializer_class(
             search_response,
             many=True,
             context={'report_name': report_name},
@@ -428,45 +402,8 @@ class CountedAuthUsageView(JSONAPIBaseView):
             pageview_info=serializer.validated_data.get('pageview_info'),
         ):
             return HttpResponse(status=204)
-        session_id, user_is_authenticated = self._get_session_id(
-            request,
-            client_session_id=serializer.validated_data.get('client_session_id'),
-        )
-        serializer.save(session_id=session_id, user_is_authenticated=user_is_authenticated)
+        serializer.save()
         return HttpResponse(status=201)
-
-    def _get_session_id(self, request, client_session_id=None):
-        # NOTE: to remove after osfmetrics 6to8 migration -- logic moved to djelme
-
-        # get a session id as described in the COUNTER code of practice:
-        # https://cop5.projectcounter.org/en/5.0.2/07-processing/03-counting-unique-items.html
-        # -- different from the "login session" tracked by `osf.models.Session` (which
-        # lasts about a month), this session lasts at most a day and may time out after
-        # minutes or hours of inactivity
-        now = timezone.now()
-        current_date_str = now.date().isoformat()
-
-        user_is_authenticated = request.user.is_authenticated
-        if client_session_id:
-            session_id_parts = [
-                client_session_id,
-                current_date_str,
-            ]
-        elif user_is_authenticated:
-            session_id_parts = [
-                request.user._id,
-                current_date_str,
-                now.hour,
-            ]
-        else:
-            session_id_parts = [
-                request.get_host(),
-                request.META.get('HTTP_USER_AGENT', ''),
-                current_date_str,
-                now.hour,
-            ]
-            user_is_authenticated = False
-        return utils.stable_key(*session_id_parts), user_is_authenticated
 
 
 class NodeAnalyticsQuery(JSONAPIBaseView):
@@ -495,7 +432,7 @@ class NodeAnalyticsQuery(JSONAPIBaseView):
         except AbstractNode.DoesNotExist:
             raise Http404
         self.check_object_permissions(request, node)
-        analytics_result = self._run_query(node_guid, timespan)
+        analytics_result = self._run_node_analytics_query(node.get_semantic_iri(), timespan)
         serializer = self.serializer_class(
             analytics_result,
             context={
@@ -505,22 +442,18 @@ class NodeAnalyticsQuery(JSONAPIBaseView):
         )
         return Response({'data': serializer.data})
 
-    def _run_query(self, node_guid, timespan):
-        query_dict = self._build_query_payload(node_guid, NodeAnalyticsQuery.Timespan(timespan))
-        analytics_search = CountedAuthUsage.search().update_from_dict(query_dict)
+    def _run_node_analytics_query(self, item_iri, timespan):
+        query_dict = self._build_query_payload(item_iri, NodeAnalyticsQuery.Timespan(timespan))
+        analytics_search = OsfCountedUsageEvent.search().update_from_dict(query_dict)
         return analytics_search.execute()
 
-    def _build_query_payload(self, node_guid, timespan):
+    def _build_query_payload(self, item_iri, timespan):
         return {
             'size': 0,  # don't return hits, just the aggregations
             'query': {
                 'bool': {
-                    'minimum_should_match': 1,
-                    'should': [
-                        {'term': {'item_guid': node_guid}},
-                        {'term': {'surrounding_guids': node_guid}},
-                    ],
                     'filter': [
+                        {'term': {'within_iris': item_iri}},
                         {'term': {'item_public': True}},
                         {'term': {'action_labels': 'view'}},
                         {'term': {'action_labels': 'web'}},
@@ -532,7 +465,12 @@ class NodeAnalyticsQuery(JSONAPIBaseView):
                 'unique-visits': {
                     'date_histogram': {
                         'field': 'timestamp',
-                        'interval': 'day',
+                        'calendar_interval': 'day',
+                    },
+                    'aggs': {
+                        'unique-count': {
+                            'cardinality': {'field': 'sessionhour_id'},
+                        },
                     },
                 },
                 'time-of-day': {
@@ -540,11 +478,21 @@ class NodeAnalyticsQuery(JSONAPIBaseView):
                         'field': 'pageview_info.hour_of_day',
                         'size': 24,
                     },
+                    'aggs': {
+                        'unique-count': {
+                            'cardinality': {'field': 'sessionhour_id'},
+                        },
+                    },
                 },
                 'referer-domain': {
                     'terms': {
                         'field': 'pageview_info.referer_domain',
                         'size': 10,
+                    },
+                    'aggs': {
+                        'unique-count': {
+                            'cardinality': {'field': 'sessionhour_id'},
+                        },
                     },
                 },
                 'popular-pages': {
@@ -553,6 +501,9 @@ class NodeAnalyticsQuery(JSONAPIBaseView):
                         'size': 10,
                     },
                     'aggs': {
+                        'unique-count': {
+                            'cardinality': {'field': 'sessionhour_id'},
+                        },
                         'route-for-path': {
                             'terms': {
                                 'field': 'pageview_info.route_name',
@@ -627,7 +578,7 @@ class UserVisitsQuery(JSONAPIBaseView):
             pass  # just fall back to days_back for now
 
         timespan = report_date
-        analytics_result = self._run_query(timespan)
+        analytics_result = self._run_user_visits_query(timespan)
         serializer = self.serializer_class(
             analytics_result,
             context={
@@ -636,9 +587,9 @@ class UserVisitsQuery(JSONAPIBaseView):
         )
         return JsonResponse({'data': serializer.data})
 
-    def _run_query(self, timespan):
+    def _run_user_visits_query(self, timespan):
         query_dict = self._build_query_payload(timespan)
-        analytics_search = CountedAuthUsage.search().update_from_dict(query_dict)
+        analytics_search = OsfCountedUsageEvent.search().update_from_dict(query_dict)
         return analytics_search.execute()
 
     def _build_query_payload(self, timespan):
@@ -655,13 +606,11 @@ class UserVisitsQuery(JSONAPIBaseView):
                 'unique-visits': {
                     'date_histogram': {
                         'field': 'timestamp',
-                        'interval': 'day',
+                        'calendar_interval': 'day',
                     },
                     'aggs': {
                         'user-visits': {
-                            'cardinality': {
-                                'field': 'session_id',
-                            },
+                            'cardinality': {'field': 'sessionhour_id'},
                         },
                     },
                 },
