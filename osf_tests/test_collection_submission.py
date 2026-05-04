@@ -1,5 +1,9 @@
+from contextlib import suppress
 from unittest import mock
 import pytest
+from requests import Response
+from requests.exceptions import HTTPError
+
 
 from osf_tests.factories import (
     AuthUserFactory,
@@ -829,12 +833,14 @@ class TestCollectionSubmissionWithCedarRecord:
             },
             'identifier': {}
         }
-        record = CedarMetadataRecord.objects.create(
-            guid=unmoderated_collection_submission_public.guid,
-            template=cedar_template,
-            metadata=metadata,
-            is_published=True,
-        )
+        with mock.patch('api.share.utils.pls_send_trove_record'):
+            record = CedarMetadataRecord.objects.create(
+                guid=unmoderated_collection_submission_public.guid,
+                template=cedar_template,
+                metadata=metadata,
+                is_published=True,
+            )
+
         result = cedar_record_to_turtle(record.guid.referent, record)
         vocab_url = '<https://osf.io/vocab/2022/>'
         schema_url = '<http://schema.org/>'
@@ -870,50 +876,125 @@ class TestCollectionSubmissionWithCedarRecord:
 
         assert result == expected
 
-    def test_cedar_record_identifier_on_create(self, unmoderated_collection_submission_public, cedar_template):
+    @mock.patch('api.share.utils.pls_send_trove_record')
+    @mock.patch('api.share.utils.share_delete_cedar_metadata_record')
+    def test_cedar_record_identifier_on_create(self, mock_delete, mock_pls, unmoderated_collection_submission_public):
+        template = CedarMetadataTemplate.objects.create(schema_name='http://google.com', cedar_id='http26', template_version=1)
+        template.should_index_for_search = True
+        template.save()
+        with mock.patch('api.share.utils.share_update_cedar_metadata_record'):
+            to_create_record = CedarMetadataRecord.objects.create(
+                guid=unmoderated_collection_submission_public.guid,
+                template=template,
+                metadata=template.template,
+                is_published=True,
+            )
+
+        with mock.patch('api.share.utils.requests.post'):
+            with mock.patch('api.share.utils._shtrove_cedar_record_identifier') as mock_identifier:
+                unmoderated_collection_submission_public.save()
+                mock_identifier.assert_called_with(
+                    to_create_record._id,
+                    to_create_record.template.cedar_id
+                )
+                assert (
+                    _shtrove_cedar_record_identifier(to_create_record._id, to_create_record.template.cedar_id) ==
+                    f'{to_create_record._id}/CedarMetadataRecord:http26'
+                )
+
+    @mock.patch('api.share.utils.pls_send_trove_record')
+    @mock.patch('api.share.utils.share_update_cedar_metadata_record')
+    def test_cedar_record_identifier_on_delete(self, mock_update, mock_pls, unmoderated_collection_submission_public):
+        template = CedarMetadataTemplate.objects.create(schema_name='http://google.com', cedar_id='http25', template_version=1)
+        with mock.patch('api.share.utils.share_delete_cedar_metadata_record'):
+            to_delete_record = CedarMetadataRecord.objects.create(
+                guid=unmoderated_collection_submission_public.guid,
+                template=template,
+                metadata=template.template,
+                is_published=False,
+            )
+
+        with mock.patch('api.share.utils.requests.delete'):
+            with mock.patch('api.share.utils._shtrove_cedar_record_identifier') as mock_identifier:
+                unmoderated_collection_submission_public.save()
+                mock_identifier.assert_called_with(to_delete_record._id, to_delete_record.template.cedar_id)
+                assert (
+                    _shtrove_cedar_record_identifier(to_delete_record._id, to_delete_record.template.cedar_id) ==
+                    f'{to_delete_record._id}/CedarMetadataRecord:http25'
+                )
+
+    @mock.patch('api.share.utils.share_update_cedar_metadata_record')
+    @mock.patch('api.share.utils.share_delete_cedar_metadata_record')
+    def test_cedar_record_create_retry(
+        self,
+        mock_delete,
+        mock_create,
+        unmoderated_collection_submission_public,
+        cedar_template,
+        cedar_template_json
+    ):
         cedar_template.should_index_for_search = True
         cedar_template.save()
+        with mock.patch('api.share.utils.pls_send_trove_record') as mock_pls:
+            mock_pls.return_value = Response()
+            mock_pls.return_value.status_code = 400
+            with suppress(Exception):
+                CedarMetadataRecord.objects.create(
+                    guid=unmoderated_collection_submission_public.guid,
+                    template=cedar_template,
+                    metadata=cedar_template_json,
+                    is_published=True,
+                )
 
-        with mock.patch('api.share.utils.pls_send_trove_record'):
-            with mock.patch('api.share.utils.share_update_cedar_metadata_record'):
-                with mock.patch('api.share.utils.share_delete_cedar_metadata_record'):
-                    to_create_record = CedarMetadataRecord.objects.create(
-                        guid=unmoderated_collection_submission_public.guid,
-                        template=cedar_template,
-                        metadata=cedar_template.template,
-                        is_published=True,
-                    )
+            def mock_raise_for_status(*args, **kwargs):
+                raise HTTPError('Retry error')
 
-        with mock.patch('api.share.utils.pls_send_trove_record'):
-            with mock.patch('api.share.utils.share_delete_cedar_metadata_record'):
-                with mock.patch('api.share.utils._shtrove_cedar_record_identifier') as mock_identifier:
-                    unmoderated_collection_submission_public.save()
-                    mock_identifier.assert_called_with(
-                        to_create_record._id,
-                        to_create_record.template.cedar_id
-                    )
-                    assert (
-                        _shtrove_cedar_record_identifier(to_create_record._id, to_create_record.template.cedar_id) ==
-                        f'{to_create_record._id}/CedarMetadataRecord:{to_create_record.template.cedar_id}'
-                    )
+            mock_pls.return_value = Response()
+            mock_pls.return_value.status_code = 400
+            mock_pls.return_value.raise_for_status = mock_raise_for_status
+            try:
+                unmoderated_collection_submission_public.save()
+            except Exception as err:
+                assert str(err) == "Retry in 180s: HTTPError('Retry error')"
+                assert not mock_create.s.called
+                assert not mock_delete.s.called
+            else:
+                pytest.fail('Expected Retry(HTTPError) to be raised')
 
-    def test_cedar_record_identifier_on_delete(self, unmoderated_collection_submission_public, cedar_template):
-        with mock.patch('api.share.utils.pls_send_trove_record'):
-            with mock.patch('api.share.utils.share_update_cedar_metadata_record'):
-                with mock.patch('api.share.utils.share_delete_cedar_metadata_record'):
-                    to_delete_record = CedarMetadataRecord.objects.create(
-                        guid=unmoderated_collection_submission_public.guid,
-                        template=cedar_template,
-                        metadata=cedar_template.template,
-                        is_published=False,
-                    )
+    @mock.patch('api.share.utils.share_update_cedar_metadata_record')
+    @mock.patch('api.share.utils.share_delete_cedar_metadata_record')
+    def test_cedar_record_delete_retry(
+        self,
+        mock_delete,
+        mock_create,
+        unmoderated_collection_submission_public,
+        cedar_template,
+        cedar_template_json
+    ):
+        cedar_template.should_index_for_search = False
+        cedar_template.save()
+        with mock.patch('api.share.utils.pls_send_trove_record') as mock_pls:
+            mock_pls.return_value = Response()
+            mock_pls.return_value.status_code = 400
+            with suppress(Exception):
+                CedarMetadataRecord.objects.create(
+                    guid=unmoderated_collection_submission_public.guid,
+                    template=cedar_template,
+                    metadata=cedar_template_json,
+                    is_published=True,
+                )
 
-        with mock.patch('api.share.utils.pls_send_trove_record'):
-            with mock.patch('api.share.utils.share_update_cedar_metadata_record'):
-                with mock.patch('api.share.utils._shtrove_cedar_record_identifier') as mock_identifier:
-                    unmoderated_collection_submission_public.save()
-                    mock_identifier.assert_called_with(to_delete_record._id, to_delete_record.template.cedar_id)
-                    assert (
-                        _shtrove_cedar_record_identifier(to_delete_record._id, to_delete_record.template.cedar_id) ==
-                        f'{to_delete_record._id}/CedarMetadataRecord:{to_delete_record.template.cedar_id}'
-                    )
+            def mock_raise_for_status(*args, **kwargs):
+                raise HTTPError('Retry error')
+
+            mock_pls.return_value = Response()
+            mock_pls.return_value.status_code = 400
+            mock_pls.return_value.raise_for_status = mock_raise_for_status
+            try:
+                unmoderated_collection_submission_public.save()
+            except Exception as err:
+                assert str(err) == "Retry in 180s: HTTPError('Retry error')"
+                assert not mock_create.s.called
+                assert not mock_delete.s.called
+            else:
+                pytest.fail('Expected Retry(HTTPError) to be raised')

@@ -86,8 +86,7 @@ def retry_shtrove_request(self_celery_task, _response):
                 )
             raise self_celery_task.retry(exc=e, countdown=countdown)
 
-        if HTTPStatus(_response.status_code).is_server_error:
-            raise self_celery_task.retry(exc=e)
+        raise self_celery_task.retry(exc=e)
 
 
 def cedar_record_to_turtle(referent, cedar_record):
