@@ -307,7 +307,7 @@ class SubscriptionDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView):
 
             for instance in qs:
                 instance.legacy_id = self.kwargs['subscription_id']
-                instance.event_name = instance.notification_type.name
+                instance.event_name = 'global_file_updated'
 
                 serializer = self.get_serializer(instance=instance, data=request.data, partial=True)
                 serializer.is_valid(raise_exception=True)
@@ -330,7 +330,7 @@ class SubscriptionDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView):
 
             for instance in qs:
                 instance.legacy_id = self.kwargs['subscription_id']
-                instance.event_name = instance.notification_type.name
+                instance.event_name = 'global_reviews'
 
                 serializer = self.get_serializer(instance=instance, data=request.data, partial=True)
                 serializer.is_valid(raise_exception=True)
@@ -361,7 +361,7 @@ class SubscriptionDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView):
 
             for instance in qs:
                 instance.legacy_id = self.kwargs['subscription_id']
-                instance.event_name = instance.notification_type.name
+                instance.event_name = 'file_updated'
 
                 serializer = self.get_serializer(instance=instance, data=request.data, partial=True)
                 serializer.is_valid(raise_exception=True)
