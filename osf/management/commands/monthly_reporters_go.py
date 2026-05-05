@@ -99,7 +99,9 @@ class Command(BaseCommand):
         parser.add_argument(
             'yearmonth',
             type=str,
-            help='year and month (YYYY-MM)',
+            default='',
+            nargs='?',
+            help='year and month YYYY-MM (default last month)',
         )
         parser.add_argument(
             '-r', '--reporter',
