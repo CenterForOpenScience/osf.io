@@ -2,7 +2,7 @@ from osf.metrics.reporters._base import MonthlyReporter
 from osf.metrics.reports import MonthlyReport
 
 
-def list_monthly_reports(reporter: MonthlyReporter) -> list[MonthlyReport]:
+def list_monthly_reports(reporter: MonthlyReporter, *, flat=False) -> list[MonthlyReport]:
     _each_reports_list = (
         reporter.report(**_kwargs)
         for _kwargs in reporter.iter_report_kwargs()

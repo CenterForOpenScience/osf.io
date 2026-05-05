@@ -3,7 +3,6 @@ import datetime
 import logging
 from django.test import TestCase
 from osf.metrics.reporters import InstitutionalSummaryMonthlyReporter
-from osf.metrics.reports import InstitutionMonthlySummaryReport
 from osf.metrics.utils import YearMonth
 from osf_tests.factories import (
     InstitutionFactory,
@@ -80,10 +79,9 @@ class TestInstiSummaryMonthlyReporter(TestCase):
 
     def test_report_generation(self):
         reporter = InstitutionalSummaryMonthlyReporter(self._yearmonth)
-        reports_raw = list_monthly_reports(reporter)
-        self.assertEqual(len(reports_raw[0]), 2)
-
-        report = next(r for r in reports_raw[0] if isinstance(r, InstitutionMonthlySummaryReport))
+        reports = list_monthly_reports(reporter)
+        self.assertEqual(len(reports), 1)
+        report = reports[0]
         self.assertEqual(report.institution_id, self._institution._id)
         self.assertEqual(report.user_count, 2)  # _logged_in_user and _active_user
         self.assertEqual(report.public_project_count, 1)
@@ -116,8 +114,7 @@ class TestInstiSummaryMonthlyReporter(TestCase):
 
         # Run the reporter for the current month (February 2018)
         reporter = InstitutionalSummaryMonthlyReporter(self._yearmonth)
-        reports_raw = list_monthly_reports(reporter)
-        reports = [item for sublist in reports_raw for item in sublist if isinstance(item, InstitutionMonthlySummaryReport)]
+        reports = list_monthly_reports(reporter)
         self.assertEqual(len(reports), 3)  # Reports for self._institution, institution2, institution3
 
         # Extract reports by institution
@@ -266,8 +263,7 @@ class TestSummaryMonthlyReporterBenchmarker(TestCase):
         if enable_benchmarking:
             reporter_start_time = time.time()
         reporter = InstitutionalSummaryMonthlyReporter(self._yearmonth)
-        reports_raw = list_monthly_reports(reporter)
-        reports = [item for sublist in reports_raw for item in sublist if isinstance(item, InstitutionMonthlySummaryReport)]
+        reports = list_monthly_reports(reporter)
         assert len(reports) == additional_institution_count + 1
 
         if enable_benchmarking:

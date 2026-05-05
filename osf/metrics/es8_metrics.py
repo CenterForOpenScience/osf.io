@@ -508,6 +508,7 @@ class MonthlyPublicItemUsageReportEs8(djelme.CyclicRecord):
     # https://cop5.projectcounter.org/en/5.1/appendices/a-glossary-of-terms.html
     # https://coprd.countermetrics.org/en/1.0.1/appendices/a-glossary.html
     item_osfid: str
+    # fields built from aggregations -- more than one value unlikely, but possible
     item_type: list[str]           # counter:Data-Type
     provider_id: list[str]         # counter:Database(?)
     platform_iri: list[str]        # counter:Platform

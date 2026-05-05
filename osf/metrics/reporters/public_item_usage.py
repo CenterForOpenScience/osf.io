@@ -64,22 +64,37 @@ class PublicItemUsageReporter(MonthlyReporter):
             if _guid is None or _guid.referent is None:
                 raise _SkipItem
             _obj = _guid.referent
-            _reports = self._init_report(_obj)
-            for _report in _reports:
-                self._fill_report_counts(_report, _obj)
-                if not any((
-                    _report.view_count,
-                    _report.view_session_count,
-                    _report.download_count,
-                    _report.download_session_count,
-                )):
-                    raise _SkipItem
-            return _reports
+            _report = self._init_report(_obj)
+            self._fill_report_counts(_report, _obj)
+            if not any((
+                _report.view_count,
+                _report.view_session_count,
+                _report.download_count,
+                _report.download_session_count,
+            )):
+                raise _SkipItem
+            _report_es6 = PublicItemUsageReport(
+                item_osfid=_report.item_osfid,
+                item_type=list(_report.item_type),
+                provider_id=list(_report.provider_id),
+                platform_iri=list(_report.platform_iri),
+                view_count=_report.view_count,
+                view_session_count=_report.view_session_count,
+                download_count=_report.download_count,
+                download_session_count=_report.download_session_count,
+            )
+            return [_report, _report_es6]
         except _SkipItem:
-            return None
+            return []
 
     def followup_task(self, report):
-        _is_last_month = report.report_yearmonth.next() == YearMonth.from_date(datetime.date.today())
+        _last_month = YearMonth.from_date(datetime.date.today()).prior()
+        if isinstance(report, MonthlyPublicItemUsageReportEs8):
+            _is_last_month = (report.cycle_coverage == cycle_coverage_yearmonth(_last_month))
+        elif isinstance(report, PublicItemUsageReport):
+            _is_last_month = (report.report_yearmonth == _last_month)
+        else:
+            raise ValueError(report)
         if _is_last_month:
             from api.share.utils import task__update_share
             return task__update_share.signature(
@@ -135,27 +150,17 @@ class PublicItemUsageReporter(MonthlyReporter):
         )
         return _iter_composite_bucket_keys(_search, 'agg_osfid', 'osfid', after=after_osfid)
 
-    def _init_report(self, osf_obj) -> typing.List[PublicItemUsageReport | MonthlyPublicItemUsageReportEs8]:
+    def _init_report(self, osf_obj) -> MonthlyPublicItemUsageReportEs8:
         if not _is_item_public(osf_obj):
             raise _SkipItem
-        reports = []
-        report_es8 = MonthlyPublicItemUsageReportEs8(
+        return MonthlyPublicItemUsageReportEs8(
             cycle_coverage=cycle_coverage_yearmonth(self.yearmonth),
             item_osfid=osf_obj._id,
             item_type=[get_item_type(osf_obj)],
             provider_id=[get_provider_id(osf_obj)],
             platform_iri=[website_settings.DOMAIN],
-        )
-        reports.append(report_es8)
-        report = PublicItemUsageReport(
-            item_osfid=report_es8.item_osfid,
-            item_type=report_es8.item_type,
-            provider_id=report_es8.provider_id,
-            platform_iri=report_es8.platform_iri,
             # leave counts null; will be set if there's data
         )
-        reports.append(report)
-        return reports
 
     def _fill_report_counts(self, report, osf_obj):
         if (

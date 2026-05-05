@@ -174,10 +174,8 @@ class TestPublicItemUsageReporter:
 
     def test_reporter(self, ym_empty, ym_sparse, ym_busy, sparse_month_usage, busy_month_item0, busy_month_item1, busy_month_item2, item0):
         _empty = list_monthly_reports(PublicItemUsageReporter(ym_empty))
-        _sparse_raw = list_monthly_reports(PublicItemUsageReporter(ym_sparse))
-        _sparse = [item for sublist in _sparse_raw for item in sublist if isinstance(item, PublicItemUsageReport)]
-        _busy_raw = list_monthly_reports(PublicItemUsageReporter(ym_busy))
-        _busy = [item for sublist in _busy_raw for item in sublist if isinstance(item, PublicItemUsageReport)]
+        _sparse = list_monthly_reports(PublicItemUsageReporter(ym_sparse))
+        _busy = list_monthly_reports(PublicItemUsageReporter(ym_busy))
 
         # empty month:
         assert _empty == []
