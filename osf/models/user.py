@@ -877,6 +877,30 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
             except Exception as e:
                 logger.exception(f'Failed to SHARE reindex preprint {preprint._id} during user merge: {e}')
 
+        from django.contrib.contenttypes.models import ContentType
+        from osf.models import AbstractNode, Preprint
+        from addons.osfstorage.models import OsfStorageFile
+        node_ctype = ContentType.objects.get_for_model(AbstractNode)
+        preprint_ctype = ContentType.objects.get_for_model(Preprint)
+        nodes_files_to_reindex = OsfStorageFile.objects.filter(
+            target_object_id__in=user.contributed.values_list('id', flat=True), target_content_type=node_ctype,
+            guids__isnull=False
+        )
+        preprints_files_to_reindex = OsfStorageFile.objects.filter(
+            target_object_id__in=user.preprints.values_list('id', flat=True), target_content_type=preprint_ctype,
+            guids__isnull=False
+        )
+        for file in nodes_files_to_reindex.iterator(chunk_size=100):
+            try:
+                update_share(file)
+            except Exception as e:
+                logger.exception(f'Failed to SHARE reindex file {file._id} during user merge: {e}')
+        for file in preprints_files_to_reindex.iterator(chunk_size=100):
+            try:
+                update_share(file)
+            except Exception as e:
+                logger.exception(f'Failed to SHARE reindex preprints file {file._id} during user merge: {e}')
+
     def _merge_users_preprints(self, user):
         """
         Preprints use guardian.  The PreprintContributor table stores order and bibliographic information.
