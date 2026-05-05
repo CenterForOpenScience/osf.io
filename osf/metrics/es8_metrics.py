@@ -513,16 +513,16 @@ class MonthlyPublicItemUsageReportEs8(djelme.CyclicRecord):
     platform_iri: list[str]        # counter:Platform
 
     # view counts include views on components or files contained by this item
-    view_count: int = esdsl.mapped_field(esdsl.Long())
-    view_session_count: int = esdsl.mapped_field(esdsl.Long())
-    cumulative_view_count: int = esdsl.mapped_field(esdsl.Long())
-    cumulative_view_session_count: int = esdsl.mapped_field(esdsl.Long())
+    view_count: int | None = esdsl.mapped_field(esdsl.Long())
+    view_session_count: int | None = esdsl.mapped_field(esdsl.Long())
+    cumulative_view_count: int | None = esdsl.mapped_field(esdsl.Long())
+    cumulative_view_session_count: int | None = esdsl.mapped_field(esdsl.Long())
 
     # download counts of this item only (not including contained components or files)
-    download_count: int = esdsl.mapped_field(esdsl.Long())
-    download_session_count: int = esdsl.mapped_field(esdsl.Long())
-    cumulative_download_count: int = esdsl.mapped_field(esdsl.Long())
-    cumulative_download_session_count: int = esdsl.mapped_field(esdsl.Long())
+    download_count: int | None = esdsl.mapped_field(esdsl.Long())
+    download_session_count: int | None = esdsl.mapped_field(esdsl.Long())
+    cumulative_download_count: int | None = esdsl.mapped_field(esdsl.Long())
+    cumulative_download_session_count: int | None = esdsl.mapped_field(esdsl.Long())
 
     class Meta:
         timeseries_index_timedepth = YEARLY

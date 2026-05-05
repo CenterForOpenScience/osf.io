@@ -1,5 +1,4 @@
 import dataclasses
-from typing import List
 
 from django.contrib.contenttypes.models import ContentType
 from django.db.models import Q, F, Sum
@@ -40,8 +39,7 @@ class InstitutionalUsersReporter(MonthlyReporter):
         _institution = osfdb.Institution.objects.get(pk=report_kwargs['institution_pk'])
         _user = osfdb.OSFUser.objects.get(pk=report_kwargs['user_pk'])
         _helper = _InstiUserReportHelper(_institution, _user, self.yearmonth)
-        _report = next(r for r in _helper.reports if isinstance(r, InstitutionalUserReport))
-        return _report
+        return _helper.build_reports()
 
 
 # helper
@@ -50,11 +48,9 @@ class _InstiUserReportHelper:
     institution: osfdb.Institution
     user: osfdb.OSFUser
     yearmonth: YearMonth
-    reports: List[InstitutionalUserReport | MonthlyInstitutionalUserReportEs8] = dataclasses.field(init=False)
 
-    def __post_init__(self):
+    def build_reports(self):
         _affiliation = self.user.get_institution_affiliation(self.institution._id)
-        self.reports = []
         report_es8 = MonthlyInstitutionalUserReportEs8(
             cycle_coverage=cycle_coverage_yearmonth(self.yearmonth),
             institution_id=self.institution._id,
@@ -77,8 +73,7 @@ class _InstiUserReportHelper:
             published_preprint_count=self._published_preprint_queryset().count(),
             storage_byte_count=self._storage_byte_count(),
         )
-        self.reports.append(report_es8)
-        report = InstitutionalUserReport(
+        report_es6 = InstitutionalUserReport(
             institution_id=report_es8.institution_id,
             user_id=report_es8.user_id,
             user_name=report_es8.user_name,
@@ -95,7 +90,7 @@ class _InstiUserReportHelper:
             published_preprint_count=report_es8.published_preprint_count,
             storage_byte_count=report_es8.storage_byte_count,
         )
-        self.reports.append(report)
+        return [report_es8, report_es6]
 
     @property
     def before_datetime(self):
