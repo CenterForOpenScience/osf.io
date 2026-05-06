@@ -467,6 +467,65 @@ class TestArchiverTasks(ArchiverTestCase):
     def test_compact_traceback_handles_empty(self):
         assert archiver_utils.compact_traceback(None) is None
 
+    def test_compact_traceback_uses_last_chars_then_last_lines(self):
+        traceback_text = '\n'.join(f'line {line_num}' for line_num in range(20))
+        compact = archiver_utils.compact_traceback(traceback_text, max_lines=3, max_chars=45)
+
+        # max_chars keeps only the tail content, then max_lines keeps the tail lines.
+        assert compact == '\n'.join(['line 17', 'line 18', 'line 19'])
+
+    @mock.patch('website.archiver.tasks.sentry.log_message')
+    def test_archiver_task_load_archive_job_retries_with_context(self, mock_log_message):
+        task = ArchiverTask()
+        task.name = 'website.archiver.tasks.stat_addon'
+        task.max_retries = 3
+        task.retry = mock.Mock(side_effect=RuntimeError('retry requested'))
+        request = mock.Mock(retries=1, id='task-123', kwargs={'dst_pk': 'reg123'})
+
+        with mock.patch.object(ArchiverTask, 'request', new_callable=mock.PropertyMock, return_value=request):
+            with mock.patch('website.archiver.tasks.ArchiveJob.load', return_value=None):
+                with pytest.raises(RuntimeError, match='retry requested'):
+                    task.load_archive_job('abc123')
+
+        retry_exception = task.retry.call_args.kwargs['exc']
+        assert isinstance(retry_exception, ArchiverStateError)
+        assert retry_exception.info['job_pk'] == 'abc123'
+        assert retry_exception.info['registration_id'] == 'reg123'
+        assert retry_exception.info['should_retry'] is True
+        assert not mock_log_message.called
+
+    @mock.patch('website.archiver.tasks.sentry.log_exception')
+    @mock.patch('website.archiver.tasks.sentry.log_message')
+    def test_archiver_task_load_archive_job_final_failure_logs_context(self, mock_log_message, mock_log_exception):
+        task = ArchiverTask()
+        task.name = 'website.archiver.tasks.stat_addon'
+        task.max_retries = 3
+        task.retry = mock.Mock()
+        request = mock.Mock(retries=3, id='task-456', kwargs={'dst_pk': 'reg456'})
+
+        with mock.patch.object(ArchiverTask, 'request', new_callable=mock.PropertyMock, return_value=request):
+            with mock.patch('website.archiver.tasks.ArchiveJob.load', return_value=None):
+                with pytest.raises(ArchiverStateError) as exc:
+                    task.load_archive_job('def456')
+
+        assert exc.value.info['job_pk'] == 'def456'
+        assert exc.value.info['registration_id'] == 'reg456'
+        assert exc.value.info['should_retry'] is False
+        assert not task.retry.called
+        mock_log_message.assert_called_once_with(
+            f'ArchiveJob {exc.value.info['job_pk']} not found during archiver task execution',
+            extra_data={
+                'job_pk': 'def456',
+                'registration_id': 'reg456',
+                'task_id': 'task-456',
+                'task_name': task.name,
+                'retries': 3,
+                'max_retries': 3,
+                'should_retry': False,
+            },
+        )
+        mock_log_exception.assert_called_once()
+
     @mock.patch('website.archiver.tasks.archive_addon.delay')
     def test_archive_node_pass(self, mock_archive_addon):
         settings.MAX_ARCHIVE_SIZE = 1024 ** 3
