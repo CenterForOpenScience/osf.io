@@ -147,6 +147,25 @@ def share_delete_cedar_metadata_record(
     retry_shtrove_request(self, response)
 
 
+def _schedule_cedar_record_updates(guid_instance):
+    for cedar_record in guid_instance.cedar_metadata_records.filter(
+        is_published=True,
+        template__should_index_for_search=True,
+    ):
+        enqueue_task(share_update_cedar_metadata_record.s(guid_instance._id, cedar_record.pk))
+
+    for cedar_record in guid_instance.cedar_metadata_records.filter(
+        Q(is_published=False) | Q(template__should_index_for_search=False),
+    ):
+        enqueue_task(
+            share_delete_cedar_metadata_record.s(
+                cedar_record.guid._id,
+                cedar_record._id,
+                cedar_record.template.cedar_id,
+            ),
+        )
+
+
 @celery_app.task(
     bind=True,
     acks_late=True,
@@ -190,22 +209,8 @@ def task__update_share(self, guid: str, is_backfill=False, osfmap_partition_name
             is_backfill=is_backfill,
             osfmap_partition_name=_next_partition.name,
         )
-        for cedar_record in _osfid_instance.cedar_metadata_records.filter(
-            is_published=True,
-            template__should_index_for_search=True,
-        ):
-            enqueue_task(share_update_cedar_metadata_record.s(_osfid_instance._id, cedar_record.pk))
-
-        for cedar_record in _osfid_instance.cedar_metadata_records.filter(
-            Q(is_published=False) | Q(template__should_index_for_search=False),
-        ):
-            enqueue_task(
-                share_delete_cedar_metadata_record.s(
-                    cedar_record.guid._id,
-                    cedar_record._id,
-                    cedar_record.template.cedar_id,
-                ),
-            )
+    else:
+        _schedule_cedar_record_updates(_osfid_instance)
 
 
 def pls_send_trove_record(osf_item, *, is_backfill: bool, osfmap_partition: OsfmapPartition):

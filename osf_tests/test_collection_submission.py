@@ -4,7 +4,6 @@ import pytest
 from requests import Response
 from requests.exceptions import HTTPError
 
-
 from osf_tests.factories import (
     AuthUserFactory,
 )
@@ -14,6 +13,7 @@ from transitions import MachineError
 from osf_tests.factories import NodeFactory, CollectionFactory, CollectionProviderFactory
 
 from osf.models import CollectionSubmission, NotificationTypeEnum, CedarMetadataRecord, CedarMetadataTemplate
+from osf_tests.metadata._utils import assert_equivalent_turtle
 from osf.utils.workflows import CollectionSubmissionStates
 from framework.exceptions import PermissionsError
 from api_tests.utils import UserRoles
@@ -842,39 +842,18 @@ class TestCollectionSubmissionWithCedarRecord:
             )
 
         result = cedar_record_to_turtle(record.guid.referent, record)
-        vocab_url = '<https://osf.io/vocab/2022/>'
-        schema_url = '<http://schema.org/>'
-        schema_metadata_url = '<https://schema.metadatacenter.org/properties/>'
-        urls_to_find = {
-            vocab_url: None,
-            schema_url: None,
-            schema_metadata_url: None
-        }
-        for url in urls_to_find.keys():
-            urls_to_find[url] = result[result.index(url) - 3]
-
-        # fetch urls from result and assign ns prefixes based on order of appearance in result to make test resilient to changes in order of namespace declaration in turtle output
-        ns1 = list(filter(lambda url: urls_to_find[url] == '1', urls_to_find.keys()))[0]
-        ns2 = list(filter(lambda url: urls_to_find[url] == '2', urls_to_find.keys()))[0]
-        ns3 = list(filter(lambda url: urls_to_find[url] == '3', urls_to_find.keys()))[0]
-        vocab_n = urls_to_find[vocab_url]
-        schema_n = urls_to_find[schema_url]
-        schema_metadata_n = urls_to_find[schema_metadata_url]
-        # compose expected result dynamically based on ordering of prefixes
-        # however ns attributes are strictly attached to specific prefix
         expected = (
-            f'@prefix ns1: {ns1} .\n'
-            f'@prefix ns2: {ns2} .\n'
-            f'@prefix ns3: {ns3} .\n\n'
-            f'<http://localhost:5000/{unmoderated_collection_submission_public.guid._id}> ns{vocab_n}:hasCedarRecord [ ns{schema_n}:description "description" ;\n'
-            f'            ns{schema_n}:identifier [ ] ;\n'
-            f'            ns{schema_n}:name "name" ;\n'
-            f'            ns{schema_n}:url [ ] ;\n'
-            f'            ns{schema_n}:variableMeasured "variable" ;\n'
-            f'            ns{schema_metadata_n}:c35f0660-2072-46a3-8e0d-532e40d94919 "1111111" ] .\n\n'
+            f'@prefix ns1: <https://osf.io/vocab/2022/> .\n'
+            f'@prefix ns2: <http://schema.org/> .\n'
+            f'@prefix ns3: <https://schema.metadatacenter.org/properties/> .\n\n'
+            f'<http://localhost:5000/{unmoderated_collection_submission_public.guid._id}> ns1:hasCedarRecord [ ns2:description "description" ;\n'
+            f'            ns2:identifier [ ] ;\n'
+            f'            ns2:name "name" ;\n'
+            f'            ns2:url [ ] ;\n'
+            f'            ns2:variableMeasured "variable" ;\n'
+            f'            ns3:c35f0660-2072-46a3-8e0d-532e40d94919 "1111111" ] .\n\n'
         )
-
-        assert result == expected
+        assert_equivalent_turtle(result, expected, 'test_share_update_cedar_metadata_record')
 
     @mock.patch('api.share.utils.pls_send_trove_record')
     @mock.patch('api.share.utils.share_delete_cedar_metadata_record')
