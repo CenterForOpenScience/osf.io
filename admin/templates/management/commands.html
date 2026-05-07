@@ -89,6 +89,12 @@
                     <input type="date" name="report_date" id="report_date"/>
                     (default: yesterday)
                     <br>
+                    <select name="reporter_key">
+                        <option value="" selected>(all daily reporters)</option>
+                        {% for reporter_key in daily_reporter_keys %}
+                            <option value="{{ reporter_key }}">{{ reporter_key }}</option>
+                        {% endfor %}
+                    </select>
                     <nav>
                         <input class="btn btn-success" type="submit" value="Run" />
                     </nav>
@@ -96,16 +102,22 @@
             </section>
             <section>
                 <h4><u>Monthly Reporters, Go!</u></h4>
-                <p>Use this management command to run all monthly metrics reports.</p>
+                <p>Use this management command to re-run monthly osf-metrics reporters.</p>
                 <form method="post"
                       action="{% url 'management:monthly_reporters_go'%}">
                     {% csrf_token %}
                     <label for="monthly_report_date">
-                        Report date:
+                        Report month:
                     </label>
                     <input type="date" name="monthly_report_date" id="monthly_report_date"/>
-                    (default: yesterday)
+                    (day ignored; default: last month)
                     <br>
+                    <select name="reporter_key">
+                        <option value="" selected>(all monthly reporters)</option>
+                        {% for reporter_key in monthly_reporter_keys %}
+                            <option value="{{ reporter_key }}">{{ reporter_key }}</option>
+                        {% endfor %}
+                    </select>
                     <nav>
                         <input class="btn btn-success" type="submit" value="Run" />
                     </nav>

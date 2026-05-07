@@ -55,10 +55,8 @@ class Command(BaseCommand):
             help='filter by reporter name (by partial case-insensitive match)'
         )
     def handle(self, *args, **options):
-        errors = daily_reporters_go(
+        daily_reporters_go.deloy(
             report_date=options.get('date'),
             reporter_filter=options.get('filter'),
         )
-        for error_key, error_val in errors.items():
-            self.stdout.write(self.style.ERROR(f'error running {error_key}: ') + error_val)
-        self.stdout.write(self.style.SUCCESS('done.'))
+        self.stdout.write(self.style.SUCCESS('daily reporters going...'))
