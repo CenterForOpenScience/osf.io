@@ -1,7 +1,33 @@
 {% extends "base.html" %}
 {% load static %}
 {% block top_includes %}
-  <link rel="stylesheet" type="text/css" href="/static/css/institutions.css" />
+    <link rel="stylesheet" type="text/css" href="/static/css/institutions.css" />
+    <style>
+        #copy-modal {
+            display: none; /* hidden by default */
+            position: fixed;
+            z-index: 2000;
+            inset: 0;
+        }
+        #copy-modal.show_modal {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 16px;
+        }
+        #copy-modal .modal-content {
+            background: white;
+            width: 100%;
+            max-width: 600px;
+            max-height: 80vh;
+            padding: 20px;
+            border-radius: 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            overflow: hidden;
+        }
+    </style>
 {% endblock %}
 {% load comment_extras %}
 {% block title %}
@@ -34,6 +60,18 @@
                 {% if perms.osf.change_institution %}
                 <a class="btn btn-primary" href={% url 'institutions:list_and_add_admin' institution.id %}>Manage Admins</a>
                 {% endif %}
+                <button
+                    {% if not cas_login_url or institution.deactivated is not None %}disabled{% endif %}
+                    class="btn btn-primary" onclick="openCopyPopup('{{ cas_login_url|escapejs }}')">
+                    Copy SSO URL
+                </button>
+                <div id="copy-modal" class="modal">
+                    <div class="modal-content">
+                        <span class="close" onclick="closeCopyPopup()">&times;</span>
+                        <p>Value copied. You can also copy manually:</p>
+                        <textarea id="copy-input" readonly></textarea>
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -169,5 +207,27 @@
                 });
             });
         });
+
+        window.openCopyPopup = function(text) {
+            const modal = document.getElementById("copy-modal");
+            const input = document.getElementById("copy-input");
+            input.value = text;
+            modal.classList.add("show_modal");
+            navigator.clipboard.writeText(text).catch(() => {});
+            input.focus();
+            input.select();
+        };
+
+        window.closeCopyPopup = function() {
+            document.getElementById("copy-modal").classList.remove("show_modal");
+        };
+
+        // Close on outside click
+        window.onclick = function(event) {
+            const modal = document.getElementById("copy-modal");
+            if (event.target === modal) {
+                modal.classList.remove("show_modal");
+            }
+        };
     </script>
 {% endblock %}
