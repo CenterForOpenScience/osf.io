@@ -646,9 +646,9 @@ class TestCollectionSubmissionWithCedarRecord:
         mock_pls.return_value = obj
         unmoderated_collection_submission_public.save()
 
-        assert not mock_create.s.called
-        assert mock_delete.s.called
-        mock_delete.s.assert_called_with(
+        assert not mock_create.delay.called
+        assert mock_delete.delay.called
+        mock_delete.delay.assert_called_with(
             record.guid._id,
             record._id,
             record.template.cedar_id
@@ -679,9 +679,9 @@ class TestCollectionSubmissionWithCedarRecord:
         mock_pls.return_value = obj
         unmoderated_collection_submission_public.save()
 
-        assert not mock_create.s.called
-        assert mock_delete.s.called
-        mock_delete.s.assert_called_with(
+        assert not mock_create.delay.called
+        assert mock_delete.delay.called
+        mock_delete.delay.assert_called_with(
             record.guid._id,
             record._id,
             record.template.cedar_id
@@ -712,9 +712,9 @@ class TestCollectionSubmissionWithCedarRecord:
         mock_pls.return_value = obj
         unmoderated_collection_submission_public.save()
 
-        assert not mock_create.s.called
-        assert mock_delete.s.called
-        mock_delete.s.assert_called_with(
+        assert not mock_create.delay.called
+        assert mock_delete.delay.called
+        mock_delete.delay.assert_called_with(
             record.guid._id,
             record._id,
             record.template.cedar_id
@@ -745,9 +745,9 @@ class TestCollectionSubmissionWithCedarRecord:
         mock_pls.return_value = obj
         unmoderated_collection_submission_public.save()
 
-        assert mock_create.s.called
-        mock_create.s.assert_called_with(unmoderated_collection_submission_public.guid._id, record.pk)
-        assert not mock_delete.s.called
+        assert mock_create.delay.called
+        mock_create.delay.assert_called_with(unmoderated_collection_submission_public.guid._id, record.pk)
+        assert not mock_delete.delay.called
 
     def test_share_update_cedar_metadata_record(self, unmoderated_collection_submission_public, cedar_template):
         metadata = {
@@ -935,8 +935,8 @@ class TestCollectionSubmissionWithCedarRecord:
                 unmoderated_collection_submission_public.save()
             except Exception as err:
                 assert str(err) == "Retry in 180s: HTTPError('Retry error')"
-                assert not mock_create.s.called
-                assert not mock_delete.s.called
+                assert not mock_create.delay.called
+                assert not mock_delete.delay.called
             else:
                 pytest.fail('Expected Retry(HTTPError) to be raised')
 
@@ -973,7 +973,7 @@ class TestCollectionSubmissionWithCedarRecord:
                 unmoderated_collection_submission_public.save()
             except Exception as err:
                 assert str(err) == "Retry in 180s: HTTPError('Retry error')"
-                assert not mock_create.s.called
-                assert not mock_delete.s.called
+                assert not mock_create.delay.called
+                assert not mock_delete.delay.called
             else:
                 pytest.fail('Expected Retry(HTTPError) to be raised')
