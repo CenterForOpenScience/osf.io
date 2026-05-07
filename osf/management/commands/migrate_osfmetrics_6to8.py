@@ -779,8 +779,7 @@ class Command(BaseCommand):
             self.stdout.write(
                 f'clearing {_es8_recordtype.__name__}', self.style.NOTICE
             )
-            _es8_recordtype.search().query({'match_all': {}}).delete()
-            _es8_recordtype.refresh()
+            _es8_recordtype.do_teardown(keep_templates=True)
 
     def _eq_style(self, num: int, should_be: int):
         return self.style.SUCCESS if (num == should_be) else self.style.WARNING
