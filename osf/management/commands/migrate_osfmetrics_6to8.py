@@ -401,7 +401,7 @@ def _convert_public_usage_report(
             has_surrounding_items=item_is_component,
         ),
         database_iris=_convert_database_iri_list(
-            provider_id=source.get('provider_id', []),
+            provider_ids=source.get('provider_id', []),
             osf_model_name=source.get('item_type', []),
         ),
         provider_ids=source.get('provider_id'),
