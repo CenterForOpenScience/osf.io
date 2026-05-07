@@ -18,7 +18,7 @@ from psycopg2 import OperationalError as PostgresOperationalError
 
 from framework.celery_tasks import app as celery_app
 from osf.metadata.rdfutils import OSF
-from osf.metadata.osfmap_utils import osfmap_type_from_model, osf_iri, is_osf_component
+from osf.metadata.osfmap_utils import osfmap_type_from_model, is_osf_component
 from osf.metrics.preprint_metrics import (
     PreprintView,
     PreprintDownload,
@@ -29,6 +29,7 @@ from osf.metrics import es8_metrics, RegistriesModerationMetrics
 from osf.metrics.reporters.public_item_usage import _iter_composite_bucket_keys
 from osf.metrics.utils import YearMonth
 from osf import models as osfdb
+from osf.models.base import osfid_iri
 from website import settings as website_settings
 
 
@@ -325,7 +326,7 @@ def _convert_counted_usage(source: dict) -> es8_metrics.OsfCountedUsageEvent:
             osf_model_name=source.get('item_type'),
         ),
         within_iris=[
-            osf_iri(_within_osfid)
+            osfid_iri(_within_osfid)
             for _within_osfid in source.get('surrounding_guids', ())
         ],
         # fields from OsfCountedUsageEvent:
@@ -393,13 +394,18 @@ def _convert_public_usage_report(
         )
     return es8_metrics.MonthlyPublicItemUsageReportEs8(
         cycle_coverage=_semverish_from_yearmonth(source['report_yearmonth']),
-        item_osfid=source['item_osfid'],
-        item_type=_convert_item_type(
-            source.get('item_type'),
+        item_iri=osfid_iri(source['item_osfid']),
+        item_osfids=[source['item_osfid']],
+        item_types=_convert_item_type_list(
+            source.get('item_type', []),
             has_surrounding_items=item_is_component,
         ),
-        provider_id=source.get('provider_id'),
-        platform_iri=source.get('platform_iri') or website_settings.DOMAIN,
+        database_iris=_convert_database_iri_list(
+            provider_id=source.get('provider_id', []),
+            osf_model_name=source.get('item_type', []),
+        ),
+        provider_ids=source.get('provider_id'),
+        platform_iris=source.get('platform_iri') or [website_settings.DOMAIN],
         view_count=source.get('view_count', 0),
         view_session_count=source.get('view_session_count', 0),
         cumulative_view_count=_c_views,
@@ -507,9 +513,16 @@ def _cumulative_preprint_count(preprint_metric_cls, osfid: str, until_when: str)
     return _view_count
 
 
-def _convert_item_type(osf_model_name: str | list[str] | None, has_surrounding_items: bool):
-    if isinstance(osf_model_name, list):
-        osf_model_name = osf_model_name[0] if osf_model_name else None
+def _convert_item_type_list(osf_model_names: list[str] | str, has_surrounding_items: bool):
+    if isinstance(osf_model_names, str):
+        osf_model_names = [osf_model_names]
+    return [
+        _convert_item_type(_model_name, has_surrounding_items)
+        for _model_name in osf_model_names
+    ]
+
+
+def _convert_item_type(osf_model_name: str | None, has_surrounding_items: bool):
     if osf_model_name:
         try:
             return osfmap_type_from_model(
@@ -521,7 +534,15 @@ def _convert_item_type(osf_model_name: str | list[str] | None, has_surrounding_i
     return OSF.Object  # fine, fallback to abstract type
 
 
-def _convert_database_iri(provider_id: str | None, osf_model_name: str) -> str:
+def _convert_database_iri_list(provider_ids: list[str], osf_model_names: list[str]):
+    return [
+        _convert_database_iri(_id, _model_name)
+        for _id in provider_ids
+        for _model_name in osf_model_names
+    ]
+
+
+def _convert_database_iri(provider_id: str | None, osf_model_name: str):
     if not provider_id:
         return website_settings.DOMAIN  # osf is a provider, sure why not
 

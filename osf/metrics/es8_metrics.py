@@ -9,12 +9,12 @@ import elasticsearch_metrics.imps.elastic8 as djelme
 
 from osf.metadata.osfmap_utils import (
     osfmap_type,
-    osf_iri,
     osfid_from_iri,
 )
 from osf.metrics.counted_usage import _get_surrounding_guids
 from osf.metrics.utils import YearMonth
 from osf import models as osfdb
+from osf.models.base import osfid_iri
 from website import settings as website_settings
 
 
@@ -188,7 +188,7 @@ class OsfCountedUsageEvent(djelme.CountedUsageRecord):
 
     def _autofill_item_iri_and_osfid(self):
         if self.item_osfid and not self.item_iri:
-            self.item_iri = osf_iri(self.item_osfid)
+            self.item_iri = osfid_iri(self.item_osfid)
         elif self.item_iri and not self.item_osfid:
             try:
                 self.item_osfid = osfid_from_iri(self.item_iri)
@@ -223,7 +223,7 @@ class OsfCountedUsageEvent(djelme.CountedUsageRecord):
     def _autofill_within_iris(self):
         if self.item_osfid and (self.within_iris is None) and self._osfid_referent:
             self.within_iris = [
-                osf_iri(_osfid)
+                osfid_iri(_osfid)
                 for _osfid in _get_surrounding_guids(self._osfid_referent)
             ]
         # ensure inclusive "within"
@@ -502,16 +502,18 @@ class MonthlyInstitutionSummaryReportEs8(djelme.CyclicRecord):
 
 class MonthlyPublicItemUsageReportEs8(djelme.CyclicRecord):
     CYCLE_TIMEDEPTH = MONTHLY
-    UNIQUE_TOGETHER_FIELDS = ('cycle_coverage', 'item_osfid')
+    UNIQUE_TOGETHER_FIELDS = ('cycle_coverage', 'item_iri')
 
     # where noted, fields are meant to correspond to defined terms from COUNTER
     # https://cop5.projectcounter.org/en/5.1/appendices/a-glossary-of-terms.html
     # https://coprd.countermetrics.org/en/1.0.1/appendices/a-glossary.html
-    item_osfid: str
+    item_iri: str
+    item_osfids: list[str]
     # fields built from aggregations -- more than one value unlikely, but possible
-    item_type: list[str]           # counter:Data-Type
-    provider_id: list[str]         # counter:Database(?)
-    platform_iri: list[str]        # counter:Platform
+    item_types: list[str]     # counter:Data-Type
+    platform_iris: list[str]  # counter:Platform
+    database_iris: list[str]  # counter:Database
+    provider_ids: list[str]   # osf-specific (usually corresponds to database_iri)
 
     # view counts include views on components or files contained by this item
     view_count: int | None = esdsl.mapped_field(esdsl.Long())

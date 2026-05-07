@@ -9,7 +9,7 @@ from website import settings as website_settings
 # namespace for osf's own concepts:
 OSF = rdflib.Namespace('https://osf.io/vocab/2022/')  # TODO: publish something helpful there
 # namespace for resources on _this_ osf instance (example: `node_iri = OSFIO[node._id]`):
-OSFIO = rdflib.Namespace(website_settings.DOMAIN)
+OSFIO = rdflib.Namespace(website_settings.DOMAIN.rstrip('/') + '/')
 # external pid namespaces:
 DOI = rdflib.Namespace('https://doi.org/')
 DxDOI = rdflib.Namespace('http://dx.doi.org/')  # "earlier but no longer preferred" DOI namespace

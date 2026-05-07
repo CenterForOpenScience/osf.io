@@ -23,6 +23,7 @@ from osf.metrics.preprint_metrics import (
 from osf.metrics.reports import PublicItemUsageReport
 from osf.metrics.utils import YearMonth, cycle_coverage_yearmonth
 from osf import models as osfdb
+from osf.models.base import osfid_iri
 from website import settings as website_settings
 from ._base import MonthlyReporter
 
@@ -74,10 +75,10 @@ class PublicItemUsageReporter(MonthlyReporter):
             )):
                 raise _SkipItem
             _report_es6 = PublicItemUsageReport(
-                item_osfid=_report.item_osfid,
-                item_type=list(_report.item_type),
-                provider_id=list(_report.provider_id),
-                platform_iri=list(_report.platform_iri),
+                item_osfid=_report.item_osfids[0],
+                item_type=list(_report.item_types),
+                provider_id=list(_report.provider_ids),
+                platform_iri=list(_report.platform_iris),
                 view_count=_report.view_count,
                 view_session_count=_report.view_session_count,
                 download_count=_report.download_count,
@@ -155,10 +156,11 @@ class PublicItemUsageReporter(MonthlyReporter):
             raise _SkipItem
         return MonthlyPublicItemUsageReportEs8(
             cycle_coverage=cycle_coverage_yearmonth(self.yearmonth),
-            item_osfid=osf_obj._id,
-            item_type=[get_item_type(osf_obj)],
-            provider_id=[get_provider_id(osf_obj)],
-            platform_iri=[website_settings.DOMAIN],
+            item_iri=osfid_iri(osf_obj._id),
+            item_osfids=[osf_obj._id],
+            item_types=[get_item_type(osf_obj)],
+            provider_ids=[get_provider_id(osf_obj)],
+            platform_iris=[website_settings.DOMAIN],
             # leave counts null; will be set if there's data
         )
 

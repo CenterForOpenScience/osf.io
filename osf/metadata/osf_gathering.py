@@ -15,7 +15,6 @@ from osf.metadata import gather
 from osf.metadata.definitions.datacite import DATACITE_RESOURCE_TYPES_GENERAL
 from osf.metadata.osfmap_utils import (
     osfmap_type,
-    osf_iri,
     is_osf_component,
     osfid_from_iri,
 )
@@ -329,7 +328,7 @@ class OsfFocus(gather.Focus):
         if isinstance(osf_item, str):
             osf_item = osfdb.base.coerce_guid(osf_item).referent
         super().__init__(
-            iri=osf_iri(osf_item),
+            iri=rdflib.URIRef(osf_item.get_semantic_iri()),
             rdftype=osfmap_type(osf_item),
             provider_id=osf_item.provider._id if (osf_item and getattr(osf_item, 'type', '') == 'osf.registration' and osf_item.provider) else None
         )

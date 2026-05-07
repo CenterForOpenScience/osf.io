@@ -46,20 +46,6 @@ def osfmap_type(osf_obj):
     return osfmap_type_from_model(type(osf_obj), is_component=is_osf_component(osf_obj))
 
 
-def osf_iri(guid_or_model):
-    """return a rdflib.URIRef or None
-
-    @param guid_or_model: a string, Guid instance, or another osf model instance
-    @returns rdflib.URIRef or None
-    """
-    _osfid: str = (
-        guid_or_model
-        if isinstance(guid_or_model, str)
-        else osfdb.base.coerce_guid(guid_or_model)._id
-    )
-    return OSFIO[_osfid]
-
-
 def osfid_from_iri(iri: str) -> str:
     if not iri.startswith(OSFIO):
         raise ValueError(f'expected iri starting with "{OSFIO}" (got {iri!r})')
