@@ -170,8 +170,24 @@ class PublicItemUsageReporter(MonthlyReporter):
             and not waffle.switch_is_active(osf.features.COUNTEDUSAGE_UNIFIED_METRICS_2024)  # type: ignore[attr-defined]
         ):
             # note: no session-count info in preprint metrics
-            report.view_count = self._preprint_views(osf_obj)
-            report.download_count = self._preprint_downloads(osf_obj)
+            report.view_count = PreprintView.get_count_for_preprint(
+                preprint=osf_obj,
+                after=self.yearmonth.month_start(),
+                before=self.yearmonth.month_end(),
+            )
+            report.download_count = PreprintDownload.get_count_for_preprint(
+                preprint=osf_obj,
+                after=self.yearmonth.month_start(),
+                before=self.yearmonth.month_end(),
+            )
+            report.cumulative_view_count = PreprintView.get_count_for_preprint(
+                preprint=osf_obj,
+                before=self.yearmonth.month_end(),
+            )
+            report.cumulative_download_count = PreprintDownload.get_count_for_preprint(
+                preprint=osf_obj,
+                before=self.yearmonth.month_end(),
+            )
         else:
             (
                 report.view_count,
@@ -262,22 +278,6 @@ class PublicItemUsageReporter(MonthlyReporter):
             else 0
         )
         return (_download_count, _download_session_count)
-
-    def _preprint_views(self, preprint: osfdb.Preprint) -> int:
-        '''aggregate views on each preprint'''
-        return PreprintView.get_count_for_preprint(
-            preprint=preprint,
-            after=self.yearmonth.month_start(),
-            before=self.yearmonth.month_end(),
-        )
-
-    def _preprint_downloads(self, preprint: osfdb.Preprint) -> int:
-        '''aggregate downloads on each preprint'''
-        return PreprintDownload.get_count_for_preprint(
-            preprint=preprint,
-            after=self.yearmonth.month_start(),
-            before=self.yearmonth.month_end(),
-        )
 
 
 def _is_item_public(osfid_referent) -> bool:
