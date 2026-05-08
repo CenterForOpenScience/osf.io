@@ -93,13 +93,13 @@ class PublicItemUsageReporter(MonthlyReporter):
         if isinstance(report, MonthlyPublicItemUsageReportEs8):
             _is_last_month = (report.cycle_coverage == cycle_coverage_yearmonth(_last_month))
         elif isinstance(report, PublicItemUsageReport):
-            _is_last_month = (report.report_yearmonth == _last_month)
+            return None  # followup for only one of the two reports
         else:
             raise ValueError(report)
         if _is_last_month:
             from api.share.utils import task__update_share
             return task__update_share.signature(
-                args=(report.item_osfid,),
+                args=(report.item_osfids[0],),
                 kwargs={
                     'is_backfill': True,
                     'osfmap_partition_name': OsfmapPartition.MONTHLY_SUPPLEMENT.name,
