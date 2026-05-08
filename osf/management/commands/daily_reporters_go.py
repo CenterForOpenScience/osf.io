@@ -20,8 +20,8 @@ def daily_reporters_go(report_date=None, reporter_filter=None, **kwargs):
     if report_date is None:  # default to yesterday
         report_date = (timezone.now() - datetime.timedelta(days=1)).date()
 
-    for _reporter_key, _reporter_class in AllDailyReporters.__members__.items():
-        if reporter_filter and (reporter_filter.lower() not in _reporter_class.__name__.lower()):
+    for _reporter_key, _reporter_enum in AllDailyReporters.__members__.items():
+        if reporter_filter and (reporter_filter.lower() not in _reporter_enum.value.__name__.lower()):
             continue
         daily_reporter_go.apply_async(kwargs={
             'reporter_key': _reporter_key,
