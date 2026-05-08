@@ -141,7 +141,7 @@ class MonthlyReportersGo(ManagementCommandPermissionView):
         else:
             report_date = None
 
-        reporter_key = request.POST.get('monthly_reporter_key', '')
+        reporter_key = request.POST.get('reporter_key', '')
         call_command(
             'monthly_reporters_go',
             yearmonth=(
