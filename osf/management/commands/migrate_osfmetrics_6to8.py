@@ -237,7 +237,7 @@ def _es8_usage_report_counts() -> tuple[int, int]:
     _search.aggs.metric(
         'agg_item_count',
         'cardinality',
-        field='item_osfid',
+        field='item_osfids',
         precision_threshold=_MAX_CARDINALITY_PRECISION,
     )
     _response = _search.execute()
