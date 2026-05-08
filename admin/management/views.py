@@ -126,7 +126,7 @@ class DailyReportersGo(ManagementCommandPermissionView):
         call_command(
             'daily_reporters_go',
             date=report_date,
-            filter=request.POST.get('reporter_key', ''),
+            reporter=request.POST.get('reporter_key', ''),
         )
         messages.success(request, 'Daily reporters going!')
         return redirect(reverse('management:commands'))

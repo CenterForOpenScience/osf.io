@@ -109,11 +109,13 @@ def storage_addon_user_counts(date, usersettings_model):
                 'grant_count',
                 filter=(~deleted_before & created_before),
                 output_field=BigIntegerField(),
+                default=0,
             ),
             'link_count_daily': Sum(
                 'grant_count',
                 filter=(~deleted_before & created_today),
                 output_field=BigIntegerField(),
+                default=0,
             ),
         })
     return usersettings_qs.aggregate(**aggregates)
