@@ -125,7 +125,7 @@ class DailyReportersGo(ManagementCommandPermissionView):
 
         call_command(
             'daily_reporters_go',
-            report_date=report_date,
+            date=report_date,
             filter=request.POST.get('reporter_key', ''),
         )
         messages.success(request, 'Daily reporters going!')
