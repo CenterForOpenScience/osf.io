@@ -55,7 +55,7 @@ class Command(BaseCommand):
             help='filter by reporter name (by partial case-insensitive match)'
         )
     def handle(self, *args, **options):
-        daily_reporters_go.deloy(
+        daily_reporters_go.delay(
             report_date=options.get('date'),
             reporter_filter=options.get('filter'),
         )
