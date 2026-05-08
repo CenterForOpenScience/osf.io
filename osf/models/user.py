@@ -18,6 +18,7 @@ from django.conf import settings
 from django.contrib.auth.base_user import AbstractBaseUser, BaseUserManager
 from django.contrib.auth.hashers import check_password
 from django.contrib.auth.models import PermissionsMixin
+from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import FieldDoesNotExist
 from django.dispatch import receiver
 from django.db import models
@@ -877,7 +878,6 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
             except Exception as e:
                 logger.exception(f'Failed to SHARE reindex preprint {preprint._id} during user merge: {e}')
 
-        from django.contrib.contenttypes.models import ContentType
         from osf.models import AbstractNode, Preprint
         from addons.osfstorage.models import OsfStorageFile
         node_ctype = ContentType.objects.get_for_model(AbstractNode)
