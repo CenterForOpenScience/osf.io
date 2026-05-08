@@ -126,7 +126,7 @@ class DailyReportersGo(ManagementCommandPermissionView):
         call_command(
             'daily_reporters_go',
             report_date=report_date,
-            reporter_key=request.POST.get('reporter_key', ''),
+            filter=request.POST.get('reporter_key', ''),
         )
         messages.success(request, 'Daily reporters going!')
         return redirect(reverse('management:commands'))
@@ -149,7 +149,7 @@ class MonthlyReportersGo(ManagementCommandPermissionView):
                 if report_date is not None
                 else ''
             ),
-            reporter_key=reporter_key,
+            reporter=reporter_key,
         )
         if reporter_key:
             messages.success(request, f'Monthly reporter {reporter_key!r} going!')
