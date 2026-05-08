@@ -402,7 +402,7 @@ def _convert_public_usage_report(
         ),
         database_iris=_convert_database_iri_list(
             provider_ids=source.get('provider_id', []),
-            osf_model_name=source.get('item_type', []),
+            osf_model_names=source.get('item_type', []),
         ),
         provider_ids=source.get('provider_id'),
         platform_iris=source.get('platform_iri') or [website_settings.DOMAIN],
