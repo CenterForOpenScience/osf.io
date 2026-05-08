@@ -1,9 +1,37 @@
 from django.views.decorators.http import require_GET
 from django.http import HttpResponseRedirect, HttpResponse
+from furl import furl
 from website import settings
-# from framework.auth.cas import CasClient
-from osf.models import OSFUser
+from framework.auth import cas
+from framework.auth.utils import print_cas_log, LogLevel
 
+def make_response_from_ticket(ticket, service_url):
+    """
+    Given a CAS ticket and service URL, attempt to validate the user and return user object.
+
+    :param str ticket: CAS service ticket
+    :param str service_url: Service URL from which the authentication request originates
+    :return: user object if authentication is successful, otherwise an HttpResponse with an error message and status code
+    """
+
+    service_furl = furl(service_url)
+    if 'ticket' in service_furl.args:
+        service_furl.remove(args=['ticket'])
+    client = cas.get_client()
+    cas_resp = client.service_validate(ticket, service_furl.url)
+    if cas_resp.authenticated:
+        user, external_credential, action = cas.get_user_from_cas_resp(cas_resp)
+        if user and action == 'authenticate':
+            print_cas_log(
+                f'CAS response - authenticating user: user=[{user._id}], '
+                f'external=[{external_credential}], action=[{action}]',
+                LogLevel.INFO,
+            )
+            # if user is authenticated by CAS
+            print_cas_log(f'CAS response - finalizing authentication: user=[{user._id}]', LogLevel.INFO)
+            return user
+
+    return HttpResponse('CAS authentication failed', status=401)
 
 @require_GET
 def auth_login(request):
@@ -19,14 +47,17 @@ def auth_login(request):
     from django.contrib.auth import login
     import itsdangerous
 
-    user = OSFUser.objects.get(username='test@mail.com')
-    login(request, user, backend='api.base.authentication.backends.ODMBackend')
+    service_url = furl(request.build_absolute_uri()).remove(args=['ticket'])
+    user_or_response = make_response_from_ticket(ticket, service_url.url)
+    if isinstance(user_or_response, HttpResponse):
+        return user_or_response
+    login(request, user_or_response, backend='api.base.authentication.backends.ODMBackend')
     session = request.session
     data = {
-        'auth_user_username': user.username,
-        'auth_user_id': user._primary_key,
-        'auth_user_fullname': user.fullname,
-        'user_reference_uri': user.get_semantic_iri(),
+        'auth_user_username': user_or_response.username,
+        'auth_user_id': user_or_response._primary_key,
+        'auth_user_fullname': user_or_response.fullname,
+        'user_reference_uri': user_or_response.get_semantic_iri(),
     }
     for key, value in data.items() if data else {}:
         session[key] = value
