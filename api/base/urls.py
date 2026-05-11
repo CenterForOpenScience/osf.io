@@ -87,7 +87,7 @@ urlpatterns = [
         ),
     ),
     re_path(r'^$', RedirectView.as_view(pattern_name=views.root), name='redirect-to-root', kwargs={'version': default_version}),
-    path('login', auth_login, name='login'),
+    path('cas/auth/login', auth_login, name='login'),
 ]
 
 # Add django-silk URLs if it's in INSTALLED_APPS
