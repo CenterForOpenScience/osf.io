@@ -300,6 +300,8 @@ class CollectionSubmissionSerializer(TaxonomizableSerializerMixin, JSONAPISerial
             obj.grade_levels = validated_data.pop('grade_levels')
 
         obj.save()
+        if waffle.switch_is_active(features.COLLECTION_SUBMISSION_WITH_CEDAR):
+            obj.sync_cedar_metadata()
         return obj
 
 
@@ -405,6 +407,8 @@ class LegacyCollectionSubmissionSerializer(TaxonomizableSerializerMixin, JSONAPI
             obj.grade_levels = validated_data.pop('grade_levels')
 
         obj.save()
+        if waffle.switch_is_active(features.COLLECTION_SUBMISSION_WITH_CEDAR):
+            obj.sync_cedar_metadata()
         return obj
 
 
@@ -429,15 +433,12 @@ class CollectionSubmissionCreateSerializer(CollectionSubmissionSerializer):
             raise exceptions.ValidationError('"creator" must be specified.')
         if not (creator.has_perm('write_collection', collection) or (hasattr(guid.referent, 'has_permission') and guid.referent.has_permission(creator, WRITE))):
             raise exceptions.PermissionDenied('Must have write permission on either collection or collected object to collect.')
-        if waffle.switch_is_active(features.COLLECTION_SUBMISSION_WITH_CEDAR) and collection.provider_id:
-            try:
-                collection.provider.validate_required_metadata(guid.referent)
-            except ValidationError as e:
-                raise InvalidModelValueError(e.message)
         try:
             obj = collection.collect_object(guid.referent, creator, **validated_data)
         except ValidationError as e:
             raise InvalidModelValueError(e.message)
+        if waffle.switch_is_active(features.COLLECTION_SUBMISSION_WITH_CEDAR):
+            obj.sync_cedar_metadata()
         if subjects:
             auth = get_user_auth(self.context['request'])
             try:
@@ -470,15 +471,12 @@ class LegacyCollectionSubmissionCreateSerializer(LegacyCollectionSubmissionSeria
             raise exceptions.ValidationError('"creator" must be specified.')
         if not (creator.has_perm('write_collection', collection) or (hasattr(guid.referent, 'has_permission') and guid.referent.has_permission(creator, WRITE))):
             raise exceptions.PermissionDenied('Must have write permission on either collection or collected object to collect.')
-        if waffle.switch_is_active(features.COLLECTION_SUBMISSION_WITH_CEDAR) and collection.provider_id:
-            try:
-                collection.provider.validate_required_metadata(guid.referent)
-            except ValidationError as e:
-                raise InvalidModelValueError(e.message)
         try:
             obj = collection.collect_object(guid.referent, creator, **validated_data)
         except ValidationError as e:
             raise InvalidModelValueError(e.message)
+        if waffle.switch_is_active(features.COLLECTION_SUBMISSION_WITH_CEDAR):
+            obj.sync_cedar_metadata()
         if subjects:
             auth = get_user_auth(self.context['request'])
             try:
