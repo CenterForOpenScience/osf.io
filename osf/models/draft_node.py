@@ -3,7 +3,7 @@ import logging
 from framework.auth.core import Auth
 from django.utils import timezone
 
-from .node import AbstractNode, Node, NodeLog
+from .node import AbstractNode, NodeLog
 from osf.exceptions import NodeStateError
 
 
@@ -26,7 +26,7 @@ class DraftNode(AbstractNode):
         raise NodeStateError('You may not set privacy for a DraftNode.')
 
     def clone(self):
-        raise NodeStateError('A DraftNode may not be forked, used as a template, or registered.')
+        return super().clone()
 
     # Overrides AbstractNode.update_search
     def update_search(self):
@@ -68,9 +68,9 @@ class DraftNode(AbstractNode):
         :param parent Node: parent registration of registration to be created
         :param provider RegistrationProvider: provider to submit the registration to
         """
-        self.convert_draft_node_to_node(auth)
+        # self.convert_draft_node_to_node(auth)
         # Copies editable fields from the DraftRegistration back to the Node
         self.copy_editable_fields(draft_registration, save=True)
 
         # Calls super on Node, since self is no longer a DraftNode
-        return super(Node, self).register_node(schema, auth, draft_registration, parent=parent, child_ids=child_ids, provider=provider, manual_guid=manual_guid)
+        return super(DraftNode, self).register_node(schema, auth, draft_registration, parent=parent, child_ids=child_ids, provider=provider, manual_guid=manual_guid)

@@ -55,7 +55,7 @@ class ArchiveJob(ObjectIDMixin, BaseModel):
     dst_node = models.ForeignKey('Registration', related_name='archive_jobs',
                                  verbose_name='destination node', null=True,
                                  blank=True, on_delete=models.CASCADE)
-    src_node = models.ForeignKey('Node', verbose_name='source node', null=True,
+    src_node = models.ForeignKey('AbstractNode', verbose_name='source node', null=True,
                                  blank=True, on_delete=models.CASCADE)
     initiator = models.ForeignKey('OSFUser', null=True, on_delete=models.CASCADE)
 
