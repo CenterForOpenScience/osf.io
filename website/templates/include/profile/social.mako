@@ -36,14 +36,6 @@
             </div>
 
             <div class="form-group">
-                <label>ORCID</label>
-                <div class="input-group">
-                <span class="input-group-addon">http://orcid.org/</span>
-                <input class="form-control" data-bind="value: orcid" placeholder="xxxx-xxxx-xxxx-xxxx" aria-label="ORCID input" />
-                </div>
-            </div>
-
-            <div class="form-group">
                 <label>ResearcherID</label>
                 <div class="input-group">
                 <span class="input-group-addon">http://researcherid.com/rid/</span>
@@ -190,7 +182,6 @@
 <script>
 iconName = function(name) {
     var nameToHtml = {
-        "ORCID": "<i class='ai ai-orcid-square ai-2x' />",
         "ResearcherID": "<img src='http://tguillerme.github.io/images/logo-RID.png' class='icon-image'>",
         "Twitter": "<i class='fa fa-twitter-square fa-2x' />",
         "GitHub": "<i class='fa fa-github-square fa-2x' />",

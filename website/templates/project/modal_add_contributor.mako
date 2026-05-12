@@ -128,11 +128,6 @@
                                                         <i class="fa fa-info-circle social-icons fa-lg"></i>
                                                     </a>
                                                 </span>
-                                                <span data-bind="visible: contributor.social.orcid">
-                                                    <a data-bind="attr: {href: contributor.social.orcid}" data-toggle="tooltip" title="ORCiD" target="_blank">
-                                                        <i class="fa social-icons fa-lg">iD</i>
-                                                    </a>
-                                                </span>
                                                 <span data-bind="visible: contributor.social.researcherId">
                                                     <a data-bind="attr: {href: contributor.social.researcherId}" data-toggle="tooltip" title="ResearcherID" target="_blank">
                                                         <i class="fa social-icons fa-lg">R</i>

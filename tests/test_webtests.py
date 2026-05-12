@@ -79,35 +79,30 @@ class TestAUser(OsfTestCase):
         res = self.app.get(self.user.url, follow_redirects=True)
         assert self.user.url in res.text
 
-    # `GET /login/` without parameters is redirected to `/my-projects/` page which has `@must_be_logged_in` decorator
-    # if user is not logged in, she/he is further redirected to CAS login page
+    # `GET /login/` (legacy BE endpoint) without parameters is redirected to `/dashboard/` (angular FE endpoint).
+    # It's impossible to test external redirects in tests, and it is angular's job to redirect correctly to CAS login.
     def test_is_redirected_to_cas_if_not_logged_in_at_login_page(self):
-        res = self.app.resolve_redirect(self.app.get('/login/'))
+        res = self.app.get('/login/')
         assert res.status_code == 302
-        location = res.headers.get('Location')
-        assert 'login?service=' in location
+        assert 'dashboard' in res.headers.get('Location')
 
-    def test_is_redirected_to_myprojects_if_already_logged_in_at_login_page(self):
+    def test_is_redirected_to_dashboard_if_already_logged_in_at_login_page(self):
         res = self.app.get('/login/', auth=self.user.auth)
         assert res.status_code == 302
-        assert 'my-projects' in res.headers.get('Location')
+        assert 'dashboard' in res.headers.get('Location')
 
     def test_register_page(self):
         res = self.app.get('/register/')
         assert res.status_code == 200
 
-    def test_is_redirected_to_myprojects_if_already_logged_in_at_register_page(self):
+    def test_is_redirected_to_dashboard_if_already_logged_in_at_register_page(self):
         res = self.app.get('/register/', auth=self.user.auth)
         assert res.status_code == 302
-        assert 'my-projects' in res.headers.get('Location')
+        assert 'dashboard' in res.headers.get('Location')
 
     def test_sees_projects_in_her_dashboard(self):
-        # the user already has a project
-        project = ProjectFactory(creator=self.user)
-        project.add_contributor(self.user)
-        project.save()
-        res = self.app.get('/my-projects/', auth=self.user.auth)
-        assert 'Projects' in res.text  # Projects heading
+        # Deprecated test, dashboard and my-projects are angular pages
+        pass
 
     def test_does_not_see_osffiles_in_user_addon_settings(self):
         res = self.app.get('/settings/addons/', auth=self.auth, follow_redirects=True)
@@ -123,10 +118,8 @@ class TestAUser(OsfTestCase):
         assert 'OSF Storage' in res.text
 
     def test_sees_correct_title_on_dashboard(self):
-        # User goes to dashboard
-        res = self.app.get('/my-projects/', auth=self.auth, follow_redirects=True)
-        title = res.html.title.string
-        assert 'OSF | My Projects' == title
+        # Deprecated test, dashboard and my-projects are angular pages
+        pass
 
     def test_can_see_make_public_button_if_admin(self):
         # User is a contributor on a project

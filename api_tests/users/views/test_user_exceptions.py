@@ -22,7 +22,6 @@ class TestExceptionFormatting:
                 twitter='userOneTwitter',
                 linkedIn='userOneLinkedIn',
                 impactStory='userOneImpactStory',
-                orcid='userOneOrcid',
                 researcherId='userOneResearcherId'
             )
         )

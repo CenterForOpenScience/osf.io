@@ -1,10 +1,14 @@
 import re
+from urllib.parse import urlsplit
 
 import pytz
 
 from datetime import timedelta, datetime
 from django.utils import timezone
 from rest_framework.exceptions import ValidationError
+
+from osf.models import AbstractNode, Guid
+from osf.metrics.counted_usage import _get_immediate_wrapper
 
 
 DATETIME_FORMAT = '%Y-%m-%dT%H:%M'
@@ -114,3 +118,47 @@ def parse_date_range(query_params, is_monthly=False):
         start_date, end_date = parse_dates(query_params, is_monthly=is_monthly)
         report_date_range = {'gte': str(start_date), 'lte': str(end_date)}
     return report_date_range
+
+
+def _user_has_read_on_resolved_node(user, guid_referent):
+    """True if ``user`` has READ on the node this referent belongs to."""
+    current = guid_referent
+    while current is not None and not isinstance(current, AbstractNode):
+        current = _get_immediate_wrapper(current)
+    if current is None or not isinstance(current, AbstractNode):
+        return False
+    return current.contributors_and_group_members.filter(guids___id=user._id).exists()
+
+
+def should_skip_counted_usage(user, *, item_guid=None, pageview_info=None):
+    """Return True when this usage should not be recorded."""
+    if not getattr(user, 'is_authenticated', False):
+        return False
+
+    referents = []
+    seen_ids = set()
+
+    def _add_referent(ref):
+        if ref is None:
+            return
+        key = (ref.__class__.__name__, ref.pk)
+        if key in seen_ids:
+            return
+        seen_ids.add(key)
+        referents.append(ref)
+
+    if item_guid:
+        guid_obj = Guid.load(item_guid)
+        if guid_obj and guid_obj.referent:
+            _add_referent(guid_obj.referent)
+
+    page_url = (pageview_info or {}).get('page_url')
+    if page_url:
+        for segment in urlsplit(page_url).path.split('/'):
+            if not segment or len(segment) < 5:
+                continue
+            guid_obj = Guid.load(segment)
+            if guid_obj and guid_obj.referent:
+                _add_referent(guid_obj.referent)
+
+    return any(_user_has_read_on_resolved_node(user, ref) for ref in referents)

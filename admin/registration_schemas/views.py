@@ -17,7 +17,7 @@ class RegistrationSchemaDetailView(FormView, PermissionRequiredMixin, TemplateVi
     Allows authorized users to view and edit some attributes of a Registration Schema.
     """
     template_name = 'registration_schemas/registration_schema.html'
-    permission_required = 'osf.view_registration_schema'
+    permission_required = 'osf.view_registrationschema'
     raise_exception = True
     form_class = RegistrationSchemaEditForm
 
@@ -143,7 +143,7 @@ class RegistrationSchemaListView(PermissionRequiredMixin, ListView):
     Allows authorized users to view all Registration Schema.
     """
     template_name = 'registration_schemas/registration_schema_list.html'
-    permission_required = 'osf.view_registration_schema'
+    permission_required = 'osf.view_registrationschema'
     raise_exception = True
 
     def get_queryset(self):

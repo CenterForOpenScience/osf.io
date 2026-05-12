@@ -12,10 +12,12 @@ OSF_DB_PASSWORD = os.environ.get('OSF_DB_PASSWORD')
 DEV_MODE = True
 DEBUG_MODE = True  # Sets app to debug mode, turns off template caching, etc.
 SECURE_MODE = not DEBUG_MODE  # Disable osf secure cookie
+LOCAL_MODE = True  # handles angular and web with different domains in local env
 
 PROTOCOL = 'https://' if SECURE_MODE else 'http://'
 DOMAIN = PROTOCOL + 'localhost:5000/'
 API_DOMAIN = PROTOCOL + 'localhost:8000/'
+LOCAL_ANGULAR_DOMAIN = PROTOCOL + 'localhost:4200/'  # Only used when LOCAL_MODE is True
 ENABLE_INSTITUTIONS = True
 
 PREPRINT_PROVIDER_DOMAINS = {
