@@ -7,7 +7,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('osf', '0037_notification_refactor_post_release'),
+        ('osf', '0039_merge_20260427_1359'),
     ]
 
     operations = [
