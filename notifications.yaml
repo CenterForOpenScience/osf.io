@@ -318,6 +318,13 @@ notification_types:
     template: 'website/templates/tou_notif.html.mako'
     tests: []
 
+  - name: user_confirm_ham_report
+    subject: 'Confirm HAM report for {user_guid}'
+    __docs__: Summary report sent to the admin who triggered Confirm HAM.
+    object_content_type_model_name: osfuser
+    template: 'website/templates/user_confirm_ham_report.html.mako'
+    tests: []
+
   - name: desk_registration_bulk_upload_product_owner
     subject: 'Registry Could Not Bulk Upload Registrations'
     object_content_type_model_name: osfuser

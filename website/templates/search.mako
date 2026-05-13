@@ -180,11 +180,6 @@
                             <i class="fa fa-info-circle social-icons" data-toggle="tooltip" title="ImpactStory"></i>
                         </a>
                     </li>
-                    <li data-bind="visible: social.orcid">
-                        <a data-bind="attr: {href: social.orcid}">
-                            <i class="fa social-icons" data-toggle="tooltip" title="ORCiD">iD</i>
-                        </a>
-                    </li>
                     <li data-bind="visible: social.researcherId">
                         <a data-bind="attr: {href: social.researcherId}">
                             <i class="fa social-icons" data-toggle="tooltip" title="ResearcherID">R</i>

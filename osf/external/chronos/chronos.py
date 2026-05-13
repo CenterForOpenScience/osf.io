@@ -103,7 +103,6 @@ class ChronosSerializer:
             'GIVEN_NAME': user.given_name,
             'FULLNAME': user.fullname,
             'MIDDLE_NAME': user.middle_names,
-            'ORCID_ID': user.social.get('orcid', None),
             'PARTNER_USER_ID': user._id,
             'SURNAME': user.family_name,
         }

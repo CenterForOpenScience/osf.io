@@ -15,7 +15,6 @@ from framework.flask import redirect
 from osf.utils.fields import ensure_str
 from osf.exceptions import InvalidCookieOrSessionError
 from website import settings
-from website.util import web_url_for
 
 SessionStore = import_module(django_conf_settings.SESSION_ENGINE).SessionStore
 
@@ -165,7 +164,7 @@ def create_session(response, data=None):
 def before_request():
     # TODO: Fix circular import
     from framework.auth.core import get_user
-    from framework.auth import cas
+    from framework.auth import cas, utils
     UserSessionMap = apps.get_model('osf.UserSessionMap')
 
     # Request Type 1: Service ticket validation during CAS login.
@@ -216,7 +215,8 @@ def before_request():
         try:
             user_session = flask_get_session_from_cookie(cookie)
         except InvalidCookieOrSessionError:
-            response = redirect(web_url_for('auth_login'))
+            # If invalid session/cookie happens, perform a full logout to clear both CAS and OSF Sessions
+            response = redirect(utils.get_default_osf_logout_url())
             response.delete_cookie(settings.COOKIE_NAME, domain=settings.OSF_COOKIE_DOMAIN)
             return response
         # Case 1: anonymous session that is used for first time external (e.g. ORCiD) login only

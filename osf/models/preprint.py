@@ -28,7 +28,7 @@ from .user import OSFUser
 from .provider import PreprintProvider
 from .preprintlog import PreprintLog
 from .contributor import PreprintContributor
-from .mixins import ReviewableMixin, Taggable, Loggable, GuardianMixin, AffiliatedInstitutionMixin
+from .mixins import ReviewableMixin, Taggable, Loggable, GuardianMixin, AffiliatedInstitutionMixin, ShareIndexMixin
 from .validators import validate_doi
 from osf.utils.fields import NonNaiveDateTimeField
 from osf.utils.workflows import DefaultStates, ReviewStates
@@ -176,7 +176,7 @@ def require_permission(permissions: list):
 
 
 class Preprint(DirtyFieldsMixin, VersionedGuidMixin, IdentifierMixin, ReviewableMixin, BaseModel, TitleMixin, DescriptionMixin,
-        Loggable, Taggable, ContributorMixin, GuardianMixin, SpamOverrideMixin, TaxonomizableMixin, AffiliatedInstitutionMixin):
+        Loggable, Taggable, ContributorMixin, GuardianMixin, SpamOverrideMixin, TaxonomizableMixin, AffiliatedInstitutionMixin, ShareIndexMixin):
 
     objects = PreprintManager()
     published_objects = PublishedPreprintManager()
@@ -407,7 +407,7 @@ class Preprint(DirtyFieldsMixin, VersionedGuidMixin, IdentifierMixin, Reviewable
         """Check and return the "initiated but unfinished version" and "unfinished or unpublished version".
         """
         last_not_rejected_version = self.get_last_not_rejected_version()
-        if last_not_rejected_version.date_published:
+        if not last_not_rejected_version or last_not_rejected_version.date_published:
             return None, None
         if last_not_rejected_version.machine_state == 'initial':
             return last_not_rejected_version, None

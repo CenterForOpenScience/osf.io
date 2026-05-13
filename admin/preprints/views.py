@@ -668,6 +668,22 @@ class PreprintFixEditing(PreprintMixin, View):
         return redirect(self.get_success_url())
 
 
+class PreprintFixCOI(PreprintMixin, View):
+    """ Allows an authorized user to manually fix conflict of interest field.
+    """
+    permission_required = 'osf.change_preprint'
+
+    def post(self, request, *args, **kwargs):
+        preprint = self.get_object()
+        if preprint.conflict_of_interest_statement and not preprint.has_coi:
+            preprint.update_has_coi(auth=request, has_coi=True, ignore_permission=True)
+            messages.success(request, 'The COI was successfully fixed.')
+        else:
+            messages.error(request, 'The COI is either already fixed or the preprint does not have conflict of interest set.')
+
+        return redirect(self.get_success_url())
+
+
 class PreprintMakePublic(PreprintMixin, View):
     """ Allows an authorized user to manually make a private preprint public.
     """

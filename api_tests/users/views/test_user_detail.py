@@ -453,7 +453,6 @@ class TestUserUpdate:
                 twitter='userOneTwitter',
                 linkedIn='userOneLinkedIn',
                 impactStory='userOneImpactStory',
-                orcid='userOneOrcid',
                 researcherId='userOneResearcherId'
             )
         )
@@ -508,7 +507,6 @@ class TestUserUpdate:
                         'twitter': ['http://twitter.com/newtwitter'],
                         'linkedIn': ['https://www.linkedin.com/newLinkedIn'],
                         'impactStory': 'https://impactstory.org/newImpactStory',
-                        'orcid': 'http://orcid.org/newOrcid',
                         'researcherId': 'http://researcherid.com/rid/newResearcherId',
                     }},
             }}
@@ -916,7 +914,6 @@ class TestUserUpdate:
         assert user_one.social['twitter'] in social['twitter']
         assert user_one.social['linkedIn'] in social['linkedIn']
         assert user_one.social['impactStory'] in social['impactStory']
-        assert user_one.social['orcid'] in social['orcid']
         assert user_one.social['researcherId'] in social['researcherId']
         assert user_one.fullname == 'new_fullname'
         assert user_one.suffix == 'The Millionth'
@@ -933,7 +930,6 @@ class TestUserUpdate:
             'academiaProfileID': 'okokokok',
             'ssrn': 'aaaa',
             'impactStory': 'why not',
-            'orcid': 'ork-id',
             'researchGate': 'Why are there so many of these',
             'researcherId': 'ok-lastone',
             'academiaInstitution': 'Center for Open Science'
@@ -1005,7 +1001,6 @@ class TestUserUpdate:
         assert user_one.social['twitter'] in social['twitter']
         assert user_one.social['linkedIn'] in social['linkedIn']
         assert user_one.social['impactStory'] in social['impactStory']
-        assert user_one.social['orcid'] in social['orcid']
         assert user_one.social['researcherId'] in social['researcherId']
         assert user_one.fullname == 'new_fullname'
         assert user_one.suffix == 'The Millionth'
@@ -1056,7 +1051,6 @@ class TestUserUpdate:
         assert 'newtwitter' in social['twitter'][0]
         assert 'newLinkedIn' in social['linkedIn'][0]
         assert 'newImpactStory' in social['impactStory']
-        assert 'newOrcid' in social['orcid']
         assert 'newResearcherId' in social['researcherId']
         user_one.reload()
         assert user_one.fullname == data_new_user_one['data']['attributes']['full_name']
@@ -1069,7 +1063,6 @@ class TestUserUpdate:
         assert 'newtwitter' in social['twitter'][0]
         assert 'newLinkedIn' in social['linkedIn'][0]
         assert 'newImpactStory' in social['impactStory']
-        assert 'newOrcid' in social['orcid']
         assert 'newResearcherId' in social['researcherId']
 
     def test_update_user_sanitizes_html_properly(

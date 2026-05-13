@@ -174,7 +174,6 @@ class TestSearchViews(OsfTestCase):
 
         user_two.social = {
             'profileWebsites': [f'http://me.com/{user_two.given_name}'],
-            'orcid': user_two.given_name,
             'linkedIn': user_two.given_name,
             'scholar': user_two.given_name,
             'impactStory': user_two.given_name,
@@ -207,7 +206,6 @@ class TestSearchViews(OsfTestCase):
         assert 'ssrn' not in res.json['results'][0]['social']
         assert res.json['results'][0]['social']['profileWebsites'][0] == f'http://me.com/{user_two.given_name}'
         assert res.json['results'][0]['social']['impactStory'] == f'https://impactstory.org/u/{user_two.given_name}'
-        assert res.json['results'][0]['social']['orcid'] == f'http://orcid.org/{user_two.given_name}'
         assert res.json['results'][0]['social']['baiduScholar'] == f'http://xueshu.baidu.com/scholarID/{user_two.given_name}'
         assert res.json['results'][0]['social']['linkedIn'] == f'https://www.linkedin.com/{user_two.given_name}'
         assert res.json['results'][0]['social']['scholar'] == f'http://scholar.google.com/citations?user={user_two.given_name}'
