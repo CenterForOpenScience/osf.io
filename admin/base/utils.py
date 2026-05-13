@@ -1,7 +1,7 @@
 """
 Utility functions and classes
 """
-from osf.models import Subject, NodeLicense, Brand
+from osf.models import Subject, NodeLicense, Brand, CedarMetadataTemplate
 
 from django.core.exceptions import ValidationError, PermissionDenied
 from django.urls import reverse
@@ -115,6 +115,11 @@ def get_brand_choices():
     no_default = ('', '---------')
     brands = Brand.objects.all()
     return [no_default] + [(brand.id, brand.name) for brand in brands]
+
+def get_cedar_template_choices():
+    no_default = ('', '---------')
+    templates = CedarMetadataTemplate.objects.filter(active=True)
+    return [no_default] + [(t.id, t.schema_name) for t in templates]
 
 def get_toplevel_subjects():
     return Subject.objects.filter(parent__isnull=True, provider___id='osf').values_list('id', 'text')

@@ -1,7 +1,10 @@
+import waffle
+
 from django.db import IntegrityError
 from rest_framework import exceptions
 from rest_framework import serializers as ser
 
+from osf import features
 from osf.models import AbstractNode, Node, Collection, Guid, Registration
 from osf.exceptions import ValidationError, NodeStateError
 from api.base.serializers import LinksField, RelationshipField, LinkedNodesRelationshipSerializer, LinkedRegistrationsRelationshipSerializer, LinkedPreprintsRelationshipSerializer
@@ -426,6 +429,11 @@ class CollectionSubmissionCreateSerializer(CollectionSubmissionSerializer):
             raise exceptions.ValidationError('"creator" must be specified.')
         if not (creator.has_perm('write_collection', collection) or (hasattr(guid.referent, 'has_permission') and guid.referent.has_permission(creator, WRITE))):
             raise exceptions.PermissionDenied('Must have write permission on either collection or collected object to collect.')
+        if waffle.switch_is_active(features.COLLECTION_SUBMISSION_WITH_CEDAR) and collection.provider_id:
+            try:
+                collection.provider.validate_required_metadata(guid.referent)
+            except ValidationError as e:
+                raise InvalidModelValueError(e.message)
         try:
             obj = collection.collect_object(guid.referent, creator, **validated_data)
         except ValidationError as e:
@@ -462,6 +470,11 @@ class LegacyCollectionSubmissionCreateSerializer(LegacyCollectionSubmissionSeria
             raise exceptions.ValidationError('"creator" must be specified.')
         if not (creator.has_perm('write_collection', collection) or (hasattr(guid.referent, 'has_permission') and guid.referent.has_permission(creator, WRITE))):
             raise exceptions.PermissionDenied('Must have write permission on either collection or collected object to collect.')
+        if waffle.switch_is_active(features.COLLECTION_SUBMISSION_WITH_CEDAR) and collection.provider_id:
+            try:
+                collection.provider.validate_required_metadata(guid.referent)
+            except ValidationError as e:
+                raise InvalidModelValueError(e.message)
         try:
             obj = collection.collect_object(guid.referent, creator, **validated_data)
         except ValidationError as e:

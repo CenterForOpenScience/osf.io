@@ -113,3 +113,8 @@ switches:
     name: populate_notification_types
     note: This is used to enable auto population of notification types.
     active: false
+
+  - flag_name: COLLECTION_SUBMISSION_WITH_CEDAR
+    name: collection_submission_with_cedar
+    note: When active, enforces that objects submitted to a collection have a CEDAR metadata record matching the provider's required_metadata_template.
+    active: false
