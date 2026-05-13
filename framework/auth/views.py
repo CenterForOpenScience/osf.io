@@ -84,7 +84,7 @@ def _reset_password_get(auth, uid=None, token=None, institutional=False):
         raise HTTPError(http_status.HTTP_400_BAD_REQUEST, data=error_data)
 
     # override routes.py login_url to redirect to my-projects
-    service_url = web_url_for('my_projects', _absolute=True)
+    service_url = web_url_for('dashboard', _absolute=True, _angular_route=True)
 
     return {
         'uid': user_obj._id,
@@ -142,7 +142,7 @@ def reset_password_post(uid=None, token=None):
             status.push_status_message('Password reset', kind='success', trust=False)
             # redirect to CAS and authenticate the user automatically with one-time verification key.
             return redirect(cas.get_login_url(
-                web_url_for('user_account', _absolute=True),
+                web_url_for('user_account', _absolute=True, _angular_route=True),
                 username=user_obj.username,
                 verification_key=user_obj.verification_key
             ))
@@ -176,7 +176,7 @@ def forgot_password_get(auth):
 
     #overriding the routes.py sign in url to redirect to the my-projects after login
     context = {}
-    context['login_url'] = web_url_for('my_projects', _absolute=True)
+    context['login_url'] = web_url_for('dashboard', _absolute=True, _angular_route=True)
 
     return context
 
@@ -324,7 +324,7 @@ def login_and_register_handler(auth, login=True, campaign=None, next_url=None, l
             # unlike other campaigns, institution login serves as an alternative for authentication
             if campaign == 'institution':
                 if next_url is None:
-                    next_url = web_url_for('my_projects', _absolute=True)
+                    next_url = web_url_for('dashboard', _absolute=True, _angular_route=True)
                 data['status_code'] = http_status.HTTP_302_FOUND
                 if auth.logged_in:
                     data['next_url'] = next_url
@@ -391,7 +391,7 @@ def login_and_register_handler(auth, login=True, campaign=None, next_url=None, l
         # `/login/` or `/register/` without any parameter
         if auth.logged_in:
             data['status_code'] = http_status.HTTP_302_FOUND
-        data['next_url'] = web_url_for('my_projects', _absolute=True)
+        data['next_url'] = web_url_for('dashboard', _absolute=True, _angular_route=True)
 
     return data
 
@@ -614,7 +614,7 @@ def external_login_confirm_email_get(auth, uid, token):
             return redirect(campaign_url)
         if new:
             status.push_status_message(language.WELCOME_MESSAGE, kind='default', jumbotron=True, trust=True, id='welcome_message')
-        return redirect(web_url_for('my_projects'))
+        return redirect(web_url_for('dashboard', _absolute=True, _angular_route=True))
 
     # token is invalid
     if token not in user.email_verifications:
@@ -644,7 +644,6 @@ def external_login_confirm_email_get(auth, uid, token):
 
     user.date_last_logged_in = timezone.now()
     user.external_identity[provider][provider_id] = 'VERIFIED'
-    user.social[provider.lower()] = provider_id
     del user.email_verifications[token]
     user.verification_key = generate_verification_key()
     user.save()
@@ -713,10 +712,10 @@ def confirm_email_get(token, auth=None, **kwargs):
                 status.push_status_message(language.WELCOME_MESSAGE, kind='default', jumbotron=True, trust=True, id='welcome_message')
             if token in auth.user.email_verifications:
                 status.push_status_message(language.CONFIRM_ALTERNATE_EMAIL_ERROR, kind='danger', trust=True, id='alternate_email_error')
-            return redirect(web_url_for('my_projects'))
+            return redirect(web_url_for('dashboard', _absolute=True, _angular_route=True))
 
         status.push_status_message(language.MERGE_COMPLETE, kind='success', trust=False)
-        return redirect(web_url_for('user_account'))
+        return redirect(web_url_for('user_account', _absolute=True, _angular_route=True))
 
     try:
         user.confirm_email(token, merge=is_merge)
@@ -1054,8 +1053,7 @@ def external_login_email_post():
     fullname = session.get('auth_user_fullname', None) or form.name.data
     service_url = session.get('service_url', None)
 
-    # TODO: @cslzchen use user tags instead of destination
-    destination = 'my_projects'
+    destination = 'dashboard'
     for campaign in campaigns.get_campaigns():
         if campaign != 'institution':
             # Handle different url encoding schemes between `furl` and `urlparse/urllib`.
@@ -1094,7 +1092,11 @@ def external_login_email_post():
             # 1. update user oauth, with pending status
             external_identity[external_id_provider][external_id] = 'LINK'
             if external_id_provider in user.external_identity:
-                user.external_identity[external_id_provider].update(external_identity[external_id_provider])
+                # v1 looks to be used because of /confirm/external/ usage for auth but add orcid external identity rewrite updates for v2 as well
+                if external_id_provider == settings.EXTERNAL_IDENTITY_PROFILE.get('OrcidProfile'):
+                    user.external_identity[external_id_provider] = external_identity[external_id_provider]
+                else:
+                    user.external_identity[external_id_provider].update(external_identity[external_id_provider])
             else:
                 user.external_identity.update(external_identity)
             if not user.accepted_terms_of_service and form.accepted_terms_of_service.data:
@@ -1129,7 +1131,6 @@ def external_login_email_post():
                 campaign=None,
                 accepted_terms_of_service=accepted_terms_of_service
             )
-            # TODO: [#OSF-6934] update social fields, verified social fields cannot be modified
             user.save()
             # 3. send confirmation email
             send_confirm_email_async(
@@ -1199,6 +1200,10 @@ def validate_next_url(next_url):
     :param next_url: the next url to check
     :return: True if valid, False otherwise
     """
+
+    # allow redirection to angular locally
+    if settings.LOCAL_MODE and next_url.startswith(settings.LOCAL_ANGULAR_DOMAIN):
+        return True
 
     # disable external domain using `//`: the browser allows `//` as a shortcut for non-protocol specific requests
     # like http:// or https:// depending on the use of SSL on the page already.

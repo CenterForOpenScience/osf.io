@@ -67,10 +67,6 @@
     "academiaInstitution": {
       "description": "The academiaInstitution for the given user",
       "type": "string"
-    },
-    "orcid": {
-      "description": "The orcid for the given user",
-      "type": "string"
     }
   },
   "additionalProperties": false

@@ -53,7 +53,7 @@ from .notable_domain import NotableDomain
 from .contributor import Contributor, RecentlyAddedContributor
 from .institution import Institution
 from .institution_affiliation import InstitutionAffiliation
-from .mixins import AddonModelMixin
+from .mixins import AddonModelMixin, ShareIndexMixin
 from .spam import SpamMixin
 from .session import UserSessionMap
 from .tag import Tag
@@ -131,7 +131,7 @@ class Email(BaseModel):
         return self.address
 
 
-class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, PermissionsMixin, AddonModelMixin, SpamMixin):
+class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, PermissionsMixin, AddonModelMixin, SpamMixin, ShareIndexMixin):
     FIELD_ALIASES = {
         '_id': 'guids___id',
         'system_tags': 'tags',
@@ -153,6 +153,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         'schools',
         'social',
         'allow_indexing',
+        'external_identity',
     }
 
     # Overrides DirtyFieldsMixin, Foreign Keys checked by '<attribute_name>_id' rather than typical name.
@@ -163,7 +164,6 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
     #   search update for all nodes to which the user is a contributor.
 
     SOCIAL_FIELDS = {
-        'orcid': 'http://orcid.org/{}',
         'github': 'http://github.com/{}',
         'scholar': 'http://scholar.google.com/citations?user={}',
         'twitter': 'http://twitter.com/{}',
@@ -346,7 +346,6 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
     #     'twitter': <list of twitter usernames>,
     #     'github': <list of github usernames>,
     #     'linkedIn': <list of linkedin profiles>,
-    #     'orcid': <orcid for user>,
     #     'researcherID': <researcherID>,
     #     'impactStory': <impactStory identifier>,
     #     'scholar': <google scholar identifier>,
@@ -1478,11 +1477,36 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         self.reactivate_account()
         super().confirm_ham(save=save, train_spam_services=train_spam_services)
 
+        failed_ham_ids = []
+
         # Don't train on resources merely associated with spam user
         for node in self.nodes.filter():
-            node.confirm_ham(save=save, train_spam_services=train_spam_services)
+            try:
+                node.confirm_ham(save=save, train_spam_services=train_spam_services)
+            except Exception as exc:
+                sentry.log_exception(exc)
+                failed_ham_ids.append(node._id)
+                continue
+
+            if not node.is_ham or getattr(node, 'is_deleted', False):
+                failed_ham_ids.append(node._id)
+
         for preprint in self.preprints.filter():
-            preprint.confirm_ham(save=save, train_spam_services=train_spam_services)
+            try:
+                preprint.confirm_ham(save=save, train_spam_services=train_spam_services)
+            except Exception as exc:
+                sentry.log_exception(exc)
+                failed_ham_ids.append(preprint._id)
+                continue
+
+            if (
+                not preprint.is_ham
+                or getattr(preprint, 'is_deleted', False)
+                or getattr(preprint, 'deleted', None) is not None
+            ):
+                failed_ham_ids.append(preprint._id)
+
+        return failed_ham_ids
 
     @property
     def is_assumed_ham(self):

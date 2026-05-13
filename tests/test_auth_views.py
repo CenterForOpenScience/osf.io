@@ -551,38 +551,49 @@ class TestAuthLoginAndRegisterLogic(OsfTestCase):
         self.no_auth = Auth()
         self.user_auth = AuthUserFactory()
         self.auth = Auth(user=self.user_auth)
-        self.next_url = web_url_for('my_projects', _absolute=True)
+        self.next_url = web_url_for('dashboard', _absolute=True, _angular_route=True)
         self.invalid_campaign = 'invalid_campaign'
 
     def test_osf_login_with_auth(self):
         # login: user with auth
         data = login_and_register_handler(self.auth)
         assert data.get('status_code') == http_status.HTTP_302_FOUND
-        assert data.get('next_url') == web_url_for('my_projects', _absolute=True)
+        assert data.get('next_url') == web_url_for('dashboard', _absolute=True, _angular_route=True)
 
     def test_osf_login_without_auth(self):
         # login: user without auth
         data = login_and_register_handler(self.no_auth)
         assert data.get('status_code') == http_status.HTTP_302_FOUND
-        assert data.get('next_url') == web_url_for('my_projects', _absolute=True)
+        assert data.get('next_url') == web_url_for('dashboard', _absolute=True, _angular_route=True)
 
     def test_osf_register_with_auth(self):
         # register: user with auth
         data = login_and_register_handler(self.auth, login=False)
         assert data.get('status_code') == http_status.HTTP_302_FOUND
-        assert data.get('next_url') == web_url_for('my_projects', _absolute=True)
+        assert data.get('next_url') == web_url_for('dashboard', _absolute=True, _angular_route=True)
 
     def test_osf_register_without_auth(self):
         # register: user without auth
         data = login_and_register_handler(self.no_auth, login=False)
         assert data.get('status_code') == http_status.HTTP_200_OK
-        assert data.get('next_url') == web_url_for('my_projects', _absolute=True)
+        assert data.get('next_url') == web_url_for('dashboard', _absolute=True, _angular_route=True)
 
     def test_next_url_login_with_auth(self):
         # next_url login: user with auth
         data = login_and_register_handler(self.auth, next_url=self.next_url)
         assert data.get('status_code') == http_status.HTTP_302_FOUND
         assert data.get('next_url') == self.next_url
+
+    def test_next_url_angular_login_with_auth(self):
+        data = login_and_register_handler(self.auth, next_url=settings.LOCAL_ANGULAR_DOMAIN)
+        assert data.get('status_code') == http_status.HTTP_302_FOUND
+        assert data.get('next_url') == settings.LOCAL_ANGULAR_DOMAIN
+
+    def test_next_url_angular_login_without_auth(self):
+        request.url = web_url_for('auth_login', next=settings.LOCAL_ANGULAR_DOMAIN, _absolute=True)
+        data = login_and_register_handler(self.no_auth, next_url=settings.LOCAL_ANGULAR_DOMAIN)
+        assert data.get('status_code') == http_status.HTTP_302_FOUND
+        assert data.get('next_url') == cas.get_login_url(request.url)
 
     def test_next_url_login_without_auth(self):
         # login: user without auth
@@ -610,14 +621,16 @@ class TestAuthLoginAndRegisterLogic(OsfTestCase):
         # institution login: user with auth
         data = login_and_register_handler(self.auth, campaign='institution')
         assert data.get('status_code') == http_status.HTTP_302_FOUND
-        assert data.get('next_url') == web_url_for('my_projects', _absolute=True)
+        assert data.get('next_url') == web_url_for('dashboard', _absolute=True, _angular_route=True)
 
     def test_institution_login_without_auth(self):
         # institution login: user without auth
         data = login_and_register_handler(self.no_auth, campaign='institution')
         assert data.get('status_code') == http_status.HTTP_302_FOUND
-        assert data.get('next_url') == cas.get_login_url(web_url_for('my_projects', _absolute=True),
-                                                         campaign='institution')
+        assert data.get('next_url') == cas.get_login_url(
+            web_url_for('dashboard', _absolute=True, _angular_route=True),
+            campaign='institution'
+        )
 
     def test_institution_login_next_url_with_auth(self):
         # institution login: user with auth and next url
@@ -635,13 +648,16 @@ class TestAuthLoginAndRegisterLogic(OsfTestCase):
         # institution register: user with auth
         data = login_and_register_handler(self.auth, login=False, campaign='institution')
         assert data.get('status_code') == http_status.HTTP_302_FOUND
-        assert data.get('next_url') == web_url_for('my_projects', _absolute=True)
+        assert data.get('next_url') == web_url_for('dashboard', _absolute=True, _angular_route=True)
 
     def test_institution_register_without_auth(self):
         # institution register: user without auth
         data = login_and_register_handler(self.no_auth, login=False, campaign='institution')
         assert data.get('status_code') == http_status.HTTP_302_FOUND
-        assert data.get('next_url') == cas.get_login_url(web_url_for('my_projects', _absolute=True), campaign='institution')
+        assert data.get('next_url') == cas.get_login_url(
+            web_url_for('dashboard', _absolute=True, _angular_route=True),
+            campaign='institution'
+        )
 
     def test_campaign_login_with_auth(self):
         for campaign in get_campaigns():
@@ -826,6 +842,20 @@ class TestAuthLogout(OsfTestCase):
         resp = self.app.get(logout_url, auth=None)
         assert resp.status_code == http_status.HTTP_302_FOUND
         assert cas.get_logout_url(self.goodbye_url) == resp.headers['Location']
+
+    def test_logout_with_angular_next_url_logged_in(self):
+        angular_url = 'http://localhost:4200/'
+        logout_url = web_url_for('auth_logout', _absolute=True, next=angular_url)
+        resp = self.app.get(logout_url, auth=self.auth_user.auth)
+        assert resp.status_code == http_status.HTTP_302_FOUND
+        assert cas.get_logout_url(logout_url) == resp.headers['Location']
+
+    def test_logout_with_angular_next_url_logged_out(self):
+        angular_url = 'http://localhost:4200/'
+        logout_url = web_url_for('auth_logout', _absolute=True, next=angular_url)
+        resp = self.app.get(logout_url, auth=None)
+        assert resp.status_code == http_status.HTTP_302_FOUND
+        assert angular_url == resp.headers['Location']
 
 
 class TestResetPassword(OsfTestCase):

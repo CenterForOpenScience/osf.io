@@ -6,7 +6,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('osf', '0038_abstractprovider_required_metadata_template'),
+        ('osf', '0040_abstractprovider_required_metadata_template'),
     ]
 
     operations = [

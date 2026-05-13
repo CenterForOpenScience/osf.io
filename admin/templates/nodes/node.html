@@ -29,6 +29,13 @@
                 </div>
             </div>
         </div>
+        <div class="row">
+            <br>
+            <div class="col-md-12">
+                {% include "nodes/add_file_to_osfstorage.html" with node=node %}
+                {% include "nodes/remove_file_from_osfstorage.html" with node=node %}
+            </div>
+        </div>
         <div class="row" style="overflow-x: auto; width: 100%;">
             <h2>{{ node.type|cut:'osf.'|title }}: <b>{{ node.title }}</b> <a href="{{ node.absolute_url }}"> ({{node.guid}})</a> </h2>
             <table class="table table-striped">

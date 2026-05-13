@@ -350,7 +350,7 @@ class PreprintDetail(PreprintOldVersionsImmutableMixin, PreprintMetricsViewMixin
         return res
 
     def delete(self, request, *args, **kwargs):
-        if self.get_preprint().machine_state == 'initial':
+        if self.get_preprint().machine_state in ['initial', 'rejected']:
             return super().delete(request, *args, **kwargs)
 
         raise ValidationError('You cannot delete created preprint')
