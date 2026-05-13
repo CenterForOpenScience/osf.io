@@ -461,7 +461,6 @@ class CollectionSubmission(TaxonomizableMixin, BaseModel):
             # It will automatically determine if a referent is part of the collection
             update_share(self.guid.referent)
 
-
             try:
                 update_collected_metadata(self.guid._id, collection_id=self.collection.id)
             except SearchUnavailableError as e:
