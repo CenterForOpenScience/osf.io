@@ -1,5 +1,4 @@
 import pytest
-from elasticsearch_metrics.tests.util import djelme_test_backends
 
 from api.base.settings.defaults import API_BASE
 from osf_tests.factories import (
@@ -9,12 +8,9 @@ from osf_tests.factories import (
 from osf.metrics.es8_metrics import MonthlyInstitutionSummaryReportEs8
 
 
+@pytest.mark.djelme_elasticsearch_backends
 @pytest.mark.django_db
 class TestInstitutionSummaryMetricsList:
-    @pytest.fixture(autouse=True)
-    def _real_elastic(self):
-        with djelme_test_backends():
-            yield
 
     @pytest.fixture()
     def institution(self):

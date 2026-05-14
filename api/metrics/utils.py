@@ -8,7 +8,7 @@ from django.utils import timezone
 from rest_framework.exceptions import ValidationError
 
 from osf.models import AbstractNode, Guid
-from osf.metrics.counted_usage import _get_immediate_wrapper
+from osf.metrics.utils import get_immediate_wrapper
 
 
 DATETIME_FORMAT = '%Y-%m-%dT%H:%M'
@@ -124,7 +124,7 @@ def _user_has_read_on_resolved_node(user, guid_referent):
     """True if ``user`` has READ on the node this referent belongs to."""
     current = guid_referent
     while current is not None and not isinstance(current, AbstractNode):
-        current = _get_immediate_wrapper(current)
+        current = get_immediate_wrapper(current)
     if current is None or not isinstance(current, AbstractNode):
         return False
     return current.contributors_and_group_members.filter(guids___id=user._id).exists()

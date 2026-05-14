@@ -9,7 +9,6 @@ from elasticsearch_metrics.registry import djelme_registry
 
 from framework.auth.oauth_scopes import CoreScopes
 
-from rest_framework.exceptions import ValidationError
 from rest_framework import permissions as drf_permissions
 from rest_framework.response import Response
 from rest_framework.generics import GenericAPIView
@@ -43,11 +42,13 @@ from api.metrics.utils import (
 from api.nodes.permissions import MustBePublic
 
 from osf.features import ENABLE_RAW_METRICS
+from osf.metrics.events import (
+    OsfCountedUsageEvent,
+    RegistriesModerationEventEs8,
+)
 from osf.metrics.es8_metrics import (
     BaseDailyReport,
     BaseMonthlyReport,
-    OsfCountedUsageEvent,
-    RegistriesModerationEventEs8,
     DailyDownloadCountReportEs8,
     DailyInstitutionSummaryReportEs8,
     DailyNodeSummaryReportEs8,
@@ -96,10 +97,6 @@ class RawMetricsView(GenericAPIView):
     serializer_class = RawMetricsSerializer
 
     @require_switch(ENABLE_RAW_METRICS)
-    def delete(self, request, *args, **kwargs):
-        raise ValidationError('DELETE not supported. Use GET/POST/PUT')
-
-    @require_switch(ENABLE_RAW_METRICS)
     def get(self, request, *args, djelme_backend_name, url_path, **kwargs):
         _response_body = self._do_es_request(
             djelme_backend_name,
@@ -117,6 +114,7 @@ class RawMetricsView(GenericAPIView):
             path=url_path,
             qp=request.GET,
             body=json.loads(request.body),
+            content_type=request.headers.get('Content-Type'),
         )
         return JsonResponse(_response_body)
 
@@ -128,13 +126,22 @@ class RawMetricsView(GenericAPIView):
             path=url_path,
             qp=request.GET,
             body=json.loads(request.body),
+            content_type=request.headers.get('Content-Type'),
         )
         return JsonResponse(_response_body)
 
-    def _do_es_request(self, djelme_backend_name, method, path, qp, body=None):
+    def _do_es_request(self, djelme_backend_name, method, path, qp, body=None, content_type=None):
         _client = self._get_es_client(djelme_backend_name)
-        _perform_fn = getattr(_client, 'perform_request', None) or _client.transport.perform_request
-        _response = _perform_fn(method, f'/{path}', params=qp.dict(), body=body)
+        _response = _client.perform_request(
+            method,
+            f'/{path}',
+            params=qp.dict(),
+            body=body,
+            headers=(
+                {'Content-Type': content_type, 'Accept': 'application/json'}
+                if content_type else None
+            ),
+        )
         return _response if isinstance(_response, dict) else _response.body
 
     def _get_es_client(self, djelme_backend_name):

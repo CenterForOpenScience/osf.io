@@ -7,8 +7,8 @@ from elasticsearch8 import dsl as esdsl
 from osf.metadata.osf_gathering import OsfmapPartition
 from osf.metrics.es8_metrics import (
     MonthlyPublicItemUsageReportEs8,
-    OsfCountedUsageEvent,
 )
+from osf.metrics.events import OsfCountedUsageEvent
 from osf.metrics.utils import YearMonth, cycle_coverage_yearmonth
 from ._base import MonthlyReporter
 

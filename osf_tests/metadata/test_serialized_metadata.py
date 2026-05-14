@@ -9,7 +9,7 @@ from osf import models as osfdb
 from osf.metadata.osf_gathering import OsfmapPartition
 from osf.metadata.rdfutils import OSF, DCTERMS
 from osf.metadata.tools import pls_gather_metadata_file
-from osf.metrics.reports import PublicItemUsageReport
+from osf.metrics.es8_metrics import MonthlyPublicItemUsageReportEs8
 from osf.metrics.utils import YearMonth
 from osf.models.licenses import NodeLicense
 from api_tests.utils import create_test_file
@@ -311,14 +311,14 @@ class TestSerializers(OsfTestCase):
             'resource_type_general': 'StudyRegistration',
         }, auth=self.user)
         self.enterContext(mock.patch(
-            'osf.metrics.reports.PublicItemUsageReport.for_last_month',
-            return_value=PublicItemUsageReport(
+            'osf.metrics.es8_metrics.MonthlyPublicItemUsageReportEs8.from_last_month',
+            return_value=[MonthlyPublicItemUsageReportEs8(
                 report_yearmonth=YearMonth.from_date(forever_now()),
                 view_count=7,
                 view_session_count=5,
                 download_count=3,
                 download_session_count=2,
-            ),
+            )],
         ))
         self.guid_dict = {
             OSF.Project: self.project._id,

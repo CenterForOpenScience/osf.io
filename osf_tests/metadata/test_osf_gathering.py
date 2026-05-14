@@ -25,7 +25,7 @@ from osf.metadata.rdfutils import (
     checksum_iri,
 )
 from osf import models as osfdb
-from osf.metrics.reports import PublicItemUsageReport
+from osf.metrics.es8_metrics import MonthlyPublicItemUsageReportEs8
 from osf.metrics.utils import YearMonth
 from osf.utils import permissions, workflows
 from osf_tests import factories
@@ -799,22 +799,23 @@ class TestOsfGathering(TestCase):
     def test_gather_last_month_usage(self):
         # no usage report:
         with mock.patch(
-            'osf.metrics.reports.PublicItemUsageReport.for_last_month',
-            return_value=None,
+            'osf.metrics.es8_metrics.MonthlyPublicItemUsageReportEs8.from_last_month',
+            return_value=[],
         ):
             assert_triples(osf_gathering.gather_last_month_usage(self.projectfocus), set())
         # yes usage report:
         _ym = YearMonth.from_date(datetime.datetime.now(tz=datetime.UTC))
         with mock.patch(
-            'osf.metrics.reports.PublicItemUsageReport.for_last_month',
-            return_value=PublicItemUsageReport(
-                item_osfid=self.project._id,
+            'osf.metrics.es8_metrics.MonthlyPublicItemUsageReportEs8.from_last_month',
+            return_value=[MonthlyPublicItemUsageReportEs8(
+                item_iri=self.project.get_semantic_iri(),
+                item_osfids=[self.project._id],
                 report_yearmonth=_ym,
                 view_count=71,
                 view_session_count=13,
                 download_count=43,
                 download_session_count=11,
-            ),
+            )],
         ):
             _usage_bnode = rdflib.BNode()
             assert_triples(osf_gathering.gather_last_month_usage(self.projectfocus), {

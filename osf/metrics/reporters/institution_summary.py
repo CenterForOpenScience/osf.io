@@ -2,12 +2,6 @@ import logging
 
 from django.db.models import Q
 
-from osf.metrics.reports import (
-    InstitutionSummaryReport,
-    RunningTotal,
-    NodeRunningTotals,
-    RegistrationRunningTotals,
-)
 from osf.models import Institution
 from osf.metrics.es8_metrics import (
     DailyInstitutionSummaryReportEs8,
@@ -25,7 +19,6 @@ logging.basicConfig(level=logging.INFO)
 class InstitutionSummaryReporter(DailyReporter):
     def report(self, date):
         institutions = Institution.objects.all()
-        reports = []
 
         daily_query = Q(created__date=date)
         public_query = Q(is_public=True)
@@ -45,7 +38,7 @@ class InstitutionSummaryReporter(DailyReporter):
                 created__date__lte=date,
                 type='osf.registration',
             )
-            report_es8 = DailyInstitutionSummaryReportEs8(
+            yield DailyInstitutionSummaryReportEs8(
                 cycle_coverage=cycle_coverage_date(date),
                 institution_id=institution._id,
                 institution_name=institution.name,
@@ -96,58 +89,3 @@ class InstitutionSummaryReporter(DailyReporter):
                         private_query & daily_query & embargo_v2_query).get_roots().count(),
                 ),
             )
-            reports.append(report_es8)
-
-            report = InstitutionSummaryReport(
-                report_date=date,
-                institution_id=institution._id,
-                institution_name=institution.name,
-                users=RunningTotal(
-                    total=report_es8.users.total,
-                    total_daily=report_es8.users.total_daily,
-                ),
-                nodes=NodeRunningTotals(
-                    total=report_es8.nodes.total,
-                    public=report_es8.nodes.public,
-                    private=report_es8.nodes.private,
-
-                    total_daily=report_es8.nodes.total_daily,
-                    public_daily=report_es8.nodes.public_daily,
-                    private_daily=report_es8.nodes.private_daily,
-                ),
-                # Projects use get_roots to remove children
-                projects=NodeRunningTotals(
-                    total=report_es8.projects.total,
-                    public=report_es8.projects.public,
-                    private=report_es8.projects.private,
-
-                    total_daily=report_es8.projects.total_daily,
-                    public_daily=report_es8.projects.public_daily,
-                    private_daily=report_es8.projects.private_daily,
-                ),
-                registered_nodes=RegistrationRunningTotals(
-                    total=report_es8.registered_nodes.total,
-                    public=report_es8.registered_nodes.public,
-                    embargoed=report_es8.registered_nodes.embargoed,
-                    embargoed_v2=report_es8.registered_nodes.embargoed_v2,
-
-                    total_daily=report_es8.registered_nodes.total_daily,
-                    public_daily=report_es8.registered_nodes.public_daily,
-                    embargoed_daily=report_es8.registered_nodes.embargoed_daily,
-                    embargoed_v2_daily=report_es8.registered_nodes.embargoed_v2_daily,
-                ),
-                registered_projects=RegistrationRunningTotals(
-                    total=report_es8.registered_projects.total,
-                    public=report_es8.registered_projects.public,
-                    embargoed=report_es8.registered_projects.embargoed,
-                    embargoed_v2=report_es8.registered_projects.embargoed_v2,
-
-                    total_daily=report_es8.registered_projects.total_daily,
-                    public_daily=report_es8.registered_projects.public_daily,
-                    embargoed_daily=report_es8.registered_projects.embargoed_daily,
-                    embargoed_v2_daily=report_es8.registered_projects.embargoed_v2_daily,
-                ),
-            )
-
-            reports.append(report)
-        return reports

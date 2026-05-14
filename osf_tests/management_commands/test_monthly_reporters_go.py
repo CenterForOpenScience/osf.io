@@ -2,7 +2,7 @@ import datetime
 
 from django.core.management import call_command
 from django.test import TestCase
-from elasticsearch_metrics.tests.util import djelme_test_backends
+from elasticsearch_metrics.tests.util import RealElasticTestCase
 
 from framework.celery_tasks import app as celery_app
 from osf.metrics.es8_metrics import (
@@ -11,15 +11,15 @@ from osf.metrics.es8_metrics import (
     MonthlyPrivateSpamMetricsReportEs8,
     MonthlyPublicItemUsageReportEs8,
     MonthlySpamSummaryReportEs8,
-    OsfCountedUsageEvent,
 )
+from osf.metrics.events import OsfCountedUsageEvent
 from osf.metrics.utils import YearMonth
 from osf_tests import factories
 
 
-class TestMonthlyReportersGo(TestCase):
+class TestMonthlyReportersGo(RealElasticTestCase, TestCase):
     def setUp(self):
-        self.enterContext(djelme_test_backends())
+        super().setUp()
         celery_app.conf.update({
             'task_always_eager': True,
             'task_eager_propagates': True,
@@ -52,8 +52,5 @@ class TestMonthlyReportersGo(TestCase):
         self._assert_count(MonthlySpamSummaryReportEs8, 1)
 
     def _assert_count(self, recordtype, expected_count):
-        if hasattr(recordtype, 'refresh'):
-            recordtype.refresh()
-        else:  # elasticsearch_metrics.imps.elastic6
-            recordtype._get_connection().indices.refresh(recordtype._template_pattern)
+        recordtype.refresh()
         self.assertEqual(recordtype.search().count(), expected_count)

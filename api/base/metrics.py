@@ -3,10 +3,8 @@ import waffle
 
 from api.base.exceptions import InvalidQueryStringError
 from osf import features
-from osf.metrics.es8_metrics import (
-    OsfCountedUsageEvent,
-    MonthlyPublicItemUsageReportEs8,
-)
+from osf.metrics.events import OsfCountedUsageEvent
+from osf.metrics.es8_metrics import MonthlyPublicItemUsageReportEs8
 from osf.models.base import osfid_iri
 
 

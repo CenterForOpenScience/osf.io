@@ -4,7 +4,7 @@ from unittest import mock
 from django.test import TestCase
 from elasticsearch_metrics.tests.util import RealElasticTestCase
 
-from osf.metrics.es8_metrics import OsfCountedUsageEvent
+from osf.metrics.events import OsfCountedUsageEvent
 from osf_tests.factories import NodeFactory, AuthUserFactory
 
 

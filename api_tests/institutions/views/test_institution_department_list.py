@@ -1,7 +1,6 @@
 import datetime
 
 import pytest
-from elasticsearch_metrics.tests.util import djelme_test_backends
 
 from api.base.settings.defaults import API_BASE, DEFAULT_ES_NULL_VALUE
 from osf_tests.factories import (
@@ -12,13 +11,9 @@ from osf.metrics.es8_metrics import MonthlyInstitutionalUserReportEs8
 from osf.metrics.utils import YearMonth
 
 
+@pytest.mark.djelme_elasticsearch_backends
 @pytest.mark.django_db
 class TestInstitutionDepartmentList:
-
-    @pytest.fixture(autouse=True)
-    def _real_elastic(self):
-        with djelme_test_backends():
-            yield
 
     @pytest.fixture()
     def institution(self):

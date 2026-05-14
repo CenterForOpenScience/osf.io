@@ -1,23 +1,12 @@
 import pytest
-from elasticsearch_metrics.tests.util import djelme_test_backends
-from waffle.testutils import override_switch
 
-from osf import features
 from osf_tests.factories import RegistrationFactory, AuthUserFactory
 from osf.utils.workflows import RegistrationModerationStates, RegistrationModerationTriggers
-from osf.metrics.es8_metrics import RegistriesModerationEventEs8
+from osf.metrics.events import RegistriesModerationEventEs8
 from tests.utils import capture_notifications
 
 
-@pytest.fixture
-def real_elastic():
-    with (
-        override_switch(features.ELASTICSEARCH_METRICS, active=True),
-        djelme_test_backends(),
-    ):
-        yield
-
-
+@pytest.mark.djelme_elasticsearch_backends
 @pytest.mark.django_db
 class TestRegistrationModerationMetrics:
 
@@ -25,7 +14,7 @@ class TestRegistrationModerationMetrics:
     def registration(self):
         return RegistrationFactory()
 
-    def test_record_transitions(self, registration, real_elastic):
+    def test_record_transitions(self, registration):
         with capture_notifications():
             registration._write_registration_action(
                 RegistrationModerationStates.INITIAL,
@@ -45,6 +34,7 @@ class TestRegistrationModerationMetrics:
         assert data['comment'] == 'Metrics is easy'
 
 
+@pytest.mark.djelme_elasticsearch_backends
 @pytest.mark.django_db
 class TestRegistrationModerationMetricsView:
 
@@ -68,7 +58,7 @@ class TestRegistrationModerationMetricsView:
     def base_url(self):
         return '/_/metrics/registries_moderation/transitions/'
 
-    def test_registries_moderation_view(self, app, user, base_url, registration, real_elastic):
+    def test_registries_moderation_view(self, app, user, base_url, registration):
         with capture_notifications():
             registration._write_registration_action(
                 RegistrationModerationStates.INITIAL,

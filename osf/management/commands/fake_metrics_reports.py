@@ -4,18 +4,19 @@ from random import randint
 from django.conf import settings
 from django.core.management.base import BaseCommand
 
-from osf.metrics import (
-    UserSummaryReport,
-    PreprintSummaryReport,
+from osf.metrics.es8_metrics import (
+    DailyUserSummaryReportEs8,
+    DailyPreprintSummaryReportEs8,
+    MonthlyPublicItemUsageReportEs8,
 )
-from osf.metrics.reports import PublicItemUsageReport
 from osf.metrics.utils import YearMonth
+from osf.models.base import osfid_iri
 from osf.models import PreprintProvider
 
 
 def fake_user_counts(days_back):
     yesterday = date.today() - timedelta(days=1)
-    first_report = UserSummaryReport(
+    first_report = DailyUserSummaryReportEs8(
         report_date=(yesterday - timedelta(days=days_back)),
         active=randint(0, 23),
         deactivated=randint(0, 2),
@@ -29,7 +30,7 @@ def fake_user_counts(days_back):
     last_report = first_report
     while last_report.report_date < yesterday:
         new_user_count = randint(0, 500)
-        new_report = UserSummaryReport(
+        new_report = DailyUserSummaryReportEs8(
             report_date=(last_report.report_date + timedelta(days=1)),
             active=(last_report.active + randint(0, new_user_count)),
             deactivated=(last_report.deactivated + randint(0, new_user_count)),
@@ -48,7 +49,7 @@ def fake_preprint_counts(days_back):
     for day_delta in range(days_back):
         for provider_key in provider_keys:
             preprint_count = randint(100, 5000) * (days_back - day_delta)
-            PreprintSummaryReport(
+            DailyPreprintSummaryReportEs8(
                 report_date=yesterday - timedelta(days=day_delta),
                 provider_key=provider_key,
                 preprint_count=preprint_count,
@@ -57,16 +58,29 @@ def fake_preprint_counts(days_back):
 
 def fake_usage_reports(osfid: str, count: int):
     _ym = YearMonth.from_date(date.today()).prior()
+    _prior_report = None
     for _months in range(count):
-        PublicItemUsageReport.record(
+        _report = MonthlyPublicItemUsageReportEs8(
             item_osfid=osfid,
+            item_iri=osfid_iri(osfid),
             report_yearmonth=_ym,
             view_count=(_vc := randint(0, 500)),
-            view_session_count=randint(0, _vc),
+            view_session_count=(_vsc := randint(0, _vc)),
+            cumulative_view_count=_vc,
+            cumulative_view_session_count=_vsc,
             download_count=(_dc := randint(0, 300)),
-            download_session_count=randint(0, _dc),
+            download_session_count=(_dsc := randint(0, _dc)),
+            cumulative_download_count=_dc,
+            cumulative_download_session_count=_dsc,
         )
+        if _prior_report:
+            _report.cumulative_view_count += _prior_report.cumulative_view_count
+            _report.cumulative_view_session_count += _prior_report.cumulative_view_session_count
+            _report.cumulative_download_count += _prior_report.cumulative_download_count
+            _report.cumulative_download_session_count += _prior_report.cumulative_download_session_count
+        _report.save()
         _ym = _ym.prior()
+        _prior_report = _report
 
 
 class Command(BaseCommand):

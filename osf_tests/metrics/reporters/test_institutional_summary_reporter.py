@@ -80,7 +80,7 @@ class TestInstiSummaryMonthlyReporter(TestCase):
     def test_report_generation(self):
         reporter = InstitutionalSummaryMonthlyReporter(self._yearmonth)
         reports = list_monthly_reports(reporter)
-        self.assertEqual(len(reports), 2)
+        self.assertEqual(len(reports), 1)
         for report in reports:
             self.assertEqual(report.institution_id, self._institution._id)
             self.assertEqual(report.user_count, 2)  # _logged_in_user and _active_user
@@ -115,7 +115,7 @@ class TestInstiSummaryMonthlyReporter(TestCase):
         # Run the reporter for the current month (February 2018)
         reporter = InstitutionalSummaryMonthlyReporter(self._yearmonth)
         reports = list_monthly_reports(reporter)
-        self.assertEqual(len(reports), 6)  # Reports for self._institution, institution2, institution3
+        self.assertEqual(len(reports), 3)  # Reports for self._institution, institution2, institution3
 
         # Extract reports by institution
         _reports1 = [r for r in reports if r.institution_id == self._institution._id]
@@ -273,7 +273,7 @@ class TestSummaryMonthlyReporterBenchmarker(TestCase):
             total_end_time = time.time()
             self.logger.info(f"Total test execution time: {total_end_time - total_start_time:.2f} seconds")
 
-        self.assertEqual(len(reports), 2 * (additional_institution_count + 1))
+        self.assertEqual(len(reports), additional_institution_count + 1)
 
         # Validate counts for each institution
         expected_count = users_per_institution * objects_per_user
