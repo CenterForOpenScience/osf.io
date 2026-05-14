@@ -1,10 +1,10 @@
 import pytest
-import time
 
 from website.app import setup_django
 setup_django()
 
 from waffle.testutils import override_switch
+from elasticsearch6_dsl.connections import connections as es6_connections
 
 from osf import features
 from osf_tests.factories import AuthUserFactory
@@ -40,9 +40,9 @@ class TestRawMetrics:
     def other_user(self):
         return AuthUserFactory()
 
-    @pytest.fixture
-    def base_url(self):
-        return f'/{API_BASE}metrics/raw/'
+    @pytest.fixture(params=['raw', 'raw-osfmetrics_es6'])
+    def base_url(self, request):
+        return f'/{API_BASE}metrics/{request.param}/'
 
     def test_delete(self, app, user, base_url):
         res = app.delete_json_api(base_url, auth=user.auth, expect_errors=True)
@@ -136,7 +136,9 @@ class TestRawMetrics:
         res = app.post_json_api(post_url, post_data, auth=user.auth)
         assert res.json == post_return
 
-        time.sleep(3)
+        es6_connections.get_connection('osfmetrics_es6').indices.refresh(
+            index='customer',
+        )
 
         get_url = f'{base_url}customer/_search?q=*'
         res = app.get(get_url, auth=user.auth)

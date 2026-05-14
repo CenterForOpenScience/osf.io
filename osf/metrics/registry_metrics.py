@@ -1,4 +1,4 @@
-from elasticsearch_metrics import metrics
+import elasticsearch_metrics.imps.elastic6 as metrics
 
 from osf.utils.workflows import RegistrationModerationTriggers, RegistrationModerationStates
 from .metric_mixin import MetricMixin

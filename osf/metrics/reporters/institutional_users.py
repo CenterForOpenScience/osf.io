@@ -7,7 +7,8 @@ from osf import models as osfdb
 from osf.models.spam import SpamStatus
 from addons.osfstorage.models import OsfStorageFile
 from osf.metrics.reports import InstitutionalUserReport
-from osf.metrics.utils import YearMonth
+from osf.metrics.utils import YearMonth, cycle_coverage_yearmonth
+from osf.metrics.es8_metrics import MonthlyInstitutionalUserReportEs8
 from ._base import MonthlyReporter
 
 
@@ -38,7 +39,7 @@ class InstitutionalUsersReporter(MonthlyReporter):
         _institution = osfdb.Institution.objects.get(pk=report_kwargs['institution_pk'])
         _user = osfdb.OSFUser.objects.get(pk=report_kwargs['user_pk'])
         _helper = _InstiUserReportHelper(_institution, _user, self.yearmonth)
-        return _helper.report
+        return _helper.build_reports()
 
 
 # helper
@@ -47,11 +48,11 @@ class _InstiUserReportHelper:
     institution: osfdb.Institution
     user: osfdb.OSFUser
     yearmonth: YearMonth
-    report: InstitutionalUserReport = dataclasses.field(init=False)
 
-    def __post_init__(self):
+    def build_reports(self):
         _affiliation = self.user.get_institution_affiliation(self.institution._id)
-        self.report = InstitutionalUserReport(
+        report_es8 = MonthlyInstitutionalUserReportEs8(
+            cycle_coverage=cycle_coverage_yearmonth(self.yearmonth),
             institution_id=self.institution._id,
             user_id=self.user._id,
             user_name=self.user.fullname,
@@ -72,6 +73,24 @@ class _InstiUserReportHelper:
             published_preprint_count=self._published_preprint_queryset().count(),
             storage_byte_count=self._storage_byte_count(),
         )
+        report_es6 = InstitutionalUserReport(
+            institution_id=report_es8.institution_id,
+            user_id=report_es8.user_id,
+            user_name=report_es8.user_name,
+            department_name=report_es8.department_name,
+            month_last_login=report_es8.month_last_login,
+            month_last_active=report_es8.month_last_active,
+            account_creation_date=report_es8.account_creation_date,
+            orcid_id=report_es8.orcid_id,
+            public_project_count=report_es8.public_project_count,
+            private_project_count=report_es8.private_project_count,
+            public_registration_count=report_es8.public_registration_count,
+            embargoed_registration_count=report_es8.embargoed_registration_count,
+            public_file_count=report_es8.public_file_count,
+            published_preprint_count=report_es8.published_preprint_count,
+            storage_byte_count=report_es8.storage_byte_count,
+        )
+        return [report_es8, report_es6]
 
     @property
     def before_datetime(self):

@@ -1,14 +1,15 @@
+from io import StringIO
+
 from dateutil.parser import isoparse
 from django.views.generic import TemplateView, View
 from django.contrib import messages
 from django.http import HttpResponse
 from django.utils import timezone
 from django.contrib.auth.mixins import PermissionRequiredMixin
+from django.core.management import call_command
 
 from osf.management.commands.manage_switch_flags import manage_waffle
 from osf.management.commands.update_registration_schemas import update_registration_schemas
-from osf.management.commands.daily_reporters_go import daily_reporters_go
-from osf.management.commands.monthly_reporters_go import monthly_reporters_go
 from osf.management.commands.fetch_cedar_metadata_templates import ingest_cedar_metadata_templates
 from osf.management.commands.sync_doi_metadata import sync_doi_metadata, sync_doi_empty_metadata_dataarchive_registrations
 from osf.management.commands.populate_notification_types import populate_notification_types
@@ -17,6 +18,7 @@ from scripts.find_spammy_content import manage_spammy_content
 from django.urls import reverse
 from django.shortcuts import redirect
 from osf.metrics.utils import YearMonth
+from osf.metrics.reporters import AllMonthlyReporters, AllDailyReporters
 from osf.models import Preprint, Node, Registration
 
 
@@ -25,6 +27,17 @@ class ManagementCommands(TemplateView):
 
     template_name = 'management/commands.html'
     object_type = 'management'
+
+    def get_context_data(self, **kwargs):
+        _context = super().get_context_data(**kwargs)
+        _context['monthly_reporter_keys'] = [
+            _enum.name.lower() for _enum in AllMonthlyReporters
+        ]
+        _context['daily_reporter_keys'] = [
+            _enum.name.lower() for _enum in AllDailyReporters
+        ]
+        return _context
+
 
 class ManagementCommandPermissionView(View, PermissionRequiredMixin):
 
@@ -110,9 +123,11 @@ class DailyReportersGo(ManagementCommandPermissionView):
         else:
             report_date = None
 
-        daily_reporters_go.apply_async(kwargs={
-            'report_date': report_date,
-        })
+        call_command(
+            'daily_reporters_go',
+            date=report_date,
+            reporter=request.POST.get('reporter_key', ''),
+        )
         messages.success(request, 'Daily reporters going!')
         return redirect(reverse('management:commands'))
 
@@ -126,20 +141,20 @@ class MonthlyReportersGo(ManagementCommandPermissionView):
         else:
             report_date = None
 
-        errors = monthly_reporters_go(
+        reporter_key = request.POST.get('reporter_key', '')
+        call_command(
+            'monthly_reporters_go',
             yearmonth=(
                 str(YearMonth.from_date(report_date))
                 if report_date is not None
                 else ''
             ),
-            reporter_key=request.POST.get('monthly_reporter', '')
+            reporter=reporter_key,
         )
-
-        if errors:
-            for reporter_name, error_msg in errors.items():
-                messages.error(request, f'{reporter_name} failed: {error_msg}')
+        if reporter_key:
+            messages.success(request, f'Monthly reporter {reporter_key!r} going!')
         else:
-            messages.success(request, 'Monthly reporters successfully went.')
+            messages.success(request, 'Monthly reporters going!')
         return redirect(reverse('management:commands'))
 
 
@@ -189,4 +204,24 @@ class RemoveOrcidFromUserSocial(ManagementCommandPermissionView):
     def post(self, request):
         remove_orcid_from_user_social()
         messages.success(request, 'Orcid from user social have been successfully removed.')
+        return redirect(reverse('management:commands'))
+
+
+class MigrateOsfmetrics6to8(ManagementCommandPermissionView):
+    def post(self, request):
+        _command_kwargs = {
+            'no_setup': True,
+            'no_color': True,
+            'no_counts': request.POST.get('no_counts'),
+            'clear_state': request.POST.get('clear_state'),
+            'clear_es8_data': request.POST.get('clear_es8_data'),
+            'start': request.POST.get('start'),
+            'unchanged': request.POST.get('unchanged'),
+            'usage_reports': request.POST.get('usage_reports'),
+            'usage_events': request.POST.get('usage_events'),
+        }
+        _out_io = StringIO()
+        call_command('migrate_osfmetrics_6to8', **_command_kwargs, stdout=_out_io)
+        for _line in _out_io.getvalue().split('\n'):
+            messages.info(request, _line)
         return redirect(reverse('management:commands'))

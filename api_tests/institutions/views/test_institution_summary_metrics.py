@@ -84,6 +84,7 @@ class TestInstitutionSummaryMetricsList:
         assert resp.json['meta'] == {'version': '2.0'}
 
     def test_get_report(self, app, url, institutional_admin, institution, reports, unshown_reports):
+        InstitutionMonthlySummaryReport._get_connection().indices.refresh(InstitutionMonthlySummaryReport._template_pattern)
         resp = app.get(url, auth=institutional_admin.auth)
         assert resp.status_code == 200
 
@@ -149,6 +150,7 @@ class TestInstitutionSummaryMetricsList:
             monthly_logged_in_user_count=270,
             monthly_active_user_count=260,
         )
+        InstitutionMonthlySummaryReport._get_connection().indices.refresh(InstitutionMonthlySummaryReport._template_pattern)
 
         resp = app.get(url, auth=institutional_admin.auth)
         assert resp.status_code == 200
@@ -189,6 +191,7 @@ class TestInstitutionSummaryMetricsList:
             institution,
             user_count=4133,
         )
+        InstitutionMonthlySummaryReport._get_connection().indices.refresh(InstitutionMonthlySummaryReport._template_pattern)
 
         resp = app.get(f'{url}?report_yearmonth=2024-08', auth=institutional_admin.auth)
         assert resp.status_code == 200
@@ -213,6 +216,7 @@ class TestInstitutionSummaryMetricsList:
             institution,
             user_count=999,
         )
+        InstitutionMonthlySummaryReport._get_connection().indices.refresh(InstitutionMonthlySummaryReport._template_pattern)
 
         # Request with an invalid report_date format
         resp = app.get(f'{url}?report_yearmonth=invalid-date', auth=institutional_admin.auth)
@@ -233,6 +237,7 @@ class TestInstitutionSummaryMetricsList:
             institution,
             user_count=999,
         )
+        InstitutionMonthlySummaryReport._get_connection().indices.refresh(InstitutionMonthlySummaryReport._template_pattern)
 
         resp = app.get(url, auth=institutional_admin.auth)
         assert resp.status_code == 200
@@ -247,5 +252,5 @@ def _summary_report_factory(yearmonth, institution, **kwargs):
         institution_id=institution._id,
         **kwargs,
     )
-    report.save(refresh=True)
+    report.save()
     return report

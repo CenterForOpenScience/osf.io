@@ -6,6 +6,10 @@ from rest_framework import serializers as ser
 from api.base.serializers import BaseAPISerializer
 from api.base.utils import absolute_reverse
 from osf.metrics.counted_usage import CountedAuthUsage, PageviewInfo
+from osf.metrics.es8_metrics import (
+    OsfCountedUsageEvent,
+    PageviewInfo as PageviewInfoEs8,
+)
 from website import settings as website_settings
 
 logger = logging.getLogger(__name__)
@@ -42,7 +46,7 @@ class PageviewInfoSerializer(ser.Serializer):
 
 
 class CountedAuthUsageSerializer(ser.Serializer):
-    item_guid = ser.CharField(max_length=255, required=False)
+    item_guid = ser.CharField(max_length=255, required=True)
     client_session_id = ser.CharField(max_length=255, required=False)
     provider_id = ser.CharField(max_length=255, required=False)
 
@@ -64,8 +68,21 @@ class CountedAuthUsageSerializer(ser.Serializer):
 
     def create(self, validated_data):
         pageview_info = None
+        pageview_info_es8 = None
         if pageview_info_data := validated_data.get('pageview_info'):
             pageview_info = PageviewInfo(**pageview_info_data)
+            pageview_info_es8 = PageviewInfoEs8(**pageview_info_data)
+        OsfCountedUsageEvent.record(
+            item_osfid=validated_data['item_guid'],
+            action_labels=validated_data.get('action_labels'),
+            provider_id=validated_data.get('provider_id'),
+            pageview_info=pageview_info_es8,
+            # used to create a COUNTER session-hour id, not stored:
+            client_session_id=validated_data.get('client_session_id'),
+            user_id=self.context.get('user_id'),
+            request_host=self.context.get('request_host'),
+            request_useragent=self.context.get('request_useragent'),
+        )
         return CountedAuthUsage.record(
             platform_iri=website_settings.DOMAIN,
             provider_id=validated_data.get('provider_id'),

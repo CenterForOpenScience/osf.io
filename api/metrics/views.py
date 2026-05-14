@@ -6,8 +6,9 @@ from enum import Enum
 from django.http import JsonResponse, HttpResponse, Http404
 from django.utils import timezone
 
-from elasticsearch.exceptions import NotFoundError, RequestError
-from elasticsearch_dsl.connections import get_connection
+from elasticsearch6.exceptions import NotFoundError, RequestError
+from elasticsearch6_dsl.connections import get_connection
+from elasticsearch_metrics.registry import djelme_registry
 
 from framework.auth.oauth_scopes import CoreScopes
 
@@ -226,24 +227,49 @@ class RawMetricsView(GenericAPIView):
         raise ValidationError('DELETE not supported. Use GET/POST/PUT')
 
     @require_switch(ENABLE_RAW_METRICS)
-    def get(self, request, *args, **kwargs):
-        connection = get_connection()
-        url_path = kwargs['url_path']
-        return JsonResponse(connection.transport.perform_request('GET', f'/{url_path}'))
+    def get(self, request, *args, djelme_backend_name, url_path, **kwargs):
+        _response_body = self._do_es_request(
+            djelme_backend_name,
+            method='GET',
+            path=url_path,
+            qp=request.GET,
+        )
+        return JsonResponse(_response_body)
 
     @require_switch(ENABLE_RAW_METRICS)
-    def post(self, request, *args, **kwargs):
-        connection = get_connection()
-        url_path = kwargs['url_path']
-        body = json.loads(request.body)
-        return JsonResponse(connection.transport.perform_request('POST', f'/{url_path}', body=body))
+    def post(self, request, *args, djelme_backend_name, url_path, **kwargs):
+        _response_body = self._do_es_request(
+            djelme_backend_name,
+            method='POST',
+            path=url_path,
+            qp=request.GET,
+            body=json.loads(request.body),
+        )
+        return JsonResponse(_response_body)
 
     @require_switch(ENABLE_RAW_METRICS)
-    def put(self, request, *args, **kwargs):
-        connection = get_connection()
-        url_path = kwargs['url_path']
-        body = json.loads(request.body)
-        return JsonResponse(connection.transport.perform_request('PUT', f'/{url_path}', body=body))
+    def put(self, request, *args, djelme_backend_name, url_path, **kwargs):
+        _response_body = self._do_es_request(
+            djelme_backend_name,
+            method='PUT',
+            path=url_path,
+            qp=request.GET,
+            body=json.loads(request.body),
+        )
+        return JsonResponse(_response_body)
+
+    def _do_es_request(self, djelme_backend_name, method, path, qp, body=None):
+        _client = self._get_es_client(djelme_backend_name)
+        _perform_fn = getattr(_client, 'perform_request', None) or _client.transport.perform_request
+        _response = _perform_fn(method, f'/{path}', params=qp.dict(), body=body)
+        return _response if isinstance(_response, dict) else _response.body
+
+    def _get_es_client(self, djelme_backend_name):
+        try:
+            _backend = djelme_registry.get_backend(djelme_backend_name)
+        except LookupError:
+            raise Http404
+        return _backend.elastic_client
 
 
 class RegistriesModerationMetricsView(GenericAPIView):
@@ -387,7 +413,14 @@ class CountedAuthUsageView(JSONAPIBaseView):
     serializer_class = CountedAuthUsageSerializer
 
     def post(self, request, *args, **kwargs):
-        serializer = self.serializer_class(data=request.data)
+        serializer = self.serializer_class(
+            data=request.data,
+            context={
+                'user_id': request.user._id if request.user.is_authenticated else None,
+                'request_host': request.get_host(),
+                'request_useragent': request.META.get('HTTP_USER_AGENT', ''),
+            },
+        )
         serializer.is_valid(raise_exception=True)
         if should_skip_counted_usage(
             request.user,
@@ -403,6 +436,8 @@ class CountedAuthUsageView(JSONAPIBaseView):
         return HttpResponse(status=201)
 
     def _get_session_id(self, request, client_session_id=None):
+        # NOTE: to remove after osfmetrics 6to8 migration -- logic moved to djelme
+
         # get a session id as described in the COUNTER code of practice:
         # https://cop5.projectcounter.org/en/5.0.2/07-processing/03-counting-unique-items.html
         # -- different from the "login session" tracked by `osf.models.Session` (which

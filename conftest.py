@@ -1,24 +1,24 @@
-import contextlib
 from unittest import mock
 import logging
 import os
 import re
 
-from django.core.management import call_command
 from django.db import transaction
-from elasticsearch import exceptions as es_exceptions
-from elasticsearch_dsl.connections import connections
-from elasticsearch_metrics.registry import registry as es_metrics_registry
+from elasticsearch6_dsl.connections import connections
+from elasticsearch_metrics.tests.util import djelme_test_backends
 from faker import Factory
 import pytest
 import responses
 import xml.etree.ElementTree as ET
+from waffle.testutils import override_switch
 
 from api_tests.share import _utils as shtrove_test_utils
 from framework.celery_tasks import app as celery_app
 from osf.external.spam import tasks as spam_tasks
 from website import settings as website_settings
 from osf.management.commands.populate_notification_types import populate_notification_types
+from osf import features
+
 
 def pytest_configure(config):
     if not os.getenv('GITHUB_ACTIONS') == 'true':
@@ -43,6 +43,8 @@ SILENT_LOGGERS = [
     'transitions.core',
     'MARKDOWN',
     'elasticsearch',
+    'elastic_transport',
+    'elasticsearch_metrics',
 ]
 for logger_name in SILENT_LOGGERS:
     logging.getLogger(logger_name).setLevel(logging.CRITICAL)
@@ -138,45 +140,20 @@ def es6_client(setup_connections):
 
 
 @pytest.fixture(scope='function', autouse=True)
-def _es_metrics_marker(request, worker_id):
+def _es_metrics_marker(request):
     """Clear out all indices and index templates before and after
     tests marked with `es_metrics`.
     """
     marker = request.node.get_closest_marker('es_metrics')
-    if marker:
-        es6_client = request.getfixturevalue('es6_client')
-        _temp_prefix = 'temp_metrics_'
-        _temp_wildcard = f'{_temp_prefix}-{worker_id}*'
 
-        def _teardown_es_temps():
-            es6_client.indices.delete(index=_temp_wildcard)
-            try:
-                es6_client.indices.delete_template(_temp_wildcard)
-            except es_exceptions.NotFoundError:
-                pass
+    if not marker:
+        yield
+        return
 
-        @contextlib.contextmanager
-        def _mock_metric_names():
-            with contextlib.ExitStack() as _exit:
-                for _metric_class in es_metrics_registry.get_metrics():
-                    _exit.enter_context(mock.patch.object(
-                        _metric_class,
-                        '_template_name',  # also used to construct index names
-                        f'{_temp_prefix}-{worker_id}{_metric_class._template_name}',
-                    ))
-                    _exit.enter_context(mock.patch.object(
-                        _metric_class,
-                        '_template',  # a wildcard string for indexes and templates
-                        f'{_temp_prefix}-{worker_id}{_metric_class._template}',
-                    ))
-                yield
-
-        _teardown_es_temps()
-        with _mock_metric_names():
-            call_command('sync_metrics')
-            yield
-        _teardown_es_temps()
-    else:
+    with (
+        override_switch(features.ELASTICSEARCH_METRICS, active=True),
+        djelme_test_backends(),
+    ):
         yield
 
 

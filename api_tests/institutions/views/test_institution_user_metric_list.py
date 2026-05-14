@@ -89,6 +89,7 @@ class TestInstitutionUserMetricList:
         assert _resp.json['data'] == []
 
     def test_get_reports(self, app, url, institutional_admin, institution, reports, unshown_reports):
+        InstitutionalUserReport._get_connection().indices.refresh(InstitutionalUserReport._template_pattern)
         _resp = app.get(url, auth=institutional_admin.auth)
         assert _resp.status_code == 200
         assert len(_resp.json['data']) == len(reports)
@@ -100,6 +101,7 @@ class TestInstitutionUserMetricList:
             assert len(response_object['attributes']['contacts']) == 0
 
     def test_filter_reports(self, app, url, institutional_admin, institution, reports, unshown_reports):
+        InstitutionalUserReport._get_connection().indices.refresh(InstitutionalUserReport._template_pattern)
         for _query, _expected_user_ids in (
             ({'filter[department]': 'nunavum'}, set()),
             ({'filter[department]': 'incidentally'}, set()),
@@ -135,6 +137,7 @@ class TestInstitutionUserMetricList:
             assert set(_user_ids(_resp)) == _expected_user_ids
 
     def test_sort_reports(self, app, url, institutional_admin, institution, reports, unshown_reports):
+        InstitutionalUserReport._get_connection().indices.refresh(InstitutionalUserReport._template_pattern)
         for _query, _expected_user_id_list in (
             ({'sort': 'storage_byte_count'}, ['u_sparse', 'u_orc', 'u_blargl', 'u_orcomma']),
             ({'sort': '-storage_byte_count'}, ['u_orcomma', 'u_blargl', 'u_orc', 'u_sparse']),
@@ -144,6 +147,7 @@ class TestInstitutionUserMetricList:
             assert list(_user_ids(_resp)) == _expected_user_id_list
 
     def test_paginate_reports(self, app, url, institutional_admin, institution, reports, unshown_reports):
+        InstitutionalUserReport._get_connection().indices.refresh(InstitutionalUserReport._template_pattern)
         for _query, _expected_user_id_list in (
             ({'sort': 'storage_byte_count', 'page[size]': 2}, ['u_sparse', 'u_orc']),
             ({'sort': 'storage_byte_count', 'page[size]': 2, 'page': 2}, ['u_blargl', 'u_orcomma']),
@@ -178,6 +182,7 @@ class TestInstitutionUserMetricList:
             month_last_active='2018-02',
             month_last_login='2018-02',
         )
+        InstitutionalUserReport._get_connection().indices.refresh(InstitutionalUserReport._template_pattern)
 
         resp = app.get(f'{url}?format={format_type}', auth=institutional_admin.auth)
         assert resp.status_code == 200
@@ -281,6 +286,7 @@ class TestInstitutionUserMetricList:
                 str(736662999298 + i),
                 f'Jalen Hurts #{i}',
             ])
+        InstitutionalUserReport._get_connection().indices.refresh(InstitutionalUserReport._template_pattern)
 
         # Make request for CSV format with page[size]=10
         resp = app.get(f'{url}?format={format_type}', auth=institutional_admin.auth)
@@ -346,6 +352,7 @@ class TestInstitutionUserMetricList:
             month_last_active='2018-02',
             month_last_login='2018-02',
         )
+        InstitutionalUserReport._get_connection().indices.refresh(InstitutionalUserReport._template_pattern)
 
         resp = app.get(f'{url}?format=json_report', auth=institutional_admin.auth)
         assert resp.status_code == 200
@@ -411,6 +418,7 @@ class TestInstitutionUserMetricList:
             department_name='a department, or so, that happens, incidentally, to have commas',
             storage_byte_count=736662999298,
         )
+        InstitutionalUserReport._get_connection().indices.refresh(InstitutionalUserReport._template_pattern)
 
         receiver = user1
         with capture_notifications():
@@ -477,5 +485,5 @@ def _report_factory(yearmonth, institution, **kwargs):
         institution_id=institution._id,
         **kwargs,
     )
-    _report.save(refresh=True)
+    _report.save()
     return _report
