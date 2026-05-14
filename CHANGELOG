@@ -2,6 +2,21 @@
 
 We follow the CalVer (https://calver.org/) versioning scheme: YY.MINOR.MICRO.
 
+26.9.0 (2026-05-07)
+===================
+
+- OSF4I In-progress SSO Project - BE Piece
+
+26.8.2 (2026-05-06)
+===================
+
+- Hotfix to avoid 502 on creating preprint version from rejected version
+
+26.8.1 (2026-04-30)
+===================
+
+- Hotfix for registrations sometimes fail to become public after approval
+
 26.8.0 (2026-04-23)
 ===================
 
