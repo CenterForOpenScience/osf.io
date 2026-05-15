@@ -5,7 +5,6 @@ import pytest
 from elasticsearch_metrics.util.anon_enough import opaque_key
 
 from framework.auth.core import Auth
-from osf.metadata.rdfutils import OSF
 from osf.utils.permissions import ADMIN, READ, WRITE
 
 from api_tests.utils import create_test_file
@@ -130,7 +129,7 @@ class TestComputedFields:
             expected_attrs={
                 'platform_iri': 'http://example.foo/',
                 'item_osfid': preprint._id,
-                'item_type': str(OSF.Preprint),
+                'item_type': 'Preprint',
                 'sessionhour_id': _expected_sessionhour_id,
                 'action_labels': ['api', 'view'],
                 'pageview_info': {
@@ -170,7 +169,7 @@ class TestComputedFields:
             expected_attrs={
                 'platform_iri': 'http://example.foo/',
                 'item_osfid': preprint._id,
-                'item_type': str(OSF.Preprint),
+                'item_type': 'Preprint',
                 'sessionhour_id': _expected_sessionhour_id,
                 'action_labels': ['view', 'web'],
                 'pageview_info': {
@@ -211,7 +210,7 @@ class TestComputedFields:
             expected_attrs={
                 'platform_iri': 'http://example.foo/',
                 'item_osfid': preprint._id,
-                'item_type': str(OSF.Preprint),
+                'item_type': 'Preprint',
                 'sessionhour_id': _expected_sessionhour_id,
                 'action_labels': ['view', 'web'],
                 'pageview_info': {
@@ -252,7 +251,7 @@ class TestComputedFields:
             expected_attrs={
                 'platform_iri': 'http://example.foo/',
                 'item_osfid': preprint._id,
-                'item_type': str(OSF.Preprint),
+                'item_type': 'Preprint',
                 'sessionhour_id': opaque_key(['localhost:80', 'haha', '1981-01-01', '0']),
                 'action_labels': ['api', 'view'],
                 'pageview_info': {
@@ -327,7 +326,7 @@ class TestGuidFields:
             expected_attrs={
                 'item_osfid': preprint._id,
                 'item_iri': f'{mock_domain}{preprint._id}',
-                'item_type': str(OSF.Preprint),
+                'item_type': 'Preprint',
                 'item_public': item_public,
                 'provider_id': preprint.provider._id,
                 'database_iri': f'{mock_domain}preprints/{preprint.provider._id}',
@@ -348,7 +347,7 @@ class TestGuidFields:
             expected_attrs={
                 'item_osfid': preprint.primary_file.get_guid()._id,
                 'item_iri': preprint.primary_file.get_semantic_iri(),
-                'item_type': str(OSF.File),
+                'item_type': 'File',
                 'item_public': item_public,
                 'provider_id': preprint.primary_file.provider,
                 'database_iri': f'urn:files.osf.io:{preprint.primary_file.provider}',
@@ -372,7 +371,7 @@ class TestGuidFields:
             expected_attrs={
                 'action_labels': ['view', 'web'],
                 'item_osfid': child_reg_file_guid,
-                'item_type': str(OSF.File),
+                'item_type': 'File',
                 'item_public': item_public,
                 'provider_id': 'osfstorage',
                 'database_iri': 'urn:files.osf.io:osfstorage',
@@ -397,7 +396,7 @@ class TestGuidFields:
             expected_attrs={
                 'action_labels': ['view', 'web'],
                 'item_osfid': child_reg._id,
-                'item_type': str(OSF.RegistrationComponent),
+                'item_type': 'RegistrationComponent',
                 'item_public': item_public,
                 'provider_id': 'osf',
                 'database_iri': f'{mock_domain}registries/osf',
