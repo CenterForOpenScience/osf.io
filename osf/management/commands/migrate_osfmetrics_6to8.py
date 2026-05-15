@@ -4,7 +4,6 @@ import functools
 import logging
 
 from django.apps import apps
-from django.core.management import call_command
 from django.core.management.base import BaseCommand
 from django.db import OperationalError as DjangoOperationalError
 from elasticsearch6.exceptions import ConnectionError as Elastic6ConnectionError
@@ -438,6 +437,7 @@ def _convert_public_usage_report(
 
 
 def _backfill_old_usage_report(osf_obj, is_component: bool, until_when: str):
+    # add a "last month" report with cumulative counts up to that point
     _last_month = YearMonth.from_date(datetime.datetime.fromisoformat(until_when)).prior()
     _c_views, _c_view_sess, _c_downloads, _c_download_sess = _get_cumulative_usage(
         osfid=osf_obj._id,
@@ -681,10 +681,6 @@ def _each_preprintdownload_osfid(until_when, after_osfid=None) -> collections.ab
 class Command(BaseCommand):
     def add_arguments(self, parser):
         parser.add_argument(
-            '--no-setup',
-            action='store_true',
-        )
-        parser.add_argument(
             '--no-counts',
             action='store_true',
         )
@@ -720,7 +716,6 @@ class Command(BaseCommand):
     def handle(
         self,
         *,
-        no_setup,
         no_counts,
         clear_state,
         clear_es8_data,
@@ -731,8 +726,6 @@ class Command(BaseCommand):
         **kwargs,
     ):
         self._quiet_chatty_loggers()
-        if not no_setup:
-            call_command('djelme_backend_setup')
         if clear_state:
             self._clear_state()
         if clear_es8_data:

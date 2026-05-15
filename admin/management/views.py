@@ -210,7 +210,6 @@ class RemoveOrcidFromUserSocial(ManagementCommandPermissionView):
 class MigrateOsfmetrics6to8(ManagementCommandPermissionView):
     def post(self, request):
         _command_kwargs = {
-            'no_setup': True,
             'no_color': True,
             'no_counts': request.POST.get('no_counts'),
             'clear_state': request.POST.get('clear_state'),
