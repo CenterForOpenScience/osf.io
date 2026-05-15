@@ -8,6 +8,12 @@ from typing import ClassVar
 
 from elasticsearch_metrics.util.timeparts import format_timeparts
 
+from osf.metadata.osfmap_utils import (
+    osfmap_type,
+    osfmap_type_from_model,
+)
+from website import settings as website_settings
+
 
 def cycle_coverage_date(given_date: datetime.date) -> str:
     """
@@ -41,6 +47,32 @@ def stable_key(*key_parts):
 
     plain_key = '|'.join(map(str, key_parts))
     return sha256(bytes(plain_key, encoding='utf')).hexdigest()
+
+
+def get_database_iri(osf_obj) -> str:
+    _provider = getattr(osf_obj, 'provider', None)
+    if not _provider:
+        return website_settings.DOMAIN
+    elif isinstance(_provider, str):
+        # file providers are a different thing that don't really have an iri, just an id
+        return f'urn:files.osf.io:{_provider}'
+    else:
+        return _provider.get_semantic_iri()
+
+
+def get_item_type(osf_obj) -> str:
+    return get_item_type_from_iri(osfmap_type(osf_obj))
+
+
+def get_item_type_from_model(osf_model_cls, *, is_component: bool) -> str:
+    return get_item_type_from_iri(
+        osfmap_type_from_model(osf_model_cls, is_component=is_component),
+    )
+
+
+def get_item_type_from_iri(type_iri) -> str:
+    (_, _, _shortname) = type_iri.rpartition('/')
+    return _shortname
 
 
 @dataclasses.dataclass(frozen=True)

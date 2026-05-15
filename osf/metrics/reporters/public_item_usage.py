@@ -13,7 +13,6 @@ import osf.features
 from osf.metadata.osf_gathering import OsfmapPartition
 from osf.metrics.counted_usage import (
     CountedAuthUsage,
-    get_item_type,
     get_provider_id,
 )
 from osf.metrics.preprint_metrics import (
@@ -21,7 +20,12 @@ from osf.metrics.preprint_metrics import (
     PreprintView,
 )
 from osf.metrics.reports import PublicItemUsageReport
-from osf.metrics.utils import YearMonth, cycle_coverage_yearmonth
+from osf.metrics.utils import (
+    YearMonth,
+    cycle_coverage_yearmonth,
+    get_database_iri,
+    get_item_type,
+)
 from osf import models as osfdb
 from osf.models.base import osfid_iri
 from website import settings as website_settings
@@ -160,6 +164,7 @@ class PublicItemUsageReporter(MonthlyReporter):
             item_osfids=[osf_obj._id],
             item_types=[get_item_type(osf_obj)],
             provider_ids=[get_provider_id(osf_obj)],
+            database_iris=[get_database_iri(osf_obj)],
             platform_iris=[website_settings.DOMAIN],
             # leave counts null; will be set if there's data
         )
