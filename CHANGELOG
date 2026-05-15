@@ -2,6 +2,11 @@
 
 We follow the CalVer (https://calver.org/) versioning scheme: YY.MINOR.MICRO.
 
+26.9.1 (2026-05-15)
+===================
+
+- Hotfix for registrations stuck archiving
+
 26.9.0 (2026-05-07)
 ===================
 
