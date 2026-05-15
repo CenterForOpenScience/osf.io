@@ -5,18 +5,16 @@ from django.test import TestCase
 from elasticsearch_metrics.tests.util import djelme_test_backends
 
 from framework.celery_tasks import app as celery_app
-from osf.metrics import reports as es6_reports
 from osf.metrics.es8_metrics import (
     MonthlyInstitutionSummaryReportEs8,
     MonthlyInstitutionalUserReportEs8,
     MonthlyPrivateSpamMetricsReportEs8,
     MonthlyPublicItemUsageReportEs8,
     MonthlySpamSummaryReportEs8,
+    OsfCountedUsageEvent,
 )
-from osf.metrics.counted_usage import CountedAuthUsage
 from osf.metrics.utils import YearMonth
 from osf_tests import factories
-from website import settings as website_settings
 
 
 class TestMonthlyReportersGo(TestCase):
@@ -33,21 +31,12 @@ class TestMonthlyReportersGo(TestCase):
         _user.add_or_update_affiliated_institution(_inst)
         # set up for public item usage report
         _reg = factories.RegistrationFactory(is_public=True)
-        CountedAuthUsage.record(
-            platform_iri=website_settings.DOMAIN,
-            item_guid=_reg._id,
-            session_id='blarg',
-            user_is_authenticated=True,
+        OsfCountedUsageEvent.record(
+            item_osfid=_reg._id,
             action_labels=['view', 'web'],
+            user_id=_user._id,
         )
-        CountedAuthUsage._get_connection().indices.refresh(CountedAuthUsage._template_pattern)
-        # TODO when switching to use es8 data
-        # OsfCountedUsageEvent.record(
-        #     item_osfid=_preprint._id,
-        #     action_labels=['view', 'web'],
-        #     user_id=_user._id,
-        # )
-        # OsfCountedUsageEvent.refresh()
+        OsfCountedUsageEvent.refresh()
 
     def test_for_smoke(self):
         self._assert_count(MonthlyInstitutionSummaryReportEs8, 0)
@@ -55,22 +44,12 @@ class TestMonthlyReportersGo(TestCase):
         self._assert_count(MonthlyPrivateSpamMetricsReportEs8, 0)
         self._assert_count(MonthlyPublicItemUsageReportEs8, 0)
         self._assert_count(MonthlySpamSummaryReportEs8, 0)
-        self._assert_count(es6_reports.SpamSummaryReport, 0)
-        self._assert_count(es6_reports.InstitutionalUserReport, 0)
-        self._assert_count(es6_reports.InstitutionMonthlySummaryReport, 0)
-        self._assert_count(es6_reports.PublicItemUsageReport, 0)
-        self._assert_count(es6_reports.PrivateSpamMetricsReport, 0)
         call_command('monthly_reporters_go', yearmonth=str(self._report_yearmonth))
         self._assert_count(MonthlyInstitutionSummaryReportEs8, 1)
         self._assert_count(MonthlyInstitutionalUserReportEs8, 1)
         self._assert_count(MonthlyPrivateSpamMetricsReportEs8, 1)
         self._assert_count(MonthlyPublicItemUsageReportEs8, 1)
         self._assert_count(MonthlySpamSummaryReportEs8, 1)
-        self._assert_count(es6_reports.SpamSummaryReport, 1)
-        self._assert_count(es6_reports.InstitutionalUserReport, 1)
-        self._assert_count(es6_reports.InstitutionMonthlySummaryReport, 1)
-        self._assert_count(es6_reports.PublicItemUsageReport, 1)
-        self._assert_count(es6_reports.PrivateSpamMetricsReport, 1)
 
     def _assert_count(self, recordtype, expected_count):
         if hasattr(recordtype, 'refresh'):

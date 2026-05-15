@@ -1,16 +1,21 @@
 import pytest
+from elasticsearch_metrics.tests.util import djelme_test_backends
 
 from api.base.settings.defaults import API_BASE
 from osf_tests.factories import (
     InstitutionFactory,
     AuthUserFactory,
 )
-from osf.metrics.reports import InstitutionMonthlySummaryReport
+from osf.metrics.es8_metrics import MonthlyInstitutionSummaryReportEs8
 
 
-@pytest.mark.es_metrics
 @pytest.mark.django_db
 class TestInstitutionSummaryMetricsList:
+    @pytest.fixture(autouse=True)
+    def _real_elastic(self):
+        with djelme_test_backends():
+            yield
+
     @pytest.fixture()
     def institution(self):
         return InstitutionFactory()
@@ -30,10 +35,10 @@ class TestInstitutionSummaryMetricsList:
         # Reports that should not be shown in the results
         # Report from another institution
         another_institution = InstitutionFactory()
-        _summary_report_factory('2024-08', another_institution)
+        _summary_report_factory('2024-08', another_institution, validate=False)
         # Old report from the same institution
-        _summary_report_factory('2024-07', institution)
-        _summary_report_factory('2018-02', institution)
+        _summary_report_factory('2024-07', institution, validate=False)
+        _summary_report_factory('2018-02', institution, validate=False)
 
     @pytest.fixture()
     def reports(self, institution):
@@ -84,7 +89,7 @@ class TestInstitutionSummaryMetricsList:
         assert resp.json['meta'] == {'version': '2.0'}
 
     def test_get_report(self, app, url, institutional_admin, institution, reports, unshown_reports):
-        InstitutionMonthlySummaryReport._get_connection().indices.refresh(InstitutionMonthlySummaryReport._template_pattern)
+        MonthlyInstitutionSummaryReportEs8.refresh()
         resp = app.get(url, auth=institutional_admin.auth)
         assert resp.status_code == 200
 
@@ -150,7 +155,7 @@ class TestInstitutionSummaryMetricsList:
             monthly_logged_in_user_count=270,
             monthly_active_user_count=260,
         )
-        InstitutionMonthlySummaryReport._get_connection().indices.refresh(InstitutionMonthlySummaryReport._template_pattern)
+        MonthlyInstitutionSummaryReportEs8.refresh()
 
         resp = app.get(url, auth=institutional_admin.auth)
         assert resp.status_code == 200
@@ -179,19 +184,21 @@ class TestInstitutionSummaryMetricsList:
             '2024-08',
             institution,
             user_count=0,
+            validate=False,
         )
         _summary_report_factory(
             '2024-09',
             institution,
             user_count=999,
-
+            validate=False,
         )
         _summary_report_factory(
             '2018-02',
             institution,
             user_count=4133,
+            validate=False,
         )
-        InstitutionMonthlySummaryReport._get_connection().indices.refresh(InstitutionMonthlySummaryReport._template_pattern)
+        MonthlyInstitutionSummaryReportEs8.refresh()
 
         resp = app.get(f'{url}?report_yearmonth=2024-08', auth=institutional_admin.auth)
         assert resp.status_code == 200
@@ -205,39 +212,25 @@ class TestInstitutionSummaryMetricsList:
         attributes = resp.json['data']['attributes']
         assert attributes['user_count'] == 4133
 
-    def test_get_with_invalid_report_date(self, app, url, institution, institutional_admin):
-        _summary_report_factory(
-            '2024-08',
-            institution,
-            user_count=0,
-        )
-        _summary_report_factory(
-            '2024-09',
-            institution,
-            user_count=999,
-        )
-        InstitutionMonthlySummaryReport._get_connection().indices.refresh(InstitutionMonthlySummaryReport._template_pattern)
-
-        # Request with an invalid report_date format
-        resp = app.get(f'{url}?report_yearmonth=invalid-date', auth=institutional_admin.auth)
-        assert resp.status_code == 200
-
-        # Verify it defaults to the most recent report data
-        attributes = resp.json['data']['attributes']
-        assert attributes['user_count'] == 999
+    def test_get_with_invalid_report_yearmonth(self, app, url, institution, institutional_admin):
+        # Request with an invalid report_yearmonth format
+        resp = app.get(f'{url}?report_yearmonth=invalid-date', auth=institutional_admin.auth, expect_errors=True)
+        assert resp.status_code == 400
 
     def test_get_without_report_date_uses_most_recent(self, app, url, institution, institutional_admin):
         _summary_report_factory(
             '2024-08',
             institution,
             user_count=0,
+            validate=False,
         )
         _summary_report_factory(
             '2024-09',
             institution,
             user_count=999,
+            validate=False,
         )
-        InstitutionMonthlySummaryReport._get_connection().indices.refresh(InstitutionMonthlySummaryReport._template_pattern)
+        MonthlyInstitutionSummaryReportEs8.refresh()
 
         resp = app.get(url, auth=institutional_admin.auth)
         assert resp.status_code == 200
@@ -246,11 +239,11 @@ class TestInstitutionSummaryMetricsList:
         assert attributes['user_count'] == 999
 
 
-def _summary_report_factory(yearmonth, institution, **kwargs):
-    report = InstitutionMonthlySummaryReport(
+def _summary_report_factory(yearmonth, institution, *, validate=True, **kwargs):
+    report = MonthlyInstitutionSummaryReportEs8(
         report_yearmonth=yearmonth,
         institution_id=institution._id,
         **kwargs,
     )
-    report.save()
+    report.save(validate=validate)
     return report

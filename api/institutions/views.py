@@ -10,8 +10,11 @@ from rest_framework.settings import api_settings
 from framework.auth.oauth_scopes import CoreScopes
 
 from osf.models import OSFUser, Node, Institution, Registration
-from osf.metrics.reports import InstitutionalUserReport, InstitutionMonthlySummaryReport
-from osf.metrics.utils import YearMonth
+from osf.metrics.es8_metrics import (
+    MonthlyInstitutionalUserReportEs8,
+    MonthlyInstitutionSummaryReportEs8,
+)
+from osf.metrics.utils import YearMonth, cycle_coverage_yearmonth
 from osf.utils import permissions as osf_permissions
 
 from api.base import permissions as base_permissions
@@ -27,11 +30,6 @@ from api.base.parsers import (
 )
 from api.base.exceptions import RelationshipPostMakesNoChanges
 from api.metrics.permissions import IsInstitutionalMetricsUser
-from api.metrics.renderers import (
-    MetricsReportsCsvRenderer,
-    MetricsReportsTsvRenderer,
-    MetricsReportsJsonRenderer,
-)
 from api.nodes.serializers import NodeSerializer
 from api.nodes.filters import NodesFilterMixin
 from api.users.serializers import UserSerializer
@@ -411,23 +409,21 @@ class InstitutionDepartmentList(InstitutionMixin, ElasticsearchListView):
     serializer_class = InstitutionDepartmentMetricsSerializer
     renderer_classes = (
         *api_settings.DEFAULT_RENDERER_CLASSES,
-        MetricsReportsCsvRenderer,
-        MetricsReportsTsvRenderer,
-        MetricsReportsJsonRenderer,
+        *ElasticsearchListView.FILE_RENDERER_CLASSES,
     )
     pagination_class = JSONAPINoPagination
 
     def get_default_search(self):
         _base_search = (
-            InstitutionalUserReport.search()
+            MonthlyInstitutionalUserReportEs8.search()
             .filter('term', institution_id=self.get_institution()._id)
         )
-        _yearmonth = InstitutionalUserReport.most_recent_yearmonth(base_search=_base_search)
-        if _yearmonth is None:
+        _most_recent_cycle = MonthlyInstitutionalUserReportEs8.most_recent_cycle(_base_search)
+        if _most_recent_cycle is None:
             return None
         _search = (
             _base_search
-            .filter('term', report_yearmonth=str(_yearmonth))
+            .filter('term', cycle_coverage=_most_recent_cycle)
             .exclude('term', user_name='Deleted user')
         )
         # add aggregation on department name
@@ -468,9 +464,7 @@ class InstitutionUserMetricsList(InstitutionMixin, ElasticsearchListView):
     view_name = 'institution-user-metrics'
     renderer_classes = (
         *api_settings.DEFAULT_RENDERER_CLASSES,
-        MetricsReportsCsvRenderer,
-        MetricsReportsTsvRenderer,
-        MetricsReportsJsonRenderer,
+        *ElasticsearchListView.FILE_RENDERER_CLASSES,
     )
 
     serializer_class = InstitutionUserMetricsSerializer
@@ -492,17 +486,16 @@ class InstitutionUserMetricsList(InstitutionMixin, ElasticsearchListView):
     ))
 
     def get_default_search(self):
-        base_search = InstitutionalUserReport.search().filter(
-            'term',
-            institution_id=self.get_institution()._id,
+        _base_search = (
+            MonthlyInstitutionalUserReportEs8.search()
+            .filter('term', institution_id=self.get_institution()._id)
         )
-        yearmonth = InstitutionalUserReport.most_recent_yearmonth(base_search=base_search)
-        if yearmonth is None:
+        _most_recent_cycle = MonthlyInstitutionalUserReportEs8.most_recent_cycle(_base_search)
+        if _most_recent_cycle is None:
             return None
-
         return (
-            base_search
-            .filter('term', report_yearmonth=str(yearmonth))
+            _base_search
+            .filter('term', cycle_coverage=_most_recent_cycle)
             .exclude('term', user_name='Deleted user')
         )
 
@@ -525,29 +518,33 @@ class InstitutionSummaryMetricsDetail(JSONAPIBaseView, generics.RetrieveAPIView,
     serializer_class = InstitutionSummaryMetricsSerializer
 
     def get_object(self):
-        institution = self.get_institution()
-        search_object = self.get_default_search()
-        if search_object:
-            object = search_object.execute()[0]
-            object.id = institution._id
-            return object
+        _institution = self.get_institution()
+        _search = self.get_default_search()
+        if _search:
+            _response = _search[0].execute()
+            if _response:
+                _report = _response[0]
+                _report.id = _institution._id
+                return _report
+        return None
 
     def get_default_search(self):
-        base_search = InstitutionMonthlySummaryReport.search().filter(
-            'term',
-            institution_id=self.get_institution()._id,
+        _base_search = (
+            MonthlyInstitutionSummaryReportEs8.search()
+            .filter('term', institution_id=self.get_institution()._id)
         )
-        yearmonth = InstitutionMonthlySummaryReport.most_recent_yearmonth(base_search=base_search)
-        if report_date_str := self.request.query_params.get('report_yearmonth'):
+        _cycle_coverage = None
+        if _yearmonth_str := self.request.query_params.get('report_yearmonth'):
             try:
-                yearmonth = YearMonth.from_str(report_date_str)
+                _yearmonth = YearMonth.from_str(_yearmonth_str)
             except ValueError:
-                pass
-
-        if yearmonth is None:
+                raise exceptions.ValidationError(
+                    'report_yearmonth query param must be in YYYY-MM format',
+                )
+            else:
+                _cycle_coverage = cycle_coverage_yearmonth(_yearmonth)
+        else:
+            _cycle_coverage = MonthlyInstitutionSummaryReportEs8.most_recent_cycle(_base_search)
+        if _cycle_coverage is None:
             return None
-
-        return base_search.filter(
-            'term',
-            report_yearmonth=str(yearmonth),
-        )
+        return _base_search.filter('term', cycle_coverage=_cycle_coverage)

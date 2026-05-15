@@ -13,6 +13,7 @@ from osf.metrics.utils import (
     YearMonth,
     get_database_iri,
     get_item_type,
+    cycle_coverage_yearmonth,
 )
 from osf import models as osfdb
 from osf.models.base import osfid_iri
@@ -222,16 +223,15 @@ class OsfCountedUsageEvent(djelme.CountedUsageRecord):
                 self.provider_id = _provider._id  # quacks like Registration, Preprint, Collection
 
     def _autofill_within_iris(self):
-        if self.item_osfid and (self.within_iris is None) and self._osfid_referent:
+        if self.item_osfid and (not self.within_iris) and self._osfid_referent:
             self.within_iris = [
                 osfid_iri(_osfid)
                 for _osfid in _get_surrounding_guids(self._osfid_referent)
             ]
         # ensure inclusive "within"
-        if not self.within_iris:
-            self.within_iris = [self.item_iri]
         if self.item_iri not in self.within_iris:
             self.within_iris = [self.item_iri, *self.within_iris]
+        self.within_iris = sorted(self.within_iris)
 
     def _autofill_pageview(self):
         # autofill pageview_info fields from other fields
@@ -327,9 +327,55 @@ class UsageByStorageAddon(esdsl.InnerDoc):
 # Cyclic reports
 
 
-class DailyStorageAddonUsageReportEs8(djelme.CyclicRecord):
+class BaseMonthlyReport(djelme.CyclicRecord):
+    CYCLE_TIMEDEPTH = MONTHLY
+
+    class Meta:
+        abstract = True
+
+    @classmethod
+    def most_recent_cycle(cls, base_search=None) -> str | None:
+        _search = base_search or cls.search()
+        _search = _search[0:0]  # omit hits
+        _search.aggs.bucket(
+            'agg_most_recent_cycle',
+            'terms',
+            field='cycle_coverage',
+            order={'_key': 'desc'},
+            size=1,
+        )
+        _response = _search.execute()
+        if not _response.aggregations:
+            return None
+        _buckets = _response.aggregations.agg_most_recent_cycle.buckets
+        if not _buckets:
+            return None
+        return _buckets[0].key
+
+    def __init__(self, *, report_yearmonth=None, **kwargs):
+        super().__init__(**kwargs)
+        # separate out report_yearmonth, so the property setter gets used
+        if report_yearmonth is not None:
+            self.report_yearmonth = report_yearmonth
+
+    @property
+    def report_yearmonth(self):
+        _year, _month = self.cycle_coverage.split('.')
+        return YearMonth(_year, _month)
+
+    @report_yearmonth.setter
+    def report_yearmonth(self, ym):
+        self.cycle_coverage = cycle_coverage_yearmonth(YearMonth.from_any(ym))
+
+
+class BaseDailyReport(djelme.CyclicRecord):
     CYCLE_TIMEDEPTH = DAILY
 
+    class Meta:
+        abstract = True
+
+
+class DailyStorageAddonUsageReportEs8(BaseDailyReport):
     usage_by_addon: list[UsageByStorageAddon]
 
     class Meta:
@@ -337,9 +383,7 @@ class DailyStorageAddonUsageReportEs8(djelme.CyclicRecord):
         timeseries_recordtype_name = 'DailyStorageAddonUsageReport'
 
 
-class DailyDownloadCountReportEs8(djelme.CyclicRecord):
-    CYCLE_TIMEDEPTH = DAILY
-
+class DailyDownloadCountReportEs8(BaseDailyReport):
     daily_file_downloads: int
 
     class Meta:
@@ -347,8 +391,7 @@ class DailyDownloadCountReportEs8(djelme.CyclicRecord):
         timeseries_recordtype_name = 'DailyDownloadCountReport'
 
 
-class DailyInstitutionSummaryReportEs8(djelme.CyclicRecord):
-    CYCLE_TIMEDEPTH = DAILY
+class DailyInstitutionSummaryReportEs8(BaseDailyReport):
     UNIQUE_TOGETHER_FIELDS = ('cycle_coverage', 'institution_id',)
 
     institution_id: str
@@ -364,8 +407,7 @@ class DailyInstitutionSummaryReportEs8(djelme.CyclicRecord):
         timeseries_recordtype_name = 'DailyInstitutionSummaryReport'
 
 
-class DailyNewUserDomainReportEs8(djelme.CyclicRecord):
-    CYCLE_TIMEDEPTH = DAILY
+class DailyNewUserDomainReportEs8(BaseDailyReport):
     UNIQUE_TOGETHER_FIELDS = ('cycle_coverage', 'domain_name',)
 
     domain_name: str
@@ -376,9 +418,7 @@ class DailyNewUserDomainReportEs8(djelme.CyclicRecord):
         timeseries_recordtype_name = 'DailyNewUserDomainReport'
 
 
-class DailyNodeSummaryReportEs8(djelme.CyclicRecord):
-    CYCLE_TIMEDEPTH = DAILY
-
+class DailyNodeSummaryReportEs8(BaseDailyReport):
     nodes: NodeRunningTotals
     projects: NodeRunningTotals
     registered_nodes: RegistrationRunningTotals
@@ -389,9 +429,7 @@ class DailyNodeSummaryReportEs8(djelme.CyclicRecord):
         timeseries_recordtype_name = 'DailyNodeSummaryReport'
 
 
-class DailyOsfstorageFileCountReportEs8(djelme.CyclicRecord):
-    CYCLE_TIMEDEPTH = DAILY
-
+class DailyOsfstorageFileCountReportEs8(BaseDailyReport):
     files: FileRunningTotals
 
     class Meta:
@@ -399,9 +437,7 @@ class DailyOsfstorageFileCountReportEs8(djelme.CyclicRecord):
         timeseries_recordtype_name = 'DailyOsfstorageFileCountReport'
 
 
-class DailyPreprintSummaryReportEs8(djelme.CyclicRecord):
-    CYCLE_TIMEDEPTH = DAILY
-
+class DailyPreprintSummaryReportEs8(BaseDailyReport):
     UNIQUE_TOGETHER_FIELDS = ('cycle_coverage', 'provider_key',)
     provider_key: str
     preprint_count: int
@@ -411,9 +447,7 @@ class DailyPreprintSummaryReportEs8(djelme.CyclicRecord):
         timeseries_recordtype_name = 'DailyPreprintSummaryReport'
 
 
-class DailyUserSummaryReportEs8(djelme.CyclicRecord):
-    CYCLE_TIMEDEPTH = DAILY
-
+class DailyUserSummaryReportEs8(BaseDailyReport):
     active: int
     deactivated: int
     merged: int
@@ -426,9 +460,7 @@ class DailyUserSummaryReportEs8(djelme.CyclicRecord):
         timeseries_recordtype_name = 'DailyUserSummaryReport'
 
 
-class MonthlySpamSummaryReportEs8(djelme.CyclicRecord):
-    CYCLE_TIMEDEPTH = MONTHLY
-
+class MonthlySpamSummaryReportEs8(BaseMonthlyReport):
     node_confirmed_spam: int
     node_confirmed_ham: int
     node_flagged: int
@@ -446,8 +478,7 @@ class MonthlySpamSummaryReportEs8(djelme.CyclicRecord):
         timeseries_recordtype_name = 'MonthlySpamSummaryReport'
 
 
-class MonthlyInstitutionalUserReportEs8(djelme.CyclicRecord):
-    CYCLE_TIMEDEPTH = MONTHLY
+class MonthlyInstitutionalUserReportEs8(BaseMonthlyReport):
     UNIQUE_TOGETHER_FIELDS = ('cycle_coverage', 'institution_id', 'user_id',)
 
     institution_id: str
@@ -473,8 +504,7 @@ class MonthlyInstitutionalUserReportEs8(djelme.CyclicRecord):
         timeseries_recordtype_name = 'MonthlyInstitutionalUserReport'
 
 
-class MonthlyInstitutionSummaryReportEs8(djelme.CyclicRecord):
-    CYCLE_TIMEDEPTH = MONTHLY
+class MonthlyInstitutionSummaryReportEs8(BaseMonthlyReport):
     UNIQUE_TOGETHER_FIELDS = ('cycle_coverage', 'institution_id', )
 
     institution_id: str
@@ -494,8 +524,7 @@ class MonthlyInstitutionSummaryReportEs8(djelme.CyclicRecord):
         timeseries_recordtype_name = 'MonthlyInstitutionSummaryReport'
 
 
-class MonthlyPublicItemUsageReportEs8(djelme.CyclicRecord):
-    CYCLE_TIMEDEPTH = MONTHLY
+class MonthlyPublicItemUsageReportEs8(BaseMonthlyReport):
     UNIQUE_TOGETHER_FIELDS = ('cycle_coverage', 'item_iri')
 
     # where noted, fields are meant to correspond to defined terms from COUNTER
@@ -526,9 +555,7 @@ class MonthlyPublicItemUsageReportEs8(djelme.CyclicRecord):
         timeseries_recordtype_name = 'MonthlyPublicItemUsageReport'
 
 
-class MonthlyPrivateSpamMetricsReportEs8(djelme.CyclicRecord):
-    CYCLE_TIMEDEPTH = MONTHLY
-
+class MonthlyPrivateSpamMetricsReportEs8(BaseMonthlyReport):
     node_oopspam_flagged: int
     node_oopspam_hammed: int
     node_akismet_flagged: int

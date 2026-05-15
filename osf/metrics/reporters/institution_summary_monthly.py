@@ -6,7 +6,6 @@ from osf.models.spam import SpamStatus
 from addons.osfstorage.models import OsfStorageFile
 from osf.metrics.reports import InstitutionMonthlySummaryReport
 from osf.metrics.es8_metrics import MonthlyInstitutionSummaryReportEs8
-from osf.metrics.utils import cycle_coverage_yearmonth
 from ._base import MonthlyReporter
 
 class InstitutionalSummaryMonthlyReporter(MonthlyReporter):
@@ -35,7 +34,7 @@ class InstitutionalSummaryMonthlyReporter(MonthlyReporter):
         preprint_queryset = self.get_published_preprints(institution, self.yearmonth)
         reports = []
         report_es8 = MonthlyInstitutionSummaryReportEs8(
-            cycle_coverage=cycle_coverage_yearmonth(self.yearmonth),
+            report_yearmonth=self.yearmonth,
             institution_id=institution._id,
             user_count=institution.get_institution_users().count(),
             private_project_count=self._get_count(node_queryset, 'osf.node', is_public=False),
