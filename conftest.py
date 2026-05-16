@@ -233,7 +233,7 @@ def mock_crossref():
 def mock_oopspam():
     """
     This should be used to mock our anti-spam service oopspam.
-    Relevent endpoints:
+    Relevant endpoints:
     'https://oopspam.p.rapidapi.com/v1/spamdetection'
     """
     with mock.patch.object(website_settings, 'SPAM_SERVICES_ENABLED', True):
@@ -247,7 +247,7 @@ def mock_oopspam():
 def mock_pigeon():
     """
     This should be used to mock our Internet Archive archiving microservice osf-pigeon.
-    Relevent endpoints:
+    Relevant endpoints:
     '{settings.OSF_PIGEON_URL}archive/{guid}'
     '{settings.OSF_PIGEON_URL}metadata/{guid}'
 

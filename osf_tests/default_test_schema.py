@@ -52,7 +52,7 @@ DEFAULT_TEST_SCHEMA = {
         }, {
             'block_type': 'question-label',
             'display_text': 'Multi-select input',
-            'help_text': 'This allows the user to select several entires from a list of options',
+            'help_text': 'This allows the user to select several entries from a list of options',
         }, {
             'block_type': 'multi-select-input',
             'registration_response_key': 'q4',

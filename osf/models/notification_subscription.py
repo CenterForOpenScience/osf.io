@@ -72,7 +72,7 @@ class NotificationSubscription(BaseModel):
 
         Args:
             event_context (OSFUser): The info for context for the template
-            destination_address (optional): overides the user's email address for the notification. Good for sending
+            destination_address (optional): overrides the user's email address for the notification. Good for sending
             to a test address or OSF desk support'
             email_context (dict, optional): Context for sending the email bcc, reply_to header etc
             save (bool, optional): save the notification and creates a subscription object if true, otherwise just

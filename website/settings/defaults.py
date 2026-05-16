@@ -75,7 +75,7 @@ REGISTRATION_UPDATE_APPROVAL_TIME = datetime.timedelta(days=2)
 EMBARGO_END_DATE_MIN = datetime.timedelta(days=2)
 EMBARGO_END_DATE_MAX = datetime.timedelta(days=1460)  # Four years
 
-# Question titles to be reomved for anonymized VOL
+# Question titles to be removed for anonymized VOL
 ANONYMIZED_TITLES = ['Authors']
 
 LOAD_BALANCER = False

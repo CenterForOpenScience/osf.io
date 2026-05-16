@@ -416,7 +416,7 @@ class PreprintProvider(AbstractProvider):
         if self.subjects.exists():
             return self.subjects.all()
         else:
-            # TODO: Delet this when all PreprintProviders have a mapping
+            # TODO: Delete this when all PreprintProviders have a mapping
             return rules_to_subjects(self.subjects_acceptable)
 
     @property
@@ -424,7 +424,7 @@ class PreprintProvider(AbstractProvider):
         if self.subjects.exists():
             return optimize_subject_query(self.subjects.filter(parent__isnull=True))
         else:
-            # TODO: Delet this when all PreprintProviders have a mapping
+            # TODO: Delete this when all PreprintProviders have a mapping
             if len(self.subjects_acceptable) == 0:
                 return optimize_subject_query(Subject.objects.filter(parent__isnull=True, provider___id='osf'))
             tops = {sub[0][0] for sub in self.subjects_acceptable}

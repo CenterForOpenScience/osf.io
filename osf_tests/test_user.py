@@ -1920,7 +1920,7 @@ class TestUserValidation(OsfTestCase):
         if fails_at_end:
             raise
 
-        # Not all domains that are permissable are possible to use as spam,
+        # Not all domains that are permissible are possible to use as spam,
         # some are correctly not extracted and not kept in notable domain so spot
         # check some, not all, because not all `testsPositive` urls should be in
         # NotableDomains

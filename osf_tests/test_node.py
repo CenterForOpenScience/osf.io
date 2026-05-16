@@ -1163,7 +1163,7 @@ class TestContributorMethods:
         user2 = UserFactory()
         child_node.add_contributor(user2, permissions=permissions.READ)
 
-        # user is readded with permission admin
+        # user is re-added with permission admin
         child_node.add_contributor(user2, permissions=permissions.ADMIN)
         child_node.save()
 
