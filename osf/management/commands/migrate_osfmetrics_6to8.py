@@ -885,9 +885,9 @@ class Command(BaseCommand):
         if _default_all or unchanged:
             _to_clear.extend(_UNCHANGED_RECORDTYPES.values())
         if _default_all or usage_events:
-            _to_clear.append(es8_metrics.MonthlyPublicItemUsageReportEs8)
-        if _default_all or usage_reports:
             _to_clear.append(es8_metrics.OsfCountedUsageEvent)
+        if _default_all or usage_reports:
+            _to_clear.append(es8_metrics.MonthlyPublicItemUsageReportEs8)
         for _es8_recordtype in _to_clear:
             self.stdout.write(
                 f'clearing {_es8_recordtype.__name__}', self.style.NOTICE
