@@ -26,7 +26,7 @@ class TestEs8Metrics:
             item_iri='https://osf.example/itemm',
             item_osfid='itemm',
             item_public=True,
-            item_type='https://osf.example/Preprint',
+            item_type='Preprint',
             platform_iri='https://osf.example',
             user_is_authenticated=False,
             pageview_info=PageviewInfo(
@@ -49,7 +49,7 @@ class TestEs8Metrics:
             item_iri='https://osf.example/itemm',
             item_osfid='itemm',
             item_public=True,
-            item_type='https://osf.example/Preprint',
+            item_type='Preprint',
             platform_iri='https://osf.example',
             user_is_authenticated=False,
             pageview_info={
@@ -72,7 +72,7 @@ class TestEs8Metrics:
             item_iri='https://osf.example/itemm',
             item_osfid='itemm',
             item_public=True,
-            item_type='https://osf.example/Preprint',
+            item_type='Preprint',
             platform_iri='https://osf.example',
             user_is_authenticated=False,
         )

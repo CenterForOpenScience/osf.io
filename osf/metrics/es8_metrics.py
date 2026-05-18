@@ -7,12 +7,13 @@ import elasticsearch8.dsl as esdsl
 from elasticsearch_metrics import DAILY, MONTHLY, YEARLY
 import elasticsearch_metrics.imps.elastic8 as djelme
 
-from osf.metadata.osfmap_utils import (
-    osfmap_type,
-    osfid_from_iri,
-)
+from osf.metadata.osfmap_utils import osfid_from_iri
 from osf.metrics.counted_usage import _get_surrounding_guids
-from osf.metrics.utils import YearMonth
+from osf.metrics.utils import (
+    YearMonth,
+    get_database_iri,
+    get_item_type,
+)
 from osf import models as osfdb
 from osf.models.base import osfid_iri
 from website import settings as website_settings
@@ -208,7 +209,7 @@ class OsfCountedUsageEvent(djelme.CountedUsageRecord):
 
     def _autofill_item_type(self):
         if self.item_osfid and not self.item_type:
-            self.item_type = osfmap_type(self._osfid_referent)
+            self.item_type = get_item_type(self._osfid_referent)
 
     def _autofill_provider_id(self):
         if self.item_osfid and not self.provider_id:
@@ -245,14 +246,7 @@ class OsfCountedUsageEvent(djelme.CountedUsageRecord):
 
     def _autofill_database_iri(self):
         if self.item_osfid and not self.database_iri:
-            _provider = getattr(self._osfid_referent, 'provider', None)
-            if not _provider:
-                self.database_iri = website_settings.DOMAIN
-            elif isinstance(_provider, str):
-                # file providers are a different thing that don't really have an iri, just an id
-                self.database_iri = f'urn:files.osf.io:{self.provider_id}'
-            else:
-                self.database_iri = _provider.get_semantic_iri()
+            self.database_iri = get_database_iri(self._osfid_referent)
 
     def _clean_action_labels(self):
         if self.action_labels:
