@@ -398,7 +398,7 @@ def _convert_public_usage_report(
         _c_views, _c_view_sess, _c_downloads, _c_download_sess = _get_cumulative_usage(
             osfid=source['item_osfid'],
             until_when=YearMonth.from_str(source['report_yearmonth']).month_end(),
-            is_preprint=(source.get('item_type') == 'preprint'),
+            is_preprint=('preprint' in source.get('item_type', ())),
         )
     else:
         _c_views = prior_report.cumulative_view_count + source.get('view_count', 0)
