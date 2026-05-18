@@ -1,6 +1,8 @@
 import collections
 import datetime
 import functools
+import heapq
+import itertools
 import logging
 
 from django.apps import apps
@@ -28,10 +30,7 @@ from osf.metrics.counted_usage import (
 )
 from osf.metrics import reports as es6_reports
 from osf.metrics import es8_metrics, RegistriesModerationMetrics
-from osf.metrics.reporters.public_item_usage import (
-    _iter_composite_bucket_keys,
-    _zip_sorted,
-)
+from osf.metrics.reporters.public_item_usage import _iter_composite_bucket_keys
 from osf.metrics.utils import (
     YearMonth,
     get_database_iri,
@@ -157,7 +156,7 @@ def migrate_usage_reports(osfid: str, until_when: str):
         _each_hit = _es6_scan_range(
             es6_reports.PublicItemUsageReport,
             until_when=until_when,
-            addl_filter={'term': {'item_osfid': osfid}},
+            addl_filter={'terms': {'item_osfid': _synonymous_osfids(osfid)}},
             sort='report_yearmonth',
         )
         _hits = list(_each_hit)
@@ -543,13 +542,9 @@ def _cumulative_countedusage_downloads(osfid, until_when) -> tuple[int, int]:
 def _cumulative_preprint_count(preprint_metric_cls, osfid: str, until_when: str) -> int:
     '''aggregate views on each preprint'''
     # copied/adapted from osf.metrics.preprint_metrics
-    _preprint_ids = [osfid]
-    if osfid.endswith('_v1'):
-        # include pre-versioned-guid counts for v1
-        _preprint_ids.append(osfid.removesuffix('_v1'))
     _search = (
         preprint_metric_cls.search()
-        .filter('terms', preprint_id=_preprint_ids)
+        .filter('terms', preprint_id=_synonymous_osfids(osfid))
         .filter('range', timestamp={'lt': until_when})
         .extra(size=0)  # no hits; only aggs
     )
@@ -561,6 +556,17 @@ def _cumulative_preprint_count(preprint_metric_cls, osfid: str, until_when: str)
         else 0
     )
     return _view_count
+
+
+def _synonymous_osfids(osfid: str) -> list[str]:
+    _synonyms = [osfid]
+    if osfid.endswith('_v1'):
+        # include pre-versioned-guid counts for v1
+        _synonyms.append(osfid.removesuffix('_v1'))
+    elif '_' not in osfid:
+        # include v1 (if it exists) with unversioned guid
+        _synonyms.append(f'{osfid}_v1')
+    return _synonyms
 
 
 def _convert_item_type_list(osf_model_names: list[str] | str, has_surrounding_items: bool):
@@ -673,6 +679,20 @@ def _each_preprintdownload_osfid(until_when, after_osfid=None) -> collections.ab
         size=_COMPOSITE_CHUNK_SIZE,
     )
     return _iter_composite_bucket_keys(_search, 'agg_osfid', 'osfid', after=after_osfid)
+
+
+def _merge_sorted_osfids(*osfid_iterables):
+    def _osfids_group_key(osfid: str):
+        return (  # v1 same as unversioned
+            osfid.removesuffix('_v1')
+            if osfid.endswith('_v1')
+            else osfid
+        )
+    for _k, _g in itertools.groupby(
+        heapq.merge(*osfid_iterables),
+        key=_osfids_group_key,
+    ):
+        yield _k
 
 
 ###
@@ -845,7 +865,7 @@ class Command(BaseCommand):
             self.stdout.write(
                 f'starting per-item {es6_reports.PublicItemUsageReport.__name__} => {es8_metrics.MonthlyPublicItemUsageReportEs8.__name__}'
             )
-            for _osfid in _zip_sorted(
+            for _osfid in _merge_sorted_osfids(
                 _each_usage_report_osfid(until_when=self._migration_started_at),
                 _each_countedusage_osfid(until_when=self._migration_started_at),
                 _each_preprintview_osfid(until_when=self._migration_started_at),
