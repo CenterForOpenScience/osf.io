@@ -145,6 +145,17 @@ def migrate_preprint_downloads(from_when: str, until_when: str):
 
 
 @celery_app.task(**_TASK_KWARGS)
+def schedule_migrate_usage_reports(until_when: str):
+    for _osfid in _merge_sorted_osfids(
+        _each_usage_report_osfid(until_when=until_when),
+        _each_countedusage_osfid(until_when=until_when),
+        _each_preprintview_osfid(until_when=until_when),
+        _each_preprintdownload_osfid(until_when=until_when),
+    ):
+        migrate_usage_reports.delay(_osfid, until_when)
+
+
+@celery_app.task(**_TASK_KWARGS)
 def migrate_usage_reports(osfid: str, until_when: str):
     # from PublicItemUsageReport to MonthlyPublicItemUsageReportEs8
     _osfobj, _ = osfdb.Guid.load_referent(osfid)
@@ -866,15 +877,7 @@ class Command(BaseCommand):
             self.stdout.write(
                 f'starting per-item {es6_reports.PublicItemUsageReport.__name__} => {es8_metrics.MonthlyPublicItemUsageReportEs8.__name__}'
             )
-            for _osfid in _merge_sorted_osfids(
-                _each_usage_report_osfid(until_when=self._migration_started_at),
-                _each_countedusage_osfid(until_when=self._migration_started_at),
-                _each_preprintview_osfid(until_when=self._migration_started_at),
-                _each_preprintdownload_osfid(until_when=self._migration_started_at),
-            ):
-                migrate_usage_reports.delay(
-                    _osfid, self._migration_started_at.isoformat()
-                )
+            schedule_migrate_usage_reports.delay(self._migration_started_at.isoformat())
 
     def _check_started_at(self, start_now):
         _started_at = self._migration_started_at
