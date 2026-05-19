@@ -139,7 +139,6 @@ class DailyStorageAddonUsageReport(BaseDailyReport):
 
     class Meta:
         timeseries_index_timedepth = YEARLY
-        timeseries_recordtype_name = 'DailyStorageAddonUsageReport'
 
 
 class DailyDownloadCountReport(BaseDailyReport):
@@ -147,7 +146,6 @@ class DailyDownloadCountReport(BaseDailyReport):
 
     class Meta:
         timeseries_index_timedepth = YEARLY
-        timeseries_recordtype_name = 'DailyDownloadCountReport'
 
 
 class DailyInstitutionSummaryReport(BaseDailyReport):
@@ -163,7 +161,6 @@ class DailyInstitutionSummaryReport(BaseDailyReport):
 
     class Meta:
         timeseries_index_timedepth = YEARLY
-        timeseries_recordtype_name = 'DailyInstitutionSummaryReport'
 
 
 class DailyNewUserDomainReport(BaseDailyReport):
@@ -174,7 +171,6 @@ class DailyNewUserDomainReport(BaseDailyReport):
 
     class Meta:
         timeseries_index_timedepth = YEARLY
-        timeseries_recordtype_name = 'DailyNewUserDomainReport'
 
 
 class DailyNodeSummaryReport(BaseDailyReport):
@@ -185,7 +181,6 @@ class DailyNodeSummaryReport(BaseDailyReport):
 
     class Meta:
         timeseries_index_timedepth = YEARLY
-        timeseries_recordtype_name = 'DailyNodeSummaryReport'
 
 
 class DailyOsfstorageFileCountReport(BaseDailyReport):
@@ -193,7 +188,6 @@ class DailyOsfstorageFileCountReport(BaseDailyReport):
 
     class Meta:
         timeseries_index_timedepth = YEARLY
-        timeseries_recordtype_name = 'DailyOsfstorageFileCountReport'
 
 
 class DailyPreprintSummaryReport(BaseDailyReport):
@@ -203,7 +197,6 @@ class DailyPreprintSummaryReport(BaseDailyReport):
 
     class Meta:
         timeseries_index_timedepth = YEARLY
-        timeseries_recordtype_name = 'DailyPreprintSummaryReport'
 
 
 class DailyUserSummaryReport(BaseDailyReport):
@@ -216,7 +209,6 @@ class DailyUserSummaryReport(BaseDailyReport):
 
     class Meta:
         timeseries_index_timedepth = YEARLY
-        timeseries_recordtype_name = 'DailyUserSummaryReport'
 
 
 class MonthlySpamSummaryReport(BaseMonthlyReport):
@@ -234,7 +226,6 @@ class MonthlySpamSummaryReport(BaseMonthlyReport):
 
     class Meta:
         timeseries_index_timedepth = YEARLY
-        timeseries_recordtype_name = 'MonthlySpamSummaryReport'
 
 
 class MonthlyInstitutionalUserReport(BaseMonthlyReport):
@@ -260,7 +251,6 @@ class MonthlyInstitutionalUserReport(BaseMonthlyReport):
 
     class Meta:
         timeseries_index_timedepth = YEARLY
-        timeseries_recordtype_name = 'MonthlyInstitutionalUserReport'
 
 
 class MonthlyInstitutionSummaryReport(BaseMonthlyReport):
@@ -280,7 +270,6 @@ class MonthlyInstitutionSummaryReport(BaseMonthlyReport):
 
     class Meta:
         timeseries_index_timedepth = YEARLY
-        timeseries_recordtype_name = 'MonthlyInstitutionSummaryReport'
 
 
 class MonthlyPublicItemUsageReport(BaseMonthlyReport):
@@ -311,7 +300,6 @@ class MonthlyPublicItemUsageReport(BaseMonthlyReport):
 
     class Meta:
         timeseries_index_timedepth = YEARLY
-        timeseries_recordtype_name = 'MonthlyPublicItemUsageReport'
 
     @classmethod
     def from_last_month(
@@ -354,7 +342,6 @@ class MonthlyPrivateSpamMetricsReport(BaseMonthlyReport):
 
     class Meta:
         timeseries_index_timedepth = YEARLY
-        timeseries_recordtype_name = 'MonthlyPrivateSpamMetricsReport'
 
 
 ###
