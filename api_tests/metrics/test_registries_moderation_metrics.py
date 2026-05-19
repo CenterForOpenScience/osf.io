@@ -2,7 +2,7 @@ import pytest
 
 from osf_tests.factories import RegistrationFactory, AuthUserFactory
 from osf.utils.workflows import RegistrationModerationStates, RegistrationModerationTriggers
-from osf.metrics.events import RegistriesModerationEventEs8
+from osf.metrics.events import RegistriesModerationEvent
 from tests.utils import capture_notifications
 
 
@@ -22,10 +22,10 @@ class TestRegistrationModerationMetrics:
                 registration.creator,
                 'Metrics is easy'
             )
-        RegistriesModerationEventEs8.refresh()
+        RegistriesModerationEvent.refresh()
 
-        assert RegistriesModerationEventEs8.search().count() == 1
-        data = RegistriesModerationEventEs8.search().execute()['hits']['hits'][0]['_source']
+        assert RegistriesModerationEvent.search().count() == 1
+        data = RegistriesModerationEvent.search().execute()['hits']['hits'][0]['_source']
 
         assert data['from_state'] == RegistrationModerationStates.INITIAL.db_name
         assert data['to_state'] == RegistrationModerationStates.PENDING.db_name
@@ -66,7 +66,7 @@ class TestRegistrationModerationMetricsView:
                 registration.creator,
                 'Metrics is easy'
             )
-        RegistriesModerationEventEs8.refresh()
+        RegistriesModerationEvent.refresh()
 
         res = app.get(base_url, auth=user.auth, expect_errors=True)
         data = res.json

@@ -36,7 +36,7 @@ class TestNodeShare:
         with (
             patch.object(settings, 'USE_CELERY', False),
             patch('osf.models.identifiers.IdentifierMixin.request_identifier_update'),
-            patch('osf.metadata.osf_gathering.MonthlyPublicItemUsageReportEs8.from_last_month', return_value=()),
+            patch('osf.metadata.osf_gathering.MonthlyPublicItemUsageReport.from_last_month', return_value=()),
         ):
             yield
 

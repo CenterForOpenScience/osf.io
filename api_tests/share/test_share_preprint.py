@@ -31,7 +31,7 @@ class TestPreprintShare:
     def _patches(self):
         with (
             mock.patch.object(settings, 'USE_CELERY', False),
-            mock.patch('osf.metadata.osf_gathering.MonthlyPublicItemUsageReportEs8.from_last_month', return_value=()),
+            mock.patch('osf.metadata.osf_gathering.MonthlyPublicItemUsageReport.from_last_month', return_value=()),
         ):
             yield
 

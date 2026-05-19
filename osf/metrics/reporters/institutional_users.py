@@ -7,12 +7,12 @@ from osf import models as osfdb
 from osf.models.spam import SpamStatus
 from addons.osfstorage.models import OsfStorageFile
 from osf.metrics.utils import YearMonth
-from osf.metrics.es8_metrics import MonthlyInstitutionalUserReportEs8
+from osf.metrics.reports import MonthlyInstitutionalUserReport
 from ._base import MonthlyReporter
 
 
 class InstitutionalUsersReporter(MonthlyReporter):
-    '''build a MonthlyInstitutionalUserReportEs8 for each institution-user affiliation
+    '''build a MonthlyInstitutionalUserReport for each institution-user affiliation
 
     built for the institution dashboard at ://osf.example/institutions/<id>/dashboard/,
     which offers institutional admins insight into how people at their institution are
@@ -50,7 +50,7 @@ class _InstiUserReportHelper:
 
     def build_report(self):
         _affiliation = self.user.get_institution_affiliation(self.institution._id)
-        return MonthlyInstitutionalUserReportEs8(
+        return MonthlyInstitutionalUserReport(
             report_yearmonth=self.yearmonth,
             institution_id=self.institution._id,
             user_id=self.user._id,

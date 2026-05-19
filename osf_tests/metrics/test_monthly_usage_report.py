@@ -5,7 +5,7 @@ from django.test import TestCase
 from elasticsearch_metrics.tests.util import RealElasticTestCase
 
 from osf.models.base import osfid_iri
-from osf.metrics.es8_metrics import MonthlyPublicItemUsageReportEs8
+from osf.metrics.reports import MonthlyPublicItemUsageReport
 from osf.metrics.utils import YearMonth
 
 
@@ -54,7 +54,7 @@ class TestEachFromLastMonth(RealElasticTestCase, TestCase):
 
     def test_with_none(self):
         self.assertEqual(
-            MonthlyPublicItemUsageReportEs8.from_last_month([self.item_iri]),
+            MonthlyPublicItemUsageReport.from_last_month([self.item_iri]),
             [],
         )
 
@@ -62,9 +62,9 @@ class TestEachFromLastMonth(RealElasticTestCase, TestCase):
         self.this_month_report
         self.three_months_back_report
         self.diff_last_month_report
-        MonthlyPublicItemUsageReportEs8.refresh()
+        MonthlyPublicItemUsageReport.refresh()
         self.assertEqual(
-            MonthlyPublicItemUsageReportEs8.from_last_month([self.item_iri]),
+            MonthlyPublicItemUsageReport.from_last_month([self.item_iri]),
             [],
         )
 
@@ -73,9 +73,9 @@ class TestEachFromLastMonth(RealElasticTestCase, TestCase):
         self.two_months_back_report
         self.three_months_back_report
         self.diff_last_month_report
-        MonthlyPublicItemUsageReportEs8.refresh()
+        MonthlyPublicItemUsageReport.refresh()
         self.assertEqual(
-            MonthlyPublicItemUsageReportEs8.from_last_month([self.item_iri]),
+            MonthlyPublicItemUsageReport.from_last_month([self.item_iri]),
             [self.two_months_back_report],
         )
 
@@ -85,15 +85,15 @@ class TestEachFromLastMonth(RealElasticTestCase, TestCase):
         self.two_months_back_report
         self.three_months_back_report
         self.diff_last_month_report
-        MonthlyPublicItemUsageReportEs8.refresh()
+        MonthlyPublicItemUsageReport.refresh()
         self.assertEqual(
-            MonthlyPublicItemUsageReportEs8.from_last_month([self.item_iri]),
+            MonthlyPublicItemUsageReport.from_last_month([self.item_iri]),
             [self.last_month_report],
         )
 
 
 def _item_usage_report(ym: YearMonth, osfid: str, **kwargs):
-    _report = MonthlyPublicItemUsageReportEs8(
+    _report = MonthlyPublicItemUsageReport(
         report_yearmonth=ym,
         item_iri=osfid_iri(osfid),
         item_osfids=osfid,

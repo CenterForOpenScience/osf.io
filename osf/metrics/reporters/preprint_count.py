@@ -2,7 +2,7 @@ import logging
 import requests
 
 from website import settings
-from osf.metrics.es8_metrics import DailyPreprintSummaryReportEs8
+from osf.metrics.reports import DailyPreprintSummaryReport
 from osf.metrics.utils import cycle_coverage_date
 from ._base import DailyReporter
 
@@ -49,7 +49,7 @@ class PreprintCountReporter(DailyReporter):
             elastic_query = get_elastic_query(date, preprint_provider)
             resp = requests.post(f'{settings.SHARE_URL}api/v2/search/creativeworks/_search', json=elastic_query).json()
 
-            yield DailyPreprintSummaryReportEs8(
+            yield DailyPreprintSummaryReport(
                 cycle_coverage=cycle_coverage_date(date),
                 provider_key=preprint_provider._id,
                 preprint_count=resp['hits']['total'],

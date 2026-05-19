@@ -19,7 +19,7 @@ from website import settings as website_settings
 
 __all__ = (
     'OsfCountedUsageEvent',
-    'RegistriesModerationEventEs8',
+    'RegistriesModerationEvent',
 )
 
 
@@ -224,7 +224,7 @@ class OsfCountedUsageEvent(djelme.CountedUsageRecord):
             self.action_labels = sorted(self.action_labels)
 
 
-class RegistriesModerationEventEs8(djelme.EventRecord):
+class RegistriesModerationEvent(djelme.EventRecord):
     UNIQUE_TOGETHER_FIELDS = (
         'timestamp', 'registration_id', 'trigger', 'from_state', 'to_state', 'user_id'
     )

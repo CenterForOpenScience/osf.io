@@ -44,20 +44,20 @@ from api.nodes.permissions import MustBePublic
 from osf.features import ENABLE_RAW_METRICS
 from osf.metrics.events import (
     OsfCountedUsageEvent,
-    RegistriesModerationEventEs8,
+    RegistriesModerationEvent,
 )
-from osf.metrics.es8_metrics import (
+from osf.metrics.reports import (
     BaseDailyReport,
     BaseMonthlyReport,
-    DailyDownloadCountReportEs8,
-    DailyInstitutionSummaryReportEs8,
-    DailyNodeSummaryReportEs8,
-    DailyOsfstorageFileCountReportEs8,
-    DailyPreprintSummaryReportEs8,
-    DailyStorageAddonUsageReportEs8,
-    DailyUserSummaryReportEs8,
-    DailyNewUserDomainReportEs8,
-    MonthlySpamSummaryReportEs8,
+    DailyDownloadCountReport,
+    DailyInstitutionSummaryReport,
+    DailyNodeSummaryReport,
+    DailyOsfstorageFileCountReport,
+    DailyPreprintSummaryReport,
+    DailyStorageAddonUsageReport,
+    DailyUserSummaryReport,
+    DailyNewUserDomainReport,
+    MonthlySpamSummaryReport,
 )
 from osf.metrics.openapi import get_metrics_openapi_json_dict
 from osf.models import AbstractNode
@@ -68,15 +68,15 @@ logger = logging.getLogger(__name__)
 
 
 VIEWABLE_REPORTS = {
-    'download_count': DailyDownloadCountReportEs8,
-    'institution_summary': DailyInstitutionSummaryReportEs8,
-    'node_summary': DailyNodeSummaryReportEs8,
-    'osfstorage_file_count': DailyOsfstorageFileCountReportEs8,
-    'preprint_summary': DailyPreprintSummaryReportEs8,
-    'storage_addon_usage': DailyStorageAddonUsageReportEs8,
-    'user_summary': DailyUserSummaryReportEs8,
-    'spam_summary': MonthlySpamSummaryReportEs8,
-    'new_user_domains': DailyNewUserDomainReportEs8,
+    'download_count': DailyDownloadCountReport,
+    'institution_summary': DailyInstitutionSummaryReport,
+    'node_summary': DailyNodeSummaryReport,
+    'osfstorage_file_count': DailyOsfstorageFileCountReport,
+    'preprint_summary': DailyPreprintSummaryReport,
+    'storage_addon_usage': DailyStorageAddonUsageReport,
+    'user_summary': DailyUserSummaryReport,
+    'spam_summary': MonthlySpamSummaryReport,
+    'new_user_domains': DailyNewUserDomainReport,
 }
 
 
@@ -167,7 +167,7 @@ class RegistriesModerationMetricsView(GenericAPIView):
     view_name = 'raw-metrics-view'
 
     def get(self, request, *args, **kwargs):
-        _search = RegistriesModerationEventEs8.search().update_from_dict(self._build_es_query())
+        _search = RegistriesModerationEvent.search().update_from_dict(self._build_es_query())
         _search_response = _search.execute()
         _providers_agg_json = (
             _search_response.aggregations['providers'].to_dict()

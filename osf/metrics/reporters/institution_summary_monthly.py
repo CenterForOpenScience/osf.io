@@ -4,11 +4,11 @@ from django.db.models import Q, F, Sum, OuterRef, Exists
 from osf.models import Institution, Preprint, AbstractNode, FileVersion, NodeLog, PreprintLog
 from osf.models.spam import SpamStatus
 from addons.osfstorage.models import OsfStorageFile
-from osf.metrics.es8_metrics import MonthlyInstitutionSummaryReportEs8
+from osf.metrics.reports import MonthlyInstitutionSummaryReport
 from ._base import MonthlyReporter
 
 class InstitutionalSummaryMonthlyReporter(MonthlyReporter):
-    """Generate a MonthlyInstitutionSummaryReportEs8 for each institution."""
+    """Generate a MonthlyInstitutionSummaryReport for each institution."""
 
     def iter_report_kwargs(self, continue_after: dict | None = None):
         _inst_qs = Institution.objects.order_by('pk')
@@ -26,7 +26,7 @@ class InstitutionalSummaryMonthlyReporter(MonthlyReporter):
             spam_status=SpamStatus.SPAM,
         )
         preprint_queryset = self.get_published_preprints(institution, self.yearmonth)
-        yield MonthlyInstitutionSummaryReportEs8(
+        yield MonthlyInstitutionSummaryReport(
             report_yearmonth=self.yearmonth,
             institution_id=institution._id,
             user_count=institution.get_institution_users().count(),

@@ -5,12 +5,12 @@ from django.test import TestCase
 from elasticsearch_metrics.tests.util import RealElasticTestCase
 
 from framework.celery_tasks import app as celery_app
-from osf.metrics.es8_metrics import (
-    MonthlyInstitutionSummaryReportEs8,
-    MonthlyInstitutionalUserReportEs8,
-    MonthlyPrivateSpamMetricsReportEs8,
-    MonthlyPublicItemUsageReportEs8,
-    MonthlySpamSummaryReportEs8,
+from osf.metrics.reports import (
+    MonthlyInstitutionSummaryReport,
+    MonthlyInstitutionalUserReport,
+    MonthlyPrivateSpamMetricsReport,
+    MonthlyPublicItemUsageReport,
+    MonthlySpamSummaryReport,
 )
 from osf.metrics.events import OsfCountedUsageEvent
 from osf.metrics.utils import YearMonth
@@ -39,17 +39,17 @@ class TestMonthlyReportersGo(RealElasticTestCase, TestCase):
         OsfCountedUsageEvent.refresh()
 
     def test_for_smoke(self):
-        self._assert_count(MonthlyInstitutionSummaryReportEs8, 0)
-        self._assert_count(MonthlyInstitutionalUserReportEs8, 0)
-        self._assert_count(MonthlyPrivateSpamMetricsReportEs8, 0)
-        self._assert_count(MonthlyPublicItemUsageReportEs8, 0)
-        self._assert_count(MonthlySpamSummaryReportEs8, 0)
+        self._assert_count(MonthlyInstitutionSummaryReport, 0)
+        self._assert_count(MonthlyInstitutionalUserReport, 0)
+        self._assert_count(MonthlyPrivateSpamMetricsReport, 0)
+        self._assert_count(MonthlyPublicItemUsageReport, 0)
+        self._assert_count(MonthlySpamSummaryReport, 0)
         call_command('monthly_reporters_go', yearmonth=str(self._report_yearmonth))
-        self._assert_count(MonthlyInstitutionSummaryReportEs8, 1)
-        self._assert_count(MonthlyInstitutionalUserReportEs8, 1)
-        self._assert_count(MonthlyPrivateSpamMetricsReportEs8, 1)
-        self._assert_count(MonthlyPublicItemUsageReportEs8, 1)
-        self._assert_count(MonthlySpamSummaryReportEs8, 1)
+        self._assert_count(MonthlyInstitutionSummaryReport, 1)
+        self._assert_count(MonthlyInstitutionalUserReport, 1)
+        self._assert_count(MonthlyPrivateSpamMetricsReport, 1)
+        self._assert_count(MonthlyPublicItemUsageReport, 1)
+        self._assert_count(MonthlySpamSummaryReport, 1)
 
     def _assert_count(self, recordtype, expected_count):
         recordtype.refresh()

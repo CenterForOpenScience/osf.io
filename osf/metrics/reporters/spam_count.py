@@ -2,7 +2,7 @@ from osf.models import OSFUser
 
 from osf.models import PreprintLog, NodeLog
 from osf.models.spam import SpamStatus
-from osf.metrics.es8_metrics import MonthlySpamSummaryReportEs8
+from osf.metrics.reports import MonthlySpamSummaryReport
 from ._base import MonthlyReporter
 
 class SpamCountReporter(MonthlyReporter):
@@ -11,7 +11,7 @@ class SpamCountReporter(MonthlyReporter):
         assert not report_kwargs
         target_month = self.yearmonth.month_start()
         next_month = self.yearmonth.month_end()
-        yield MonthlySpamSummaryReportEs8(
+        yield MonthlySpamSummaryReport(
             report_yearmonth=self.yearmonth,
             node_confirmed_spam=NodeLog.objects.filter(
                 action=NodeLog.CONFIRM_SPAM,

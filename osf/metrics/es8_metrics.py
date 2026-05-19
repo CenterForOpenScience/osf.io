@@ -134,7 +134,7 @@ class BaseDailyReport(djelme.CyclicRecord):
         )
 
 
-class DailyStorageAddonUsageReportEs8(BaseDailyReport):
+class DailyStorageAddonUsageReport(BaseDailyReport):
     usage_by_addon: list[UsageByStorageAddon]
 
     class Meta:
@@ -142,7 +142,7 @@ class DailyStorageAddonUsageReportEs8(BaseDailyReport):
         timeseries_recordtype_name = 'DailyStorageAddonUsageReport'
 
 
-class DailyDownloadCountReportEs8(BaseDailyReport):
+class DailyDownloadCountReport(BaseDailyReport):
     daily_file_downloads: int
 
     class Meta:
@@ -150,7 +150,7 @@ class DailyDownloadCountReportEs8(BaseDailyReport):
         timeseries_recordtype_name = 'DailyDownloadCountReport'
 
 
-class DailyInstitutionSummaryReportEs8(BaseDailyReport):
+class DailyInstitutionSummaryReport(BaseDailyReport):
     UNIQUE_TOGETHER_FIELDS = ('cycle_coverage', 'institution_id',)
 
     institution_id: str
@@ -166,7 +166,7 @@ class DailyInstitutionSummaryReportEs8(BaseDailyReport):
         timeseries_recordtype_name = 'DailyInstitutionSummaryReport'
 
 
-class DailyNewUserDomainReportEs8(BaseDailyReport):
+class DailyNewUserDomainReport(BaseDailyReport):
     UNIQUE_TOGETHER_FIELDS = ('cycle_coverage', 'domain_name',)
 
     domain_name: str
@@ -177,7 +177,7 @@ class DailyNewUserDomainReportEs8(BaseDailyReport):
         timeseries_recordtype_name = 'DailyNewUserDomainReport'
 
 
-class DailyNodeSummaryReportEs8(BaseDailyReport):
+class DailyNodeSummaryReport(BaseDailyReport):
     nodes: NodeRunningTotals
     projects: NodeRunningTotals
     registered_nodes: RegistrationRunningTotals
@@ -188,7 +188,7 @@ class DailyNodeSummaryReportEs8(BaseDailyReport):
         timeseries_recordtype_name = 'DailyNodeSummaryReport'
 
 
-class DailyOsfstorageFileCountReportEs8(BaseDailyReport):
+class DailyOsfstorageFileCountReport(BaseDailyReport):
     files: FileRunningTotals
 
     class Meta:
@@ -196,7 +196,7 @@ class DailyOsfstorageFileCountReportEs8(BaseDailyReport):
         timeseries_recordtype_name = 'DailyOsfstorageFileCountReport'
 
 
-class DailyPreprintSummaryReportEs8(BaseDailyReport):
+class DailyPreprintSummaryReport(BaseDailyReport):
     UNIQUE_TOGETHER_FIELDS = ('cycle_coverage', 'provider_key',)
     provider_key: str
     preprint_count: int
@@ -206,7 +206,7 @@ class DailyPreprintSummaryReportEs8(BaseDailyReport):
         timeseries_recordtype_name = 'DailyPreprintSummaryReport'
 
 
-class DailyUserSummaryReportEs8(BaseDailyReport):
+class DailyUserSummaryReport(BaseDailyReport):
     active: int
     deactivated: int
     merged: int
@@ -219,7 +219,7 @@ class DailyUserSummaryReportEs8(BaseDailyReport):
         timeseries_recordtype_name = 'DailyUserSummaryReport'
 
 
-class MonthlySpamSummaryReportEs8(BaseMonthlyReport):
+class MonthlySpamSummaryReport(BaseMonthlyReport):
     node_confirmed_spam: int
     node_confirmed_ham: int
     node_flagged: int
@@ -237,7 +237,7 @@ class MonthlySpamSummaryReportEs8(BaseMonthlyReport):
         timeseries_recordtype_name = 'MonthlySpamSummaryReport'
 
 
-class MonthlyInstitutionalUserReportEs8(BaseMonthlyReport):
+class MonthlyInstitutionalUserReport(BaseMonthlyReport):
     UNIQUE_TOGETHER_FIELDS = ('cycle_coverage', 'institution_id', 'user_id',)
 
     institution_id: str
@@ -263,7 +263,7 @@ class MonthlyInstitutionalUserReportEs8(BaseMonthlyReport):
         timeseries_recordtype_name = 'MonthlyInstitutionalUserReport'
 
 
-class MonthlyInstitutionSummaryReportEs8(BaseMonthlyReport):
+class MonthlyInstitutionSummaryReport(BaseMonthlyReport):
     UNIQUE_TOGETHER_FIELDS = ('cycle_coverage', 'institution_id', )
 
     institution_id: str
@@ -283,7 +283,7 @@ class MonthlyInstitutionSummaryReportEs8(BaseMonthlyReport):
         timeseries_recordtype_name = 'MonthlyInstitutionSummaryReport'
 
 
-class MonthlyPublicItemUsageReportEs8(BaseMonthlyReport):
+class MonthlyPublicItemUsageReport(BaseMonthlyReport):
     UNIQUE_TOGETHER_FIELDS = ('cycle_coverage', 'item_iri')
 
     # where noted, fields are meant to correspond to defined terms from COUNTER
@@ -317,7 +317,7 @@ class MonthlyPublicItemUsageReportEs8(BaseMonthlyReport):
     def from_last_month(
         cls,
         item_iris: collections.abc.Collection[str],
-    ) -> list['MonthlyPublicItemUsageReportEs8']:
+    ) -> list['MonthlyPublicItemUsageReport']:
         _last_month = YearMonth.from_today().prior()
         _from_last_month = list(cls.each_from_month(item_iris, _last_month))
         if item_iris and not _from_last_month:
@@ -331,7 +331,7 @@ class MonthlyPublicItemUsageReportEs8(BaseMonthlyReport):
         cls,
         item_iris: collections.abc.Collection[str],
         yearmonth: YearMonth,
-    ) -> collections.abc.Collection['MonthlyPublicItemUsageReportEs8']:
+    ) -> collections.abc.Collection['MonthlyPublicItemUsageReport']:
         if item_iris:
             _search = (
                 cls.search()
@@ -342,7 +342,7 @@ class MonthlyPublicItemUsageReportEs8(BaseMonthlyReport):
             yield from _search.execute()
 
 
-class MonthlyPrivateSpamMetricsReportEs8(BaseMonthlyReport):
+class MonthlyPrivateSpamMetricsReport(BaseMonthlyReport):
     node_oopspam_flagged: int
     node_oopspam_hammed: int
     node_akismet_flagged: int

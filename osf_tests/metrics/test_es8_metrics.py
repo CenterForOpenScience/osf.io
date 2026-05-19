@@ -3,7 +3,7 @@ import datetime
 from django.test import TestCase
 from elasticsearch_metrics.tests.util import RealElasticTestCase
 
-from osf.metrics.es8_metrics import DailyDownloadCountReportEs8
+from osf.metrics.reports import DailyDownloadCountReport
 from osf.metrics.events import OsfCountedUsageEvent
 
 
@@ -72,12 +72,12 @@ class TestEs8Metrics(RealElasticTestCase, TestCase):
         assert usage.item_iri in usage.within_iris
 
     def test_save_report(self):
-        _saved = DailyDownloadCountReportEs8.record(
+        _saved = DailyDownloadCountReport.record(
             cycle_coverage='2026.1.1',
             daily_file_downloads=17,
         )
-        DailyDownloadCountReportEs8.refresh()
-        _response = DailyDownloadCountReportEs8.search().execute()
+        DailyDownloadCountReport.refresh()
+        _response = DailyDownloadCountReport.search().execute()
         (_fetched,) = _response
         assert _fetched.meta.id == _saved.meta.id
         assert _fetched.cycle_coverage == '2026.1.1'

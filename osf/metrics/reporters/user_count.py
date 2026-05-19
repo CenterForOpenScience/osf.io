@@ -1,6 +1,6 @@
 from osf.models import OSFUser
 
-from osf.metrics.es8_metrics import DailyUserSummaryReportEs8
+from osf.metrics.reports import DailyUserSummaryReport
 from osf.metrics.utils import cycle_coverage_date
 from ._base import DailyReporter
 
@@ -8,7 +8,7 @@ from ._base import DailyReporter
 class UserCountReporter(DailyReporter):
 
     def report(self, report_date):
-        yield DailyUserSummaryReportEs8(
+        yield DailyUserSummaryReport(
             cycle_coverage=cycle_coverage_date(report_date),
             active=OSFUser.objects.filter(is_active=True, date_confirmed__date__lte=report_date).count(),
             deactivated=OSFUser.objects.filter(date_disabled__isnull=False, date_disabled__date__lte=report_date).count(),

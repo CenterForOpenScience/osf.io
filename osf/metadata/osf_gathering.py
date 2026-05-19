@@ -37,7 +37,7 @@ from osf.metadata.rdfutils import (
     format_dcterms_extent,
     smells_like_iri,
 )
-from osf.metrics.es8_metrics import MonthlyPublicItemUsageReportEs8
+from osf.metrics.reports import MonthlyPublicItemUsageReport
 from osf.metrics.utils import YearMonth
 from osf.utils import (
     workflows as osfworkflows,
@@ -1094,7 +1094,7 @@ def gather_last_month_usage(focus):
         ]
     else:  # no versions, just the one semantic iri
         _item_iris = [focus.iri]
-    _usage_reports = MonthlyPublicItemUsageReportEs8.from_last_month(_item_iris)
+    _usage_reports = MonthlyPublicItemUsageReport.from_last_month(_item_iris)
     if _usage_reports:
         def _sum_usage(report_attr_name):
             return sum(

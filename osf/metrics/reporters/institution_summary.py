@@ -3,12 +3,7 @@ import logging
 from django.db.models import Q
 
 from osf.models import Institution
-from osf.metrics.es8_metrics import (
-    DailyInstitutionSummaryReportEs8,
-    RunningTotal as RunningTotalEs8,
-    NodeRunningTotals as NodeRunningTotalsEs8,
-    RegistrationRunningTotals as RegistrationRunningTotalsEs8
-)
+from osf.metrics.reports import DailyInstitutionSummaryReport
 from osf.metrics.utils import cycle_coverage_date
 from ._base import DailyReporter
 
@@ -38,15 +33,15 @@ class InstitutionSummaryReporter(DailyReporter):
                 created__date__lte=date,
                 type='osf.registration',
             )
-            yield DailyInstitutionSummaryReportEs8(
+            yield DailyInstitutionSummaryReport(
                 cycle_coverage=cycle_coverage_date(date),
                 institution_id=institution._id,
                 institution_name=institution.name,
-                users=RunningTotalEs8(
+                users=dict(
                     total=institution.get_institution_users().filter(is_active=True).count(),
                     total_daily=institution.get_institution_users().filter(date_confirmed__date=date).count(),
                 ),
-                nodes=NodeRunningTotalsEs8(
+                nodes=dict(
                     total=node_qs.count(),
                     public=node_qs.filter(public_query).count(),
                     private=node_qs.filter(private_query).count(),
@@ -56,7 +51,7 @@ class InstitutionSummaryReporter(DailyReporter):
                     private_daily=node_qs.filter(private_query & daily_query).count(),
                 ),
                 # Projects use get_roots to remove children
-                projects=NodeRunningTotalsEs8(
+                projects=dict(
                     total=node_qs.get_roots().count(),
                     public=node_qs.filter(public_query).get_roots().count(),
                     private=node_qs.filter(private_query).get_roots().count(),
@@ -65,7 +60,7 @@ class InstitutionSummaryReporter(DailyReporter):
                     public_daily=node_qs.filter(public_query & daily_query).get_roots().count(),
                     private_daily=node_qs.filter(private_query & daily_query).get_roots().count(),
                 ),
-                registered_nodes=RegistrationRunningTotalsEs8(
+                registered_nodes=dict(
                     total=registration_qs.count(),
                     public=registration_qs.filter(public_query).count(),
                     embargoed=registration_qs.filter(private_query).count(),
@@ -76,7 +71,7 @@ class InstitutionSummaryReporter(DailyReporter):
                     embargoed_daily=registration_qs.filter(private_query & daily_query).count(),
                     embargoed_v2_daily=registration_qs.filter(private_query & daily_query & embargo_v2_query).count(),
                 ),
-                registered_projects=RegistrationRunningTotalsEs8(
+                registered_projects=dict(
                     total=registration_qs.get_roots().count(),
                     public=registration_qs.filter(public_query).get_roots().count(),
                     embargoed=registration_qs.filter(private_query).get_roots().count(),

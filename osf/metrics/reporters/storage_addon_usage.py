@@ -12,7 +12,7 @@ from django.db.models import (
 from addons.base.models import BaseOAuthUserSettings, BaseOAuthNodeSettings
 from osf.models import SpamStatus, Tag
 from website import settings
-from osf.metrics.es8_metrics import DailyStorageAddonUsageReportEs8
+from osf.metrics.reports import DailyStorageAddonUsageReport
 from osf.metrics.utils import cycle_coverage_date
 from ._base import DailyReporter
 
@@ -167,7 +167,7 @@ class StorageAddonUsageReporter(DailyReporter):
                     'total_daily': node_counts.get('deleted_daily', 0),
                 },
             })
-        yield DailyStorageAddonUsageReportEs8(
+        yield DailyStorageAddonUsageReport(
             cycle_coverage=cycle_coverage_date(date),
             usage_by_addon=_usages_by_addon,
         )
