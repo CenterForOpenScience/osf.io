@@ -162,28 +162,22 @@ def migrate_usage_reports(osfid: str, until_when: str):
     _item_is_component = is_osf_component(_osfobj) if _osfobj else False
 
     def _each_new():
-        # go in sorted order to build cumulative counts
-        # (only a few dozen of these per item; should be fine to sort and load all at once)
         _each_hit = _es6_scan_range(
             es6_reports.PublicItemUsageReport,
             until_when=until_when,
             addl_filter={'terms': {'item_osfid': _synonymous_osfids(osfid)}},
-            sort='report_yearmonth',
         )
+        # (only a few dozen of these per item; should be fine to load all at once)
         _hits = list(_each_hit)
         if _osfobj and not _hits:
             # this item has usages, but only before the monthly usage reparts started
             # -- create one for cumulative counts (if the object still exists)
             yield _backfill_old_usage_report(_osfobj, _item_is_component, until_when)
         else:
-            _prior_report = None
             for _hit in _hits:
-                yield (
-                    _prior_report := _convert_public_usage_report(
-                        _hit['_source'],
-                        _prior_report,
-                        item_is_component=_item_is_component,
-                    )
+                yield _convert_public_usage_report(
+                    _hit['_source'],
+                    item_is_component=_item_is_component,
                 )
 
     _es8_bulk_save(es8_metrics.MonthlyPublicItemUsageReportEs8, _each_new())
@@ -223,7 +217,6 @@ def _es6_scan_range(
     from_when: str = '',
     until_when: str,
     addl_filter=None,
-    sort=None,
 ):
     _timestamp_range = {'lt': until_when}
     if from_when:
@@ -234,13 +227,10 @@ def _es6_scan_range(
     if addl_filter:
         _filters.append(addl_filter)
     _query_body = {'query': {'bool': {'filter': _filters}}}
-    if sort:
-        _query_body['sort'] = sort
     return es6_helpers.scan(
         _es6_connection(),
         index=es6_recordtype._template_pattern,
         query=_query_body,
-        preserve_order=bool(sort),
     )
 
 
@@ -402,26 +392,13 @@ def _convert_preprint_metric(
 
 def _convert_public_usage_report(
     source: dict,
-    prior_report: es8_metrics.MonthlyPublicItemUsageReportEs8 | None,
     item_is_component: bool,
 ) -> es8_metrics.MonthlyPublicItemUsageReportEs8:
-    if prior_report is None:
-        _c_views, _c_view_sess, _c_downloads, _c_download_sess = _get_cumulative_usage(
-            osfid=source['item_osfid'],
-            until_when=YearMonth.from_str(source['report_yearmonth']).month_end(),
-            is_preprint=('preprint' in source.get('item_type', ())),
-        )
-    else:
-        _c_views = prior_report.cumulative_view_count + source.get('view_count', 0)
-        _c_view_sess = prior_report.cumulative_view_session_count + (
-            source.get('view_session_count', 0) or source.get('view_count', 0)
-        )
-        _c_downloads = prior_report.cumulative_download_count + source.get(
-            'download_count', 0
-        )
-        _c_download_sess = prior_report.cumulative_download_session_count + (
-            source.get('download_session_count', 0) or source.get('download_count')
-        )
+    _c_views, _c_view_sess, _c_downloads, _c_download_sess = _get_cumulative_usage(
+        osfid=source['item_osfid'],
+        until_when=YearMonth.from_str(source['report_yearmonth']).month_end(),
+        is_preprint=('preprint' in source.get('item_type', ())),
+    )
     return es8_metrics.MonthlyPublicItemUsageReportEs8(
         cycle_coverage=_semverish_from_yearmonth(source['report_yearmonth']),
         item_iri=osfid_iri(source['item_osfid']),
@@ -437,11 +414,11 @@ def _convert_public_usage_report(
         provider_ids=source.get('provider_id'),
         platform_iris=source.get('platform_iri') or [website_settings.DOMAIN],
         view_count=source.get('view_count', 0),
-        view_session_count=source.get('view_session_count', 0),
+        view_session_count=source.get('view_session_count') or source.get('view_count', 0),
         cumulative_view_count=_c_views,
         cumulative_view_session_count=_c_view_sess or _c_views,
         download_count=source.get('download_count', 0),
-        download_session_count=source.get('download_session_count', 0),
+        download_session_count=source.get('download_session_count') or source.get('download_count', 0),
         cumulative_download_count=_c_downloads,
         cumulative_download_session_count=_c_download_sess or _c_downloads,
     )
@@ -552,7 +529,7 @@ def _cumulative_countedusage_downloads(osfid, until_when) -> tuple[int, int]:
 
 
 def _cumulative_preprint_count(preprint_metric_cls, osfid: str, until_when: str) -> int:
-    '''aggregate views on each preprint'''
+    '''aggregate counts on given preprint'''
     # copied/adapted from osf.metrics.preprint_metrics
     _search = (
         preprint_metric_cls.search()
@@ -562,12 +539,11 @@ def _cumulative_preprint_count(preprint_metric_cls, osfid: str, until_when: str)
     )
     _search.aggs.metric('agg_count', 'sum', field='count')
     _response = _search.execute()
-    _view_count = (
+    return (
         int(_response.aggregations.agg_count.value)
         if hasattr(_response.aggregations, 'agg_count')
         else 0
     )
-    return _view_count
 
 
 def _synonymous_osfids(osfid: str) -> list[str]:

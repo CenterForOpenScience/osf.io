@@ -14,6 +14,7 @@ from osf.metadata.osf_gathering import OsfmapPartition
 from osf.metrics.counted_usage import (
     CountedAuthUsage,
     get_provider_id,
+    get_item_type as get_legacy_item_type,
 )
 from osf.metrics.preprint_metrics import (
     PreprintDownload,
@@ -80,7 +81,7 @@ class PublicItemUsageReporter(MonthlyReporter):
                 raise _SkipItem
             _report_es6 = PublicItemUsageReport(
                 item_osfid=_report.item_osfids[0],
-                item_type=list(_report.item_types),
+                item_type=[get_legacy_item_type(_obj)],
                 provider_id=list(_report.provider_ids),
                 platform_iri=list(_report.platform_iris),
                 view_count=_report.view_count,
