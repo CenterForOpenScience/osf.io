@@ -229,6 +229,7 @@ def _es6_scan_range(
         _es6_connection(),
         index=es6_recordtype._template_pattern,
         query=_query_body,
+        preserve_order=bool(sort),
     )
 
 
