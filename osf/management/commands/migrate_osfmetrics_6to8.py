@@ -764,12 +764,12 @@ class Command(BaseCommand):
             self._clear_es8_data(unchanged, usage_events, usage_reports)
         self._check_started_at(start_now=start)
         _default_all = not any((unchanged, usage_events, usage_reports))
-        if unchanged or _default_all:
-            self._handle_unchanged(start=start, no_counts=no_counts)
-        if usage_events or _default_all:
-            self._handle_usage_events(start=start, no_counts=no_counts)
         if usage_reports or _default_all:
             self._handle_usage_reports(start=start, no_counts=no_counts)
+        if usage_events or _default_all:
+            self._handle_usage_events(start=start, no_counts=no_counts)
+        if unchanged or _default_all:
+            self._handle_unchanged(start=start, no_counts=no_counts)
         if not no_counts:
             self.stdout.write('(counts may be approximate)')
 
