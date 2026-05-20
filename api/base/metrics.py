@@ -4,7 +4,7 @@ import waffle
 from api.base.exceptions import InvalidQueryStringError
 from osf import features
 from osf.metrics.events import OsfCountedUsageEvent
-from osf.metrics.reports import MonthlyPublicItemUsageReport
+from osf.metrics.monthly_reports import MonthlyPublicItemUsageReport
 from osf.models.base import osfid_iri
 
 

@@ -2,7 +2,7 @@ import logging
 
 from django.db.models import Q
 
-from osf.metrics.reports import DailyNodeSummaryReport
+from osf.metrics.daily_reports import DailyNodeSummaryReport
 from osf.metrics.utils import cycle_coverage_date
 from ._base import DailyReporter
 

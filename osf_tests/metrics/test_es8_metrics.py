@@ -3,7 +3,7 @@ import datetime
 from django.test import TestCase
 from elasticsearch_metrics.tests.util import RealElasticTestCase
 
-from osf.metrics.reports import DailyDownloadCountReport
+from osf.metrics.daily_reports import DailyDownloadCountReport
 from osf.metrics.events import OsfCountedUsageEvent
 
 

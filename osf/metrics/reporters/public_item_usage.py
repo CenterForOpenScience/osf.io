@@ -5,7 +5,7 @@ import typing
 from elasticsearch8 import dsl as esdsl
 
 from osf.metadata.osf_gathering import OsfmapPartition
-from osf.metrics.reports import MonthlyPublicItemUsageReport
+from osf.metrics.monthly_reports import MonthlyPublicItemUsageReport
 from osf.metrics.events import OsfCountedUsageEvent
 from osf.metrics.utils import YearMonth, cycle_coverage_yearmonth
 from ._base import MonthlyReporter
@@ -33,9 +33,9 @@ class PublicItemUsageReporter(MonthlyReporter):
     def report(self, **report_kwargs):
         _item_iri = report_kwargs['item_iri']
         try:
-            return [self._build_report(_item_iri)]
+            yield self._build_report(_item_iri)
         except _SkipItem:
-            return []
+            pass
 
     def followup_task(self, report):
         _last_month = YearMonth.from_date(datetime.date.today()).prior()

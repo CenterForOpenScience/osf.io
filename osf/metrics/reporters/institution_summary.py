@@ -3,7 +3,7 @@ import logging
 from django.db.models import Q
 
 from osf.models import Institution
-from osf.metrics.reports import DailyInstitutionSummaryReport
+from osf.metrics.daily_reports import DailyInstitutionSummaryReport
 from osf.metrics.utils import cycle_coverage_date
 from ._base import DailyReporter
 

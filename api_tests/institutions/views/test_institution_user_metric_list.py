@@ -12,7 +12,7 @@ from osf_tests.factories import (
     AuthUserFactory,
 )
 
-from osf.metrics.reports import MonthlyInstitutionalUserReport
+from osf.metrics.monthly_reports import MonthlyInstitutionalUserReport
 from osf.models import UserMessage
 from tests.utils import capture_notifications
 

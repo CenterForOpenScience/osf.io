@@ -2,7 +2,7 @@ import logging
 from collections import Counter
 
 from osf.models import OSFUser
-from osf.metrics.reports import DailyNewUserDomainReport
+from osf.metrics.daily_reports import DailyNewUserDomainReport
 from osf.metrics.utils import cycle_coverage_date
 from ._base import DailyReporter
 

@@ -2,7 +2,7 @@ from osf.models import OSFUser
 
 from osf.models import PreprintLog, NodeLog
 from osf.models.spam import SpamStatus
-from osf.metrics.reports import MonthlySpamSummaryReport
+from osf.metrics.monthly_reports import MonthlySpamSummaryReport
 from ._base import MonthlyReporter
 
 class SpamCountReporter(MonthlyReporter):

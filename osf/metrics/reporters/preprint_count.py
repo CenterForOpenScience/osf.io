@@ -2,7 +2,7 @@ import logging
 import requests
 
 from website import settings
-from osf.metrics.reports import DailyPreprintSummaryReport
+from osf.metrics.daily_reports import DailyPreprintSummaryReport
 from osf.metrics.utils import cycle_coverage_date
 from ._base import DailyReporter
 

@@ -25,7 +25,7 @@ from osf.metadata.rdfutils import (
     checksum_iri,
 )
 from osf import models as osfdb
-from osf.metrics.reports import MonthlyPublicItemUsageReport
+from osf.metrics.monthly_reports import MonthlyPublicItemUsageReport
 from osf.metrics.utils import YearMonth
 from osf.utils import permissions, workflows
 from osf_tests import factories
@@ -799,14 +799,14 @@ class TestOsfGathering(TestCase):
     def test_gather_last_month_usage(self):
         # no usage report:
         with mock.patch(
-            'osf.metrics.reports.MonthlyPublicItemUsageReport.from_last_month',
+            'osf.metrics.monthly_reports.MonthlyPublicItemUsageReport.from_last_month',
             return_value=[],
         ):
             assert_triples(osf_gathering.gather_last_month_usage(self.projectfocus), set())
         # yes usage report:
         _ym = YearMonth.from_date(datetime.datetime.now(tz=datetime.UTC))
         with mock.patch(
-            'osf.metrics.reports.MonthlyPublicItemUsageReport.from_last_month',
+            'osf.metrics.monthly_reports.MonthlyPublicItemUsageReport.from_last_month',
             return_value=[MonthlyPublicItemUsageReport(
                 item_iri=self.project.get_semantic_iri(),
                 item_osfids=[self.project._id],

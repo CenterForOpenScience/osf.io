@@ -37,7 +37,7 @@ from osf.metadata.rdfutils import (
     format_dcterms_extent,
     smells_like_iri,
 )
-from osf.metrics.reports import MonthlyPublicItemUsageReport
+from osf.metrics.monthly_reports import MonthlyPublicItemUsageReport
 from osf.metrics.utils import YearMonth
 from osf.utils import (
     workflows as osfworkflows,

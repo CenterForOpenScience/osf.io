@@ -5,7 +5,7 @@ from django.test import TestCase
 from elasticsearch_metrics.tests.util import RealElasticTestCase
 
 from framework.celery_tasks import app as celery_app
-from osf.metrics.reports import (
+from osf.metrics.monthly_reports import (
     MonthlyInstitutionSummaryReport,
     MonthlyInstitutionalUserReport,
     MonthlyPrivateSpamMetricsReport,

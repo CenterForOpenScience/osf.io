@@ -5,7 +5,7 @@ from osf_tests.factories import (
     InstitutionFactory,
     AuthUserFactory,
 )
-from osf.metrics.reports import MonthlyInstitutionSummaryReport
+from osf.metrics.monthly_reports import MonthlyInstitutionSummaryReport
 
 
 @pytest.mark.djelme_elasticsearch_backends

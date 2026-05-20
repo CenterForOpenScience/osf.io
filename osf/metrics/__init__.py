@@ -1,10 +1,12 @@
 from . import (
     events,
-    reports,
+    daily_reports,
+    monthly_reports,
 )
 
 
 __all__ = (
     'events',
-    'reports',
+    'daily_reports',
+    'monthly_reports',
 )

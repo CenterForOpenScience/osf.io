@@ -1,6 +1,6 @@
 from osf.external.oopspam.client import OOPSpamClient
 from osf.external.askismet.client import AkismetClient
-from osf.metrics.reports import MonthlyPrivateSpamMetricsReport
+from osf.metrics.monthly_reports import MonthlyPrivateSpamMetricsReport
 from ._base import MonthlyReporter
 
 

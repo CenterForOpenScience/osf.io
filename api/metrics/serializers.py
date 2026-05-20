@@ -83,8 +83,7 @@ class ReportNameSerializer(ser.BaseSerializer):
 
 class CyclicReportSerializer(ser.BaseSerializer):
     def to_representation(self, instance):
-        # TODO: detangle datamodel (osf.metrics.reports) from api serialization
-        # (don't use `to_dict` here)
+        # TODO: detangle datamodel from api serialization (don't use `to_dict` here)
         _report_attrs = instance.to_dict()
         for _extra_attr in ('report_date', 'report_yearmonth'):
             if (_extra_attr not in _report_attrs) and hasattr(instance, _extra_attr):

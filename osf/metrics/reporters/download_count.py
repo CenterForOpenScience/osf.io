@@ -1,5 +1,5 @@
 from osf.models import PageCounter
-from osf.metrics.reports import DailyDownloadCountReport
+from osf.metrics.daily_reports import DailyDownloadCountReport
 from ._base import DailyReporter
 
 

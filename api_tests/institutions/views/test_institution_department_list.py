@@ -7,7 +7,7 @@ from osf_tests.factories import (
     InstitutionFactory,
     AuthUserFactory,
 )
-from osf.metrics.reports import MonthlyInstitutionalUserReport
+from osf.metrics.monthly_reports import MonthlyInstitutionalUserReport
 from osf.metrics.utils import YearMonth
 
 

@@ -3,7 +3,7 @@ from django.db.models import Q
 import logging
 
 from osf.models import AbstractNode, Preprint
-from osf.metrics.reports import DailyOsfstorageFileCountReport
+from osf.metrics.daily_reports import DailyOsfstorageFileCountReport
 from osf.metrics.utils import cycle_coverage_date
 from ._base import DailyReporter
 

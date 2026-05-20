@@ -10,7 +10,7 @@ from rest_framework.settings import api_settings
 from framework.auth.oauth_scopes import CoreScopes
 
 from osf.models import OSFUser, Node, Institution, Registration
-from osf.metrics.reports import (
+from osf.metrics.monthly_reports import (
     MonthlyInstitutionalUserReport,
     MonthlyInstitutionSummaryReport,
 )

@@ -12,7 +12,7 @@ from django.db.models import (
 from addons.base.models import BaseOAuthUserSettings, BaseOAuthNodeSettings
 from osf.models import SpamStatus, Tag
 from website import settings
-from osf.metrics.reports import DailyStorageAddonUsageReport
+from osf.metrics.daily_reports import DailyStorageAddonUsageReport
 from osf.metrics.utils import cycle_coverage_date
 from ._base import DailyReporter
 

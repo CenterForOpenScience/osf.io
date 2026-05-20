@@ -13,10 +13,10 @@ usage data and periodic reports are both stored in elasticsearch using
 each "usage" is represented as `OsfCountedUsageEvent` -- see `osf.metrics.events`
 for field definitions with comments mapping fields to concepts in the COUNTER spec.
 
-each periodic report is a subclass of `BaseMonthlyReport` or `BaseDailyReport`
-(themselves subclasses of `elasticsearch_metrics.imps.elastic8.CyclicRecord`;
-see `osf.metrics.reports`) and has a "reporter" (see `osf.metrics.reporters`)
-that is invoked periodically to report.
+each periodic report is a subclass of `osf.metrics.monthly_reports.BaseMonthlyReport`
+or `osf.metrics.daily_reports.BaseDailyReport` (themselves subclasses of
+`elasticsearch_metrics.imps.elastic8.CyclicRecord`) and has a "reporter"
+(see `osf.metrics.reporters`) that is invoked periodically to report.
 
 ## api
 note: the `osf.metrics` api is subject to change, is supported only for use within OSF
@@ -36,7 +36,7 @@ endpoints of interest for new development (all starting with `/_/metrics/`):
 ## how to
 
 ### add a new monthly report
-- add a `BaseMonthlyReport` subclass (in `osf.metrics.reports`) with the fields you want
+- add a `BaseMonthlyReport` subclass (in `osf.metrics.monthly_reports`) with the fields you want
 - add a `MonthlyReporter` subclass (in a module under `osf.metrics.reporters`)
   that knows how to build your report
 - to have your reporter run automatically, add it to `osf.metrics.reporters.MONTHLY_REPORTERS`

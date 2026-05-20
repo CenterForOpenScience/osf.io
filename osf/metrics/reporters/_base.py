@@ -4,10 +4,8 @@ import logging
 
 import celery
 
-from osf.metrics.reports import (
-    BaseDailyReport,
-    BaseMonthlyReport,
-)
+from osf.metrics.daily_reports import BaseDailyReport
+from osf.metrics.monthly_reports import BaseMonthlyReport
 from osf.metrics.utils import YearMonth
 
 

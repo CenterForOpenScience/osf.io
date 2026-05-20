@@ -7,7 +7,7 @@ from osf import models as osfdb
 from osf.models.spam import SpamStatus
 from addons.osfstorage.models import OsfStorageFile
 from osf.metrics.utils import YearMonth
-from osf.metrics.reports import MonthlyInstitutionalUserReport
+from osf.metrics.monthly_reports import MonthlyInstitutionalUserReport
 from ._base import MonthlyReporter
 
 

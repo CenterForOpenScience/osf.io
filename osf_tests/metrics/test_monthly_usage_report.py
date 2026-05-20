@@ -5,7 +5,7 @@ from django.test import TestCase
 from elasticsearch_metrics.tests.util import RealElasticTestCase
 
 from osf.models.base import osfid_iri
-from osf.metrics.reports import MonthlyPublicItemUsageReport
+from osf.metrics.monthly_reports import MonthlyPublicItemUsageReport
 from osf.metrics.utils import YearMonth
 
 

@@ -8,7 +8,7 @@ from elasticsearch_metrics.tests.util import RealElasticTestCase
 
 from osf.metadata.rdfutils import OSF
 from osf.metrics.events import OsfCountedUsageEvent
-from osf.metrics.reports import MonthlyPublicItemUsageReport
+from osf.metrics.monthly_reports import MonthlyPublicItemUsageReport
 from osf.metrics.reporters.public_item_usage import PublicItemUsageReporter
 from osf.metrics.utils import YearMonth
 from osf_tests import factories

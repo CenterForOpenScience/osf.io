@@ -4,11 +4,11 @@ from random import randint
 from django.conf import settings
 from django.core.management.base import BaseCommand
 
-from osf.metrics.reports import (
+from osf.metrics.daily_reports import (
     DailyUserSummaryReport,
     DailyPreprintSummaryReport,
-    MonthlyPublicItemUsageReport,
 )
+from osf.metrics.monthly_reports import MonthlyPublicItemUsageReport
 from osf.metrics.utils import YearMonth
 from osf.models.base import osfid_iri
 from osf.models import PreprintProvider

@@ -46,9 +46,8 @@ from osf.metrics.events import (
     OsfCountedUsageEvent,
     RegistriesModerationEvent,
 )
-from osf.metrics.reports import (
+from osf.metrics.daily_reports import (
     BaseDailyReport,
-    BaseMonthlyReport,
     DailyDownloadCountReport,
     DailyInstitutionSummaryReport,
     DailyNodeSummaryReport,
@@ -57,6 +56,9 @@ from osf.metrics.reports import (
     DailyStorageAddonUsageReport,
     DailyUserSummaryReport,
     DailyNewUserDomainReport,
+)
+from osf.metrics.monthly_reports import (
+    BaseMonthlyReport,
     MonthlySpamSummaryReport,
 )
 from osf.metrics.openapi import get_metrics_openapi_json_dict

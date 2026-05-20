@@ -1,6 +1,6 @@
 from osf.models import OSFUser
 
-from osf.metrics.reports import DailyUserSummaryReport
+from osf.metrics.daily_reports import DailyUserSummaryReport
 from osf.metrics.utils import cycle_coverage_date
 from ._base import DailyReporter
 

@@ -4,7 +4,7 @@ from django.db.models import Q, F, Sum, OuterRef, Exists
 from osf.models import Institution, Preprint, AbstractNode, FileVersion, NodeLog, PreprintLog
 from osf.models.spam import SpamStatus
 from addons.osfstorage.models import OsfStorageFile
-from osf.metrics.reports import MonthlyInstitutionSummaryReport
+from osf.metrics.monthly_reports import MonthlyInstitutionSummaryReport
 from ._base import MonthlyReporter
 
 class InstitutionalSummaryMonthlyReporter(MonthlyReporter):
