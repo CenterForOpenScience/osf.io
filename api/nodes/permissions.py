@@ -374,5 +374,5 @@ class ProjectCreationNotAllowed(permissions.BasePermission):
 
     def has_permission(self, request, view):
         if request.method == 'POST' and waffle.flag_is_active(request, features.PREVENT_PROJECT_CREATION):
-            raise exceptions.PermissionDenied('Project creation is currently disabled.')
+            raise exceptions.MethodNotAllowed(request.method, detail='Project creation is currently disabled.')
         return True
