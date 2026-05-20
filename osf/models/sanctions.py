@@ -456,7 +456,16 @@ class SanctionCallbackMixin:
         return {}
 
 
+class EmbargoQuerySet(models.QuerySet):
+
+    def non_deleted_registations(self):
+        return self.filter(registrations__is_deleted=False).distinct()
+
+
 class EmbargoManager(models.Manager):
+
+    def get_queryset(self):
+        return EmbargoQuerySet(self.model, using=self._db)
 
     def pending_embargoes(self):
         """Embargoes that are still awaiting admin approval."""
@@ -465,6 +474,32 @@ class EmbargoManager(models.Manager):
     def active_embargoes(self):
         """Embargoes that have been approved and are currently in effect."""
         return self.filter(state=self.model.APPROVED)
+
+    def pending_past_activation_window(self):
+        """Pending embargoes that should have been activated (matches should_be_embargoed)."""
+        cutoff = timezone.now() - osf_settings.EMBARGO_PENDING_TIME
+        return (
+            self.pending_embargoes()
+            .filter(initiation_date__lte=cutoff)
+            .non_deleted_registations()
+        )
+
+    def active_past_end_date(self):
+        """Active embargoes past end date (matches should_be_completed)."""
+        return (
+            self.active_embargoes()
+            .filter(end_date__lt=timezone.now())
+            .non_deleted_registations()
+        )
+
+    def active_upcoming(self):
+        """Active embargoes with a future end date."""
+        return (
+            self.active_embargoes()
+            .filter(end_date__gte=timezone.now())
+            .non_deleted_registations()
+            .order_by('end_date')
+        )
 
 
 class Embargo(SanctionCallbackMixin, EmailApprovableSanction):
