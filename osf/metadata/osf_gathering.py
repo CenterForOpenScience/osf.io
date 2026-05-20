@@ -1085,15 +1085,14 @@ def gather_cedar_templates(focus):
 
 @gather.er(OSF.usage)
 def gather_last_month_usage(focus):
+    _item_iris = [focus.iri]
+    # items with versioned osfids may have a separate usage report for each version,
+    # but this metadata is gathered for the unversioned osfid -- add counts together
     if hasattr(focus.dbmodel, 'versioned_guids'):
-        # items with versioned osfids have a separate usage report for each version,
-        # but this metadata is being gathered for the unversioned base osfid
-        _item_iris = [
+        _item_iris.extend(
             osfid_iri(_vg.versioned_osfid())
             for _vg in focus.dbmodel.versioned_guids.all()
-        ]
-    else:  # no versions, just the one semantic iri
-        _item_iris = [focus.iri]
+        )
     _usage_reports = MonthlyPublicItemUsageReport.from_last_month(_item_iris)
     if _usage_reports:
         def _sum_usage(report_attr_name):
