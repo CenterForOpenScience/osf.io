@@ -1,7 +1,9 @@
+import waffle
 from rest_framework import permissions
 from rest_framework import exceptions
 
 from addons.base.models import BaseAddonSettings
+from osf import features
 from osf.models import (
     AbstractNode,
     Contributor,
@@ -366,3 +368,11 @@ class NodeLinksShowIfVersion(ShowIfVersion):
         max_version = '2.0'
         deprecated_message = 'This feature is deprecated as of version 2.1'
         super().__init__(min_version, max_version, deprecated_message)
+
+
+class ProjectCreationNotAllowed(permissions.BasePermission):
+
+    def has_permission(self, request, view):
+        if request.method == 'POST' and waffle.flag_is_active(request, features.PREVENT_PROJECT_CREATION):
+            raise exceptions.MethodNotAllowed(request.method, detail='Project creation is currently disabled.')
+        return True
