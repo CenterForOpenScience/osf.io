@@ -4,7 +4,7 @@ import logging
 from enum import Enum
 
 from django.http import JsonResponse, HttpResponse, Http404
-
+from elasticsearch8.exceptions import ApiError as Es8ApiError
 from elasticsearch_metrics.registry import djelme_registry
 
 from framework.auth.oauth_scopes import CoreScopes
@@ -100,51 +100,57 @@ class RawMetricsView(GenericAPIView):
 
     @require_switch(ENABLE_RAW_METRICS)
     def get(self, request, *args, djelme_backend_name, url_path, **kwargs):
-        _response_body = self._do_es_request(
+        return self._do_es_request(
+            request,
             djelme_backend_name,
             method='GET',
             path=url_path,
-            qp=request.GET,
         )
-        return JsonResponse(_response_body)
 
     @require_switch(ENABLE_RAW_METRICS)
     def post(self, request, *args, djelme_backend_name, url_path, **kwargs):
-        _response_body = self._do_es_request(
+        return self._do_es_request(
+            request,
             djelme_backend_name,
             method='POST',
             path=url_path,
-            qp=request.GET,
-            body=json.loads(request.body),
-            content_type=request.headers.get('Content-Type'),
         )
-        return JsonResponse(_response_body)
 
     @require_switch(ENABLE_RAW_METRICS)
     def put(self, request, *args, djelme_backend_name, url_path, **kwargs):
-        _response_body = self._do_es_request(
+        return self._do_es_request(
+            request,
             djelme_backend_name,
             method='PUT',
             path=url_path,
-            qp=request.GET,
-            body=json.loads(request.body),
-            content_type=request.headers.get('Content-Type'),
         )
-        return JsonResponse(_response_body)
 
-    def _do_es_request(self, djelme_backend_name, method, path, qp, body=None, content_type=None):
+    def _do_es_request(self, django_request, djelme_backend_name, method, path):
         _client = self._get_es_client(djelme_backend_name)
-        _response = _client.perform_request(
-            method,
-            f'/{path}',
-            params=qp.dict(),
-            body=body,
-            headers=(
-                {'Content-Type': content_type, 'Accept': 'application/json'}
-                if content_type else None
-            ),
+        _body = (
+            json.loads(django_request.body)
+            if django_request.body else None
         )
-        return _response if isinstance(_response, dict) else _response.body
+        _content_type = django_request.headers.get('Content-Type')
+        _headers = (
+            {'Content-Type': _content_type, 'Accept': 'application/json'}
+            if _content_type else None
+        )
+        try:
+            _response = _client.perform_request(
+                method,
+                f'/{path}',
+                params=django_request.GET.dict(),
+                body=_body,
+                headers=_headers,
+            )
+        except Es8ApiError as _api_error:
+            return HttpResponse(
+                str(_api_error),
+                content_type='text/plain; charset=utf-8',
+                status=_api_error.status_code,
+            )
+        return JsonResponse(_response.body)
 
     def _get_es_client(self, djelme_backend_name):
         try:
