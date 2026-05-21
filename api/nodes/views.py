@@ -789,6 +789,14 @@ class NodeRegistrationsList(JSONAPIBaseView, generics.ListCreateAPIView, NodeMix
 class NodeChildrenList(BaseChildrenList, bulk_views.ListBulkCreateJSONAPIView, NodeMixin):
     """See [documentation for this endpoint](https://developer.osf.io/#operation/nodes_children_list).
     """
+    permission_classes = (
+        ContributorOrPublic,
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        ReadOnlyIfRegistration,
+        base_permissions.TokenHasScope,
+        ExcludeWithdrawals,
+        ProjectCreationNotAllowed,
+    )
 
     required_read_scopes = [CoreScopes.NODE_CHILDREN_READ]
     required_write_scopes = [CoreScopes.NODE_CHILDREN_WRITE]
