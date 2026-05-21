@@ -69,6 +69,11 @@ flags:
     note: When active, disables all project/node creation on OSF (POST to node endpoints is blocked).
     everyone: false
 
+  - flag_name: PREVENT_DRAFT_NODE_BE_CHANGED_TO_NODES
+    name: prevent_draft_node_be_changed_to_nodes
+    note: When active, disables draft nodes to be changed to nodes.
+    everyone: false
+
 switches:
   - flag_name: DISABLE_ENGAGEMENT_EMAILS
     name: disable_engagement_emails
