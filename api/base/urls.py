@@ -1,4 +1,4 @@
-from django.urls import include, re_path
+from django.urls import include, re_path, path
 from django.views.generic.base import RedirectView
 
 
@@ -6,6 +6,7 @@ from api.base import views
 from api.base import settings
 from api.base import versioning
 from api.providers.views import RegistrationBulkCreate
+from api.auth import auth_login
 
 default_version = versioning.decimal_version_to_url_path(settings.REST_FRAMEWORK['DEFAULT_VERSION'])
 
@@ -86,6 +87,7 @@ urlpatterns = [
         ),
     ),
     re_path(r'^$', RedirectView.as_view(pattern_name=views.root), name='redirect-to-root', kwargs={'version': default_version}),
+    path('cas/auth/login', auth_login, name='login'),
 ]
 
 # Add django-silk URLs if it's in INSTALLED_APPS
