@@ -41,7 +41,7 @@ class TestConfirmExternalLogin:
 
     @pytest.fixture()
     def url(self):
-        return f'/{API_BASE}users/external_login_comfirm_email/'
+        return f'/{API_BASE}users/external_login_confirm_email/'
 
     @pytest.fixture
     def csrf_token(self):
