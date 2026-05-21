@@ -84,12 +84,14 @@ LOAD_BALANCER = False
 DEV_MODE = False
 DEBUG_MODE = False
 SECURE_MODE = not DEBUG_MODE  # Set secure cookie
+LOCAL_MODE = False  # handles angular and web with different domains in local env
 
 PROTOCOL = 'https://' if SECURE_MODE else 'http://'
 DOMAIN = PROTOCOL + 'localhost:5000/'
 INTERNAL_DOMAIN = DOMAIN
 API_DOMAIN = PROTOCOL + 'localhost:8000/'
 RESET_PASSWORD_URL = PROTOCOL + 'localhost:5000/resetpassword/' # TODO set angular reset password url
+LOCAL_ANGULAR_DOMAIN = PROTOCOL + 'localhost:4200/'  # Only used when LOCAL_MODE is True
 
 PREPRINT_PROVIDER_DOMAINS = {
     'enabled': False,
@@ -107,6 +109,11 @@ ALLOW_LOGIN = True
 SEARCH_ENGINE = 'elastic'  # Can be 'elastic', or None
 ELASTIC_URI = '127.0.0.1:9200'
 ELASTIC6_URI = os.environ.get('ELASTIC6_URI', '127.0.0.1:9201')
+ELASTIC8_URI = os.environ.get('ELASTIC8_URI')
+ELASTIC8_CERT_PATH = os.environ.get('ELASTIC8_CERT_PATH')
+ELASTIC8_ASSERT_HOSTNAME = os.environ.get('ELASTIC8_ASSERT_HOSTNAME')
+ELASTIC8_USERNAME = os.environ.get('ELASTIC8_USERNAME', 'elastic')
+ELASTIC8_SECRET = os.environ.get('ELASTIC8_SECRET')
 ELASTIC_TIMEOUT = 10
 ELASTIC_INDEX = 'website'
 ELASTIC_KWARGS = {
@@ -411,6 +418,7 @@ class CeleryConfig:
     task_account_status_changes_queue = 'account_status_changes'
     task_external_high_queue = 'external_high'
     task_external_low_queue = 'external_low'
+    task_background_migration_queue = 'background_migration'
 
     external_high_modules = {
         'osf.tasks.log_gv_addon',
@@ -476,6 +484,10 @@ class CeleryConfig:
         'scripts.enhanced_stuck_registration_audit',
     }
 
+    background_migration_modules = {
+        'osf.management.commands.migrate_osfmetrics_6to8',
+    }
+
     try:
         from kombu import Queue, Exchange
     except ImportError:
@@ -529,12 +541,19 @@ class CeleryConfig:
                 routing_key=task_external_low_queue,
                 consumer_arguments={'x-priority': -2},
             ),
+            Queue(
+                task_background_migration_queue,
+                Exchange(task_background_migration_queue),
+                routing_key=task_background_migration_queue,
+                consumer_arguments={'x-priority': -1},
+            ),
         )
 
         task_default_exchange_type = 'direct'
         task_routes = ('framework.celery_tasks.routers.CeleryRouter', )
         task_ignore_result = True
         task_store_errors_even_if_ignored = True
+        result_extended = True
 
     broker_url = os.environ.get('BROKER_URL', f'amqp://{RABBITMQ_USERNAME}:{RABBITMQ_PASSWORD}@{RABBITMQ_HOST}:{RABBITMQ_PORT}/{RABBITMQ_VHOST}')
     broker_use_ssl = False
@@ -583,6 +602,7 @@ class CeleryConfig:
         'scripts.remove_after_use.merge_notification_subscription_provider_ct',
         'scripts.disable_removed_beat_tasks',
         'osf.management.commands.delete_withdrawn_or_failed_registration_files',
+        'osf.management.commands.migrate_osfmetrics_6to8',
     )
 
     # Modules that need metrics and release requirements
