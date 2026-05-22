@@ -2,6 +2,11 @@
 
 We follow the CalVer (https://calver.org/) versioning scheme: YY.MINOR.MICRO.
 
+26.10.1 (2026-05-22)
+====================
+
+- Hotfix to resume (rather than restart) a long task after connection error
+
 26.10.0 (2026-05-19)
 ===================
 
