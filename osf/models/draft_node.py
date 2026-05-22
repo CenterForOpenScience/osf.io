@@ -4,10 +4,7 @@ from framework.auth.core import Auth
 from django.utils import timezone
 
 from .node import AbstractNode, Node, NodeLog
-from osf import features
 from osf.exceptions import NodeStateError
-from osf.utils.requests import get_current_request
-import waffle
 
 
 logger = logging.getLogger(__name__)
@@ -25,22 +22,12 @@ class DraftNode(AbstractNode):
     DraftNodes are hidden. They are not accessible in search, and they are not public.
     """
 
-    def is_draft_node_prevented_to_be_changed_node(self):
-        request = get_current_request()
-        if request:
-            return waffle.flag_is_active(request, features.PREVENT_DRAFT_NODE_BE_CHANGED_TO_NODES)
-        try:
-            flag = waffle.get_waffle_flag_model().objects.get(
-                name=features.PREVENT_DRAFT_NODE_BE_CHANGED_TO_NODES
-            )
-            return flag.everyone
-        except waffle.get_waffle_flag_model().DoesNotExist:
-            return False
-
     def set_privacy(self, permissions, *args, **kwargs):
         raise NodeStateError('You may not set privacy for a DraftNode.')
 
     def clone(self):
+        if self.is_draft_node_prevented_to_be_changed_to_node():
+            return super().clone()
         raise NodeStateError('A DraftNode may not be forked, used as a template, or registered.')
 
     # Overrides AbstractNode.update_search
@@ -57,9 +44,6 @@ class DraftNode(AbstractNode):
         return self.registered_draft.first().can_edit(auth, user)
 
     def convert_draft_node_to_node(self, auth):
-        if self.is_draft_node_prevented_to_be_changed_node():
-            raise NodeStateError('DraftNodes cannot be converted to Nodes.')
-
         self.recast('osf.node')
         self.save()
 
@@ -86,9 +70,15 @@ class DraftNode(AbstractNode):
         :param parent Node: parent registration of registration to be created
         :param provider RegistrationProvider: provider to submit the registration to
         """
-        self.convert_draft_node_to_node(auth)
+        is_draft_node_prevented_to_be_changed_to_node = self.is_draft_node_prevented_to_be_changed_to_node()
+        if not is_draft_node_prevented_to_be_changed_to_node:
+            self.convert_draft_node_to_node(auth)
         # Copies editable fields from the DraftRegistration back to the Node
         self.copy_editable_fields(draft_registration, save=True)
 
         # Calls super on Node, since self is no longer a DraftNode
-        return super(Node, self).register_node(schema, auth, draft_registration, parent=parent, child_ids=child_ids, provider=provider, manual_guid=manual_guid)
+        if not is_draft_node_prevented_to_be_changed_to_node:
+            return super(Node, self).register_node(schema, auth, draft_registration, parent=parent, child_ids=child_ids, provider=provider, manual_guid=manual_guid)
+        else:
+            return AbstractNode.register_node(self, schema, auth, draft_registration, parent=parent, child_ids=child_ids,
+                                           provider=provider, manual_guid=manual_guid)
