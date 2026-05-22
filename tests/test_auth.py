@@ -96,7 +96,7 @@ class TestAuthUtils(OsfTestCase):
             res = self.app.resolve_redirect(res)
 
             assert res.status_code == 302
-            assert '/my-projects/' == urlparse(res.location).path
+            assert '/dashboard/' == urlparse(res.location).path
         # assert len(get_session()['status']) == 1
 
     def test_get_user_by_id(self):

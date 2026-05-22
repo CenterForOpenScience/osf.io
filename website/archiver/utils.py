@@ -394,8 +394,10 @@ def compact_traceback(einfo, max_lines=25, max_chars=4000):
     if not traceback_text:
         return None
 
-    lines = traceback_text.splitlines()
-    compact = '\n'.join(lines[-max_lines:])
-    if len(compact) > max_chars:
-        compact = compact[-max_chars:]
-    return compact
+    max_lines = max(1, int(max_lines))
+    max_chars = max(1, int(max_chars))
+
+    # Always compact from the tail to preserve the latest failure context.
+    tail_text = traceback_text[-max_chars:]
+    lines = tail_text.splitlines()
+    return '\n'.join(lines[-max_lines:])

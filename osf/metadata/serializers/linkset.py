@@ -16,7 +16,7 @@ from urllib.parse import urljoin, urlsplit, urlencode, urlunsplit
 import rdflib
 
 from ._base import MetadataSerializer
-from osf.metadata.osf_gathering import osfguid_from_iri
+from osf.metadata.osf_gathering import osfid_from_iri
 from osf.metadata.rdfutils import (DOI, DATACITE, DCTERMS, OWL, RDF, OSF, DCAT, SCHEMA, DATACITE_SCHEMA_RESOURCE_TYPE_GENERAL_MAPPING, map_resource_type_general_datacite_to_scheme)
 from website.settings import DOMAIN
 from website.util import web_url_for
@@ -74,7 +74,7 @@ class BaseSignpostLinkset(MetadataSerializer, abc.ABC):
 
         base_metadata_url = urljoin(DOMAIN, web_url_for(
             'metadata_download',  # name of a view function mapped in website/routes.py
-            guid=osfguid_from_iri(self.basket.focus.iri),
+            guid=osfid_from_iri(self.basket.focus.iri),
         ))
         split_base_metadata_url = urlsplit(base_metadata_url)
 

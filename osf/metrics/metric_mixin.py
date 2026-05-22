@@ -2,7 +2,7 @@ from datetime import datetime
 
 from django.db import models
 from django.utils import timezone
-from elasticsearch.exceptions import NotFoundError
+from elasticsearch6.exceptions import NotFoundError
 import pytz
 
 
