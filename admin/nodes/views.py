@@ -487,7 +487,6 @@ class EmbargoReportView(PermissionRequiredMixin, TemplateView):
     - active embargoes that are past their end date
     - upcoming active embargoes
     """
-    EMBARGO_REPORT_PAGE_SIZE = 10
 
     template_name = 'nodes/embargo_report.html'
     permission_required = 'osf.view_registration'
@@ -504,7 +503,7 @@ class EmbargoReportView(PermissionRequiredMixin, TemplateView):
         )
 
     def paginate_embargo_report(self, request, queryset, page_param):
-        paginator = Paginator(queryset, self.EMBARGO_REPORT_PAGE_SIZE)
+        paginator = Paginator(queryset, settings.EMBARGO_REPORT_PAGE_SIZE)
         page_number = request.GET.get(page_param) or 1
         try:
             return paginator.page(page_number)
