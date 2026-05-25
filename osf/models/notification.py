@@ -5,6 +5,7 @@ from django.db import models
 from django.utils import timezone
 
 from api.base import settings as api_settings
+from website import settings as osf_settings
 from osf import email, features
 
 
@@ -21,7 +22,6 @@ class Notification(models.Model):
 
     def send(
             self,
-            protocol_type='email',
             destination_address=None,
             email_context=None,
             save=True,
@@ -36,22 +36,28 @@ class Notification(models.Model):
                 f"\ncontext={self.event_context}"
                 f"\nemail_context={email_context}"
             )
-        if protocol_type == 'email' and waffle.switch_is_active(features.ENABLE_MAILHOG):
+
+        if waffle.switch_is_active(features.ENABLE_MAILHOG):
             email.send_email_over_smtp(
                 recipient_address,
                 self.subscription.notification_type,
                 self.event_context,
                 email_context
             )
-        elif protocol_type == 'email':
+
+        if not osf_settings.LOCAL_MODE:
             email.send_email_with_send_grid(
                 recipient_address,
                 self.subscription.notification_type,
                 self.event_context,
                 email_context
             )
-        else:
-            raise NotImplementedError(f'protocol `{protocol_type}` is not supported.')
+
+        if osf_settings.LOCAL_MODE and not waffle.switch_is_active(features.ENABLE_MAILHOG):
+            logging.warning(
+                'Both ENABLE_MAILHOG and LOCAL_MODE are disabled. Emails will not be sent to MailHog or real email addresses. '
+                'Turn on ENABLE_MAILHOG to send emails to MailHog for testing, or turn on LOCAL_MODE to send emails with SendGrid.'
+            )
 
         if save:
             self.mark_sent()
