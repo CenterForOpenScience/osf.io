@@ -16,7 +16,7 @@ from osf.models.files import File, FileVersion, Folder, TrashedFileNode, BaseFil
 from osf.utils import permissions
 from website.files import exceptions
 from website.files import utils as files_utils
-from website.util import api_url_for
+# from website.util import api_url_for
 from website import settings as website_settings
 from addons.osfstorage.settings import DEFAULT_REGION_ID
 from website.util import api_v2_url
@@ -608,12 +608,13 @@ class NodeSettings(BaseNodeSettings, BaseStorageAddon):
         return dict(Region.objects.get(id=self.region_id).waterbutler_settings, **{
             'nid': self.owner._id,
             'rootId': self.root_node._id,
-            'baseUrl': api_url_for(
-                'osfstorage_get_metadata',
-                guid=self.owner._id,
-                _absolute=True,
-                _internal=True
-            ),
+            'baseUrl': f'http://localhost:5000/api/v1/{self.owner._id}/osfstorage/'
+            # 'baseUrl': api_url_for(
+            #     'osfstorage_get_metadata',
+            #     guid=self.owner._id,
+            #     _absolute=True,
+            #     _internal=True
+            # ),
         })
 
     def serialize_waterbutler_credentials(self):
@@ -628,12 +629,13 @@ class NodeSettings(BaseNodeSettings, BaseStorageAddon):
         }
 
         if (metadata['kind'] != 'folder'):
-            url = self.owner.web_url_for(
-                'addon_view_or_download_file',
-                guid=self.owner._id,
-                path=metadata['path'],
-                provider='osfstorage'
-            )
+            url = 'url'
+            # url = self.owner.web_url_for(
+            #     'addon_view_or_download_file',
+            #     guid=self.owner._id,
+            #     path=metadata['path'],
+            #     provider='osfstorage'
+            # )
             params['urls'] = {'view': url, 'download': url + '?action=download'}
 
         self.owner.add_log(

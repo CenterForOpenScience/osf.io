@@ -156,7 +156,7 @@ class FileEvent(Event):
         if self._url is None:
             self._url = furl(
                 self.node.absolute_url,
-                path=self.node.web_url_for('collect_file_trees').split('/')
+                path='localhost:5000/project/<pid>/files/'.split('/')
             )
         return self._url.url
 
