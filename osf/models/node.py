@@ -69,7 +69,6 @@ from website.project.model import NodeUpdateError
 from website.identifiers.tasks import update_doi_metadata_on_change
 from website.identifiers.clients import DataCiteClient
 from osf import features
-from osf.models import DraftNode
 from osf.utils.permissions import (
     ADMIN,
     ADMIN_NODE,
@@ -1514,6 +1513,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
 
         registered.root = None  # Recompute root on save
 
+        from osf.models import DraftNode
         if isinstance(self, DraftNode) and self.is_draft_node_prevented_to_be_changed_to_node():
             # New approach: DraftNode stays as DraftNode
             registered.branched_from_node = False
