@@ -228,6 +228,9 @@ class WaterbutlerAuthView(APIView):
     Authenticate a request and construct a JWT payload for Waterbutler callbacks.
     """
 
+    def get_serializer_class(self):
+        return None
+
     def get(self, request, *args, **kwargs):
 
         print('*' * 100)
@@ -366,9 +369,11 @@ from website.project.decorators import _inject_nodes
 class WaterbutlerLogView(APIView):
 
     parser_classes = [HMACSignedParser]
-
     authentication_classes = []
     permission_classes = []
+
+    def get_serializer_class(self):
+        return None
 
     def put(self, request, *args, **kwargs):
         payload = copy.deepcopy(request.data)

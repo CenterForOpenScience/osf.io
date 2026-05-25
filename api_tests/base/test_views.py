@@ -28,6 +28,7 @@ from api.users.views import (
 )
 from api.registrations.views import RegistrationCallbackView
 from api.wb.views import MoveFileMetadataView, CopyFileMetadataView
+from api.files.views import WaterbutlerAuthView, WaterbutlerLogView
 from rest_framework.permissions import IsAuthenticatedOrReadOnly, IsAuthenticated
 from api.base.permissions import TokenHasScope
 from website.settings import DEBUG_MODE
@@ -75,7 +76,9 @@ class TestApiBaseViews(ApiTestCase):
             ConfirmEmailView,
             ExternalLogin,
             RegistrationCallbackView,
-            SanctionResponseView
+            SanctionResponseView,
+            WaterbutlerAuthView,
+            WaterbutlerLogView,
         ]
 
     def test_root_returns_200(self):
