@@ -2,6 +2,29 @@
 
 We follow the CalVer (https://calver.org/) versioning scheme: YY.MINOR.MICRO.
 
+26.10.0 (2026-05-19)
+===================
+
+- osfmetrics data migration from elasticsearch6 to elasticsearch8
+  - add configuration for osfmetrics with es8 (in parallel with es6)
+  - save new osfmetrics event records and periodic reports in both es6 and es8
+  - add migrate_osfmetrics_6to8 command to copy old data from es6 to es8
+
+26.9.1 (2026-05-15)
+===================
+
+- Hotfix for registrations stuck archiving
+
+26.9.0 (2026-05-07)
+===================
+
+- OSF4I In-progress SSO Project - BE Piece
+
+26.8.2 (2026-05-06)
+===================
+
+- Hotfix to avoid 502 on creating preprint version from rejected version
+
 26.8.1 (2026-04-30)
 ===================
 

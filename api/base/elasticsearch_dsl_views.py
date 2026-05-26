@@ -3,7 +3,7 @@ import abc
 import datetime
 import typing
 
-import elasticsearch_dsl as edsl
+import elasticsearch6_dsl as edsl
 from rest_framework import generics, exceptions as drf_exceptions
 from rest_framework.settings import api_settings as drf_settings
 from api.base.settings.defaults import REPORT_FILENAME_FORMAT
@@ -23,7 +23,7 @@ from api.base.renderers import JSONAPIRenderer
 
 
 class ElasticsearchListView(FilterMixin, JSONAPIBaseView, generics.ListAPIView, abc.ABC):
-    '''abstract view class using `elasticsearch_dsl.Search` as a queryset-analogue
+    '''abstract view class using `elasticsearch6_dsl.Search` as a queryset-analogue
 
     builds a `Search` based on `self.get_default_search()` and the request's
     query parameters for filtering, sorting, and pagination -- fetches only
@@ -36,7 +36,7 @@ class ElasticsearchListView(FilterMixin, JSONAPIBaseView, generics.ListAPIView, 
 
     @abc.abstractmethod
     def get_default_search(self) -> edsl.Search | None:
-        '''the base `elasticsearch_dsl.Search` for this list, based on url path
+        '''the base `elasticsearch6_dsl.Search` for this list, based on url path
 
         (common jsonapi query parameters will be considered automatically)
         '''
@@ -95,7 +95,7 @@ class ElasticsearchListView(FilterMixin, JSONAPIBaseView, generics.ListAPIView, 
     # (filtering handled in-view to reuse logic from FilterMixin)
     filter_backends = ()
 
-    # note: because elasticsearch_dsl.Search supports slicing and gives results when iterated on,
+    # note: because elasticsearch6_dsl.Search supports slicing and gives results when iterated on,
     #       it works fine with default pagination
 
     # override rest_framework.generics.GenericAPIView

@@ -81,7 +81,6 @@ class TestInstiSummaryMonthlyReporter(TestCase):
         reporter = InstitutionalSummaryMonthlyReporter(self._yearmonth)
         reports = list_monthly_reports(reporter)
         self.assertEqual(len(reports), 1)
-
         report = reports[0]
         self.assertEqual(report.institution_id, self._institution._id)
         self.assertEqual(report.user_count, 2)  # _logged_in_user and _active_user

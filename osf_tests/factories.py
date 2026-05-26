@@ -28,6 +28,7 @@ from framework.auth.core import Auth
 from osf import models
 from osf.models.sanctions import Sanction
 from osf.models.storage import PROVIDER_ASSET_NAME_CHOICES
+from osf.models.institution import SSOAvailability
 from osf.utils.names import impute_names_model
 from osf.utils.workflows import (
     DefaultStates,
@@ -258,6 +259,7 @@ class InstitutionFactory(DjangoModelFactory):
     orcid_record_verified_source = ''
     delegation_protocol = ''
     institutional_request_access_enabled = False
+    sso_availability = SSOAvailability.PUBLIC.value
 
     class Meta:
         model = models.Institution

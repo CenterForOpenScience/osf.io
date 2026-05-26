@@ -8,6 +8,8 @@ from osf.metrics import (
     UserSummaryReport,
     PreprintSummaryReport,
 )
+from osf.metrics.reports import PublicItemUsageReport
+from osf.metrics.utils import YearMonth
 from osf.models import PreprintProvider
 
 
@@ -53,10 +55,27 @@ def fake_preprint_counts(days_back):
             ).save()
 
 
+def fake_usage_reports(osfid: str, count: int):
+    _ym = YearMonth.from_date(date.today()).prior()
+    for _months in range(count):
+        PublicItemUsageReport.record(
+            item_osfid=osfid,
+            report_yearmonth=_ym,
+            view_count=(_vc := randint(0, 500)),
+            view_session_count=randint(0, _vc),
+            download_count=(_dc := randint(0, 300)),
+            download_session_count=randint(0, _dc),
+        )
+        _ym = _ym.prior()
+
+
 class Command(BaseCommand):
     def handle(self, *args, **kwargs):
         if not settings.DEBUG:
             raise NotImplementedError('fake_reports requires DEBUG mode')
         fake_user_counts(1000)
         fake_preprint_counts(1000)
+        fake_usage_reports('blarg', 100)
+        fake_usage_reports('blerg', 50)
+        fake_usage_reports('bleg', 50)
         # TODO: more reports
