@@ -1,20 +1,16 @@
 import pytest
-from elasticsearch_metrics.tests.util import djelme_test_backends
 
 from api.base.settings.defaults import API_BASE
 from osf_tests.factories import (
     InstitutionFactory,
     AuthUserFactory,
 )
-from osf.metrics.es8_metrics import MonthlyInstitutionSummaryReportEs8
+from osf.metrics.monthly_reports import MonthlyInstitutionSummaryReport
 
 
+@pytest.mark.djelme_elasticsearch_backends
 @pytest.mark.django_db
 class TestInstitutionSummaryMetricsList:
-    @pytest.fixture(autouse=True)
-    def _real_elastic(self):
-        with djelme_test_backends():
-            yield
 
     @pytest.fixture()
     def institution(self):
@@ -89,7 +85,7 @@ class TestInstitutionSummaryMetricsList:
         assert resp.json['meta'] == {'version': '2.0'}
 
     def test_get_report(self, app, url, institutional_admin, institution, reports, unshown_reports):
-        MonthlyInstitutionSummaryReportEs8.refresh()
+        MonthlyInstitutionSummaryReport.refresh()
         resp = app.get(url, auth=institutional_admin.auth)
         assert resp.status_code == 200
 
@@ -155,7 +151,7 @@ class TestInstitutionSummaryMetricsList:
             monthly_logged_in_user_count=270,
             monthly_active_user_count=260,
         )
-        MonthlyInstitutionSummaryReportEs8.refresh()
+        MonthlyInstitutionSummaryReport.refresh()
 
         resp = app.get(url, auth=institutional_admin.auth)
         assert resp.status_code == 200
@@ -198,7 +194,7 @@ class TestInstitutionSummaryMetricsList:
             user_count=4133,
             validate=False,
         )
-        MonthlyInstitutionSummaryReportEs8.refresh()
+        MonthlyInstitutionSummaryReport.refresh()
 
         resp = app.get(f'{url}?report_yearmonth=2024-08', auth=institutional_admin.auth)
         assert resp.status_code == 200
@@ -230,7 +226,7 @@ class TestInstitutionSummaryMetricsList:
             user_count=999,
             validate=False,
         )
-        MonthlyInstitutionSummaryReportEs8.refresh()
+        MonthlyInstitutionSummaryReport.refresh()
 
         resp = app.get(url, auth=institutional_admin.auth)
         assert resp.status_code == 200
@@ -240,7 +236,7 @@ class TestInstitutionSummaryMetricsList:
 
 
 def _summary_report_factory(yearmonth, institution, *, validate=True, **kwargs):
-    report = MonthlyInstitutionSummaryReportEs8(
+    report = MonthlyInstitutionSummaryReport(
         report_yearmonth=yearmonth,
         institution_id=institution._id,
         **kwargs,

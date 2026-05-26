@@ -5,10 +5,8 @@ import typing
 from elasticsearch8 import dsl as esdsl
 
 from osf.metadata.osf_gathering import OsfmapPartition
-from osf.metrics.es8_metrics import (
-    MonthlyPublicItemUsageReportEs8,
-    OsfCountedUsageEvent,
-)
+from osf.metrics.monthly_reports import MonthlyPublicItemUsageReport
+from osf.metrics.events import OsfCountedUsageEvent
 from osf.metrics.utils import YearMonth, cycle_coverage_yearmonth
 from ._base import MonthlyReporter
 
@@ -35,9 +33,9 @@ class PublicItemUsageReporter(MonthlyReporter):
     def report(self, **report_kwargs):
         _item_iri = report_kwargs['item_iri']
         try:
-            return [self._build_report(_item_iri)]
+            yield self._build_report(_item_iri)
         except _SkipItem:
-            return []
+            pass
 
     def followup_task(self, report):
         _last_month = YearMonth.from_date(datetime.date.today()).prior()
@@ -62,7 +60,7 @@ class PublicItemUsageReporter(MonthlyReporter):
         )
         return _iter_composite_bucket_keys(_search, 'agg_item_iri', 'item_iri', after=after_item_iri)
 
-    def _build_report(self, item_iri) -> MonthlyPublicItemUsageReportEs8:
+    def _build_report(self, item_iri) -> MonthlyPublicItemUsageReport:
         # get usage metrics from OsfCountedUsageEvent:
         #   - views of the item and its components and files (matching `within_iris`)
         #   - downloads for each item (matching `item_iri`)
@@ -71,7 +69,7 @@ class PublicItemUsageReporter(MonthlyReporter):
         _views_bucket = _response.aggregations.agg_by_label.buckets.views
         _downloads_bucket = _response.aggregations.agg_by_label.buckets.downloads
         _fields_agg = _response.aggregations.agg_for_terms
-        _report = MonthlyPublicItemUsageReportEs8(
+        _report = MonthlyPublicItemUsageReport(
             report_yearmonth=self.yearmonth,
             item_iri=item_iri,
             item_osfids=_bucket_keys(_fields_agg.item_osfids.buckets),
@@ -150,7 +148,7 @@ class PublicItemUsageReporter(MonthlyReporter):
 
     def _prior_usage_report(self, item_iri):
         _search = (
-            MonthlyPublicItemUsageReportEs8.search()
+            MonthlyPublicItemUsageReport.search()
             .filter('term', item_iri=item_iri)
             .filter('range', cycle_coverage={
                 'lt': cycle_coverage_yearmonth(self.yearmonth),

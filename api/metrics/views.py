@@ -4,12 +4,11 @@ import logging
 from enum import Enum
 
 from django.http import JsonResponse, HttpResponse, Http404
-
+from elasticsearch8.exceptions import ApiError as Es8ApiError
 from elasticsearch_metrics.registry import djelme_registry
 
 from framework.auth.oauth_scopes import CoreScopes
 
-from rest_framework.exceptions import ValidationError
 from rest_framework import permissions as drf_permissions
 from rest_framework.response import Response
 from rest_framework.generics import GenericAPIView
@@ -43,20 +42,24 @@ from api.metrics.utils import (
 from api.nodes.permissions import MustBePublic
 
 from osf.features import ENABLE_RAW_METRICS
-from osf.metrics.es8_metrics import (
-    BaseDailyReport,
-    BaseMonthlyReport,
+from osf.metrics.events import (
     OsfCountedUsageEvent,
-    RegistriesModerationEventEs8,
-    DailyDownloadCountReportEs8,
-    DailyInstitutionSummaryReportEs8,
-    DailyNodeSummaryReportEs8,
-    DailyOsfstorageFileCountReportEs8,
-    DailyPreprintSummaryReportEs8,
-    DailyStorageAddonUsageReportEs8,
-    DailyUserSummaryReportEs8,
-    DailyNewUserDomainReportEs8,
-    MonthlySpamSummaryReportEs8,
+    RegistriesModerationEvent,
+)
+from osf.metrics.daily_reports import (
+    BaseDailyReport,
+    DailyDownloadCountReport,
+    DailyInstitutionSummaryReport,
+    DailyNodeSummaryReport,
+    DailyOsfstorageFileCountReport,
+    DailyPreprintSummaryReport,
+    DailyStorageAddonUsageReport,
+    DailyUserSummaryReport,
+    DailyNewUserDomainReport,
+)
+from osf.metrics.monthly_reports import (
+    BaseMonthlyReport,
+    MonthlySpamSummaryReport,
 )
 from osf.metrics.openapi import get_metrics_openapi_json_dict
 from osf.models import AbstractNode
@@ -67,15 +70,15 @@ logger = logging.getLogger(__name__)
 
 
 VIEWABLE_REPORTS = {
-    'download_count': DailyDownloadCountReportEs8,
-    'institution_summary': DailyInstitutionSummaryReportEs8,
-    'node_summary': DailyNodeSummaryReportEs8,
-    'osfstorage_file_count': DailyOsfstorageFileCountReportEs8,
-    'preprint_summary': DailyPreprintSummaryReportEs8,
-    'storage_addon_usage': DailyStorageAddonUsageReportEs8,
-    'user_summary': DailyUserSummaryReportEs8,
-    'spam_summary': MonthlySpamSummaryReportEs8,
-    'new_user_domains': DailyNewUserDomainReportEs8,
+    'download_count': DailyDownloadCountReport,
+    'institution_summary': DailyInstitutionSummaryReport,
+    'node_summary': DailyNodeSummaryReport,
+    'osfstorage_file_count': DailyOsfstorageFileCountReport,
+    'preprint_summary': DailyPreprintSummaryReport,
+    'storage_addon_usage': DailyStorageAddonUsageReport,
+    'user_summary': DailyUserSummaryReport,
+    'spam_summary': MonthlySpamSummaryReport,
+    'new_user_domains': DailyNewUserDomainReport,
 }
 
 
@@ -96,46 +99,58 @@ class RawMetricsView(GenericAPIView):
     serializer_class = RawMetricsSerializer
 
     @require_switch(ENABLE_RAW_METRICS)
-    def delete(self, request, *args, **kwargs):
-        raise ValidationError('DELETE not supported. Use GET/POST/PUT')
-
-    @require_switch(ENABLE_RAW_METRICS)
     def get(self, request, *args, djelme_backend_name, url_path, **kwargs):
-        _response_body = self._do_es_request(
+        return self._do_es_request(
+            request,
             djelme_backend_name,
             method='GET',
             path=url_path,
-            qp=request.GET,
         )
-        return JsonResponse(_response_body)
 
     @require_switch(ENABLE_RAW_METRICS)
     def post(self, request, *args, djelme_backend_name, url_path, **kwargs):
-        _response_body = self._do_es_request(
+        return self._do_es_request(
+            request,
             djelme_backend_name,
             method='POST',
             path=url_path,
-            qp=request.GET,
-            body=json.loads(request.body),
         )
-        return JsonResponse(_response_body)
 
     @require_switch(ENABLE_RAW_METRICS)
     def put(self, request, *args, djelme_backend_name, url_path, **kwargs):
-        _response_body = self._do_es_request(
+        return self._do_es_request(
+            request,
             djelme_backend_name,
             method='PUT',
             path=url_path,
-            qp=request.GET,
-            body=json.loads(request.body),
         )
-        return JsonResponse(_response_body)
 
-    def _do_es_request(self, djelme_backend_name, method, path, qp, body=None):
+    def _do_es_request(self, django_request, djelme_backend_name, method, path):
         _client = self._get_es_client(djelme_backend_name)
-        _perform_fn = getattr(_client, 'perform_request', None) or _client.transport.perform_request
-        _response = _perform_fn(method, f'/{path}', params=qp.dict(), body=body)
-        return _response if isinstance(_response, dict) else _response.body
+        _body = (
+            json.loads(django_request.body)
+            if django_request.body else None
+        )
+        _content_type = django_request.headers.get('Content-Type')
+        _headers = (
+            {'Content-Type': _content_type, 'Accept': 'application/json'}
+            if _content_type else None
+        )
+        try:
+            _response = _client.perform_request(
+                method,
+                f'/{path}',
+                params=django_request.GET.dict(),
+                body=_body,
+                headers=_headers,
+            )
+        except Es8ApiError as _api_error:
+            return HttpResponse(
+                str(_api_error),
+                content_type='text/plain; charset=utf-8',
+                status=_api_error.status_code,
+            )
+        return JsonResponse(_response.body)
 
     def _get_es_client(self, djelme_backend_name):
         try:
@@ -160,7 +175,7 @@ class RegistriesModerationMetricsView(GenericAPIView):
     view_name = 'raw-metrics-view'
 
     def get(self, request, *args, **kwargs):
-        _search = RegistriesModerationEventEs8.search().update_from_dict(self._build_es_query())
+        _search = RegistriesModerationEvent.search().update_from_dict(self._build_es_query())
         _search_response = _search.execute()
         _providers_agg_json = (
             _search_response.aggregations['providers'].to_dict()

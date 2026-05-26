@@ -4,12 +4,11 @@ from django.db.models import Q, F, Sum, OuterRef, Exists
 from osf.models import Institution, Preprint, AbstractNode, FileVersion, NodeLog, PreprintLog
 from osf.models.spam import SpamStatus
 from addons.osfstorage.models import OsfStorageFile
-from osf.metrics.reports import InstitutionMonthlySummaryReport
-from osf.metrics.es8_metrics import MonthlyInstitutionSummaryReportEs8
+from osf.metrics.monthly_reports import MonthlyInstitutionSummaryReport
 from ._base import MonthlyReporter
 
 class InstitutionalSummaryMonthlyReporter(MonthlyReporter):
-    """Generate an InstitutionMonthlySummaryReport for each institution."""
+    """Generate a MonthlyInstitutionSummaryReport for each institution."""
 
     def iter_report_kwargs(self, continue_after: dict | None = None):
         _inst_qs = Institution.objects.order_by('pk')
@@ -19,21 +18,15 @@ class InstitutionalSummaryMonthlyReporter(MonthlyReporter):
             yield {'institution_pk': _pk}
 
     def report(self, **report_kwargs):
-        _institution = Institution.objects.get(pk=report_kwargs['institution_pk'])
-        reports = self.generate_report(_institution)
-        return reports
-
-    def generate_report(self, institution):
+        institution = Institution.objects.get(pk=report_kwargs['institution_pk'])
         node_queryset = institution.nodes.filter(
             deleted__isnull=True,
             created__lt=self.yearmonth.month_end()
         ).exclude(
             spam_status=SpamStatus.SPAM,
         )
-
         preprint_queryset = self.get_published_preprints(institution, self.yearmonth)
-        reports = []
-        report_es8 = MonthlyInstitutionSummaryReportEs8(
+        yield MonthlyInstitutionSummaryReport(
             report_yearmonth=self.yearmonth,
             institution_id=institution._id,
             user_count=institution.get_institution_users().count(),
@@ -47,23 +40,6 @@ class InstitutionalSummaryMonthlyReporter(MonthlyReporter):
             monthly_logged_in_user_count=self.get_monthly_logged_in_user_count(institution, self.yearmonth),
             monthly_active_user_count=self.get_monthly_active_user_count(institution, self.yearmonth),
         )
-        reports.append(report_es8)
-
-        report = InstitutionMonthlySummaryReport(
-            institution_id=report_es8.institution_id,
-            user_count=report_es8.user_count,
-            private_project_count=report_es8.private_project_count,
-            public_project_count=report_es8.public_project_count,
-            public_registration_count=report_es8.public_registration_count,
-            embargoed_registration_count=report_es8.embargoed_registration_count,
-            published_preprint_count=report_es8.published_preprint_count,
-            storage_byte_count=report_es8.storage_byte_count,
-            public_file_count=report_es8.public_file_count,
-            monthly_logged_in_user_count=report_es8.monthly_logged_in_user_count,
-            monthly_active_user_count=report_es8.monthly_active_user_count,
-        )
-        reports.append(report)
-        return reports
 
     def _get_count(self, node_queryset, node_type, is_public):
         return node_queryset.filter(type=node_type, is_public=is_public, root_id=F('pk')).count()

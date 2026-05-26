@@ -11,12 +11,12 @@ import rdflib
 
 from api.caching.tasks import get_storage_usage_total
 from osf import models as osfdb
+from osf.models.base import osfid_iri
 from osf.metadata import gather
 from osf.metadata.definitions.datacite import DATACITE_RESOURCE_TYPES_GENERAL
 from osf.metadata.osfmap_utils import (
     osfmap_type,
     is_osf_component,
-    osfid_from_iri,
 )
 from osf.metadata.rdfutils import (
     DATACITE,
@@ -37,7 +37,7 @@ from osf.metadata.rdfutils import (
     format_dcterms_extent,
     smells_like_iri,
 )
-from osf.metrics.reports import PublicItemUsageReport
+from osf.metrics.monthly_reports import MonthlyPublicItemUsageReport
 from osf.metrics.utils import YearMonth
 from osf.utils import (
     workflows as osfworkflows,
@@ -1085,22 +1085,33 @@ def gather_cedar_templates(focus):
 
 @gather.er(OSF.usage)
 def gather_last_month_usage(focus):
-    _usage_report = PublicItemUsageReport.for_last_month(
-        item_osfid=osfid_from_iri(focus.iri),
-    )
-    if _usage_report is not None:
+    _item_iris = [focus.iri]
+    # items with versioned osfids may have a separate usage report for each version,
+    # but this metadata is gathered for the unversioned osfid -- add counts together
+    if hasattr(focus.dbmodel, 'versioned_guids'):
+        _item_iris.extend(
+            osfid_iri(_vg.versioned_osfid())
+            for _vg in focus.dbmodel.versioned_guids.all()
+        )
+    _usage_reports = MonthlyPublicItemUsageReport.from_last_month(_item_iris)
+    if _usage_reports:
+        def _sum_usage(report_attr_name):
+            return sum(
+                getattr(_usage_report, report_attr_name)
+                for _usage_report in _usage_reports
+            )
         _usage_report_ref = rdflib.BNode()
         yield (OSF.usage, _usage_report_ref)
         yield (_usage_report_ref, DCAT.accessService, rdflib.URIRef(website_settings.DOMAIN.rstrip('/')))
         yield (_usage_report_ref, FOAF.primaryTopic, focus.iri)
         yield (_usage_report_ref, DCTERMS.temporal, rdflib.Literal(
-            str(_usage_report.report_yearmonth),
+            str(_usage_reports[0].report_yearmonth),
             datatype=rdflib.XSD.gYearMonth,
         ))
-        yield (_usage_report_ref, OSF.viewCount, _usage_report.view_count)
-        yield (_usage_report_ref, OSF.viewSessionCount, _usage_report.view_session_count)
-        yield (_usage_report_ref, OSF.downloadCount, _usage_report.download_count)
-        yield (_usage_report_ref, OSF.downloadSessionCount, _usage_report.download_session_count)
+        yield (_usage_report_ref, OSF.viewCount, _sum_usage('view_count'))
+        yield (_usage_report_ref, OSF.viewSessionCount, _sum_usage('view_session_count'))
+        yield (_usage_report_ref, OSF.downloadCount, _sum_usage('download_count'))
+        yield (_usage_report_ref, OSF.downloadSessionCount, _sum_usage('download_session_count'))
 
 
 @gather.er(OSF.hasOsfAddon)

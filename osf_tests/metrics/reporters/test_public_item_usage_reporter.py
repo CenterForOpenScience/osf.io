@@ -7,10 +7,8 @@ from django.test import TestCase
 from elasticsearch_metrics.tests.util import RealElasticTestCase
 
 from osf.metadata.rdfutils import OSF
-from osf.metrics.es8_metrics import (
-    OsfCountedUsageEvent,
-    MonthlyPublicItemUsageReportEs8,
-)
+from osf.metrics.events import OsfCountedUsageEvent
+from osf.metrics.monthly_reports import MonthlyPublicItemUsageReport
 from osf.metrics.reporters.public_item_usage import PublicItemUsageReporter
 from osf.metrics.utils import YearMonth
 from osf_tests import factories
@@ -121,7 +119,7 @@ class TestPublicItemUsageReporter(RealElasticTestCase, TestCase):
                 )
         # plus prior report with cumulative counts:
         # 4 views, 3 view sessions, 2 downloads, 1 download session
-        MonthlyPublicItemUsageReportEs8.record(
+        MonthlyPublicItemUsageReport.record(
             report_yearmonth=self.ym_busy.prior(),
             item_iri='http://osf.example/item0_v1',
             item_osfids=['item0_v1'],
@@ -202,7 +200,7 @@ class TestPublicItemUsageReporter(RealElasticTestCase, TestCase):
         assert len(_sparse) == 3
         _sparse_item0, _sparse_item1, _sparse_item2 = sorted(_sparse, key=attrgetter('item_iri'))
         # sparse-month item0
-        assert isinstance(_sparse_item0, MonthlyPublicItemUsageReportEs8)
+        assert isinstance(_sparse_item0, MonthlyPublicItemUsageReport)
         assert _sparse_item0.item_iri == 'http://osf.example/item0_v1'
         assert _sparse_item0.item_osfids == ['item0_v1']
         assert _sparse_item0.provider_ids == [self.item0.provider._id]
@@ -216,7 +214,7 @@ class TestPublicItemUsageReporter(RealElasticTestCase, TestCase):
         assert _sparse_item0.cumulative_download_count == 0
         assert _sparse_item0.cumulative_download_session_count == 0
         # sparse-month item1
-        assert isinstance(_sparse_item1, MonthlyPublicItemUsageReportEs8)
+        assert isinstance(_sparse_item1, MonthlyPublicItemUsageReport)
         assert _sparse_item1.item_iri == 'http://osf.example/item1'
         assert _sparse_item1.item_osfids == ['item1']
         assert _sparse_item1.provider_ids == ['osf']
@@ -230,7 +228,7 @@ class TestPublicItemUsageReporter(RealElasticTestCase, TestCase):
         assert _sparse_item1.cumulative_download_count == 1
         assert _sparse_item1.cumulative_download_session_count == 1
         # sparse-month item2
-        assert isinstance(_sparse_item1, MonthlyPublicItemUsageReportEs8)
+        assert isinstance(_sparse_item1, MonthlyPublicItemUsageReport)
         assert _sparse_item2.item_iri == 'http://osf.example/item2'
         assert _sparse_item2.item_osfids == ['item2']
         assert _sparse_item2.provider_ids == ['osf']
@@ -248,7 +246,7 @@ class TestPublicItemUsageReporter(RealElasticTestCase, TestCase):
         assert len(_busy) == 3
         _busy_item0, _busy_item1, _busy_item2 = sorted(_busy, key=attrgetter('item_iri'))
         # busy-month item0 (plus prior-month report)
-        assert isinstance(_busy_item0, MonthlyPublicItemUsageReportEs8)
+        assert isinstance(_busy_item0, MonthlyPublicItemUsageReport)
         assert _busy_item0.item_iri == 'http://osf.example/item0_v1'
         assert _busy_item0.item_osfids == ['item0_v1']
         assert _busy_item0.provider_ids == [self.item0.provider._id]
@@ -263,7 +261,7 @@ class TestPublicItemUsageReporter(RealElasticTestCase, TestCase):
         assert _busy_item0.cumulative_download_count == (4 * 5) + 2
         assert _busy_item0.cumulative_download_session_count == 4 + 1
         # busy-month item1
-        assert isinstance(_busy_item1, MonthlyPublicItemUsageReportEs8)
+        assert isinstance(_busy_item1, MonthlyPublicItemUsageReport)
         assert _busy_item1.item_iri == 'http://osf.example/item1'
         assert _busy_item1.item_osfids == ['item1']
         assert _busy_item1.provider_ids == ['osf']
@@ -277,7 +275,7 @@ class TestPublicItemUsageReporter(RealElasticTestCase, TestCase):
         assert _busy_item1.cumulative_download_count == 5 * 7
         assert _busy_item1.cumulative_download_session_count == 5
         # busy-month item2
-        assert isinstance(_busy_item2, MonthlyPublicItemUsageReportEs8)
+        assert isinstance(_busy_item2, MonthlyPublicItemUsageReport)
         assert _busy_item2.item_iri == 'http://osf.example/item2'
         assert _busy_item2.item_osfids == ['item2']
         assert _busy_item2.provider_ids == ['osf']

@@ -1,22 +1,14 @@
 import datetime
 
-from elasticsearch_metrics.tests.util import djelme_test_backends
-import pytest
+from django.test import TestCase
+from elasticsearch_metrics.tests.util import RealElasticTestCase
 
-from osf.metrics.es8_metrics import (
-    PageviewInfo,
-    DailyDownloadCountReportEs8,
-    OsfCountedUsageEvent,
-)
+from osf.metrics.daily_reports import DailyDownloadCountReport
+from osf.metrics.events import OsfCountedUsageEvent
 
 
-class TestEs8Metrics:
+class TestEs8Metrics(RealElasticTestCase, TestCase):
     """smoke tests to check that djelme records can be saved and searched"""
-
-    @pytest.fixture(autouse=True)
-    def _real_elastic(self):
-        with djelme_test_backends():
-            yield
 
     def test_nested_pageview_autofill(self):
         usage = OsfCountedUsageEvent.record(
@@ -29,12 +21,12 @@ class TestEs8Metrics:
             item_type='Preprint',
             platform_iri='https://osf.example',
             user_is_authenticated=False,
-            pageview_info=PageviewInfo(
-                page_url='https://example.com/path/test',
-                referer_url='https://google.com',
-                route_name='foo.bar',
-                page_title='title title',
-            ),
+            pageview_info={
+                'page_url': 'https://example.com/path/test',
+                'referer_url': 'https://google.com',
+                'route_name': 'foo.bar',
+                'page_title': 'title title',
+            },
         )
         assert usage.pageview_info.page_path == '/path/test'
         assert usage.pageview_info.referer_domain == 'google.com'
@@ -80,12 +72,12 @@ class TestEs8Metrics:
         assert usage.item_iri in usage.within_iris
 
     def test_save_report(self):
-        _saved = DailyDownloadCountReportEs8.record(
+        _saved = DailyDownloadCountReport.record(
             cycle_coverage='2026.1.1',
             daily_file_downloads=17,
         )
-        DailyDownloadCountReportEs8.refresh()
-        _response = DailyDownloadCountReportEs8.search().execute()
+        DailyDownloadCountReport.refresh()
+        _response = DailyDownloadCountReport.search().execute()
         (_fetched,) = _response
         assert _fetched.meta.id == _saved.meta.id
         assert _fetched.cycle_coverage == '2026.1.1'

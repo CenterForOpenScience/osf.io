@@ -8,7 +8,6 @@ permissions:
 env:
   WHEELHOUSE: ~/.cache/wheelhouse
   ELASTICSEARCH_ARCHIVE: elasticsearch-2.4.5.tar.gz
-  ELASTICSEARCH6_ARCHIVE: elasticsearch-6.3.1.tar.gz
   OSF_DB_PORT: 5432
   OSF_DB_PASSWORD: postgres
   GITHUB_ACTIONS: true
@@ -140,6 +139,8 @@ jobs:
     - uses: ./.github/actions/start-build
     - name: Run tests
       run: poetry run python3 -m invoke test-ci-api3-and-osf --junit
+      env:
+        ELASTIC8_URI: http://localhost:9202
     - name: Upload report
       if: (success() || failure())    # run this step even if previous step failed
       uses: ./.github/actions/gen-report

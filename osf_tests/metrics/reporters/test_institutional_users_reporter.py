@@ -75,19 +75,19 @@ class TestInstiUsersReporter(TestCase):
     def test_one_user_with_nothing(self):
         self._user_setup_with_nothing.affiliate_user()
         _reports = list_monthly_reports(InstitutionalUsersReporter(self._yearmonth))
-        self.assertEqual(len(_reports), 2)
+        self.assertEqual(len(_reports), 1)
         self._assert_report_matches_setup(_reports[0], self._user_setup_with_nothing)
 
     def test_one_user_with_ones(self):
         self._user_setup_with_ones.affiliate_user()
         _reports = list_monthly_reports(InstitutionalUsersReporter(self._yearmonth))
-        self.assertEqual(len(_reports), 2)
+        self.assertEqual(len(_reports), 1)
         self._assert_report_matches_setup(_reports[0], self._user_setup_with_ones)
 
     def test_one_user_with_stuff_and_no_files(self):
         self._user_setup_with_stuff.affiliate_user()
         _reports = list_monthly_reports(InstitutionalUsersReporter(self._yearmonth))
-        self.assertEqual(len(_reports), 2)
+        self.assertEqual(len(_reports), 1)
         self._assert_report_matches_setup(_reports[0], self._user_setup_with_stuff)
         self.assertEqual(_reports[0].public_file_count, 2)  # preprint 2 files
         self.assertEqual(_reports[0].storage_byte_count, 2674)  # preprint bytes
@@ -99,7 +99,7 @@ class TestInstiUsersReporter(TestCase):
         with _patch_now(self._now):
             create_test_file(target=_project, user=_user, size=37)
         _reports = list_monthly_reports(InstitutionalUsersReporter(self._yearmonth))
-        self.assertEqual(len(_reports), 2)
+        self.assertEqual(len(_reports), 1)
         for _report in _reports:
             self._assert_report_matches_setup(_report, self._user_setup_with_stuff)
             self.assertEqual(_report.public_file_count, 3)  # 2 preprint files
@@ -118,7 +118,7 @@ class TestInstiUsersReporter(TestCase):
             create_test_file(target=_component, user=_user, size=51, filename='blar')
             create_test_file(target=_component, user=_user, size=47, filename='blarg')
         _reports = list_monthly_reports(InstitutionalUsersReporter(self._yearmonth))
-        self.assertEqual(len(_reports), 2)
+        self.assertEqual(len(_reports), 1)
         for _report in _reports:
             self._assert_report_matches_setup(_report, self._user_setup_with_stuff)
             self.assertEqual(_report.public_file_count, 7)  # 2 preprint files
@@ -137,7 +137,7 @@ class TestInstiUsersReporter(TestCase):
             for _setup in _setups
         }
         _reports = list_monthly_reports(InstitutionalUsersReporter(self._yearmonth))
-        self.assertEqual(len(_reports), 2 * len(_setup_by_userid))
+        self.assertEqual(len(_reports), len(_setup_by_userid))
         for _actual_report in _reports:
             _setup = _setup_by_userid[_actual_report.user_id]
             self._assert_report_matches_setup(_actual_report, _setup)

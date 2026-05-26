@@ -3,10 +3,8 @@ import waffle
 
 from api.base.exceptions import InvalidQueryStringError
 from osf import features
-from osf.metrics.es8_metrics import (
-    OsfCountedUsageEvent,
-    MonthlyPublicItemUsageReportEs8,
-)
+from osf.metrics.events import OsfCountedUsageEvent
+from osf.metrics.monthly_reports import MonthlyPublicItemUsageReport
 from osf.models.base import osfid_iri
 
 
@@ -104,7 +102,7 @@ class UsageMetricsViewMixin(abc.ABC):
 
     def _get_latest_usage_report(self, item_iri):
         _search = (
-            MonthlyPublicItemUsageReportEs8.search()
+            MonthlyPublicItemUsageReport.search()
             .filter('term', item_iri=item_iri)
             .sort('-cycle_coverage')
         )

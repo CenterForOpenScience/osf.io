@@ -1,23 +1,12 @@
 import pytest
-from elasticsearch_metrics.tests.util import djelme_test_backends
-from waffle.testutils import override_switch
 
-from osf import features
 from osf_tests.factories import RegistrationFactory, AuthUserFactory
 from osf.utils.workflows import RegistrationModerationStates, RegistrationModerationTriggers
-from osf.metrics.es8_metrics import RegistriesModerationEventEs8
+from osf.metrics.events import RegistriesModerationEvent
 from tests.utils import capture_notifications
 
 
-@pytest.fixture
-def real_elastic():
-    with (
-        override_switch(features.ELASTICSEARCH_METRICS, active=True),
-        djelme_test_backends(),
-    ):
-        yield
-
-
+@pytest.mark.djelme_elasticsearch_backends
 @pytest.mark.django_db
 class TestRegistrationModerationMetrics:
 
@@ -25,7 +14,7 @@ class TestRegistrationModerationMetrics:
     def registration(self):
         return RegistrationFactory()
 
-    def test_record_transitions(self, registration, real_elastic):
+    def test_record_transitions(self, registration):
         with capture_notifications():
             registration._write_registration_action(
                 RegistrationModerationStates.INITIAL,
@@ -33,10 +22,10 @@ class TestRegistrationModerationMetrics:
                 registration.creator,
                 'Metrics is easy'
             )
-        RegistriesModerationEventEs8.refresh()
+        RegistriesModerationEvent.refresh()
 
-        assert RegistriesModerationEventEs8.search().count() == 1
-        data = RegistriesModerationEventEs8.search().execute()['hits']['hits'][0]['_source']
+        assert RegistriesModerationEvent.search().count() == 1
+        data = RegistriesModerationEvent.search().execute()['hits']['hits'][0]['_source']
 
         assert data['from_state'] == RegistrationModerationStates.INITIAL.db_name
         assert data['to_state'] == RegistrationModerationStates.PENDING.db_name
@@ -45,6 +34,7 @@ class TestRegistrationModerationMetrics:
         assert data['comment'] == 'Metrics is easy'
 
 
+@pytest.mark.djelme_elasticsearch_backends
 @pytest.mark.django_db
 class TestRegistrationModerationMetricsView:
 
@@ -68,7 +58,7 @@ class TestRegistrationModerationMetricsView:
     def base_url(self):
         return '/_/metrics/registries_moderation/transitions/'
 
-    def test_registries_moderation_view(self, app, user, base_url, registration, real_elastic):
+    def test_registries_moderation_view(self, app, user, base_url, registration):
         with capture_notifications():
             registration._write_registration_action(
                 RegistrationModerationStates.INITIAL,
@@ -76,7 +66,7 @@ class TestRegistrationModerationMetricsView:
                 registration.creator,
                 'Metrics is easy'
             )
-        RegistriesModerationEventEs8.refresh()
+        RegistriesModerationEvent.refresh()
 
         res = app.get(base_url, auth=user.auth, expect_errors=True)
         data = res.json

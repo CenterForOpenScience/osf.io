@@ -1,24 +1,19 @@
 import datetime
 
 import pytest
-from elasticsearch_metrics.tests.util import djelme_test_backends
 
 from api.base.settings.defaults import API_BASE, DEFAULT_ES_NULL_VALUE
 from osf_tests.factories import (
     InstitutionFactory,
     AuthUserFactory,
 )
-from osf.metrics.es8_metrics import MonthlyInstitutionalUserReportEs8
+from osf.metrics.monthly_reports import MonthlyInstitutionalUserReport
 from osf.metrics.utils import YearMonth
 
 
+@pytest.mark.djelme_elasticsearch_backends
 @pytest.mark.django_db
 class TestInstitutionDepartmentList:
-
-    @pytest.fixture(autouse=True)
-    def _real_elastic(self):
-        with djelme_test_backends():
-            yield
 
     @pytest.fixture()
     def institution(self):
@@ -43,7 +38,7 @@ class TestInstitutionDepartmentList:
     @pytest.fixture()
     def populate_counts(self, user, user2, user3, user4, admin, institution):
         # This represents a Department that had a user, but no longer has any users, so does not appear in results.
-        MonthlyInstitutionalUserReportEs8(
+        MonthlyInstitutionalUserReport(
             report_yearmonth=YearMonth(2017, 2),
             user_id=user._id,
             institution_id=institution._id,
@@ -55,7 +50,7 @@ class TestInstitutionDepartmentList:
         _this_month = YearMonth.from_date(datetime.date.today())
 
         # The user has left the department
-        MonthlyInstitutionalUserReportEs8(
+        MonthlyInstitutionalUserReport(
             report_yearmonth=_this_month,
             user_id=user._id,
             institution_id=institution._id,
@@ -65,7 +60,7 @@ class TestInstitutionDepartmentList:
         ).save(validate=False)
 
         # A second user entered the department
-        MonthlyInstitutionalUserReportEs8(
+        MonthlyInstitutionalUserReport(
             report_yearmonth=_this_month,
             user_id=user2._id,
             institution_id=institution._id,
@@ -75,7 +70,7 @@ class TestInstitutionDepartmentList:
         ).save(validate=False)
 
         # A new department with a single user to test sorting
-        MonthlyInstitutionalUserReportEs8(
+        MonthlyInstitutionalUserReport(
             report_yearmonth=_this_month,
             user_id=user3._id,
             institution_id=institution._id,
@@ -85,7 +80,7 @@ class TestInstitutionDepartmentList:
         ).save(validate=False)
 
         # A user with no department
-        MonthlyInstitutionalUserReportEs8(
+        MonthlyInstitutionalUserReport(
             report_yearmonth=_this_month,
             user_id=user4._id,
             institution_id=institution._id,
@@ -119,7 +114,7 @@ class TestInstitutionDepartmentList:
         assert resp.json['data'] == []
 
     def test_get(self, app, url, admin, institution, populate_counts):
-        MonthlyInstitutionalUserReportEs8.refresh()
+        MonthlyInstitutionalUserReport.refresh()
         resp = app.get(url, auth=admin.auth)
 
         assert resp.json['data'] == [{

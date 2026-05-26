@@ -4,7 +4,6 @@ import os
 import re
 
 from django.db import transaction
-from elasticsearch6_dsl.connections import connections
 from elasticsearch_metrics.tests.util import djelme_test_backends
 from faker import Factory
 import pytest
@@ -129,22 +128,12 @@ def _test_speedups_disable(request, settings, _test_speedups):
         patcher.start()
 
 
-@pytest.fixture(scope='session')
-def setup_connections():
-    connections.create_connection(hosts=[website_settings.ELASTIC6_URI])
-
-
-@pytest.fixture(scope='function')
-def es6_client(setup_connections):
-    return connections.get_connection()
-
-
 @pytest.fixture(scope='function', autouse=True)
-def _es_metrics_marker(request):
+def _djelme_elasticsearch_backends_marker(request):
     """Clear out all indices and index templates before and after
-    tests marked with `es_metrics`.
+    tests marked with `djelme_elasticsearch_backends`.
     """
-    marker = request.node.get_closest_marker('es_metrics')
+    marker = request.node.get_closest_marker('djelme_elasticsearch_backends')
 
     if not marker:
         yield

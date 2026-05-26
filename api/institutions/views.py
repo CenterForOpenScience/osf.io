@@ -10,9 +10,9 @@ from rest_framework.settings import api_settings
 from framework.auth.oauth_scopes import CoreScopes
 
 from osf.models import OSFUser, Node, Institution, Registration
-from osf.metrics.es8_metrics import (
-    MonthlyInstitutionalUserReportEs8,
-    MonthlyInstitutionSummaryReportEs8,
+from osf.metrics.monthly_reports import (
+    MonthlyInstitutionalUserReport,
+    MonthlyInstitutionSummaryReport,
 )
 from osf.metrics.utils import YearMonth, cycle_coverage_yearmonth
 from osf.utils import permissions as osf_permissions
@@ -415,10 +415,10 @@ class InstitutionDepartmentList(InstitutionMixin, ElasticsearchListView):
 
     def get_default_search(self):
         _base_search = (
-            MonthlyInstitutionalUserReportEs8.search()
+            MonthlyInstitutionalUserReport.search()
             .filter('term', institution_id=self.get_institution()._id)
         )
-        _most_recent_cycle = MonthlyInstitutionalUserReportEs8.most_recent_cycle(_base_search)
+        _most_recent_cycle = MonthlyInstitutionalUserReport.most_recent_cycle(_base_search)
         if _most_recent_cycle is None:
             return None
         _search = (
@@ -487,10 +487,10 @@ class InstitutionUserMetricsList(InstitutionMixin, ElasticsearchListView):
 
     def get_default_search(self):
         _base_search = (
-            MonthlyInstitutionalUserReportEs8.search()
+            MonthlyInstitutionalUserReport.search()
             .filter('term', institution_id=self.get_institution()._id)
         )
-        _most_recent_cycle = MonthlyInstitutionalUserReportEs8.most_recent_cycle(_base_search)
+        _most_recent_cycle = MonthlyInstitutionalUserReport.most_recent_cycle(_base_search)
         if _most_recent_cycle is None:
             return None
         return (
@@ -530,7 +530,7 @@ class InstitutionSummaryMetricsDetail(JSONAPIBaseView, generics.RetrieveAPIView,
 
     def get_default_search(self):
         _base_search = (
-            MonthlyInstitutionSummaryReportEs8.search()
+            MonthlyInstitutionSummaryReport.search()
             .filter('term', institution_id=self.get_institution()._id)
         )
         _cycle_coverage = None
@@ -544,7 +544,7 @@ class InstitutionSummaryMetricsDetail(JSONAPIBaseView, generics.RetrieveAPIView,
             else:
                 _cycle_coverage = cycle_coverage_yearmonth(_yearmonth)
         else:
-            _cycle_coverage = MonthlyInstitutionSummaryReportEs8.most_recent_cycle(_base_search)
+            _cycle_coverage = MonthlyInstitutionSummaryReport.most_recent_cycle(_base_search)
         if _cycle_coverage is None:
             return None
         return _base_search.filter('term', cycle_coverage=_cycle_coverage)
