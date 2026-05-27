@@ -456,15 +456,60 @@ class SanctionCallbackMixin:
         return {}
 
 
+class EmbargoQuerySet(models.QuerySet):
+
+    def has_non_deleted_registrations(self):
+        """Keep embargoes linked to at least one non-deleted registration.
+
+        Excludes orphaned embargoes (no registration) and embargoes whose only
+        linked registration(s) are soft-deleted. Matches Embargo.is_deleted.
+        """
+        return self.filter(registrations__is_deleted=False).distinct()
+
+
 class EmbargoManager(models.Manager):
 
-    def pending_embargoes(self):
-        """Embargoes that are still awaiting admin approval."""
-        return self.filter(state=self.model.UNAPPROVED)
+    def get_queryset(self):
+        return EmbargoQuerySet(self.model, using=self._db)
 
-    def active_embargoes(self):
+    def pending_embargoes(self, exclude_deleted=False):
+        """Embargoes that are still awaiting admin approval."""
+        queryset = self.filter(state=self.model.UNAPPROVED)
+        if exclude_deleted:
+            queryset = queryset.has_non_deleted_registrations()
+        return queryset
+
+    def active_embargoes(self, exclude_deleted=False):
         """Embargoes that have been approved and are currently in effect."""
-        return self.filter(state=self.model.APPROVED)
+        queryset = self.filter(state=self.model.APPROVED)
+        if exclude_deleted:
+            queryset = queryset.has_non_deleted_registrations()
+        return queryset
+
+    def pending_past_activation_window(self):
+        """Pending embargoes that should have been activated (matches should_be_embargoed)."""
+        cutoff = timezone.now() - osf_settings.EMBARGO_PENDING_TIME
+        return (
+            self.pending_embargoes(exclude_deleted=True)
+            .filter(initiation_date__lte=cutoff)
+            .order_by('initiation_date')
+        )
+
+    def active_past_end_date(self):
+        """Active embargoes past end date (matches should_be_completed)."""
+        return (
+            self.active_embargoes(exclude_deleted=True)
+            .filter(end_date__lt=timezone.now())
+            .order_by('end_date')
+        )
+
+    def active_upcoming(self):
+        """Active embargoes with a future end date."""
+        return (
+            self.active_embargoes(exclude_deleted=True)
+            .filter(end_date__gte=timezone.now())
+            .order_by('end_date')
+        )
 
 
 class Embargo(SanctionCallbackMixin, EmailApprovableSanction):
