@@ -6,7 +6,7 @@ from django.db import transaction
 from django.contrib import messages
 from django.contrib.auth.mixins import PermissionRequiredMixin
 from django.core.exceptions import PermissionDenied, ValidationError
-from django.db.models import F, Case, When, IntegerField
+from django.db.models import F, Case, When, IntegerField, Prefetch
 from django.http import HttpResponse
 from django.shortcuts import redirect, reverse, get_object_or_404
 from django.urls import NoReverseMatch
@@ -487,42 +487,50 @@ class EmbargoReportView(PermissionRequiredMixin, TemplateView):
     - active embargoes that are past their end date
     - upcoming active embargoes
     """
+
     template_name = 'nodes/embargo_report.html'
     permission_required = 'osf.view_registration'
     raise_exception = True
 
+    def _embargo_report_queryset(self, queryset):
+        return queryset.select_related('initiated_by').prefetch_related(
+            Prefetch(
+                'registrations',
+                queryset=Registration.objects.filter(is_deleted=False).prefetch_related(
+                    'guids',
+                ).only('id', 'title', 'is_public', 'embargo_id'),
+            ),
+        )
+
+    def paginate_embargo_report(self, request, queryset, page_param):
+        paginator = Paginator(queryset, settings.EMBARGO_REPORT_PAGE_SIZE)
+        page_number = request.GET.get(page_param) or 1
+        try:
+            return paginator.page(page_number)
+        except InvalidPage:
+            return paginator.page(1)
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        pending_embargoes = Embargo.objects.pending_embargoes().select_related('initiated_by')
-        active_embargoes = Embargo.objects.active_embargoes().select_related('initiated_by')
-
-        pending_overdue_embargoes = [
-            embargo for embargo in pending_embargoes
-            if embargo.should_be_embargoed
-        ]
-
-        overdue_embargoes = [
-            embargo for embargo in active_embargoes
-            if embargo.should_be_completed
-        ]
-
-        upcoming_queryset = active_embargoes.filter(
-            end_date__gte=timezone.now(),
-        ).order_by('end_date')
-
-        page_number = self.request.GET.get('page') or 1
-        paginator = Paginator(upcoming_queryset, 10)
-        try:
-            upcoming_page = paginator.page(page_number)
-        except InvalidPage:
-            upcoming_page = paginator.page(1)
+        request = self.request
 
         context.update({
             'now': timezone.now(),
-            'pending_overdue_embargoes': pending_overdue_embargoes,
-            'overdue_embargoes': overdue_embargoes,
-            'upcoming_embargoes': upcoming_page.object_list,
-            'upcoming_page': upcoming_page,
+            'upcoming_page': self.paginate_embargo_report(
+                request,
+                self._embargo_report_queryset(Embargo.objects.active_upcoming()),
+                'upcoming_page',
+            ),
+            'pending_page': self.paginate_embargo_report(
+                request,
+                self._embargo_report_queryset(Embargo.objects.pending_past_activation_window()),
+                'pending_page',
+            ),
+            'overdue_page': self.paginate_embargo_report(
+                request,
+                self._embargo_report_queryset(Embargo.objects.active_past_end_date()),
+                'overdue_page',
+            ),
         })
         return context
 
