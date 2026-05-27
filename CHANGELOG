@@ -2,6 +2,11 @@
 
 We follow the CalVer (https://calver.org/) versioning scheme: YY.MINOR.MICRO.
 
+26.10.2 (2026-05-27)
+====================
+
+- Fix admin embargo report page by paging
+
 26.10.1 (2026-05-22)
 ====================
 
