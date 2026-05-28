@@ -11,6 +11,7 @@ class CedarMetadataTemplate(ObjectIDMixin, BaseModel):
     active = models.BooleanField(default=True)
     template_version = models.PositiveIntegerField()
     should_index_for_search = models.BooleanField(default=False)
+    is_for_collections = models.BooleanField(default=False)
 
     class Meta:
         unique_together = ('cedar_id', 'template_version')
