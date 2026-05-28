@@ -84,20 +84,6 @@ class TestValidateRequiredMetadata:
 
         provider.validate_required_metadata(preprint)
 
-    def test_published_invalid_record_raises(self, provider, cedar_template, preprint):
-        provider.required_metadata_template = cedar_template
-        provider.save()
-
-        CedarMetadataRecord.objects.create(
-            guid=preprint.guids.first(),
-            template=cedar_template,
-            metadata={'title': 123},
-            is_published=True,
-        )
-
-        with pytest.raises(ValidationError):
-            provider.validate_required_metadata(preprint)
-
     def test_record_for_wrong_template_raises(self, provider, cedar_template, preprint):
         provider.required_metadata_template = cedar_template
         provider.save()

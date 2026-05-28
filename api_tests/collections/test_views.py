@@ -4451,15 +4451,28 @@ class TestCollectionSubmissionWithCedarSwitch:
                 )
         assert res.status_code == 201
 
-    def test_switch_active_no_provider_no_cedar_record_created(self, app, user_one, project, url_no_provider, payload):
-        from osf.models import CedarMetadataRecord
-        with mock_update_share():
-            with override_switch(features.COLLECTION_SUBMISSION_WITH_CEDAR, active=True):
-                app.post_json_api(url_no_provider, payload(guid=project._id), auth=user_one.auth)
-        assert not CedarMetadataRecord.objects.filter(guid__in=project.guids.all()).exists()
+    def test_switch_active_submission_without_cedar_record_fails(
+            self, app, user_one, project, url, payload, cedar_template):
+        with capture_notifications():
+            with mock_update_share():
+                with override_switch(features.COLLECTION_SUBMISSION_WITH_CEDAR, active=True):
+                    res = app.post_json_api(
+                        url,
+                        payload(guid=project._id),
+                        auth=user_one.auth,
+                        expect_errors=True,
+                    )
+        assert res.status_code == 400
 
-    def test_switch_active_submission_creates_cedar_record(self, app, user_one, project, url, payload, cedar_template):
+    def test_switch_active_submission_with_cedar_record_succeeds(
+            self, app, user_one, project, url, payload, cedar_template):
         from osf.models import CedarMetadataRecord
+        CedarMetadataRecord.objects.create(
+            guid=project.guids.first(),
+            template=cedar_template,
+            metadata={'title': 'Test'},
+            is_published=True,
+        )
         with capture_notifications():
             with mock_update_share():
                 with override_switch(features.COLLECTION_SUBMISSION_WITH_CEDAR, active=True):
@@ -4469,44 +4482,25 @@ class TestCollectionSubmissionWithCedarSwitch:
                         auth=user_one.auth,
                     )
         assert res.status_code == 201
-        record = CedarMetadataRecord.objects.filter(
-            guid__in=project.guids.all(),
-            template=cedar_template,
-            is_published=True,
-        ).first()
-        assert record is not None
 
-    def test_switch_active_submission_with_custom_fields_syncs_cedar_metadata(
-            self, app, user_one, project, url, payload, cedar_template, collection):
-        from osf.models import CedarMetadataRecord
-        collection.status_choices = ['pending']
-        collection.volume_choices = ['1']
-        collection.save()
-        with capture_notifications():
-            with mock_update_share():
-                with override_switch(features.COLLECTION_SUBMISSION_WITH_CEDAR, active=True):
-                    app.post_json_api(
-                        url,
-                        payload(guid=project._id, status='pending', volume='1'),
-                        auth=user_one.auth,
-                    )
-        record = CedarMetadataRecord.objects.get(guid__in=project.guids.all(), template=cedar_template)
-        assert record.metadata['status'] == 'pending'
-        assert record.metadata['volume'] == '1'
-
-    def test_switch_inactive_submission_does_not_create_cedar_record(
+    def test_switch_inactive_submission_without_cedar_record_succeeds(
             self, app, user_one, project, url, payload, cedar_template):
-        from osf.models import CedarMetadataRecord
         with capture_notifications():
             with mock_update_share():
                 with override_switch(features.COLLECTION_SUBMISSION_WITH_CEDAR, active=False):
                     res = app.post_json_api(url, payload(guid=project._id), auth=user_one.auth)
         assert res.status_code == 201
-        assert not CedarMetadataRecord.objects.filter(guid__in=project.guids.all()).exists()
 
-    def test_switch_active_update_syncs_cedar_metadata(
-            self, app, user_one, project, url, payload, cedar_template, collection, provider):
+    def test_switch_active_update_does_not_alter_cedar_record(
+            self, app, user_one, project, url, payload, cedar_template, collection):
         from osf.models import CedarMetadataRecord
+        original_metadata = {'title': 'Original'}
+        CedarMetadataRecord.objects.create(
+            guid=project.guids.first(),
+            template=cedar_template,
+            metadata=original_metadata,
+            is_published=True,
+        )
         collection.status_choices = ['pending', 'approved']
         collection.save()
         with capture_notifications():
@@ -4520,7 +4514,7 @@ class TestCollectionSubmissionWithCedarSwitch:
             app.patch_json_api(detail_url, payload(status='approved'), auth=user_one.auth)
 
         record = CedarMetadataRecord.objects.get(guid__in=project.guids.all(), template=cedar_template)
-        assert record.metadata['status'] == 'approved'
+        assert record.metadata == original_metadata
 
 
 class TestCollectedMetaSubjectFiltering(SubjectsFilterMixin):

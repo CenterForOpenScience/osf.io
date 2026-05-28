@@ -22,13 +22,6 @@ from django.dispatch import receiver
 
 logger = logging.getLogger(__name__)
 
-CEDAR_METADATA_FIELDS = [
-    'collected_type', 'status', 'volume', 'issue',
-    'program_area', 'school_type', 'study_design',
-    'data_type', 'disease', 'grade_levels',
-]
-
-
 class CollectionSubmission(TaxonomizableMixin, BaseModel):
     primary_identifier_name = 'guid___id'
 
@@ -99,19 +92,6 @@ class CollectionSubmission(TaxonomizableMixin, BaseModel):
     @state.setter
     def state(self, new_state):
         self.machine_state = new_state.value
-
-    def sync_cedar_metadata(self):
-        """Create or update a CedarMetadataRecord from this submission's custom metadata fields."""
-
-        from osf.models import CedarMetadataRecord
-        if not (self.collection.provider_id and self.collection.provider.required_metadata_template):
-            return
-        template = self.collection.provider.required_metadata_template
-        metadata = {f: getattr(self, f) for f in CEDAR_METADATA_FIELDS if getattr(self, f, '')}
-        record, _ = CedarMetadataRecord.objects.get_or_create(guid=self.guid, template=template)
-        record.metadata = metadata
-        record.is_published = True
-        record.save()
 
     def _notify_contributors_pending(self, event_data):
         user = event_data.kwargs.get('user')
