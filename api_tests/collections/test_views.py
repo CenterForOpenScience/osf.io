@@ -4453,7 +4453,7 @@ class TestCollectionSubmissionWithCedarSwitch:
 
     def test_switch_active_submission_without_cedar_record_fails(
             self, app, user_one, project, url, payload, cedar_template):
-        with capture_notifications():
+        with capture_notifications(expect_none=True):
             with mock_update_share():
                 with override_switch(features.COLLECTION_SUBMISSION_WITH_CEDAR, active=True):
                     res = app.post_json_api(
