@@ -1,4 +1,6 @@
+from django.core.exceptions import ValidationError
 from django.db import models
+from jsonschema import validate as jsonschema_validate, ValidationError as JsonSchemaValidationError
 
 from osf.models.base import BaseModel, ObjectIDMixin
 from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
@@ -47,6 +49,16 @@ class CedarMetadataRecord(ObjectIDMixin, BaseModel):
     def get_template_version(self):
         return self.template.template_version
 
+    def clean(self):
+        if self.is_published:
+            try:
+                jsonschema_validate(self.metadata, self.template.template)
+            except JsonSchemaValidationError as e:
+                raise ValidationError(
+                    f'CEDAR metadata does not validate against template "{self.template.schema_name}": {e.message}'
+                )
+
     def save(self, *args, **kwargs):
+        self.clean()
         self.guid.referent.update_search()
         return super().save(*args, **kwargs)
