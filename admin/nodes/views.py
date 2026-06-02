@@ -110,14 +110,16 @@ class RegistrationUpdateDateView(NodeMixin, View):
             node.created = new_date
             node.save()
 
+            params = dict(node.log_params)
+            params.update({
+                'last_date': str(last_date),
+                'new_date': str(new_date),
+            })
             node.add_log(
                 action=NodeLog.REGISTRATION_DATE_UPDATED,
                 auth=None,
                 foreign_user=NodeLog.SUPPORT_USER_LABEL,
-                params={
-                    'last_date': str(last_date),
-                    'new_date': str(new_date)
-                },
+                params=params,
                 log_date=timezone.now(),
                 should_hide=False,
             )
@@ -227,7 +229,7 @@ class NodeRemoveContributorView(NodeMixin, View):
                 action_flag=CONTRIBUTOR_REMOVED
             )
             params = dict(node.log_params)
-            params['contributors'] = user.pk
+            params['contributors'] = [user._id]
             node.add_log(
                 action=NodeLog.CONTRIB_REMOVED,
                 auth=None,
@@ -882,10 +884,7 @@ class NodeMakePrivate(NodeMixin, View):
             action=NodeLog.MADE_PRIVATE,
             auth=None,
             foreign_user=NodeLog.SUPPORT_USER_LABEL,
-            params={
-                'project': node.parent_id,
-                'node': node._primary_key,
-            },
+            params=dict(node.log_params),
             log_date=timezone.now(),
             should_hide=False,
         )
@@ -909,10 +908,7 @@ class NodeMakePublic(NodeMixin, View):
                 action=NodeLog.MADE_PUBLIC,
                 auth=None,
                 foreign_user=NodeLog.SUPPORT_USER_LABEL,
-                params={
-                    'project': node.parent_id,
-                    'node': node._primary_key,
-                },
+                params=dict(node.log_params),
                 log_date=timezone.now(),
                 should_hide=False,
             )
@@ -949,16 +945,16 @@ class NodeRemoveFileView(NodeMixin, View):
                 file.delete()
                 _update_schema_meta(file.target)
                 _remove_file_from_schema_response_blocks(node, [file_id, copied_from_id])
+            params = dict(node.log_params)
+            params.update({
+                'pathType': 'file',
+                'path': file_path,
+            })
             node.add_log(
                 action=NodeLog.FILE_REMOVED,
                 auth=None,
                 foreign_user=NodeLog.SUPPORT_USER_LABEL,
-                params={
-                    'project': node.parent_id,
-                    'node': node._primary_key,
-                    'pathType': 'file',
-                    'path': file_path,
-                },
+                params=params,
                 log_date=timezone.now(),
                 should_hide=False,
             )
@@ -1000,15 +996,13 @@ class NodeAddOsfStorageFileView(NodeMixin, View):
         ).first()
         copied = file.copy_under(archive_folder)
         copied_path = getattr(copied, 'materialized_path', None) or getattr(copied, 'path', None) or ''
+        params = dict(registration.log_params)
+        params['path'] = copied_path
         registration.add_log(
             action=NodeLog.FILE_ADDED,
             auth=None,
             foreign_user=NodeLog.SUPPORT_USER_LABEL,
-            params={
-                'project': registration.parent_id,
-                'node': registration._primary_key,
-                'path': copied_path,
-            },
+            params=params,
             log_date=timezone.now(),
             should_hide=False,
         )
@@ -1040,16 +1034,16 @@ class NodeRemoveOsfStorageFileView(NodeMixin, View):
             return redirect(self.get_success_url())
         file_path = getattr(file, 'materialized_path', None) or getattr(file, 'path', None) or ''
         registration_file.delete()
+        params = dict(registration.log_params)
+        params.update({
+            'pathType': 'file',
+            'path': file_path,
+        })
         registration.add_log(
             action=NodeLog.FILE_REMOVED,
             auth=None,
             foreign_user=NodeLog.SUPPORT_USER_LABEL,
-            params={
-                'project': registration.parent_id,
-                'node': registration._primary_key,
-                'pathType': 'file',
-                'path': file_path,
-            },
+            params=params,
             log_date=timezone.now(),
             should_hide=False,
         )

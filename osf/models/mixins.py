@@ -1823,10 +1823,10 @@ class ContributorMixin(models.Model):
                 )
             if not self.get_group(permission).user_set.filter(id=user.id).exists():
                 self.set_permissions(user, permission, save=False)
+                permissions_changed = {
+                    user._id: permission
+                }
                 if log:
-                    permissions_changed = {
-                        user._id: permission
-                    }
                     params = self.log_params
                     params['contributors'] = permissions_changed
                     self.add_log(
