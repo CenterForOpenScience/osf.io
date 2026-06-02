@@ -3,10 +3,13 @@ import enum
 import functools
 from urllib.parse import urlsplit
 
+from django.conf import settings as django_settings
+from django.core.management import call_command
 import elasticsearch8.dsl as esdsl
 from elasticsearch_metrics import MONTHLY
 import elasticsearch_metrics.imps.elastic8 as djelme
 
+from framework.celery_tasks import app as celery_app
 from osf.metadata.osfmap_utils import osfid_from_iri
 from osf.metrics.utils import (
     get_database_iri,
@@ -21,6 +24,11 @@ __all__ = (
     'OsfCountedUsageEvent',
     'RegistriesModerationEvent',
 )
+
+
+@celery_app.task()
+def delete_expired_djelme_indexes():
+    call_command('djelme_indexes', '--delete-expired', '--really-really')
 
 
 ###
@@ -94,6 +102,7 @@ class OsfCountedUsageEvent(djelme.CountedUsageRecord):
 
     class Meta:
         timeseries_index_timedepth = MONTHLY
+        timeseries_index_expiration = datetime.timedelta(days=django_settings.OSF_USAGEEVENT_EXPIRATION_DAYS)
 
     class ActionLabel(enum.Enum):
         SEARCH = 'search'  # counter:Search

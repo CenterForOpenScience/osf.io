@@ -337,8 +337,7 @@ DJELME_BACKENDS = {
         },
     },
 }
-# Store yearly indices for time-series metrics
-ELASTICSEARCH_METRICS_DATE_FORMAT = '%Y'
+OSF_USAGEEVENT_EXPIRATION_DAYS = 90
 
 WAFFLE_CACHE_NAME = 'waffle_cache'
 STORAGE_USAGE_CACHE_NAME = 'storage_usage'
