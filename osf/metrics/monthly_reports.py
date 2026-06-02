@@ -23,7 +23,7 @@ __all__ = (
 ###
 # base class
 
-class BaseMonthlyReport(djelme.CyclicRecord):
+class BaseMonthlyReport(djelme.CyclicReport):
     CYCLE_TIMEDEPTH = MONTHLY
 
     class Meta:

@@ -15,7 +15,7 @@ for field definitions with comments mapping fields to concepts in the COUNTER sp
 
 each periodic report is a subclass of `osf.metrics.monthly_reports.BaseMonthlyReport`
 or `osf.metrics.daily_reports.BaseDailyReport` (themselves subclasses of
-`elasticsearch_metrics.imps.elastic8.CyclicRecord`) and has a "reporter"
+`elasticsearch_metrics.imps.elastic8.CyclicReport`) and has a "reporter"
 (see `osf.metrics.reporters`) that is invoked periodically to report.
 
 ## api

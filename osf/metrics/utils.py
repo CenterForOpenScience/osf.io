@@ -6,7 +6,7 @@ import datetime
 from hashlib import sha256
 from typing import ClassVar
 
-from elasticsearch_metrics.util.timeparts import format_timeparts
+from elasticsearch_metrics.util.timeparts import serialize_timeparts
 
 from osf.metadata.osfmap_utils import (
     osfmap_type,
@@ -22,7 +22,7 @@ def cycle_coverage_date(given_date: datetime.date) -> str:
     >>> cycle_coverage_date(datetime.datetime(7654, 3, 2, 1))
     '7654.3.2'
     """
-    return format_timeparts(given_date, 3)
+    return serialize_timeparts((given_date.year, given_date.month, given_date.day), 3)
 
 
 def cycle_coverage_yearmonth(given_ym: YearMonth | datetime.date) -> str:
@@ -32,7 +32,7 @@ def cycle_coverage_yearmonth(given_ym: YearMonth | datetime.date) -> str:
     >>> cycle_coverage_yearmonth(datetime.date(1234, 5, 6))
     '1234.5'
     """
-    return format_timeparts((given_ym.year, given_ym.month), 2)
+    return serialize_timeparts((given_ym.year, given_ym.month), 2)
 
 
 def stable_key(*key_parts):
