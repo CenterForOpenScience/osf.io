@@ -220,3 +220,15 @@ class MigrateOsfmetricsFix6to8(ManagementCommandPermissionView):
         for _line in _out_io.getvalue().split('\n'):
             messages.info(request, _line)
         return redirect(reverse('management:commands'))
+
+
+class MigrateFunderNamesToRor(ManagementCommandPermissionView):
+
+    def post(self, request):
+        _command_kwargs = {}
+        _out_io = StringIO()
+        call_command('migrate_funder_names_to_ror', **_command_kwargs, stdout=_out_io)
+        messages.success(request, 'ROR funder names have been successfully updated and made consistent.')
+        for _line in _out_io.getvalue().split('\n'):
+            messages.info(request, _line)
+        return redirect(reverse('management:commands'))

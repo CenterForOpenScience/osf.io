@@ -23,4 +23,6 @@ urlpatterns = [
     re_path(r'^remove_orcid_from_user_social', views.RemoveOrcidFromUserSocial.as_view(),
             name='remove_orcid_from_user_social'),
     path('migrate_osfmetrics_fix_6to8', views.MigrateOsfmetricsFix6to8.as_view(), name='migrate_osfmetrics_fix_6to8'),
+    re_path(r'^migrate_funder_names_to_ror', views.MigrateFunderNamesToRor.as_view(),
+            name='migrate_funder_names_to_ror'),
 ]
