@@ -29,6 +29,7 @@ class TestAuthBasicAuthentication(OsfTestCase):
         self.reachable_project = ProjectFactory(title='Private Project User 1', is_public=False, creator=self.user1)
         self.unreachable_project = ProjectFactory(title='Private Project User 2', is_public=False, creator=self.user2)
         self.reachable_url = self.reachable_project.web_url_for('view_project')
+        self.reachable_absolute_url = self.reachable_project.web_url_for('view_project', _absolute=True)
         self.unreachable_url = self.unreachable_project.web_url_for('view_project')
 
     def test_missing_credential_fails(self):
@@ -97,6 +98,14 @@ class TestAuthBasicAuthentication(OsfTestCase):
         session = SessionStore(session_key=session_key)
         session.delete()
         self.app.set_cookie(settings.COOKIE_NAME, str(cookie))
-        res = self.app.get(self.reachable_url)
+        res = self.app.get(self.reachable_absolute_url)
         assert res.status_code == 302
-        assert 'http://localhost:5000/logout/?next=http://localhost:4200/' == res.location
+        assert f'{settings.COOKIE_NAME}=;' in res.headers.get('Set-Cookie')
+        assert self.reachable_absolute_url == res.location
+
+    def test_invalid_cookie(self):
+        self.app.set_cookie(settings.COOKIE_NAME, str('INVALID_COOKIE'))
+        res = self.app.get(self.reachable_absolute_url)
+        assert res.status_code == 302
+        assert f'{settings.COOKIE_NAME}=;' in res.headers.get('Set-Cookie')
+        assert self.reachable_absolute_url == res.location
