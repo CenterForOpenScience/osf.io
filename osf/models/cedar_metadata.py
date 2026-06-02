@@ -12,6 +12,9 @@ CEDAR_SERVER_GENERATED_FIELDS = frozenset({
     'pav:createdBy',
     'pav:lastUpdatedOn',
     'oslc:modifiedBy',
+    'schema:isBasedOn',
+    'schema:name',
+    'schema:description',
 })
 
 
@@ -66,9 +69,20 @@ class CedarMetadataRecord(ObjectIDMixin, BaseModel):
                     f for f in schema['required']
                     if f not in CEDAR_SERVER_GENERATED_FIELDS
                 ]
-            metadata = {k: v for k, v in self.metadata.items() if v != {}}
+            context = self.metadata.get('@context')
+            if isinstance(context, dict):
+                required_context = schema.get('properties', {}).get('@context', {}).get('required')
+                if isinstance(required_context, list):
+                    filtered_context = {
+                        k: v for k, v in context.items()
+                        if k in required_context
+                    }
+                    if filtered_context:
+                        self.metadata['@context'] = filtered_context
+                    else:
+                        self.metadata.pop('@context', None)
             try:
-                jsonschema_validate(metadata, schema)
+                jsonschema_validate(self.metadata, schema)
             except JsonSchemaValidationError as e:
                 raise ValidationError(
                     f'CEDAR metadata does not validate against template "{self.template.schema_name}": {e.message}'
