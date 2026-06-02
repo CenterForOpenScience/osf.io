@@ -1,8 +1,11 @@
 [tool.poetry]
 name = "osf-io"
-version = "26.10.2"
+version = "26.10.3"
 description = "The code for [https://osf.io](https://osf.io)."
-authors = ["Longze Chen <cslzchen@gmail.com>"]
+authors = [
+    "Brian J. Geiger <bgeiger@pobox.com>",
+    "Longze Chen <cslzchen@gmail.com>",
+]
 license = "Apache License 2.0"
 readme = "README.md"
 packages = [{include = "osf"}]
