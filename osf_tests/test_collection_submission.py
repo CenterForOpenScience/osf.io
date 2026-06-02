@@ -833,7 +833,8 @@ class TestCollectionSubmissionWithCedarRecord:
             },
             'identifier': {}
         }
-        with mock.patch('api.share.utils.pls_send_trove_record'):
+        with mock.patch('api.share.utils.pls_send_trove_record'), \
+                mock.patch('api.share.utils.share_update_cedar_metadata_record'):
             record = CedarMetadataRecord.objects.create(
                 guid=unmoderated_collection_submission_public.guid,
                 template=cedar_template,

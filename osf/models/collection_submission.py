@@ -22,7 +22,6 @@ from django.dispatch import receiver
 
 logger = logging.getLogger(__name__)
 
-
 class CollectionSubmission(TaxonomizableMixin, BaseModel):
     primary_identifier_name = 'guid___id'
 
