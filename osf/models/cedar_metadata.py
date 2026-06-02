@@ -69,6 +69,8 @@ class CedarMetadataRecord(ObjectIDMixin, BaseModel):
                     f for f in schema['required']
                     if f not in CEDAR_SERVER_GENERATED_FIELDS
                 ]
+            # Workaround for a cedar-embeddable-editor bug that injects extra keys into
+            # @context; strip it down to only the schema-required keys before saving.
             context = self.metadata.get('@context')
             if isinstance(context, dict):
                 required_context = schema.get('properties', {}).get('@context', {}).get('required')
