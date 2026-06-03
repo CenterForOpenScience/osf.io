@@ -2,6 +2,29 @@
 
 We follow the CalVer (https://calver.org/) versioning scheme: YY.MINOR.MICRO.
 
+26.10.3 (2026-06-02)
+====================
+
+- Update how invalid cookie/session is handled
+
+26.10.2 (2026-05-27)
+====================
+
+- Fix admin embargo report page by paging
+
+26.10.1 (2026-05-22)
+====================
+
+- Hotfix to resume (rather than restart) a long task after connection error
+
+26.10.0 (2026-05-19)
+===================
+
+- osfmetrics data migration from elasticsearch6 to elasticsearch8
+  - add configuration for osfmetrics with es8 (in parallel with es6)
+  - save new osfmetrics event records and periodic reports in both es6 and es8
+  - add migrate_osfmetrics_6to8 command to copy old data from es6 to es8
+
 26.9.1 (2026-05-15)
 ===================
 

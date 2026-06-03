@@ -74,6 +74,7 @@ REGISTRATION_UPDATE_APPROVAL_TIME = datetime.timedelta(days=2)
 # Date range for embargo periods
 EMBARGO_END_DATE_MIN = datetime.timedelta(days=2)
 EMBARGO_END_DATE_MAX = datetime.timedelta(days=1460)  # Four years
+EMBARGO_REPORT_PAGE_SIZE = 10
 
 # Question titles to be reomved for anonymized VOL
 ANONYMIZED_TITLES = ['Authors']
