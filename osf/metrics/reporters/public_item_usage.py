@@ -97,12 +97,11 @@ class PublicItemUsageReporter(MonthlyReporter):
 
     def _base_usage_search(self):
         return (
-            OsfCountedUsageEvent.search()
+            OsfCountedUsageEvent.search_timeseries_range(
+                self.yearmonth.month_start(),
+                self.yearmonth.month_end(),
+            )
             .filter('term', item_public=True)
-            .filter('range', timestamp={
-                'lt': self.yearmonth.month_end(),
-                'gte': self.yearmonth.month_start()
-            })
             .extra(size=0)  # only aggregations, no hits
         )
 

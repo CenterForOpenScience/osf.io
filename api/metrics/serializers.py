@@ -85,6 +85,8 @@ class CyclicReportSerializer(ser.BaseSerializer):
     def to_representation(self, instance):
         # TODO: detangle datamodel from api serialization (don't use `to_dict` here)
         _report_attrs = instance.to_dict()
+        if 'timeseries_timeparts' in _report_attrs:
+            del _report_attrs['timeseries_timeparts']
         for _extra_attr in ('report_date', 'report_yearmonth'):
             if (_extra_attr not in _report_attrs) and hasattr(instance, _extra_attr):
                 _report_attrs[_extra_attr] = getattr(instance, _extra_attr)

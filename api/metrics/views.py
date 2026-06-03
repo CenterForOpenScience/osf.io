@@ -324,7 +324,6 @@ class ReportList(ElasticsearchListView):
 
 class RecentReportList(JSONAPIBaseView):
     MAX_COUNT = 10000
-    DEFAULT_DAYS_BACK = 13
 
     permission_classes = (
         TokenHasScope,
@@ -358,20 +357,14 @@ class RecentReportList(JSONAPIBaseView):
                 status=404,
             )
         is_daily = issubclass(report_class, BaseDailyReport)
-        days_back = request.GET.get('days_back', self.DEFAULT_DAYS_BACK if is_daily else None)
         is_monthly = issubclass(report_class, BaseMonthlyReport)
-
-        range_filter = parse_date_range(request.GET, is_monthly=is_monthly)
+        assert is_daily or is_monthly
+        _from, _until = parse_date_range(request.GET, is_monthly=is_monthly)
         search_recent = (
-            report_class.search()
-            .filter('range', cycle_coverage=range_filter)
+            report_class.search_timeseries_range(_from, _until)
             .sort('-cycle_coverage')
             [:self.MAX_COUNT]
         )
-        if days_back:
-            search_recent.filter('range', report_date={'gte': f'now/d-{days_back}d'})
-
-        report_date_range = parse_date_range(request.GET)
         search_response = search_recent.execute()
         serializer = self.serializer_class(
             search_response,
@@ -381,12 +374,10 @@ class RecentReportList(JSONAPIBaseView):
         accepted_format = request.accepted_renderer.format
         response_headers = {}
         if accepted_format in ('tsv', 'csv'):
-            from_date = report_date_range['gte']
-            until_date = report_date_range['lte']
             filename = (
                 f'{report_name}__'
-                f'until_{until_date}__'
-                f'from_{from_date}.{accepted_format}'
+                f'until_{_until}__'
+                f'from_{_from}.{accepted_format}'
             )
             response_headers['Content-Disposition'] = f'attachment; filename={filename}'
         return Response(
