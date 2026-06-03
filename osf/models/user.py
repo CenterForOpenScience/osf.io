@@ -733,7 +733,9 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         # Capture content to SHARE reindex BEFORE merge transfers contributors
         # After merge, user.contributed and user.preprints will be empty
         nodes_to_reindex = list(user.contributed)
+        node_ids_to_reindex = [node.id for node in nodes_to_reindex]
         preprints_to_reindex = list(user.preprints.all())
+        preprint_ids_to_reindex = [preprint.id for preprint in preprints_to_reindex]
 
         # Move over the other user's attributes
         # TODO: confirm
@@ -883,11 +885,11 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         node_ctype = ContentType.objects.get_for_model(AbstractNode)
         preprint_ctype = ContentType.objects.get_for_model(Preprint)
         nodes_files_to_reindex = OsfStorageFile.objects.filter(
-            target_object_id__in=user.contributed.values_list('id', flat=True), target_content_type=node_ctype,
+            target_object_id__in=node_ids_to_reindex, target_content_type=node_ctype,
             guids__isnull=False
         )
         preprints_files_to_reindex = OsfStorageFile.objects.filter(
-            target_object_id__in=user.preprints.values_list('id', flat=True), target_content_type=preprint_ctype,
+            target_object_id__in=preprint_ids_to_reindex, target_content_type=preprint_ctype,
             guids__isnull=False
         )
         for file in nodes_files_to_reindex.iterator(chunk_size=100):
