@@ -97,8 +97,7 @@ class UsageMetricsViewMixin(abc.ABC):
                     _prior_count = _latest_usage_report.cumulative_download_count
                 else:
                     raise ValueError(f'unsupported action label {action_label!r}')
-        _response = _search[0:0].execute()
-        return _prior_count + _response.doc_count
+        return _prior_count + _search.count()
 
     def _get_latest_usage_report(self, item_iri):
         _search = (
