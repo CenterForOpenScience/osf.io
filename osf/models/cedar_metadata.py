@@ -73,11 +73,11 @@ class CedarMetadataRecord(ObjectIDMixin, BaseModel):
             # @context; strip it down to only the schema-required keys before saving.
             context = self.metadata.get('@context')
             if isinstance(context, dict):
-                required_context = schema.get('properties', {}).get('@context', {}).get('required')
-                if isinstance(required_context, list):
+                defined_context = schema.get('properties', {}).get('@context', {}).get('properties')
+                if isinstance(defined_context, dict):
                     filtered_context = {
                         k: v for k, v in context.items()
-                        if k in required_context
+                        if k in defined_context
                     }
                     if filtered_context:
                         self.metadata['@context'] = filtered_context
