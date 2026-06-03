@@ -728,6 +728,10 @@ class CeleryConfig:
             'schedule': crontab(minute=0, hour=5),  # Daily 12 a.m
             'kwargs': {'dry_run': False},
         },
+        'delete_expired_djelme_indexes': {
+            'task': 'osf.metrics.events.delete_expired_djelme_indexes',
+            'schedule': crontab(minute=30, hour=7, day_of_month=5),     # Fifth day of month 2:30 a.m. EST
+        },
     }
 
 

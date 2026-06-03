@@ -22,7 +22,7 @@ __all__ = (
 ###
 # base class
 
-class BaseDailyReport(djelme.CyclicRecord):
+class BaseDailyReport(djelme.CyclicReport):
     CYCLE_TIMEDEPTH = DAILY
 
     class Meta:
