@@ -17,7 +17,7 @@ from osf.models import UserMessage
 from tests.utils import capture_notifications
 
 
-@pytest.mark.djelme_elasticsearch_backends
+@pytest.mark.osfmetrics_elastic_backends
 @pytest.mark.django_db
 class TestInstitutionUserMetricList:
     @pytest.fixture()

@@ -129,11 +129,11 @@ def _test_speedups_disable(request, settings, _test_speedups):
 
 
 @pytest.fixture(scope='function', autouse=True)
-def _djelme_elasticsearch_backends_marker(request):
-    """Clear out all indices and index templates before and after
-    tests marked with `djelme_elasticsearch_backends`.
+def _osfmetrics_elastic_backends_marker(request):
+    """Enable osfmetrics and set up temporary indexes and index templates for
+    tests marked with `osfmetrics_elastic_backends`.
     """
-    marker = request.node.get_closest_marker('djelme_elasticsearch_backends')
+    marker = request.node.get_closest_marker('osfmetrics_elastic_backends')
 
     if not marker:
         yield

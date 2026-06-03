@@ -8,7 +8,7 @@ from osf_tests.factories import (
 from osf.metrics.monthly_reports import MonthlyInstitutionSummaryReport
 
 
-@pytest.mark.djelme_elasticsearch_backends
+@pytest.mark.osfmetrics_elastic_backends
 @pytest.mark.django_db
 class TestInstitutionSummaryMetricsList:
 

@@ -11,7 +11,7 @@ from osf.metrics.monthly_reports import MonthlyInstitutionalUserReport
 from osf.metrics.utils import YearMonth
 
 
-@pytest.mark.djelme_elasticsearch_backends
+@pytest.mark.osfmetrics_elastic_backends
 @pytest.mark.django_db
 class TestInstitutionDepartmentList:
 

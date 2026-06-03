@@ -12,7 +12,7 @@ from api.base.settings import API_PRIVATE_BASE as API_BASE
 pytestmark = pytest.mark.django_db
 
 
-@pytest.mark.djelme_elasticsearch_backends
+@pytest.mark.osfmetrics_elastic_backends
 class TestRawMetrics:
 
     @pytest.fixture(autouse=True)

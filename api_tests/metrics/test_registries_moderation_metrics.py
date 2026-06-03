@@ -6,7 +6,7 @@ from osf.metrics.events import RegistriesModerationEvent
 from tests.utils import capture_notifications
 
 
-@pytest.mark.djelme_elasticsearch_backends
+@pytest.mark.osfmetrics_elastic_backends
 @pytest.mark.django_db
 class TestRegistrationModerationMetrics:
 
@@ -34,7 +34,7 @@ class TestRegistrationModerationMetrics:
         assert data['comment'] == 'Metrics is easy'
 
 
-@pytest.mark.djelme_elasticsearch_backends
+@pytest.mark.osfmetrics_elastic_backends
 @pytest.mark.django_db
 class TestRegistrationModerationMetricsView:
 
