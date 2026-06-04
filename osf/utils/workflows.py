@@ -392,7 +392,7 @@ COLLECTION_SUBMISSION_TRANSITIONS = [
         'source': [CollectionSubmissionStates.IN_PROGRESS],
         'dest': CollectionSubmissionStates.ACCEPTED,
         'before': [],
-        'after': ['_make_public', '_notify_accepted'],
+        'after': ['_notify_accepted'],
         'unless': ['is_moderated', 'is_hybrid_moderated'],
     },
     {
@@ -408,7 +408,7 @@ COLLECTION_SUBMISSION_TRANSITIONS = [
         'source': [CollectionSubmissionStates.IN_PROGRESS],
         'dest': CollectionSubmissionStates.ACCEPTED,
         'before': [],
-        'after': ['_make_public', '_notify_contributors_pending', '_notify_moderators_pending'],
+        'after': ['_notify_contributors_pending', '_notify_moderators_pending'],
         'conditions': ['is_hybrid_moderated', 'is_submitted_by_moderator_contributor'],
     },
     {
