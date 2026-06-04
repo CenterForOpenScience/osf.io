@@ -1,10 +1,11 @@
 [tool.poetry]
 name = "osf-io"
-version = "26.10.3"
+version = "26.10.4"
 description = "The code for [https://osf.io](https://osf.io)."
 authors = [
     "Brian J. Geiger <bgeiger@pobox.com>",
     "Longze Chen <cslzchen@gmail.com>",
+    "Ostap Zherebetskyi <ozherebetskyi@exoft.net>",
 ]
 license = "Apache License 2.0"
 readme = "README.md"
