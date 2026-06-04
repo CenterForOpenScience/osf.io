@@ -894,12 +894,12 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         )
         for file in nodes_files_to_reindex.iterator(chunk_size=100):
             try:
-                update_share(file)
+                update_share(file, urgent=False)
             except Exception as e:
                 logger.exception(f'Failed to SHARE reindex file {file._id} during user merge: {e}')
         for file in preprints_files_to_reindex.iterator(chunk_size=100):
             try:
-                update_share(file)
+                update_share(file, urgent=False)
             except Exception as e:
                 logger.exception(f'Failed to SHARE reindex preprints file {file._id} during user merge: {e}')
 

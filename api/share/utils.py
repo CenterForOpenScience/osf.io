@@ -50,21 +50,21 @@ def is_qa_resource(resource):
     return has_qa_tags or has_qa_title
 
 
-def update_share(resource):
+def update_share(resource, urgent=True):
     if not settings.SHARE_ENABLED:
         return
     if not hasattr(resource, 'guids'):
         logger.error(f'update_share called on non-guid resource: {resource}')
         return
-    _enqueue_update_share(resource)
+    _enqueue_update_share(resource, urgent)
 
 
-def _enqueue_update_share(osfresource):
+def _enqueue_update_share(osfresource, urgent):
     _osfguid_value = osfresource.guids.values_list('_id', flat=True).first()
     if not _osfguid_value:
         logger.warning(f'update_share skipping resource that has no guids: {osfresource}')
         return
-    enqueue_task(task__update_share.s(_osfguid_value))
+    enqueue_task(task__update_share.s(_osfguid_value, urgent=urgent))
 
 
 @celery_app.task(
@@ -73,7 +73,7 @@ def _enqueue_update_share(osfresource):
     max_retries=4,
     retry_backoff=True,
 )
-def task__update_share(self, guid: str, is_backfill=False, osfmap_partition_name='MAIN'):
+def task__update_share(self, guid: str, is_backfill=False, osfmap_partition_name='MAIN', urgent=True):
     """
     Send SHARE/trove current metadata record(s) for the osf-guid-identified object
     """

@@ -32,6 +32,8 @@ class CeleryRouter:
         :param str task:    Of the form 'full.module.path.to.class.function'
         :returns dict:      Tells celery into which queue to route this task.
         """
+        if kwargs and (kwargs.get('urgent') is False):
+            return {'queue': CeleryConfig.task_low_queue}
         return {
             'queue': match_by_module(task)
         }
