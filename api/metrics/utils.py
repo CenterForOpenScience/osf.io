@@ -55,13 +55,13 @@ def parse_date_range(
         _from = _until.date() - timedelta(days=int(_days_back))
     elif _timeframe := query_params.get('timeframe'):
         if _match := re.match(r'previous_(\d+)_days?', _timeframe):
-            _days_back = _match.group(1)
+            _days_back = int(_match.group(1))
         else:
             raise Exception(f'Unsupported timeframe format: "{_timeframe}"')
         _from = _until - timedelta(days=_days_back)
     elif query_params.get('timeframeStart'):
         _from = query_params.get('timeframeStart')
-        _until = query_params.get('timeframeEnd')
+        _until = query_params.get('timeframeEnd', _until)
     else:
         _from, _until = parse_dates(query_params, is_monthly=is_monthly)
     return (_from, _until)
