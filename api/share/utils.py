@@ -56,10 +56,13 @@ def update_share(resource, urgent=True):
     if not hasattr(resource, 'guids'):
         logger.error(f'update_share called on non-guid resource: {resource}')
         return
-    _enqueue_update_share(resource, urgent)
+    if urgent:
+        _enqueue_update_share(resource)
+    else:
+        _enqueue_update_share(resource, urgent=False)
 
 
-def _enqueue_update_share(osfresource, urgent):
+def _enqueue_update_share(osfresource, urgent=True):
     _osfguid_value = osfresource.guids.values_list('_id', flat=True).first()
     if not _osfguid_value:
         logger.warning(f'update_share skipping resource that has no guids: {osfresource}')
