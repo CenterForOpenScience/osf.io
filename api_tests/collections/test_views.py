@@ -4358,6 +4358,45 @@ class TestCollectionSubmissionList:
             assert res.status_code == 201
             _shmock.assert_called()
 
+    def test_private_project_made_public_on_non_moderated_submit(self, app, collection_with_zero_collection_submission, user_one, project_four, url, payload):
+        # Projects are private by default; non-moderated submit should make referent public
+        assert not project_four.is_public
+
+        collection_with_zero_collection_submission.is_public = True
+        collection_with_zero_collection_submission.save()
+
+        with mock_update_share():
+            res = app.post_json_api(
+                url.format(collection_with_zero_collection_submission._id),
+                payload(guid=project_four._id),
+                auth=user_one.auth)
+            assert res.status_code == 201
+
+        project_four.refresh_from_db()
+        assert project_four.is_public
+
+    def test_on_collection_updated_notifies_share_when_collection_goes_public(self, user_one, project_one, project_two):
+        from website.collections.tasks import on_collection_updated
+
+        collection = CollectionFactory(creator=user_one)
+        with mock_update_share():
+            collection.collect_object(project_one, user_one)
+            collection.collect_object(project_two, user_one)
+
+        with mock_update_share() as _shmock:
+            on_collection_updated(collection._id)
+
+        # on_collection_updated should not call update_share when collection is private
+        _shmock.assert_not_called()
+
+        with mock_update_share() as _shmock:
+            collection.is_public = True
+            collection.save()
+            on_collection_updated(collection._id)
+
+        # Both accepted submissions should trigger a SHARE update
+        assert _shmock.call_count == 2
+
     def test_filters(self, app, collection_with_one_collection_submission, collection_with_three_collection_submission, project_two, project_four, user_one, subject_one, url, payload):
         res = app.get(f'{url.format(collection_with_three_collection_submission._id)}?filter[id]={project_two._id}', auth=user_one.auth)
         assert res.status_code == 200
