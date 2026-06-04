@@ -2,6 +2,11 @@
 
 We follow the CalVer (https://calver.org/) versioning scheme: YY.MINOR.MICRO.
 
+26.10.4 (2026-06-04)
+====================
+
+- Fix duplication in scheduled notifications
+
 26.10.3 (2026-06-02)
 ====================
 
