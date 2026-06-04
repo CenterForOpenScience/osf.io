@@ -19,6 +19,7 @@ class Notification(models.Model):
     sent = models.DateTimeField(null=True, blank=True)
     created = models.DateTimeField(auto_now_add=True)
     fake_sent = models.BooleanField(default=False)
+    scheduled = models.DateTimeField(null=True, blank=True)
 
     def send(
             self,
