@@ -1119,7 +1119,6 @@ class TestOsfStorageRegistrationFileRemove(AdminTestCase):
             name=registration_osfstorage.archive_folder_name
         ).children.exists()
         assert not self.registration_registered_from.files.exists()
-<<<<<<< HEAD
         remove_log = self.registration_registered_from.logs.filter(
             action=NodeLog.FILE_REMOVED,
             foreign_user=NodeLog.SUPPORT_USER_LABEL,
@@ -1237,7 +1236,6 @@ class TestRegistrationUpdateDate(AdminTestCase):
             foreign_user=NodeLog.SUPPORT_USER_LABEL,
         ).latest('date')
         assert_support_attributed_log(log, self.admin_user)
-=======
 
 
 class TestEmbargoReportView(AdminTestCase):
@@ -1298,4 +1296,3 @@ class TestEmbargoReportView(AdminTestCase):
 
         context = self.view.get_context_data()
         assert embargo not in context['overdue_page']
->>>>>>> upstream/develop
