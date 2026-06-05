@@ -18,6 +18,7 @@ from osf.models import (
     AbstractNode,
     RegistrationApproval,
     Embargo,
+    Sanction,
     SchemaResponse,
     DraftRegistration,
 
@@ -44,7 +45,8 @@ from admin.nodes.views import (
     CheckArchiveStatusRegistrationsView,
     ForceArchiveRegistrationsView,
     ApprovalBacklogListView,
-    ConfirmApproveBacklogView
+    ConfirmApproveBacklogView,
+    EmbargoReportView,
 )
 from admin_tests.utilities import setup_log_view, setup_view, handle_post_view_request
 from api_tests.share._utils import mock_update_share
@@ -62,6 +64,7 @@ from osf_tests.factories import (
     RegistrationApprovalFactory,
     RegistrationProviderFactory,
     DraftRegistrationFactory,
+    EmbargoFactory,
     get_default_metaschema
 )
 from osf.utils.workflows import ApprovalStates, RegistrationModerationStates
@@ -69,7 +72,7 @@ from osf.utils import permissions
 from osf.exceptions import NodeStateError
 
 
-from website.settings import REGISTRATION_APPROVAL_TIME
+from website.settings import REGISTRATION_APPROVAL_TIME, EMBARGO_PENDING_TIME
 
 
 def patch_messages(request):
@@ -1116,6 +1119,7 @@ class TestOsfStorageRegistrationFileRemove(AdminTestCase):
             name=registration_osfstorage.archive_folder_name
         ).children.exists()
         assert not self.registration_registered_from.files.exists()
+<<<<<<< HEAD
         remove_log = self.registration_registered_from.logs.filter(
             action=NodeLog.FILE_REMOVED,
             foreign_user=NodeLog.SUPPORT_USER_LABEL,
@@ -1233,3 +1237,65 @@ class TestRegistrationUpdateDate(AdminTestCase):
             foreign_user=NodeLog.SUPPORT_USER_LABEL,
         ).latest('date')
         assert_support_attributed_log(log, self.admin_user)
+=======
+
+
+class TestEmbargoReportView(AdminTestCase):
+
+    def setUp(self):
+        super().setUp()
+        self.request = RequestFactory().get('/nodes/embargo_report/')
+        self.view = setup_log_view(EmbargoReportView(), self.request)
+
+    def test_pending_past_activation_window_in_report(self):
+        embargo = EmbargoFactory(approve=False)
+        embargo.initiation_date = timezone.now() - EMBARGO_PENDING_TIME - timezone.timedelta(days=1)
+        embargo.save()
+
+        context = self.view.get_context_data()
+        assert embargo in context['pending_page']
+
+    def test_recent_pending_embargo_excluded(self):
+        embargo = EmbargoFactory(approve=False)
+        embargo.initiation_date = timezone.now()
+        embargo.save()
+
+        context = self.view.get_context_data()
+        assert embargo not in context['pending_page']
+
+    def test_active_past_end_date_in_report(self):
+        embargo = EmbargoFactory(
+            approve=True,
+            end_date=timezone.now() - timezone.timedelta(days=1),
+        )
+        embargo.state = Sanction.APPROVED
+        embargo.save()
+
+        context = self.view.get_context_data()
+        assert embargo in context['overdue_page']
+
+    def test_active_upcoming_in_report(self):
+        embargo = EmbargoFactory(
+            approve=True,
+            end_date=timezone.now() + timezone.timedelta(days=30),
+        )
+        embargo.state = Sanction.APPROVED
+        embargo.save()
+
+        context = self.view.get_context_data()
+        assert embargo in context['upcoming_page']
+
+    def test_deleted_registration_embargo_excluded(self):
+        embargo = EmbargoFactory(
+            approve=True,
+            end_date=timezone.now() - timezone.timedelta(days=1),
+        )
+        embargo.state = Sanction.APPROVED
+        embargo.save()
+        registration = embargo.registrations.first()
+        registration.is_deleted = True
+        registration.save()
+
+        context = self.view.get_context_data()
+        assert embargo not in context['overdue_page']
+>>>>>>> upstream/develop

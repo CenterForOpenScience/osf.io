@@ -18,10 +18,12 @@
             <th>Initiated By</th>
         </tr>
     </thead>
-    {% include "util/pagination.html" with items=upcoming_page status='' pagin=False order='' %}
+    {% if upcoming_page.paginator.num_pages > 1 %}
+        {% include "util/pagination.html" with items=upcoming_page page_param="upcoming_page" status='' pagin=False order='' %}
+    {% endif %}
     <tbody>
-        {% for embargo in upcoming_embargoes %}
-            {% with registration=embargo.registrations.first %}
+        {% for embargo in upcoming_page %}
+            {% with registration=embargo.registrations.all.0 %}
                 {% if registration %}
                 <tr>
                     <td>
@@ -66,9 +68,12 @@
             <th>Initiated By</th>
         </tr>
     </thead>
+    {% if pending_page.paginator.num_pages > 1 %}
+        {% include "util/pagination.html" with items=pending_page page_param="pending_page" status='' pagin=False order='' %}
+    {% endif %}
     <tbody>
-        {% for embargo in pending_overdue_embargoes %}
-            {% with registration=embargo.registrations.first %}
+        {% for embargo in pending_page %}
+            {% with registration=embargo.registrations.all.0 %}
                 {% if registration %}
                 <tr>
                     <td>
@@ -113,9 +118,12 @@
             <th>Initiated By</th>
         </tr>
     </thead>
+    {% if overdue_page.paginator.num_pages > 1 %}
+        {% include "util/pagination.html" with items=overdue_page page_param="overdue_page" status='' pagin=False order='' %}
+    {% endif %}
     <tbody>
-        {% for embargo in overdue_embargoes %}
-            {% with registration=embargo.registrations.first %}
+        {% for embargo in overdue_page %}
+            {% with registration=embargo.registrations.all.0 %}
                 {% if registration %}
                 <tr>
                     <td>
@@ -154,4 +162,3 @@
 </table>
 
 {% endblock %}
-

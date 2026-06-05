@@ -18,6 +18,7 @@ from elasticsearch_metrics.imps import elastic8 as djel8me
 from psycopg2 import OperationalError as PostgresOperationalError
 
 from framework.celery_tasks import app as celery_app
+from framework.sentry import log_exception
 from osf.metadata.rdfutils import OSF
 from osf.metadata.osfmap_utils import is_osf_component
 from osf.metrics.preprint_metrics import (
@@ -72,13 +73,14 @@ _UNCHANGED_RECORDTYPES = {
     RegistriesModerationMetrics: es8_metrics.RegistriesModerationEventEs8,
 }
 
+_RETRY_ERRORS = (
+    DjangoOperationalError,
+    Elastic6ConnectionError,
+    Elastic8TransportError,
+    PostgresOperationalError,
+)
 _TASK_KWARGS = dict(
-    autoretry_for=(
-        DjangoOperationalError,
-        Elastic6ConnectionError,
-        Elastic8TransportError,
-        PostgresOperationalError,
-    ),
+    autoretry_for=_RETRY_ERRORS,
     retry_backoff=True,  # exponential backoff, with jitter
     max_retries=20,
 )
@@ -145,14 +147,31 @@ def migrate_preprint_downloads(from_when: str, until_when: str):
 
 
 @celery_app.task(**_TASK_KWARGS)
-def schedule_migrate_usage_reports(until_when: str):
-    for _osfid in _merge_sorted_osfids(
-        _each_usage_report_osfid(until_when=until_when),
-        _each_countedusage_osfid(until_when=until_when),
-        _each_preprintview_osfid(until_when=until_when),
-        _each_preprintdownload_osfid(until_when=until_when),
-    ):
-        migrate_usage_reports.delay(_osfid, until_when)
+def schedule_migrate_usage_reports(until_when: str, after_osfid: str | None = None):
+    _last_osfid = None
+    try:
+        for _osfid in _merge_sorted_osfids(
+            _each_usage_report_osfid(until_when, after_osfid),
+            _each_countedusage_osfid(until_when, after_osfid),
+            _each_preprintview_osfid(until_when, after_osfid),
+            _each_preprintdownload_osfid(until_when, after_osfid),
+        ):
+            migrate_usage_reports.delay(_osfid, until_when)
+            _last_osfid = _osfid
+    except _RETRY_ERRORS as _error:
+        if _last_osfid is None:
+            raise  # didn't even get started
+        # schedule another task to continue scheduling
+        schedule_migrate_usage_reports.delay(
+            until_when,
+            after_osfid=(  # avoid infinite loop from _merge_sorted_osfids removing "_v1"
+                f'{_last_osfid}_v1'
+                if '_' not in _last_osfid
+                else _last_osfid
+            ),
+        )
+        # let this task succeed but log the error
+        log_exception(_error)
 
 
 @celery_app.task(**_TASK_KWARGS)

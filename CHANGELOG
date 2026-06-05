@@ -2,6 +2,26 @@
 
 We follow the CalVer (https://calver.org/) versioning scheme: YY.MINOR.MICRO.
 
+26.10.4 (2026-06-04)
+====================
+
+- Fix duplication in scheduled notifications
+
+26.10.3 (2026-06-02)
+====================
+
+- Update how invalid cookie/session is handled
+
+26.10.2 (2026-05-27)
+====================
+
+- Fix admin embargo report page by paging
+
+26.10.1 (2026-05-22)
+====================
+
+- Hotfix to resume (rather than restart) a long task after connection error
+
 26.10.0 (2026-05-19)
 ===================
 
