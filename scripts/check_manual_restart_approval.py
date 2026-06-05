@@ -22,7 +22,7 @@ def check_manual_restart_approval(registration_id):
 
         approval = registration.registration_approval
         if not approval:
-            logger.info(f"Registration {registration_id} has no registration approval object")
+            logger.error(f"Registration {registration_id} has no registration approval object")
             return f"Registration {registration_id} has no registration approval object"
 
         if approval.is_rejected:
@@ -30,24 +30,26 @@ def check_manual_restart_approval(registration_id):
             return f"Registration {registration_id} approval was rejected"
 
         if registration.archiving:
-            logger.info(f"Registration {registration_id} still archiving, retrying in 10 minutes")
+            logger.debug(f"Registration {registration_id} still archiving, retrying in 10 minutes")
             check_manual_restart_approval.apply_async(
                 args=[registration_id],
                 countdown=600
             )
             return f"Registration {registration_id} still archiving, scheduled retry"
 
-        if timezone.now() < approval.auto_approve_at:
+        if timezone.now() < approval.auto_approval_time:
             logger.info(f"Registration {registration_id} not ready for auto-approval yet")
             return f"Registration {registration_id} not ready for auto-approval yet"
 
-        logger.info(f"Processing manual restart approval for registration {registration_id}")
+        logger.debug(f"Processing manual restart approval for registration {registration_id}")
         approve_past_pendings([approval], dry_run=False)
 
         return f"Processed manual restart approval check for registration {registration_id}"
 
     except Exception as e:
-        logger.error(f"Error processing manual restart approval for {registration_id}: {e}")
+        msg = f"Error processing manual restart approval for {registration_id}: {str(e)}"
+        logger.error(msg)
+        sentry.log_message(msg)
         sentry.log_exception(e)
         raise
 

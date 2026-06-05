@@ -133,9 +133,9 @@ class Command(BaseCommand):
         if approval.is_rejected:
             return 'approval was rejected'
 
-        auto_approve_at = approval.auto_approve_at
-        if timezone.now() < auto_approve_at:
-            remaining = auto_approve_at - timezone.now()
+        auto_approval_time = approval.auto_approval_time
+        if timezone.now() < auto_approval_time:
+            remaining = auto_approval_time - timezone.now()
             return f'not ready yet ({remaining} remaining)'
 
         if registration.is_stuck_registration:
