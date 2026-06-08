@@ -133,6 +133,7 @@ def send_user_email_task(self, user_id, notification_ids, **kwargs):
             email_task.error_message = email_task.error_message + f'Max retries reached: {str(e)} \n'
             email_task.save()
             logger.error(f'Max retries reached for send_moderator_email_task for user {user_id}. Task id: {self.request.id}. Errors: {email_task.error_message}')
+            notifications_qs.update(scheduled=None)
             return
 
         email_task, _ = EmailTask.objects.get_or_create(task_id=self.request.id)
@@ -291,6 +292,7 @@ def send_moderator_email_task(self, user_id, notification_ids, provider_content_
             email_task.error_message = email_task.error_message + f'\nMax retries reached: {str(e)}'
             email_task.save()
             logger.error(f'Max retries reached for send_moderator_email_task for user {user_id}. Task id: {self.request.id}. Errors: {email_task.error_message}')
+            notifications_qs.update(scheduled=None)
             return
 
         email_task.status = 'RETRY'
