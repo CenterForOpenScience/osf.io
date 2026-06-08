@@ -14,6 +14,7 @@
             <th>Name</th>
             <th>Version</th>
             <th>Active</th>
+            <th>For Collections only</th>
         </tr>
     </thead>
     <tbody>
@@ -32,6 +33,9 @@
             </td>
             <td>
                 {{ template.active }}
+            </td>
+            <td>
+                {{ template.is_for_collections }}
             </td>
         </tr>
     {% endfor %}

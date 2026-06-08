@@ -1,6 +1,7 @@
-from django.forms import ModelForm, CharField, JSONField
+from django.forms import ModelForm, CharField, JSONField, BooleanField
 
 from osf.models import CedarMetadataTemplate
+
 
 class CedarMetadataTemplateForm(ModelForm):
     schema_name = CharField(
@@ -18,7 +19,8 @@ class CedarMetadataTemplateForm(ModelForm):
     template = JSONField(
         disabled=True
     )
+    is_for_collections = BooleanField(label='For collections only:', required=False)
 
     class Meta:
         model = CedarMetadataTemplate
-        fields = ['schema_name', 'cedar_id', 'template_version', 'template', 'active', 'should_index_for_search']
+        fields = ['schema_name', 'cedar_id', 'template_version', 'template', 'is_for_collections', 'active', 'should_index_for_search']
