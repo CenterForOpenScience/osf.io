@@ -68,6 +68,7 @@ from website import settings as website_settings
 from website import filters
 from website.project import new_bookmark_collection
 from website.util.metrics import OsfSourceTags, unregistered_created_source_tag
+from website.settings import CeleryConfig
 from importlib import import_module
 from osf.models.notification_type import NotificationTypeEnum
 from osf.utils.requests import string_type_request_headers
@@ -894,12 +895,12 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         )
         for file in nodes_files_to_reindex.iterator(chunk_size=100):
             try:
-                update_share(file, urgent=False)
+                update_share(file, target_queue=CeleryConfig.task_low_queue)
             except Exception as e:
                 logger.exception(f'Failed to SHARE reindex file {file._id} during user merge: {e}')
         for file in preprints_files_to_reindex.iterator(chunk_size=100):
             try:
-                update_share(file, urgent=False)
+                update_share(file, target_queue=CeleryConfig.task_low_queue)
             except Exception as e:
                 logger.exception(f'Failed to SHARE reindex preprints file {file._id} during user merge: {e}')
 

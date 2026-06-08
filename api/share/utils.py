@@ -50,24 +50,31 @@ def is_qa_resource(resource):
     return has_qa_tags or has_qa_title
 
 
-def update_share(resource, urgent=True):
+def update_share(resource, target_queue=None):
+    """
+    By default, tasks are routed to queue based on module routing in CeleryRouter,
+    :param resource: osf resource that is needed to be reindexed
+    :param target_queue: should be task queue attribute of CeleryConfig f.e 'task_low_queue' for bulk background
+    passing 'target_queue' allows low-level queue task run (reindexing files after a user merge) even though
+    related module path may be marked to work with task_high_queue.
+    """
     if not settings.SHARE_ENABLED:
         return
     if not hasattr(resource, 'guids'):
         logger.error(f'update_share called on non-guid resource: {resource}')
         return
-    if urgent:
-        _enqueue_update_share(resource)
+    if target_queue is not None:
+        _enqueue_update_share(resource, target_queue)
     else:
-        _enqueue_update_share(resource, urgent=False)
+        _enqueue_update_share(resource)
 
 
-def _enqueue_update_share(osfresource, urgent=True):
+def _enqueue_update_share(osfresource, target_queue=None):
     _osfguid_value = osfresource.guids.values_list('_id', flat=True).first()
     if not _osfguid_value:
         logger.warning(f'update_share skipping resource that has no guids: {osfresource}')
         return
-    enqueue_task(task__update_share.s(_osfguid_value, urgent=urgent))
+    enqueue_task(task__update_share.s(_osfguid_value, target_queue=target_queue))
 
 
 @celery_app.task(
@@ -76,7 +83,7 @@ def _enqueue_update_share(osfresource, urgent=True):
     max_retries=4,
     retry_backoff=True,
 )
-def task__update_share(self, guid: str, is_backfill=False, osfmap_partition_name='MAIN', urgent=True):
+def task__update_share(self, guid: str, is_backfill=False, osfmap_partition_name='MAIN', target_queue=None):
     """
     Send SHARE/trove current metadata record(s) for the osf-guid-identified object
     """
