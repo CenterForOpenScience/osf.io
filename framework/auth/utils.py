@@ -31,6 +31,12 @@ DOMAIN_REGEX = re.compile(
     r'|^\[(25[0-5]|2[0-4]\d|[0-1]?\d?\d)'
     r'(\.(25[0-5]|2[0-4]\d|[0-1]?\d?\d)){3}\]$', re.IGNORECASE)
 
+URL_REGEX = re.compile(
+    r'((https?://)?'
+    r'([A-Z0-9-]+\.)+[A-Z]{2,}'
+    r'(:\d+)?'
+    r'(/.*)?)', re.IGNORECASE)
+
 
 class LogLevel(IntEnum):
     DEBUG = 0
