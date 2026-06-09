@@ -2,6 +2,11 @@
 
 We follow the CalVer (https://calver.org/) versioning scheme: YY.MINOR.MICRO.
 
+26.10.5 (2026-06-09)
+====================
+
+- Prevent users from using URLs/domains in their names
+
 26.10.4 (2026-06-04)
 ====================
 
