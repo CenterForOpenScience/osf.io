@@ -11,7 +11,7 @@ from osf.models.notification_type import get_default_frequency_choices
 from osf.utils.registrations import FILE_VIEW_URL_REGEX
 from osf.utils.sanitize import strip_html
 from osf.exceptions import ValidationError, ValidationValueError, reraise_django_validation_errors, BlockedEmailError
-from framework.auth import utils as auth_utils
+from osf.external.spam.tasks import DOMAIN_REGEX
 
 from website.language import SWITCH_VALIDATOR_ERROR
 
@@ -115,7 +115,7 @@ def validate_email(value):
 
 def has_domain_in_user_fields(user):
     name_content = ' '.join([getattr(user, field) or '' for field in user.DOMAIN_VALIDATION_FIELDS])
-    if auth_utils.URL_REGEX.search(name_content):
+    if DOMAIN_REGEX.search(name_content):
         return True
     return False
 
