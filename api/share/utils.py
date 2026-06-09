@@ -118,7 +118,7 @@ def share_update_cedar_metadata_record(self, referent_id, cedar_record_pk):
         shtrove_ingest_url(),
         params={
             'focus_iri': referent.get_semantic_iri(),
-            'record_identifier': _shtrove_cedar_record_identifier(cedar_record._id, cedar_record.template.cedar_id),
+            'record_identifier': _shtrove_cedar_record_identifier(referent._id, cedar_record.template.cedar_id),
             'is_supplementary': True,
         },
         headers={
@@ -142,7 +142,7 @@ def share_delete_cedar_metadata_record(
     response = requests.delete(
         shtrove_ingest_url(),
         params={
-            'record_identifier': _shtrove_cedar_record_identifier(cedar_record___id, cedar_template_cedar_id),
+            'record_identifier': _shtrove_cedar_record_identifier(cedar_referent___id, cedar_template_cedar_id),
         },
         headers=_shtrove_auth_headers(referent),
     )
@@ -300,8 +300,8 @@ def _shtrove_record_identifier(osf_item, osfmap_partition: OsfmapPartition):
     )
 
 
-def _shtrove_cedar_record_identifier(cedar_record___id, template_cedar_id) -> str:
-    return f'{cedar_record___id}/CedarMetadataRecord:{template_cedar_id}'
+def _shtrove_cedar_record_identifier(referent_osfid, template_cedar_id) -> str:
+    return f'{referent_osfid}/CedarMetadataRecord:{template_cedar_id}'
 
 
 def _shtrove_auth_headers(osf_item):
