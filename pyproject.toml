@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "osf-io"
-version = "26.10.4"
+version = "26.10.5"
 description = "The code for [https://osf.io](https://osf.io)."
 authors = [
     "Brian J. Geiger <bgeiger@pobox.com>",

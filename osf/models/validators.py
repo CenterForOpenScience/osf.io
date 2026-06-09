@@ -11,6 +11,7 @@ from osf.models.notification_type import get_default_frequency_choices
 from osf.utils.registrations import FILE_VIEW_URL_REGEX
 from osf.utils.sanitize import strip_html
 from osf.exceptions import ValidationError, ValidationValueError, reraise_django_validation_errors, BlockedEmailError
+from osf.external.spam.tasks import DOMAIN_REGEX
 
 from website.language import SWITCH_VALIDATOR_ERROR
 
@@ -110,6 +111,11 @@ def validate_email(value):
 
     if is_email_domain_blocked:
         raise BlockedEmailError('Invalid Email')
+
+
+def has_domain_in_user_fields_for_names(user):
+    name_content = ' '.join([getattr(user, field) or '' for field in user.DOMAIN_VALIDATION_FIELDS])
+    return True if DOMAIN_REGEX.search(name_content) else False
 
 
 def validate_subject_hierarchy_length(parent):
