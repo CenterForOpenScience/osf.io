@@ -179,10 +179,9 @@ class Registration(AbstractNode):
         return Registration.objects.filter(
             (models.Q(ia_url__isnull=True) | models.Q(ia_url='')),
             is_public=True,
-            identifiers__category='doi'
         ).exclude(
             moderation_state='withdrawn',
-        )
+        ).distinct()
 
     @staticmethod
     def find_doi_backlog():

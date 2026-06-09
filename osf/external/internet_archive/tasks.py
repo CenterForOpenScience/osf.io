@@ -4,8 +4,23 @@ from osf.utils.requests import requests_retry_session
 from framework.celery_tasks import app
 from framework.postcommit_tasks.handlers import get_task_from_postcommit_queue, enqueue_postcommit_task
 from osf.utils.workflows import RegistrationModerationStates
+from osf.models import RegistrationProvider
+from osf.management.commands.populate_internet_archives_collections import create_ia_subcollection
 
 from website import settings
+
+
+@app.task(max_retries=5, default_retry_delay=60)
+def _create_ia_provider_subcollection(provider_id):
+    provider = RegistrationProvider.objects.get(_id=provider_id)
+    resp = create_ia_subcollection(provider, settings.ID_VERSION, dry_run=False)
+    if resp and resp.status_code not in (200, 409):
+        raise Exception(f'Failed to create IA subcollection for {provider_id}: {resp.status_code}')
+
+
+def create_ia_provider_subcollection(provider):
+    if settings.IA_ARCHIVE_ENABLED:
+        enqueue_postcommit_task(_create_ia_provider_subcollection, (provider._id,), {}, celery=True)
 
 
 @app.task(max_retries=5, default_retry_delay=60, ignore_results=False)
