@@ -57,7 +57,7 @@ from .mixins import AddonModelMixin, ShareIndexMixin
 from .spam import SpamMixin
 from .session import UserSessionMap
 from .tag import Tag
-from .validators import validate_email, validate_social, validate_history_item, has_domain_in_user_fields
+from .validators import validate_email, validate_social, validate_history_item, has_domain_in_user_fields_for_names
 from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
 from osf.utils.fields import NonNaiveDateTimeField, LowercaseEmailField, ensure_str
 from osf.utils.names import impute_names
@@ -1057,7 +1057,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         was_creating = self._state.adding
         has_domain = False
         if not self.is_spammy:
-            has_domain = has_domain_in_user_fields(self)
+            has_domain = has_domain_in_user_fields_for_names(self)
 
         if has_domain and was_creating:
             raise ValidationError('Invalid personal information.')

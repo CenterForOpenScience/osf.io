@@ -48,7 +48,6 @@ from api.base.throttling import (
     BurstRateThrottle,
     FilesRateThrottle,
     FilesBurstRateThrottle,
-    SendEmailThrottle,
 )
 from api.base.utils import default_node_list_permission_queryset
 from api.base.utils import get_object_or_error, is_bulk_request, get_user_auth, is_truthy
@@ -433,7 +432,7 @@ class NodeContributorsList(BaseContributorList, bulk_views.BulkUpdateJSONAPIView
     required_write_scopes = [CoreScopes.NODE_CONTRIBUTORS_WRITE]
     model_class = OSFUser
 
-    throttle_classes = (AddContributorThrottle, UserRateThrottle, NonCookieAuthThrottle, BurstRateThrottle, SendEmailThrottle)
+    throttle_classes = (AddContributorThrottle, UserRateThrottle, NonCookieAuthThrottle, BurstRateThrottle)
 
     pagination_class = NodeContributorPagination
     serializer_class = NodeContributorsSerializer
