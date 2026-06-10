@@ -45,6 +45,7 @@ from osf.models import (
 from website.project import new_private_link
 from website.project.model import NodeUpdateError
 from osf.utils import permissions as osf_permissions
+from api.base.settings import BULK_SETTINGS
 
 
 class RegistrationProviderRelationshipField(RelationshipField):
@@ -1222,6 +1223,8 @@ class NodeContributorsSerializer(JSONAPISerializer):
 
 
 class NodeContributorsBulkCreateListSerializer(JSONAPIListSerializer):
+    class Meta:
+        bulk_limit = BULK_SETTINGS['NODE_CONTRIBUTORS_BULK_LIMIT']
 
     email_preferences = ['false']
 
@@ -1313,6 +1316,7 @@ class NodeContributorsCreateSerializer(NodeContributorsSerializer):
 
     class Meta(NodeContributorsSerializer.Meta):
         list_serializer_class = NodeContributorsBulkCreateListSerializer
+        bulk_limit = BULK_SETTINGS['NODE_CONTRIBUTORS_BULK_LIMIT']
 
     def validate_data(self, resource, user_id=None, full_name=None, email=None, index=None, child_nodes=None):
         if not user_id and not full_name:

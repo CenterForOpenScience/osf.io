@@ -1589,7 +1589,7 @@ class TestNodeContributorBulkCreate(NodeCRUDTestCase):
             bulk=True,
         )
         assert (
-            res.json['errors'][0]['detail'] == 'Bulk operation limit is 100, got 101.'
+            res.json['errors'][0]['detail'] == 'Bulk operation limit is 50, got 101.'
         )
         assert res.json['errors'][0]['source']['pointer'] == '/data'
 
@@ -1923,7 +1923,7 @@ class TestNodeContributorBulkUpdate(NodeCRUDTestCase):
             bulk=True,
         )
         assert (
-            res.json['errors'][0]['detail'] == 'Bulk operation limit is 100, got 101.'
+            res.json['errors'][0]['detail'] == 'Bulk operation limit is 50, got 101.'
         )
         assert res.json['errors'][0]['source']['pointer'] == '/data'
 
@@ -2353,7 +2353,7 @@ class TestNodeContributorBulkPartialUpdate(NodeCRUDTestCase):
             bulk=True,
         )
         assert (
-            res.json['errors'][0]['detail'] == 'Bulk operation limit is 100, got 101.'
+            res.json['errors'][0]['detail'] == 'Bulk operation limit is 50, got 101.'
         )
         assert res.json['errors'][0]['source']['pointer'] == '/data'
 
@@ -2765,7 +2765,7 @@ class TestNodeContributorBulkDelete(NodeCRUDTestCase):
         )
         assert res.status_code == 400
         assert (
-            res.json['errors'][0]['detail'] == 'Bulk operation limit is 100, got 101.'
+            res.json['errors'][0]['detail'] == 'Bulk operation limit is 50, got 101.'
         )
         assert res.json['errors'][0]['source']['pointer'] == '/data'
 

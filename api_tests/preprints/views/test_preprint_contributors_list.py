@@ -1755,7 +1755,7 @@ class TestPreprintContributorBulkCreate(NodeCRUDTestCase):
         node_contrib_create_list = {'data': [payload_one] * 101}
         res = app.post_json_api(url_published, node_contrib_create_list,
                                 auth=user.auth, expect_errors=True, bulk=True)
-        assert res.json['errors'][0]['detail'] == 'Bulk operation limit is 100, got 101.'
+        assert res.json['errors'][0]['detail'] == 'Bulk operation limit is 50, got 101.'
         assert res.json['errors'][0]['source']['pointer'] == '/data'
 
     #   test_preprint_contributor_ugly_payload
@@ -2092,7 +2092,7 @@ class TestPreprintContributorBulkUpdate(NodeCRUDTestCase):
         res = app.put_json_api(
             url_published, contrib_update_list,
             auth=user.auth, expect_errors=True, bulk=True)
-        assert res.json['errors'][0]['detail'] == 'Bulk operation limit is 100, got 101.'
+        assert res.json['errors'][0]['detail'] == 'Bulk operation limit is 50, got 101.'
         assert res.json['errors'][0]['source']['pointer'] == '/data'
 
     #   test_bulk_update_contributors_invalid_permissions
@@ -2514,7 +2514,7 @@ class TestPreprintContributorBulkPartialUpdate(NodeCRUDTestCase):
         res = app.patch_json_api(
             url_published, contrib_update_list,
             auth=user.auth, expect_errors=True, bulk=True)
-        assert res.json['errors'][0]['detail'] == 'Bulk operation limit is 100, got 101.'
+        assert res.json['errors'][0]['detail'] == 'Bulk operation limit is 50, got 101.'
         assert res.json['errors'][0]['source']['pointer'] == '/data'
 
     #   test_bulk_partial_update_invalid_permissions
@@ -2879,7 +2879,7 @@ class TestPreprintContributorBulkDelete(NodeCRUDTestCase):
             url_published, new_payload, auth=user.auth,
             expect_errors=True, bulk=True)
         assert res.status_code == 400
-        assert res.json['errors'][0]['detail'] == 'Bulk operation limit is 100, got 101.'
+        assert res.json['errors'][0]['detail'] == 'Bulk operation limit is 50, got 101.'
         assert res.json['errors'][0]['source']['pointer'] == '/data'
 
     #   test_bulk_delete_contributors_no_payload
