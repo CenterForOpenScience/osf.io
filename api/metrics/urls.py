@@ -5,11 +5,8 @@ from . import views
 app_name = 'osf'
 
 urlpatterns = [
-    re_path(r'^raw/(?P<url_path>[a-z0-9._/]*)$', views.RawMetricsView.as_view(), name=views.RawMetricsView.view_name, kwargs={'djelme_backend_name': 'osfmetrics_es6'}),
     path('raw-<djelme_backend_name>/', views.RawMetricsView.as_view(), name=views.RawMetricsView.view_name, kwargs={'url_path': ''}),
     path('raw-<djelme_backend_name>/<path:url_path>', views.RawMetricsView.as_view(), name=views.RawMetricsView.view_name),
-    re_path(r'^preprints/views/$', views.PreprintViewMetrics.as_view(), name=views.PreprintViewMetrics.view_name),
-    re_path(r'^preprints/downloads/$', views.PreprintDownloadMetrics.as_view(), name=views.PreprintDownloadMetrics.view_name),
     re_path(r'^registries_moderation/transitions/$', views.RegistriesModerationMetricsView.as_view(), name=views.RegistriesModerationMetricsView.view_name),
 
     re_path(
@@ -17,8 +14,13 @@ urlpatterns = [
         views.ReportNameList.as_view(),
         name=views.ReportNameList.view_name,
     ),
-    re_path(
-        r'^reports/(?P<report_name>[a-z0-9_]+)/recent/$',
+    path(
+        'reports/<report_name>/',
+        views.ReportList.as_view(),
+        name=views.ReportList.view_name,
+    ),
+    path(
+        'reports/<report_name>/recent/',
         views.RecentReportList.as_view(),
         name=views.RecentReportList.view_name,
     ),

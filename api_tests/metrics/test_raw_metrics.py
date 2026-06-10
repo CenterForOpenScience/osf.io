@@ -1,10 +1,8 @@
+from http import HTTPStatus
+
 import pytest
-
-from website.app import setup_django
-setup_django()
-
 from waffle.testutils import override_switch
-from elasticsearch6_dsl.connections import connections as es6_connections
+from elasticsearch8.dsl.connections import connections as es8_connections
 
 from osf import features
 from osf_tests.factories import AuthUserFactory
@@ -14,7 +12,7 @@ from api.base.settings import API_PRIVATE_BASE as API_BASE
 pytestmark = pytest.mark.django_db
 
 
-@pytest.mark.es_metrics
+@pytest.mark.osfmetrics_elastic_backends
 class TestRawMetrics:
 
     @pytest.fixture(autouse=True)
@@ -23,10 +21,11 @@ class TestRawMetrics:
             yield
 
     @pytest.fixture(autouse=True)
-    def teardown_customer_index(self, es6_client):
-        es6_client.indices.delete(index='customer', ignore_unavailable=True)
+    def teardown_customer_index(self):
+        _es8_client = es8_connections.get_connection('osfmetrics_es8')
+        _es8_client.indices.delete(index='customer', ignore_unavailable=True)
         yield
-        es6_client.indices.delete(index='customer', ignore_unavailable=True)
+        _es8_client.indices.delete(index='customer', ignore_unavailable=True)
 
     @pytest.fixture
     def user(self):
@@ -40,19 +39,17 @@ class TestRawMetrics:
     def other_user(self):
         return AuthUserFactory()
 
-    @pytest.fixture(params=['raw', 'raw-osfmetrics_es6'])
+    @pytest.fixture
     def base_url(self, request):
-        return f'/{API_BASE}metrics/{request.param}/'
+        return f'/{API_BASE}metrics/raw-osfmetrics_es8/'
 
     def test_delete(self, app, user, base_url):
         res = app.delete_json_api(base_url, auth=user.auth, expect_errors=True)
-        assert res.status_code == 400
-        assert res.json['errors'][0]['detail'] == 'DELETE not supported. Use GET/POST/PUT'
+        assert res.status_code == HTTPStatus.METHOD_NOT_ALLOWED
 
     def test_put(self, app, user, base_url):
         put_return = {
             '_index': 'customer',
-            '_type': '_doc',
             '_id': '1',
             '_version': 1,
             'result': 'created',
@@ -69,7 +66,7 @@ class TestRawMetrics:
         put_data = {
             'name': 'John Doe'
         }
-        res = app.put_json_api(put_url, put_data, auth=user.auth)
+        res = app.put_json_api(put_url, put_data, headers={'Content-Type': 'application/json'}, auth=user.auth)
         assert res.json == put_return
 
     def test_put_no_perms(self, app, other_user, base_url):
@@ -77,14 +74,13 @@ class TestRawMetrics:
         put_data = {
             'name': 'John Doe'
         }
-        res = app.put_json_api(put_url, put_data, auth=other_user.auth, expect_errors=True)
+        res = app.put_json_api(put_url, put_data, auth=other_user.auth, headers={'Content-Type': 'application/json'}, expect_errors=True)
         assert res.status_code == 403
         assert res.json['errors'][0]['detail'] == 'You do not have permission to perform this action.'
 
     def test_post(self, app, user, base_url):
         post_return = {
             '_index': 'customer',
-            '_type': '_doc',
             '_id': '1',
             '_version': 1,
             'result': 'created',
@@ -101,7 +97,7 @@ class TestRawMetrics:
         post_data = {
             'name': 'Jane Doe'
         }
-        res = app.post_json_api(post_url, post_data, auth=user.auth)
+        res = app.post_json_api(post_url, post_data, headers={'Content-Type': 'application/json'}, auth=user.auth)
         assert res.json == post_return
 
     def test_post_no_perms(self, app, other_user, base_url):
@@ -109,14 +105,13 @@ class TestRawMetrics:
         post_data = {
             'name': 'John Doe'
         }
-        res = app.post_json_api(post_url, post_data, auth=other_user.auth, expect_errors=True)
+        res = app.post_json_api(post_url, post_data, headers={'Content-Type': 'application/json'}, auth=other_user.auth, expect_errors=True)
         assert res.status_code == 403
         assert res.json['errors'][0]['detail'] == 'You do not have permission to perform this action.'
 
     def test_post_and_get(self, app, user, base_url):
         post_return = {
             '_index': 'customer',
-            '_type': '_doc',
             '_id': '1',
             '_version': 1,
             'result': 'created',
@@ -133,17 +128,17 @@ class TestRawMetrics:
         post_data = {
             'name': 'Beyonce'
         }
-        res = app.post_json_api(post_url, post_data, auth=user.auth)
+        res = app.post_json_api(post_url, post_data, headers={'Content-Type': 'application/json'}, auth=user.auth)
         assert res.json == post_return
 
-        es6_connections.get_connection('osfmetrics_es6').indices.refresh(
+        es8_connections.get_connection('osfmetrics_es8').indices.refresh(
             index='customer',
         )
 
         get_url = f'{base_url}customer/_search?q=*'
         res = app.get(get_url, auth=user.auth)
 
-        assert res.json['hits']['total'] == 1
+        assert res.json['hits']['total']['value'] == 1
         assert res.json['hits']['hits'][0]['_source']['name'] == 'Beyonce'
 
         get_url = f'{base_url}customer/_doc/1/'

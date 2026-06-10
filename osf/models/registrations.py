@@ -24,8 +24,7 @@ from osf.utils.fields import NonNaiveDateTimeField, LowercaseCharField
 from osf.utils.permissions import ADMIN, READ, WRITE
 from osf.exceptions import NodeStateError, DraftRegistrationStateError
 from osf.external.internet_archive.tasks import archive_to_ia, update_ia_metadata
-from osf.metrics import RegistriesModerationMetrics
-from osf.metrics.es8_metrics import RegistriesModerationEventEs8
+from osf.metrics.events import RegistriesModerationEvent
 from osf.models.notification_type import NotificationTypeEnum
 from .action import RegistrationAction
 from .archive import ArchiveJob
@@ -786,8 +785,7 @@ class Registration(AbstractNode):
         )
         action.save()
         if waffle.switch_is_active(features.ELASTICSEARCH_METRICS):
-            RegistriesModerationMetrics.record_transitions(action)
-            RegistriesModerationEventEs8.record(
+            RegistriesModerationEvent.record(
                 registration_id=action.target._id,
                 provider_id=action.target.provider._id,
                 from_state=action.from_state,

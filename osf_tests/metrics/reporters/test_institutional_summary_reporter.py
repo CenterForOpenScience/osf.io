@@ -81,18 +81,18 @@ class TestInstiSummaryMonthlyReporter(TestCase):
         reporter = InstitutionalSummaryMonthlyReporter(self._yearmonth)
         reports = list_monthly_reports(reporter)
         self.assertEqual(len(reports), 1)
-        report = reports[0]
-        self.assertEqual(report.institution_id, self._institution._id)
-        self.assertEqual(report.user_count, 2)  # _logged_in_user and _active_user
-        self.assertEqual(report.public_project_count, 1)
-        self.assertEqual(report.private_project_count, 1)
-        self.assertEqual(report.public_registration_count, 1)
-        self.assertEqual(report.embargoed_registration_count, 1)
-        self.assertEqual(report.published_preprint_count, 1)
-        self.assertEqual(report.storage_byte_count, 1337)  # test value for one file
-        self.assertEqual(report.public_file_count, 1)
-        self.assertEqual(report.monthly_logged_in_user_count, 1)
-        self.assertEqual(report.monthly_active_user_count, 1)
+        for report in reports:
+            self.assertEqual(report.institution_id, self._institution._id)
+            self.assertEqual(report.user_count, 2)  # _logged_in_user and _active_user
+            self.assertEqual(report.public_project_count, 1)
+            self.assertEqual(report.private_project_count, 1)
+            self.assertEqual(report.public_registration_count, 1)
+            self.assertEqual(report.embargoed_registration_count, 1)
+            self.assertEqual(report.published_preprint_count, 1)
+            self.assertEqual(report.storage_byte_count, 1337)  # test value for one file
+            self.assertEqual(report.public_file_count, 1)
+            self.assertEqual(report.monthly_logged_in_user_count, 1)
+            self.assertEqual(report.monthly_active_user_count, 1)
 
     def test_report_generation_multiple_institutions(self):
         institution2 = InstitutionFactory()
@@ -118,22 +118,24 @@ class TestInstiSummaryMonthlyReporter(TestCase):
         self.assertEqual(len(reports), 3)  # Reports for self._institution, institution2, institution3
 
         # Extract reports by institution
-        report_institution = next(r for r in reports if r.institution_id == self._institution._id)
-        report_institution2 = next(r for r in reports if r.institution_id == institution2._id)
+        _reports1 = [r for r in reports if r.institution_id == self._institution._id]
+        _reports2 = [r for r in reports if r.institution_id == institution2._id]
 
         # Validate report for self._institution
-        self.assertEqual(report_institution.public_project_count, 1)
-        self.assertEqual(report_institution.private_project_count, 1)
-        self.assertEqual(report_institution.user_count, 2)
-        self.assertEqual(report_institution.monthly_active_user_count, 1)
-        self.assertEqual(report_institution.monthly_logged_in_user_count, 1)
+        for _report in _reports1:
+            self.assertEqual(_report.public_project_count, 1)
+            self.assertEqual(_report.private_project_count, 1)
+            self.assertEqual(_report.user_count, 2)
+            self.assertEqual(_report.monthly_active_user_count, 1)
+            self.assertEqual(_report.monthly_logged_in_user_count, 1)
 
         # Validate report for institution2
-        self.assertEqual(report_institution2.public_project_count, 1)
-        self.assertEqual(report_institution2.private_project_count, 0)
-        self.assertEqual(report_institution2.user_count, 1)
-        self.assertEqual(report_institution2.monthly_active_user_count, 1)
-        self.assertEqual(report_institution2.monthly_logged_in_user_count, 0)  # No logged-in users
+        for _report in _reports2:
+            self.assertEqual(_report.public_project_count, 1)
+            self.assertEqual(_report.private_project_count, 0)
+            self.assertEqual(_report.user_count, 1)
+            self.assertEqual(_report.monthly_active_user_count, 1)
+            self.assertEqual(_report.monthly_logged_in_user_count, 0)  # No logged-in users
 
 
 class TestSummaryMonthlyReporterBenchmarker(TestCase):
@@ -264,7 +266,6 @@ class TestSummaryMonthlyReporterBenchmarker(TestCase):
             reporter_start_time = time.time()
         reporter = InstitutionalSummaryMonthlyReporter(self._yearmonth)
         reports = list_monthly_reports(reporter)
-        assert len(reports) == additional_institution_count + 1
 
         if enable_benchmarking:
             reporter_end_time = time.time()

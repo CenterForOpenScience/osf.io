@@ -2,34 +2,12 @@ from __future__ import annotations
 import datetime
 import typing
 
-import waffle
+from elasticsearch8 import dsl as esdsl
 
-from osf.metrics.es8_metrics import MonthlyPublicItemUsageReportEs8
-
-if typing.TYPE_CHECKING:
-    import elasticsearch6_dsl as edsl
-
-import osf.features
 from osf.metadata.osf_gathering import OsfmapPartition
-from osf.metrics.counted_usage import (
-    CountedAuthUsage,
-    get_provider_id,
-    get_item_type as get_legacy_item_type,
-)
-from osf.metrics.preprint_metrics import (
-    PreprintDownload,
-    PreprintView,
-)
-from osf.metrics.reports import PublicItemUsageReport
-from osf.metrics.utils import (
-    YearMonth,
-    cycle_coverage_yearmonth,
-    get_database_iri,
-    get_item_type,
-)
-from osf import models as osfdb
-from osf.models.base import osfid_iri
-from website import settings as website_settings
+from osf.metrics.monthly_reports import MonthlyPublicItemUsageReport
+from osf.metrics.events import OsfCountedUsageEvent
+from osf.metrics.utils import YearMonth, cycle_coverage_yearmonth
 from ._base import MonthlyReporter
 
 
@@ -48,60 +26,20 @@ class PublicItemUsageReporter(MonthlyReporter):
     includes projects, project components, registrations, registration components, and preprints
     '''
     def iter_report_kwargs(self, continue_after: dict | None = None):
-        _after_osfid = continue_after['osfid'] if continue_after else None
-        for _osfid in _zip_sorted(
-            self._countedusage_osfids(_after_osfid),
-            self._preprintview_osfids(_after_osfid),
-            self._preprintdownload_osfids(_after_osfid),
-        ):
-            yield {'osfid': _osfid}
+        _after_item_iri = continue_after['item_iri'] if continue_after else None
+        for _item_iri in self._each_item_iri(_after_item_iri):
+            yield {'item_iri': _item_iri}
 
     def report(self, **report_kwargs):
-        _osfid = report_kwargs['osfid']
-        # get usage metrics from several sources:
-        # - osf.metrics.counted_usage:
-        #   - views and downloads for each item (using `CountedAuthUsage.item_guid`)
-        #   - views for each item's components and files (using `CountedAuthUsage.surrounding_guids`)
-        # - osf.metrics.preprint_metrics:
-        #   - preprint views and downloads
-        # - PageCounter? (no)
+        _item_iri = report_kwargs['item_iri']
         try:
-            _guid = osfdb.Guid.load(_osfid)
-            if _guid is None or _guid.referent is None:
-                raise _SkipItem
-            _obj = _guid.referent
-            _report = self._init_report(_obj)
-            self._fill_report_counts(_report, _obj)
-            if not any((
-                _report.view_count,
-                _report.view_session_count,
-                _report.download_count,
-                _report.download_session_count,
-            )):
-                raise _SkipItem
-            _report_es6 = PublicItemUsageReport(
-                item_osfid=_report.item_osfids[0],
-                item_type=[get_legacy_item_type(_obj)],
-                provider_id=list(_report.provider_ids),
-                platform_iri=list(_report.platform_iris),
-                view_count=_report.view_count,
-                view_session_count=_report.view_session_count,
-                download_count=_report.download_count,
-                download_session_count=_report.download_session_count,
-            )
-            return [_report, _report_es6]
+            yield self._build_report(_item_iri)
         except _SkipItem:
-            return []
+            pass
 
     def followup_task(self, report):
         _last_month = YearMonth.from_date(datetime.date.today()).prior()
-        if isinstance(report, MonthlyPublicItemUsageReportEs8):
-            _is_last_month = (report.cycle_coverage == cycle_coverage_yearmonth(_last_month))
-        elif isinstance(report, PublicItemUsageReport):
-            return None  # followup for only one of the two reports
-        else:
-            raise ValueError(report)
-        if _is_last_month:
+        if report.report_yearmonth == _last_month:
             from api.share.utils import task__update_share
             return task__update_share.signature(
                 args=(report.item_osfids[0],),
@@ -112,212 +50,120 @@ class PublicItemUsageReporter(MonthlyReporter):
                 countdown=30,  # give index time to settle
             )
 
-    def _countedusage_osfids(self, after_osfid: str | None) -> typing.Iterator[str]:
+    def _each_item_iri(self, after_item_iri: str | None) -> typing.Iterator[str]:
         _search = self._base_usage_search()
         _search.aggs.bucket(
-            'agg_osfid',
+            'agg_item_iri',
             'composite',
-            sources=[{'osfid': {'terms': {'field': 'item_guid'}}}],
+            sources=[{'item_iri': {'terms': {'field': 'item_iri'}}}],
             size=_CHUNK_SIZE,
         )
-        return _iter_composite_bucket_keys(_search, 'agg_osfid', 'osfid', after=after_osfid)
+        return _iter_composite_bucket_keys(_search, 'agg_item_iri', 'item_iri', after=after_item_iri)
 
-    def _preprintview_osfids(self, after_osfid: str | None) -> typing.Iterator[str]:
-        _search = (
-            PreprintView.search()
-            .filter('range', timestamp={
-                'gte': self.yearmonth.month_start(),
-                'lt': self.yearmonth.month_end(),
-            })
-            .extra(size=0)  # only aggregations, no hits
+    def _build_report(self, item_iri) -> MonthlyPublicItemUsageReport:
+        # get usage metrics from OsfCountedUsageEvent:
+        #   - views of the item and its components and files (matching `within_iris`)
+        #   - downloads for each item (matching `item_iri`)
+        _search = self._build_usage_counts_search(item_iri)
+        _response = _search.execute()
+        _views_bucket = _response.aggregations.agg_by_label.buckets.views
+        _downloads_bucket = _response.aggregations.agg_by_label.buckets.downloads
+        _fields_agg = _response.aggregations.agg_for_terms
+        _report = MonthlyPublicItemUsageReport(
+            report_yearmonth=self.yearmonth,
+            item_iri=item_iri,
+            item_osfids=_bucket_keys(_fields_agg.item_osfids.buckets),
+            database_iris=_bucket_keys(_fields_agg.database_iris.buckets),
+            platform_iris=_bucket_keys(_fields_agg.platform_iris.buckets),
+            provider_ids=_bucket_keys(_fields_agg.provider_ids.buckets),
+            item_types=_bucket_keys(_fields_agg.item_types.buckets),
+            view_count=_views_bucket.doc_count,
+            view_session_count=_views_bucket.agg_session_count.value,
+            download_count=_downloads_bucket.doc_count,
+            download_session_count=_downloads_bucket.agg_session_count.value,
+            # same as non-cumulative counts, unless there's a prior report (added below)
+            cumulative_view_count=_views_bucket.doc_count,
+            cumulative_view_session_count=_views_bucket.agg_session_count.value,
+            cumulative_download_count=_downloads_bucket.doc_count,
+            cumulative_download_session_count=_downloads_bucket.agg_session_count.value,
         )
-        _search.aggs.bucket(
-            'agg_osfid',
-            'composite',
-            sources=[{'osfid': {'terms': {'field': 'preprint_id'}}}],
-            size=_CHUNK_SIZE,
-        )
-        return _iter_composite_bucket_keys(_search, 'agg_osfid', 'osfid', after=after_osfid)
+        _prior = self._prior_usage_report(item_iri)
+        if _prior is not None:
+            _report.cumulative_view_count += _prior.cumulative_view_count
+            _report.cumulative_view_session_count += _prior.cumulative_view_session_count
+            _report.cumulative_download_count += _prior.cumulative_download_count
+            _report.cumulative_download_session_count += _prior.cumulative_download_session_count
+        return _report
 
-    def _preprintdownload_osfids(self, after_osfid: str | None) -> typing.Iterator[str]:
-        _search = (
-            PreprintDownload.search()
-            .filter('range', timestamp={
-                'gte': self.yearmonth.month_start(),
-                'lt': self.yearmonth.month_end(),
-            })
-            .extra(size=0)  # only aggregations, no hits
-        )
-        _search.aggs.bucket(
-            'agg_osfid',
-            'composite',
-            sources=[{'osfid': {'terms': {'field': 'preprint_id'}}}],
-            size=_CHUNK_SIZE,
-        )
-        return _iter_composite_bucket_keys(_search, 'agg_osfid', 'osfid', after=after_osfid)
-
-    def _init_report(self, osf_obj) -> MonthlyPublicItemUsageReportEs8:
-        if not _is_item_public(osf_obj):
-            raise _SkipItem
-        return MonthlyPublicItemUsageReportEs8(
-            cycle_coverage=cycle_coverage_yearmonth(self.yearmonth),
-            item_iri=osfid_iri(osf_obj._id),
-            item_osfids=[osf_obj._id],
-            item_types=[get_item_type(osf_obj)],
-            provider_ids=[get_provider_id(osf_obj)],
-            database_iris=[get_database_iri(osf_obj)],
-            platform_iris=[website_settings.DOMAIN],
-            # leave counts null; will be set if there's data
-        )
-
-    def _fill_report_counts(self, report, osf_obj):
-        if (
-            isinstance(osf_obj, osfdb.Preprint)
-            and not waffle.switch_is_active(osf.features.COUNTEDUSAGE_UNIFIED_METRICS_2024)  # type: ignore[attr-defined]
-        ):
-            # note: no session-count info in preprint metrics
-            report.view_count = PreprintView.get_count_for_preprint(
-                preprint=osf_obj,
-                after=self.yearmonth.month_start(),
-                before=self.yearmonth.month_end(),
-            )
-            report.download_count = PreprintDownload.get_count_for_preprint(
-                preprint=osf_obj,
-                after=self.yearmonth.month_start(),
-                before=self.yearmonth.month_end(),
-            )
-            report.cumulative_view_count = PreprintView.get_count_for_preprint(
-                preprint=osf_obj,
-                before=self.yearmonth.month_end(),
-            )
-            report.cumulative_download_count = PreprintDownload.get_count_for_preprint(
-                preprint=osf_obj,
-                before=self.yearmonth.month_end(),
-            )
-        else:
-            (
-                report.view_count,
-                report.view_session_count,
-            ) = self._countedusage_view_counts(osf_obj, cumulative=False)
-            (
-                report.download_count,
-                report.download_session_count,
-            ) = self._countedusage_download_counts(osf_obj, cumulative=False)
-
-            (
-                report.cumulative_view_count,
-                report.cumulative_view_session_count,
-            ) = self._countedusage_view_counts(osf_obj, cumulative=True)
-
-            (
-                report.cumulative_download_count,
-                report.cumulative_download_session_count,
-            ) = self._countedusage_download_counts(osf_obj, cumulative=True)
-
-    def _base_usage_search(self, cumulative: bool = False):
-        timestamp_filter = {
-            'lt': self.yearmonth.month_end(),
-        }
-        if not cumulative:
-            timestamp_filter['gte'] = self.yearmonth.month_start()
+    def _base_usage_search(self):
         return (
-            CountedAuthUsage.search()
+            OsfCountedUsageEvent.search_timeseries_range(
+                self.yearmonth.month_start(),
+                self.yearmonth.month_end(),
+            )
             .filter('term', item_public=True)
-            .filter('range', timestamp=timestamp_filter)
             .extra(size=0)  # only aggregations, no hits
         )
 
-    def _countedusage_view_counts(self, osf_obj, cumulative: bool = False) -> tuple[int, int]:
-        '''compute view_session_count separately to avoid double-counting
-
-        (the same session may be represented in both the composite agg on `item_guid`
-        and that on `surrounding_guids`)
+    def _build_usage_counts_search(self, item_iri, cumulative: bool = False) -> tuple[int, int]:
+        '''get usage counts for the given item_iri
         '''
-        _search = (
-            self._base_usage_search(cumulative=cumulative)
-            .query(
-                'bool',
-                filter=[
-                    {'term': {'action_labels': CountedAuthUsage.ActionLabel.VIEW.value}},
-                ],
-                should=[
-                    {'term': {'item_guid': osf_obj._id}},
-                    {'term': {'surrounding_guids': osf_obj._id}},
-                ],
-                minimum_should_match=1,
-            )
-        )
-        _search.aggs.metric(
+        _search = self._base_usage_search().filter('term', within_iris=item_iri)
+
+        # aggregation for counts by action label (views, downloads)
+        _agg_by_label = esdsl.A('filters', filters={
+            # bucket for views (including items within)
+            'views': {'term': {'action_labels': OsfCountedUsageEvent.ActionLabel.VIEW.value}},
+            # bucket for downloads (excluding items within)
+            'downloads': {
+                'bool': {
+                    'filter': [
+                        {'term': {'action_labels': OsfCountedUsageEvent.ActionLabel.DOWNLOAD.value}},
+                        {'term': {'item_iri': item_iri}},
+                    ],
+                },
+            },
+        })
+        # session count for each label bucket
+        _agg_by_label.metric(
             'agg_session_count',
             'cardinality',
-            field='session_id',
+            field='sessionhour_id',
             precision_threshold=_MAX_CARDINALITY_PRECISION,
         )
-        _response = _search.execute()
-        _view_count = _response.hits.total
-        _view_session_count = (
-            _response.aggregations.agg_session_count.value
-            if 'agg_session_count' in _response.aggregations
-            else 0
-        )
-        return (_view_count, _view_session_count)
+        _search.aggs.bucket('agg_by_label', _agg_by_label)
 
-    def _countedusage_download_counts(self, osf_obj, cumulative: bool = False) -> tuple[int, int]:
-        '''aggregate downloads on each osfid (not including components/files)'''
+        # aggregation for getting terms used on usage events directly on the item
+        # (excluding items within) -- usually one value per field per item, but could be more
+        _agg_for_terms = esdsl.A('filter', term={'item_iri': item_iri})
+        _agg_for_terms.bucket('item_osfids', esdsl.A('terms', field='item_osfid'))
+        _agg_for_terms.bucket('item_types', esdsl.A('terms', field='item_type'))
+        _agg_for_terms.bucket('platform_iris', esdsl.A('terms', field='platform_iri'))
+        _agg_for_terms.bucket('database_iris', esdsl.A('terms', field='database_iri'))
+        _agg_for_terms.bucket('provider_ids', esdsl.A('terms', field='provider_id'))
+        _search.aggs.bucket('agg_for_terms', _agg_for_terms)
+
+        return _search
+
+    def _prior_usage_report(self, item_iri):
         _search = (
-            self._base_usage_search(cumulative=cumulative)
-            .filter('term', item_guid=osf_obj._id)
-            .filter('term', action_labels=CountedAuthUsage.ActionLabel.DOWNLOAD.value)
+            MonthlyPublicItemUsageReport.search()
+            .filter('term', item_iri=item_iri)
+            .filter('range', cycle_coverage={
+                'lt': cycle_coverage_yearmonth(self.yearmonth),
+            })
+            .sort('-cycle_coverage')  # most recent first
         )
-        # agg: get download session count
-        _search.aggs.metric(
-            'agg_session_count',
-            'cardinality',
-            field='session_id',
-            precision_threshold=_MAX_CARDINALITY_PRECISION,
-        )
-        _response = _search.execute()
-        _download_count = _response.hits.total
-        _download_session_count = (
-            _response.aggregations.agg_session_count.value
-            if 'agg_session_count' in _response.aggregations
-            else 0
-        )
-        return (_download_count, _download_session_count)
+        _response = _search[0].execute()
+        return _response[0] if _response else None
 
 
-def _is_item_public(osfid_referent) -> bool:
-    if isinstance(osfid_referent, osfdb.Preprint):
-        return bool(osfid_referent.verified_publishable)        # quacks like Preprint
-    return getattr(osfid_referent, 'is_public', False)    # quacks like AbstractNode
-
-
-def _zip_sorted(
-    *iterators: typing.Iterator[str],
-) -> typing.Iterator[str]:
-    '''loop thru multiple iterators on sorted (ascending) sequences of strings
-    '''
-    _nexts = {  # holds the next value from each iterator, or None
-        _i: next(_iter, None)
-        for _i, _iter in enumerate(iterators)
-    }
-    while True:
-        _nonnull_nexts = [
-            _next
-            for _next in _nexts.values()
-            if _next is not None
-        ]
-        if not _nonnull_nexts:
-            return  # all done
-        _value = min(_nonnull_nexts)
-        yield _value
-        for _i, _iter in enumerate(iterators):
-            if _nexts[_i] == _value:
-                _nexts[_i] = next(_iter, None)
+def _bucket_keys(buckets):
+    return [_bucket['key'] for _bucket in buckets]
 
 
 def _iter_composite_bucket_keys(
-    search: edsl.Search,
+    search: esdsl.Search,
     composite_agg_name: str,
     composite_source_name: str,
     after: str | None = None,

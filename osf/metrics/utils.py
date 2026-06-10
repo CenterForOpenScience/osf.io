@@ -6,7 +6,7 @@ import datetime
 from hashlib import sha256
 from typing import ClassVar
 
-from elasticsearch_metrics.util.timeparts import format_timeparts
+from elasticsearch_metrics.util.timeparts import serialize_timeparts
 
 from osf.metadata.osfmap_utils import (
     osfmap_type,
@@ -22,7 +22,7 @@ def cycle_coverage_date(given_date: datetime.date) -> str:
     >>> cycle_coverage_date(datetime.datetime(7654, 3, 2, 1))
     '7654.3.2'
     """
-    return format_timeparts(given_date, 3)
+    return serialize_timeparts((given_date.year, given_date.month, given_date.day), 3)
 
 
 def cycle_coverage_yearmonth(given_ym: YearMonth | datetime.date) -> str:
@@ -32,7 +32,7 @@ def cycle_coverage_yearmonth(given_ym: YearMonth | datetime.date) -> str:
     >>> cycle_coverage_yearmonth(datetime.date(1234, 5, 6))
     '1234.5'
     """
-    return format_timeparts((given_ym.year, given_ym.month), 2)
+    return serialize_timeparts((given_ym.year, given_ym.month), 2)
 
 
 def stable_key(*key_parts):
@@ -75,6 +75,36 @@ def get_item_type_from_iri(type_iri) -> str:
     return _shortname
 
 
+def get_surrounding_osfids(osfid_referent):
+    """get all the parent/owner/surrounding osfids for the given osfid_referent
+
+    @param osfid_referent: instance of a model that has GuidMixin
+    @returns list of str
+
+    For AbstractNode, goes up the node hierarchy up to the root.
+    For WikiPage or BaseFileNode, grab the node it belongs to and
+    follow the node hierarchy from there.
+    """
+    _surrounding_osfids = []
+    _current_referent = osfid_referent
+    while _current_referent:
+        next_referent = get_immediate_wrapper(_current_referent)
+        if next_referent:
+            _surrounding_osfids.append(next_referent._id)
+        _current_referent = next_referent
+    return _surrounding_osfids
+
+
+def get_immediate_wrapper(osfid_referent):
+    if hasattr(osfid_referent, 'verified_publishable'):
+        return None                                     # quacks like Preprint
+    return (
+        getattr(osfid_referent, 'parent_node', None)     # quacks like AbstractNode
+        or getattr(osfid_referent, 'node', None)         # quacks like WikiPage, Comment
+        or getattr(osfid_referent, 'target', None)       # quacks like BaseFileNode
+    )
+
+
 @dataclasses.dataclass(frozen=True)
 class YearMonth:
     """YearMonth: represents a specific month in a specific year"""
@@ -87,6 +117,11 @@ class YearMonth:
     def from_date(cls, date: datetime.date) -> YearMonth:
         """construct a YearMonth from a `datetime.date` (or `datetime.datetime`)"""
         return cls(date.year, date.month)
+
+    @classmethod
+    def from_today(cls) -> YearMonth:
+        """construct a YearMonth from the current moment"""
+        return cls.from_date(datetime.date.today())
 
     @classmethod
     def from_str(cls, input_str: str) -> YearMonth:

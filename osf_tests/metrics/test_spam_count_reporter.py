@@ -1,7 +1,6 @@
 import pytest
 from datetime import datetime
 from osf.metrics.reporters.private_spam_metrics import PrivateSpamMetricsReporter
-from osf.metrics.reports import PrivateSpamMetricsReport
 from osf.metrics.utils import YearMonth
 from osf_tests.factories import NodeLogFactory, NodeFactory
 from unittest.mock import patch
@@ -31,10 +30,10 @@ def test_private_spam_metrics_reporter():
         mock_akismet_get_hammed_count.return_value = 10
 
         reporter = PrivateSpamMetricsReporter(report_yearmonth)
-        reports_raw = reporter.report()
-        report = next(r for r in reports_raw if isinstance(r, PrivateSpamMetricsReport))
-
-        assert report.node_oopspam_flagged == 10, f"Expected 10, got {report.node_oopspam_flagged}"
-        assert report.node_oopspam_hammed == 5, f"Expected 5, got {report.node_oopspam_hammed}"
-        assert report.node_akismet_flagged == 20, f"Expected 20, got {report.node_akismet_flagged}"
-        assert report.node_akismet_hammed == 10, f"Expected 10, got {report.node_akismet_hammed}"
+        reports = list(reporter.report())
+        assert len(reports) == 1
+        for report in reports:
+            assert report.node_oopspam_flagged == 10, f"Expected 10, got {report.node_oopspam_flagged}"
+            assert report.node_oopspam_hammed == 5, f"Expected 5, got {report.node_oopspam_hammed}"
+            assert report.node_akismet_flagged == 20, f"Expected 20, got {report.node_akismet_flagged}"
+            assert report.node_akismet_hammed == 10, f"Expected 10, got {report.node_akismet_hammed}"
