@@ -266,7 +266,7 @@ class PreprintVersionsList(JSONAPIBaseView, generics.ListCreateAPIView, Preprint
         return super().create(request, *args, **kwargs)
 
 
-class PreprintDetail(PreprintOldVersionsImmutableMixin, UsageMetricsViewMixin, JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, PreprintMixin, WaterButlerMixin):
+class PreprintDetail(PreprintOldVersionsImmutableMixin, UsageMetricsViewMixin, JSONAPIBaseView, generics.RetrieveUpdateAPIView, PreprintMixin, WaterButlerMixin):
     """See [documentation for this endpoint](https://developer.osf.io/#operation/preprints_read).
 
     Note: The resource now exposes a `versions` relationship pointing to
@@ -306,13 +306,6 @@ class PreprintDetail(PreprintOldVersionsImmutableMixin, UsageMetricsViewMixin, J
         res = super().get_parser_context(http_request)
         res['legacy_type_allowed'] = True
         return res
-
-    def delete(self, request, *args, **kwargs):
-        if self.get_preprint().machine_state in ['initial', 'rejected']:
-            return super().delete(request, *args, **kwargs)
-
-        raise ValidationError('You cannot delete created preprint')
-
 
 class PreprintNodeRelationship(PreprintOldVersionsImmutableMixin, JSONAPIBaseView, generics.RetrieveUpdateAPIView, PreprintMixin):
     permission_classes = (

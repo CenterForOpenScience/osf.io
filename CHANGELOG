@@ -2,6 +2,26 @@
 
 We follow the CalVer (https://calver.org/) versioning scheme: YY.MINOR.MICRO.
 
+26.10.7 (2026-06-10)
+====================
+
+- Fix typo in pyproject.toml
+
+26.10.6 (2026-06-10)
+====================
+
+- Disable Preprint DELETE from API
+
+26.10.5 (2026-06-09)
+====================
+
+- Prevent users from using URLs/domains in their names
+
+26.10.4 (2026-06-04)
+====================
+
+- Fix duplication in scheduled notifications
+
 26.10.3 (2026-06-02)
 ====================
 
