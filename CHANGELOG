@@ -2,6 +2,13 @@
 
 We follow the CalVer (https://calver.org/) versioning scheme: YY.MINOR.MICRO.
 
+26.11.0 (2026-06-10)
+====================
+
+- Stop using elasticsearch6
+- Change all osfmetrics-consuming code to use es8 from data migration in 26.10.0
+
+
 26.10.7 (2026-06-10)
 ====================
 
