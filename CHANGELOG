@@ -2,6 +2,11 @@
 
 We follow the CalVer (https://calver.org/) versioning scheme: YY.MINOR.MICRO.
 
+26.10.7 (2026-06-10)
+====================
+
+- Fix typo in pyproject.toml
+
 26.10.6 (2026-06-10)
 ====================
 
