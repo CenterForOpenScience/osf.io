@@ -131,7 +131,7 @@ class BulkDestroyJSONAPIView(bulk_generics.BulkDestroyAPIView):
             data = request.data
 
         num_items = len(data)
-        bulk_limit = BULK_SETTINGS['DEFAULT_BULK_LIMIT']
+        bulk_limit = getattr(self, 'bulk_limit', BULK_SETTINGS['DEFAULT_BULK_LIMIT'])
 
         if num_items > bulk_limit:
             raise JSONAPIException(

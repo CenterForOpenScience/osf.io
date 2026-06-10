@@ -1367,6 +1367,9 @@ class NodeContributorDetailSerializer(NodeContributorsSerializer):
     id = IDField(required=True, source='_id')
     index = ser.IntegerField(required=False, read_only=False, source='_order')
 
+    class Meta(NodeContributorsSerializer.Meta):
+        bulk_limit = BULK_SETTINGS['NODE_CONTRIBUTORS_BULK_LIMIT']
+
     def update(self, instance, validated_data):
         return update_contributors_permissions_and_bibliographic_status(
             self,

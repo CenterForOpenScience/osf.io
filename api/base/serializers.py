@@ -1391,7 +1391,16 @@ class JSONAPIListSerializer(ser.ListSerializer):
     # overrides ListSerializer
     def run_validation(self, data):
         meta = getattr(self, 'Meta', None)
-        bulk_limit = getattr(meta, 'bulk_limit', BULK_SETTINGS['DEFAULT_BULK_LIMIT'])
+
+        if meta and hasattr(meta, 'bulk_limit'):
+            bulk_limit = meta.bulk_limit
+        else:
+            child_meta = getattr(getattr(self, 'child', None), 'Meta', None)
+            bulk_limit = getattr(
+                child_meta,
+                'bulk_limit',
+                BULK_SETTINGS['DEFAULT_BULK_LIMIT'],
+            )
 
         num_items = len(data)
 

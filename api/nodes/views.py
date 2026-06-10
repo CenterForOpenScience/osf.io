@@ -5,6 +5,7 @@ from collections import Counter
 import dataclasses
 import waffle
 
+from api.base.settings import BULK_SETTINGS
 from api.collections.serializers import CollectionSerializer
 from osf import features
 from packaging.version import Version
@@ -439,6 +440,8 @@ class NodeContributorsList(BaseContributorList, bulk_views.BulkUpdateJSONAPIView
     view_category = 'nodes'
     view_name = 'node-contributors'
     ordering = ('_order',)  # default ordering
+
+    bulk_limit = BULK_SETTINGS['NODE_CONTRIBUTORS_BULK_LIMIT']
 
     def get_resource(self):
         return self.get_node()
