@@ -1,16 +1,17 @@
-import pytest
 import datetime
+
+import pytest
 
 from api.base.settings.defaults import API_BASE, DEFAULT_ES_NULL_VALUE
 from osf_tests.factories import (
     InstitutionFactory,
     AuthUserFactory,
 )
-from osf.metrics.reports import InstitutionalUserReport
+from osf.metrics.monthly_reports import MonthlyInstitutionalUserReport
 from osf.metrics.utils import YearMonth
 
 
-@pytest.mark.es_metrics
+@pytest.mark.osfmetrics_elastic_backends
 @pytest.mark.django_db
 class TestInstitutionDepartmentList:
 
@@ -37,55 +38,55 @@ class TestInstitutionDepartmentList:
     @pytest.fixture()
     def populate_counts(self, user, user2, user3, user4, admin, institution):
         # This represents a Department that had a user, but no longer has any users, so does not appear in results.
-        InstitutionalUserReport(
+        MonthlyInstitutionalUserReport(
             report_yearmonth=YearMonth(2017, 2),
             user_id=user._id,
             institution_id=institution._id,
             department_name='Old Department',
             public_project_count=1,
             private_project_count=1,
-        ).save()
+        ).save(validate=False)
 
         _this_month = YearMonth.from_date(datetime.date.today())
 
         # The user has left the department
-        InstitutionalUserReport(
+        MonthlyInstitutionalUserReport(
             report_yearmonth=_this_month,
             user_id=user._id,
             institution_id=institution._id,
             department_name='New Department',
             public_project_count=1,
             private_project_count=1,
-        ).save()
+        ).save(validate=False)
 
         # A second user entered the department
-        InstitutionalUserReport(
+        MonthlyInstitutionalUserReport(
             report_yearmonth=_this_month,
             user_id=user2._id,
             institution_id=institution._id,
             department_name='New Department',
             public_project_count=1,
             private_project_count=1,
-        ).save()
+        ).save(validate=False)
 
         # A new department with a single user to test sorting
-        InstitutionalUserReport(
+        MonthlyInstitutionalUserReport(
             report_yearmonth=_this_month,
             user_id=user3._id,
             institution_id=institution._id,
             department_name='Smaller Department',
             public_project_count=1,
             private_project_count=1,
-        ).save()
+        ).save(validate=False)
 
         # A user with no department
-        InstitutionalUserReport(
+        MonthlyInstitutionalUserReport(
             report_yearmonth=_this_month,
             user_id=user4._id,
             institution_id=institution._id,
             public_project_count=1,
             private_project_count=1,
-        ).save()
+        ).save(validate=False)
 
     @pytest.fixture()
     def admin(self, institution):
@@ -113,7 +114,7 @@ class TestInstitutionDepartmentList:
         assert resp.json['data'] == []
 
     def test_get(self, app, url, admin, institution, populate_counts):
-        InstitutionalUserReport._get_connection().indices.refresh(InstitutionalUserReport._template_pattern)
+        MonthlyInstitutionalUserReport.refresh()
         resp = app.get(url, auth=admin.auth)
 
         assert resp.json['data'] == [{

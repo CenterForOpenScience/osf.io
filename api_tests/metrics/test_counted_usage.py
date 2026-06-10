@@ -1,10 +1,13 @@
 from datetime import datetime, timezone
-
-import pytest
 from unittest import mock
 
-from framework.auth.core import Auth
+import pytest
+from elasticsearch_metrics.util.anon_enough import opaque_key
 
+from framework.auth.core import Auth
+from osf.utils.permissions import ADMIN, READ, WRITE
+
+from api_tests.utils import create_test_file
 from osf_tests.factories import (
     AuthUserFactory,
     NodeFactory,
@@ -12,11 +15,7 @@ from osf_tests.factories import (
     PrivateLinkFactory,
     ProjectFactory,
     RegistrationFactory,
-    # UserFactory,
 )
-from osf.utils.permissions import ADMIN, READ, WRITE
-from api_tests.utils import create_test_file
-from elasticsearch_metrics.tests.util import djelme_test_backends
 
 
 COUNTED_USAGE_URL = '/_/metrics/events/counted_usage/'
@@ -30,23 +29,24 @@ def counted_usage_payload(**attributes):
     }
 
 
-def assert_saved_with(mock_save, *, expected_doc_id=None, expected_attrs):
-    assert mock_save.call_count == 1
-    args, kwargs = mock_save.call_args
-    actual_instance = args[0]
+def assert_saved_with(mock_es8, *, expected_doc_id=None, expected_attrs):
+    assert mock_es8.index.call_count == 1
+    _args, _kwargs = mock_es8.index.call_args
     if expected_doc_id is not None:
-        assert actual_instance.meta.id == expected_doc_id
-    actual_attrs = actual_instance.to_dict()
-    for attr_name, expected_value in expected_attrs.items():
-        actual_value = actual_attrs.get(attr_name, None)
-        assert actual_value == expected_value, repr(actual_value)
+        assert _kwargs['id'] == expected_doc_id
+    _actual_attrs = _kwargs['body']
+    for _attr_name, _expected_value in expected_attrs.items():
+        _actual_value = _actual_attrs.get(_attr_name, None)
+        assert (_actual_value == _expected_value), repr(_actual_value)
 
 
 @pytest.fixture
-def mock_save():
-    with mock.patch('elasticsearch_metrics.imps.elastic6.BaseMetric.check_index_template'):
-        with mock.patch('elasticsearch6_dsl.Document.save', autospec=True) as mock_save:
-            yield mock_save
+def mock_es8():
+    with mock.patch('elasticsearch_metrics.imps.elastic8.TimeseriesRecord.check_djelme_setup'):
+        with mock.patch('elasticsearch_metrics.imps.elastic8.BaseDjelmeRecord._get_connection') as _mock_get_connection:
+            _mock_es8 = _mock_get_connection.return_value
+            _mock_es8.index.return_value = {'result': {}}
+            yield _mock_es8
 
 
 @pytest.mark.django_db
@@ -77,20 +77,18 @@ class TestRestrictions:
 class TestComputedFields:
 
     @pytest.fixture(autouse=True)
-    def _real_elastic(self):
-        with djelme_test_backends():
-            yield
-
-    @pytest.fixture(autouse=True)
     def mock_domain(self):
         domain = 'http://example.foo/'
-        with mock.patch('api.metrics.serializers.website_settings.DOMAIN', new=domain):
+        with mock.patch('website.settings.DOMAIN', new=domain):
             yield domain
 
     @pytest.fixture(autouse=True)
     def mock_now(self):
         timestamp = datetime(1981, 1, 1, 0, 1, 31, tzinfo=timezone.utc)
-        with mock.patch('django.utils.timezone.now', return_value=timestamp):
+        with (
+            mock.patch('django.utils.timezone.now', return_value=timestamp),
+            mock.patch('elasticsearch_metrics.imps.elastic8.utcnow', return_value=timestamp),
+        ):
             yield timestamp
 
     @pytest.fixture
@@ -105,7 +103,7 @@ class TestComputedFields:
         with mock.patch('osf.models.base.generate_guid', return_value='guidy'):
             return AuthUserFactory()
 
-    def test_by_client_session_id(self, app, mock_save, user, preprint):
+    def test_by_client_session_id(self, app, mock_es8, user, preprint):
         payload = counted_usage_payload(
             client_session_id='hello',
             item_guid=preprint._id,
@@ -115,18 +113,25 @@ class TestComputedFields:
         headers = {
             'User-Agent': 'haha',
         }
-        resp = app.post_json_api(COUNTED_USAGE_URL, payload, headers=headers, auth=user.auth)
+        resp = app.post_json_api(COUNTED_USAGE_URL, payload, headers=headers)
         assert resp.status_code == 201
+        _expected_sessionhour_id = opaque_key(['hello', '1981-01-01', '0'])
         assert_saved_with(
-            mock_save,
-            # doc_id: sha256(b'http://example.foo/|http://example.foo/blahblah/blee|5b7c8b0a740a5b23712258a9d1164d2af008df02a8e3d339f16ead1d19595b34|1981-01-01|3|api,view').hexdigest()
-            expected_doc_id='3239044c7462dd318edd0522a0ed7d84b9c6502ef16cb40dfcae6c1f456d57a2',
+            mock_es8,
+            expected_doc_id=opaque_key([
+                'http://example.foo/',
+                _expected_sessionhour_id,
+                "['api', 'view']",
+                'http://example.foo/blahblah/blee',
+                '1981-01-01',
+                '3',
+            ]),
             expected_attrs={
                 'platform_iri': 'http://example.foo/',
-                'item_guid': preprint._id,
-                # session_id: sha256(b'hello|1981-01-01').hexdigest()
-                'session_id': '5b7c8b0a740a5b23712258a9d1164d2af008df02a8e3d339f16ead1d19595b34',
-                'action_labels': ['view', 'api'],
+                'item_osfid': preprint._id,
+                'item_type': 'Preprint',
+                'sessionhour_id': _expected_sessionhour_id,
+                'action_labels': ['api', 'view'],
                 'pageview_info': {
                     'page_url': 'http://example.foo/blahblah/blee',
                     'page_path': '/blahblah/blee',
@@ -135,9 +140,9 @@ class TestComputedFields:
             },
         )
 
-    def test_by_client_session_id_anon(self, app, mock_save, preprint):
+    def test_by_client_session_id_anon(self, app, mock_es8, preprint):
         payload = counted_usage_payload(
-            client_session_id='hello',
+            client_session_id='hihi',
             item_guid=preprint._id,
             action_labels=['view', 'web'],
             pageview_info={
@@ -150,15 +155,22 @@ class TestComputedFields:
         }
         resp = app.post_json_api(COUNTED_USAGE_URL, payload, headers=headers)
         assert resp.status_code == 201
+        _expected_sessionhour_id = opaque_key(['hihi', '1981-01-01', '0'])
         assert_saved_with(
-            mock_save,
-            # doc_id: sha256(b'http://example.foo/|http://example.foo/bliz/|5b7c8b0a740a5b23712258a9d1164d2af008df02a8e3d339f16ead1d19595b34|1981-01-01|3|view,web').hexdigest()
-            expected_doc_id='d01759e963893f9dc9b2ccf016a5ef29135673779802b5578f31449543677e82',
+            mock_es8,
+            expected_doc_id=opaque_key([
+                'http://example.foo/',
+                _expected_sessionhour_id,
+                "['view', 'web']",
+                'http://example.foo/bliz/',
+                '1981-01-01',
+                '3',
+            ]),
             expected_attrs={
                 'platform_iri': 'http://example.foo/',
-                'item_guid': preprint._id,
-                # session_id: sha256(b'hello|1981-01-01').hexdigest()
-                'session_id': '5b7c8b0a740a5b23712258a9d1164d2af008df02a8e3d339f16ead1d19595b34',
+                'item_osfid': preprint._id,
+                'item_type': 'Preprint',
+                'sessionhour_id': _expected_sessionhour_id,
                 'action_labels': ['view', 'web'],
                 'pageview_info': {
                     'page_url': 'http://example.foo/bliz/',
@@ -170,7 +182,7 @@ class TestComputedFields:
             },
         )
 
-    def test_by_user_auth(self, app, mock_save, user, preprint):
+    def test_by_user_auth(self, app, mock_es8, user, preprint):
         payload = counted_usage_payload(
             item_guid=preprint._id,
             action_labels=['view', 'web'],
@@ -184,15 +196,22 @@ class TestComputedFields:
         }
         resp = app.post_json_api(COUNTED_USAGE_URL, payload, headers=headers, auth=user.auth)
         assert resp.status_code == 201
+        _expected_sessionhour_id = opaque_key(['guidy', '1981-01-01', '0'])
         assert_saved_with(
-            mock_save,
-            # doc_id: sha256(b'http://example.foo/|http://osf.io/mst3k|ec768abb16c3411570af99b9d635c2c32d1ca31d1b25eec8ee73759e7242e74a|1981-01-01|3|view,web').hexdigest()
-            expected_doc_id='7b8bc27c6d90fb45aa5bbd02deceba9f7384ed61b9a6e7253317c262020b94c2',
+            mock_es8,
+            expected_doc_id=opaque_key([
+                'http://example.foo/',
+                _expected_sessionhour_id,
+                "['view', 'web']",
+                'http://osf.io/mst3k',
+                '1981-01-01',
+                '3',
+            ]),
             expected_attrs={
                 'platform_iri': 'http://example.foo/',
-                'item_guid': preprint._id,
-                # session_id: sha256(b'guidy|1981-01-01|0').hexdigest()
-                'session_id': 'ec768abb16c3411570af99b9d635c2c32d1ca31d1b25eec8ee73759e7242e74a',
+                'item_osfid': preprint._id,
+                'item_type': 'Preprint',
+                'sessionhour_id': _expected_sessionhour_id,
                 'action_labels': ['view', 'web'],
                 'pageview_info': {
                     'page_url': 'http://osf.io/mst3k',
@@ -204,7 +223,7 @@ class TestComputedFields:
             },
         )
 
-    def test_by_useragent_header(self, app, mock_save, preprint):
+    def test_by_useragent_header(self, app, mock_es8, preprint):
         payload = counted_usage_payload(
             item_guid=preprint._id,
             action_labels=['view', 'api'],
@@ -218,16 +237,23 @@ class TestComputedFields:
         }
         resp = app.post_json_api(COUNTED_USAGE_URL, payload, headers=headers)
         assert resp.status_code == 201
+        _expected_sessionhour_id = opaque_key(['localhost:80', 'haha', '1981-01-01', '0'])
         assert_saved_with(
-            mock_save,
-            # doc_id: sha256(b'http://example.foo/|yxwvu|97098dd3f7cd26053c0d0264d1c84eaeea8e08d2c55ca34017ffbe53c749ba5a|1981-01-01|3|api,view').hexdigest()
-            expected_doc_id='6d7549df6734bb955eb832c6316ffae46c2959c95b5817ab4fcb341dbc875c23',
+            mock_es8,
+            expected_doc_id=opaque_key([
+                'http://example.foo/',
+                _expected_sessionhour_id,
+                "['api', 'view']",
+                'http://example.foo/bliz/',
+                '1981-01-01',
+                '3',
+            ]),
             expected_attrs={
                 'platform_iri': 'http://example.foo/',
-                'item_guid': preprint._id,
-                # session_id: sha256(b'localhost:80|haha|1981-01-01|0').hexdigest()
-                'session_id': '97098dd3f7cd26053c0d0264d1c84eaeea8e08d2c55ca34017ffbe53c749ba5a',
-                'action_labels': ['view', 'api'],
+                'item_osfid': preprint._id,
+                'item_type': 'Preprint',
+                'sessionhour_id': opaque_key(['localhost:80', 'haha', '1981-01-01', '0']),
+                'action_labels': ['api', 'view'],
                 'pageview_info': {
                     'page_url': 'http://example.foo/bliz/',
                     'page_path': '/bliz',
@@ -244,9 +270,10 @@ class TestComputedFields:
 class TestGuidFields:
 
     @pytest.fixture(autouse=True)
-    def _real_elastic(self):
-        with djelme_test_backends():
-            yield
+    def mock_domain(self):
+        domain = 'http://example.foo/'
+        with mock.patch('website.settings.DOMAIN', new=domain):
+            yield domain
 
     @pytest.fixture
     def preprint(self, item_public):
@@ -286,7 +313,7 @@ class TestGuidFields:
     def child_reg_file_guid(self, child_reg_file):
         return child_reg_file.get_guid(create=True)._id
 
-    def test_preprint_file(self, app, mock_save, preprint, item_public):
+    def test_preprint_file(self, app, mock_es8, preprint, item_public, mock_domain):
         # test_preprint_guid
         payload = counted_usage_payload(
             item_guid=preprint._id,
@@ -295,16 +322,18 @@ class TestGuidFields:
         resp = app.post_json_api(COUNTED_USAGE_URL, payload, headers={'User-Agent': 'blarg'})
         assert resp.status_code == 201
         assert_saved_with(
-            mock_save,
+            mock_es8,
             expected_attrs={
-                'item_guid': preprint._id,
-                'item_type': 'preprint',
+                'item_osfid': preprint._id,
+                'item_iri': f'{mock_domain}{preprint._id}',
+                'item_type': 'Preprint',
                 'item_public': item_public,
                 'provider_id': preprint.provider._id,
-                'surrounding_guids': None,
+                'database_iri': f'{mock_domain}preprints/{preprint.provider._id}',
+                'within_iris': [f'{mock_domain}{preprint._id}'],
             },
         )
-        mock_save.reset_mock()
+        mock_es8.reset_mock()
 
         # test_preprint_file_guid
         payload = counted_usage_payload(
@@ -314,17 +343,22 @@ class TestGuidFields:
         resp = app.post_json_api(COUNTED_USAGE_URL, payload, headers={'User-Agent': 'blarg'})
         assert resp.status_code == 201
         assert_saved_with(
-            mock_save,
+            mock_es8,
             expected_attrs={
-                'item_guid': preprint.primary_file.get_guid()._id,
-                'item_type': 'osfstoragefile',
+                'item_osfid': preprint.primary_file.get_guid()._id,
+                'item_iri': preprint.primary_file.get_semantic_iri(),
+                'item_type': 'File',
                 'item_public': item_public,
                 'provider_id': preprint.primary_file.provider,
-                'surrounding_guids': [preprint._id],
+                'database_iri': f'urn:files.osf.io:{preprint.primary_file.provider}',
+                'within_iris': sorted([
+                    f'{mock_domain}{preprint._id}',
+                    preprint.primary_file.get_semantic_iri(),
+                ]),
             },
         )
 
-    def test_child_registration_file(self, app, mock_save, child_reg_file_guid, child_reg, parent_reg, item_public):
+    def test_child_registration_file(self, app, mock_es8, child_reg_file_guid, child_reg_file, child_reg, parent_reg, item_public, mock_domain):
         # test_child_registration_file_guid
         payload = counted_usage_payload(
             item_guid=child_reg_file_guid,
@@ -333,20 +367,22 @@ class TestGuidFields:
         resp = app.post_json_api(COUNTED_USAGE_URL, payload, headers={'User-Agent': 'blarg'})
         assert resp.status_code == 201
         assert_saved_with(
-            mock_save,
+            mock_es8,
             expected_attrs={
                 'action_labels': ['view', 'web'],
-                'item_guid': child_reg_file_guid,
-                'item_type': 'osfstoragefile',
+                'item_osfid': child_reg_file_guid,
+                'item_type': 'File',
                 'item_public': item_public,
                 'provider_id': 'osfstorage',
-                'surrounding_guids': [
-                    child_reg._id,
-                    parent_reg._id,
-                ],
+                'database_iri': 'urn:files.osf.io:osfstorage',
+                'within_iris': sorted([
+                    child_reg_file.get_semantic_iri(),
+                    child_reg.get_semantic_iri(),
+                    parent_reg.get_semantic_iri(),
+                ]),
             },
         )
-        mock_save.reset_mock()
+        mock_es8.reset_mock()
 
         # test_child_registration_guid
         payload = counted_usage_payload(
@@ -356,19 +392,22 @@ class TestGuidFields:
         resp = app.post_json_api(COUNTED_USAGE_URL, payload, headers={'User-Agent': 'blarg'})
         assert resp.status_code == 201
         assert_saved_with(
-            mock_save,
+            mock_es8,
             expected_attrs={
                 'action_labels': ['view', 'web'],
-                'item_guid': child_reg._id,
-                'item_type': 'registration',
+                'item_osfid': child_reg._id,
+                'item_type': 'RegistrationComponent',
                 'item_public': item_public,
                 'provider_id': 'osf',
-                'surrounding_guids': [
-                    parent_reg._id,
-                ],
+                'database_iri': f'{mock_domain}registries/osf',
+                'item_iri': child_reg.get_semantic_iri(),
+                'within_iris': sorted([
+                    child_reg.get_semantic_iri(),
+                    parent_reg.get_semantic_iri(),
+                ]),
             },
         )
-        mock_save.reset_mock()
+        mock_es8.reset_mock()
 
         # test_parent_registration_guid
         payload = counted_usage_payload(
@@ -378,13 +417,15 @@ class TestGuidFields:
         resp = app.post_json_api(COUNTED_USAGE_URL, payload, headers={'User-Agent': 'blarg'})
         assert resp.status_code == 201
         assert_saved_with(
-            mock_save,
+            mock_es8,
             expected_attrs={
                 'action_labels': ['view', 'web'],
-                'item_guid': parent_reg._id,
+                'item_osfid': parent_reg._id,
                 'item_public': item_public,
                 'provider_id': 'osf',
-                'surrounding_guids': None,
+                'database_iri': f'{mock_domain}registries/osf',
+                'item_iri': parent_reg.get_semantic_iri(),
+                'within_iris': [parent_reg.get_semantic_iri()],
             },
         )
 
@@ -392,7 +433,7 @@ class TestGuidFields:
 @pytest.mark.django_db
 class TestContributorExclusion:
 
-    def test_creator_pageview_not_recorded(self, app, mock_save):
+    def test_creator_pageview_not_recorded(self, app, mock_es8):
         user = AuthUserFactory()
         project = ProjectFactory(creator=user)
         payload = counted_usage_payload(
@@ -402,14 +443,14 @@ class TestContributorExclusion:
         )
         resp = app.post_json_api(COUNTED_USAGE_URL, payload, auth=user.auth)
         assert resp.status_code == 204
-        assert mock_save.call_count == 0
+        assert mock_es8.index.call_count == 0
 
     @pytest.mark.parametrize(
         'permissions',
         [READ, WRITE, ADMIN],
         ids=['read', 'write', 'admin'],
     )
-    def test_contributor_pageview_not_recorded(self, app, mock_save, permissions):
+    def test_contributor_pageview_not_recorded(self, app, mock_es8, permissions):
         creator = AuthUserFactory()
         contributor = AuthUserFactory()
         project = ProjectFactory(creator=creator)
@@ -421,9 +462,9 @@ class TestContributorExclusion:
         )
         resp = app.post_json_api(COUNTED_USAGE_URL, payload, auth=contributor.auth)
         assert resp.status_code == 204
-        assert mock_save.call_count == 0
+        assert mock_es8.index.call_count == 0
 
-    def test_non_contributor_pageview_recorded(self, app, mock_save):
+    def test_non_contributor_pageview_recorded(self, app, mock_es8):
         creator = AuthUserFactory()
         visitor = AuthUserFactory()
         project = ProjectFactory(creator=creator, is_public=True)
@@ -434,9 +475,9 @@ class TestContributorExclusion:
         )
         resp = app.post_json_api(COUNTED_USAGE_URL, payload, auth=visitor.auth)
         assert resp.status_code == 201
-        assert mock_save.call_count == 1
+        assert mock_es8.index.call_count == 1
 
-    def test_parent_contributor_not_on_child_component_pageview_recorded(self, app, mock_save):
+    def test_parent_contributor_not_on_child_component_pageview_recorded(self, app, mock_es8):
         creator = AuthUserFactory()
         child_owner = AuthUserFactory()
         parent_reader = AuthUserFactory()
@@ -451,9 +492,9 @@ class TestContributorExclusion:
         )
         resp = app.post_json_api(COUNTED_USAGE_URL, payload, auth=parent_reader.auth)
         assert resp.status_code == 201
-        assert mock_save.call_count == 1
+        assert mock_es8.index.call_count == 1
 
-    def test_anonymous_view_only_link_visitor_pageview_recorded(self, app, mock_save):
+    def test_anonymous_view_only_link_visitor_pageview_recorded(self, app, mock_es8):
         creator = AuthUserFactory()
         project = ProjectFactory(creator=creator, is_public=False)
         link = PrivateLinkFactory(anonymous=True, creator=creator)
@@ -468,9 +509,9 @@ class TestContributorExclusion:
         )
         resp = app.post_json_api(COUNTED_USAGE_URL, payload)
         assert resp.status_code == 201
-        assert mock_save.call_count == 1
+        assert mock_es8.index.call_count == 1
 
-    def test_logged_in_non_contributor_view_only_link_pageview_recorded(self, app, mock_save):
+    def test_logged_in_non_contributor_view_only_link_pageview_recorded(self, app, mock_es8):
         creator = AuthUserFactory()
         visitor = AuthUserFactory()
         project = ProjectFactory(creator=creator, is_public=False)
@@ -485,14 +526,14 @@ class TestContributorExclusion:
         )
         resp = app.post_json_api(COUNTED_USAGE_URL, payload, auth=visitor.auth)
         assert resp.status_code == 201
-        assert mock_save.call_count == 1
+        assert mock_es8.index.call_count == 1
 
     @pytest.mark.parametrize(
         'permissions',
         [READ, WRITE, ADMIN],
         ids=['read', 'write', 'admin'],
     )
-    def test_logged_in_contributor_view_only_link_pageview_not_recorded(self, app, mock_save, permissions):
+    def test_logged_in_contributor_view_only_link_pageview_not_recorded(self, app, mock_es8, permissions):
         creator = AuthUserFactory()
         contributor = AuthUserFactory()
         project = ProjectFactory(creator=creator, is_public=False)
@@ -508,4 +549,4 @@ class TestContributorExclusion:
         )
         resp = app.post_json_api(COUNTED_USAGE_URL, payload, auth=contributor.auth)
         assert resp.status_code == 204
-        assert mock_save.call_count == 0
+        assert mock_es8.index.call_count == 0

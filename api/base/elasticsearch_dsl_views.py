@@ -3,8 +3,9 @@ import abc
 import datetime
 import typing
 
-import elasticsearch6_dsl as edsl
+import elasticsearch8.dsl as esdsl
 from rest_framework import generics, exceptions as drf_exceptions
+from rest_framework.serializers import Serializer
 from rest_framework.settings import api_settings as drf_settings
 from api.base.settings.defaults import REPORT_FILENAME_FORMAT
 
@@ -23,7 +24,7 @@ from api.base.renderers import JSONAPIRenderer
 
 
 class ElasticsearchListView(FilterMixin, JSONAPIBaseView, generics.ListAPIView, abc.ABC):
-    '''abstract view class using `elasticsearch6_dsl.Search` as a queryset-analogue
+    '''abstract view class using `elasticsearch8.dsl.Search` as a queryset-analogue
 
     builds a `Search` based on `self.get_default_search()` and the request's
     query parameters for filtering, sorting, and pagination -- fetches only
@@ -35,18 +36,18 @@ class ElasticsearchListView(FilterMixin, JSONAPIBaseView, generics.ListAPIView, 
     ordering_fields: frozenset[str] = frozenset()  # serializer field names
 
     @abc.abstractmethod
-    def get_default_search(self) -> edsl.Search | None:
-        '''the base `elasticsearch6_dsl.Search` for this list, based on url path
+    def get_default_search(self) -> esdsl.Search | None:
+        '''the base `elasticsearch8.dsl.Search` for this list, based on url path
 
         (common jsonapi query parameters will be considered automatically)
         '''
         ...
 
-    FILE_RENDERER_CLASSES = {
+    FILE_RENDERER_CLASSES = (
         MetricsReportsCsvRenderer,
         MetricsReportsTsvRenderer,
         MetricsReportsJsonRenderer,
-    }
+    )
 
     def set_content_disposition(self, response, renderer: str):
         """Set the Content-Disposition header to prompt a file download with the appropriate filename.
@@ -75,7 +76,7 @@ class ElasticsearchListView(FilterMixin, JSONAPIBaseView, generics.ListAPIView, 
         response = super().finalize_response(request, response, *args, **kwargs)
         # Check if this is a direct download request or file renderer classes, set to the Content-Disposition header
         # so filename and attachment for browser download
-        if isinstance(request.accepted_renderer, tuple(self.FILE_RENDERER_CLASSES)):
+        if isinstance(request.accepted_renderer, self.FILE_RENDERER_CLASSES):
             self.set_content_disposition(response, request.accepted_renderer)
 
         return response
@@ -95,7 +96,7 @@ class ElasticsearchListView(FilterMixin, JSONAPIBaseView, generics.ListAPIView, 
     # (filtering handled in-view to reuse logic from FilterMixin)
     filter_backends = ()
 
-    # note: because elasticsearch6_dsl.Search supports slicing and gives results when iterated on,
+    # note: because elasticsearch8.dsl.Search supports slicing and gives results when iterated on,
     #       it works fine with default pagination
 
     # override rest_framework.generics.GenericAPIView
@@ -128,10 +129,17 @@ class ElasticsearchListView(FilterMixin, JSONAPIBaseView, generics.ListAPIView, 
                 )
         return self.__add_sort(_search)
 
+    def get_serializer_context(self):
+        return (
+            super().get_serializer_context()
+            if issubclass(self.get_serializer_class(), Serializer)
+            else {}  # allow custom BaseSerializer-based serializer
+        )
+
     ###
     # private methods
 
-    def __add_sort(self, search: edsl.Search) -> edsl.Search:
+    def __add_sort(self, search: esdsl.Search) -> esdsl.Search:
         _elastic_sort = self.__get_elastic_sort()
         return (search if _elastic_sort is None else search.sort(_elastic_sort))
 
@@ -148,17 +156,20 @@ class ElasticsearchListView(FilterMixin, JSONAPIBaseView, generics.ListAPIView, 
             raise drf_exceptions.ValidationError(
                 f'invalid value for {drf_settings.ORDERING_PARAM} query param (valid values: {", ".join(self.ordering_fields)})',
             )
-        _serializer_field = self.get_serializer().fields[_sort_field]
-        _elastic_sort_field = _serializer_field.source
+        _elastic_sort_field = (
+            self.get_serializer().fields[_sort_field].source
+            if issubclass(self.get_serializer_class(), Serializer)
+            else _sort_field  # allow custom BaseSerializer-based serializer
+        )
         return (_elastic_sort_field if _ascending else f'-{_elastic_sort_field}')
 
     def __add_search_filter(
         self,
-        search: edsl.Search,
+        search: esdsl.Search,
         elastic_field_name: str,
         operator: str,
         value: str,
-    ) -> edsl.Search:
+    ) -> esdsl.Search:
         match operator:  # operators from FilterMixin
             case 'eq':
                 if value == '':

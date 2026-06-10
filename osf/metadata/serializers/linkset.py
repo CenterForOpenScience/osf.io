@@ -16,7 +16,7 @@ from urllib.parse import urljoin, urlsplit, urlencode, urlunsplit
 import rdflib
 
 from ._base import MetadataSerializer
-from osf.metadata.osf_gathering import osfid_from_iri
+from osf.metadata.osfmap_utils import osfid_from_iri
 from osf.metadata.rdfutils import (DOI, DATACITE, DCTERMS, OWL, RDF, OSF, DCAT, SCHEMA, DATACITE_SCHEMA_RESOURCE_TYPE_GENERAL_MAPPING, map_resource_type_general_datacite_to_scheme)
 from website.settings import DOMAIN
 from website.util import web_url_for

@@ -321,12 +321,6 @@ HASHIDS_SALT = 'pinkhimalayan'
 
 # django-elasticsearch-metrics
 DJELME_BACKENDS = {
-    'osfmetrics_es6': {
-        'elasticsearch_metrics.imps.elastic6': {
-            'hosts': osf_settings.ELASTIC6_URI,
-            'retry_on_timeout': True,
-        },
-    },
     'osfmetrics_es8': {
         'elasticsearch_metrics.imps.elastic8': {
             # passthru kwargs to elasticsearch8 connection constructor
@@ -343,8 +337,7 @@ DJELME_BACKENDS = {
         },
     },
 }
-# Store yearly indices for time-series metrics
-ELASTICSEARCH_METRICS_DATE_FORMAT = '%Y'
+OSF_USAGEEVENT_EXPIRATION_DAYS = 90
 
 WAFFLE_CACHE_NAME = 'waffle_cache'
 STORAGE_USAGE_CACHE_NAME = 'storage_usage'
