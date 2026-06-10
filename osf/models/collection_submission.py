@@ -474,6 +474,27 @@ class CollectionSubmission(TaxonomizableMixin, BaseModel):
             logger.exception(e)
             sentry.log_exception(e)
 
+    CEDAR_METADATA_FIELDS = (
+        'collected_type', 'status', 'volume', 'issue',
+        'program_area', 'school_type', 'study_design',
+        'data_type', 'disease', 'grade_levels',
+    )
+
+    def sync_cedar_metadata(self):
+        from osf.models.cedar_metadata import CedarMetadataRecord
+        template = self.collection.provider.required_metadata_template
+        metadata = {
+            field: getattr(self, field)
+            for field in self.CEDAR_METADATA_FIELDS
+            if getattr(self, field)
+        }
+        metadata['@context'] = template.cedar_id
+        CedarMetadataRecord.objects.update_or_create(
+            guid=self.guid,
+            template=template,
+            defaults={'metadata': metadata, 'is_published': True},
+        )
+
     def save(self, *args, **kwargs):
         ret = super().save(*args, **kwargs)
         self.update_search()
