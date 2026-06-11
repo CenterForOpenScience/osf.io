@@ -46,6 +46,7 @@ from api.base.throttling import (
     UserRateThrottle,
     NonCookieAuthThrottle,
     AddContributorThrottle,
+    AddContributorUnregisteredThrottle,
     BurstRateThrottle,
     FilesRateThrottle,
     FilesBurstRateThrottle,
@@ -433,7 +434,7 @@ class NodeContributorsList(BaseContributorList, bulk_views.BulkUpdateJSONAPIView
     required_write_scopes = [CoreScopes.NODE_CONTRIBUTORS_WRITE]
     model_class = OSFUser
 
-    throttle_classes = (AddContributorThrottle, UserRateThrottle, NonCookieAuthThrottle, BurstRateThrottle)
+    throttle_classes = (AddContributorThrottle, UserRateThrottle, NonCookieAuthThrottle, BurstRateThrottle, AddContributorUnregisteredThrottle)
 
     pagination_class = NodeContributorPagination
     serializer_class = NodeContributorsSerializer

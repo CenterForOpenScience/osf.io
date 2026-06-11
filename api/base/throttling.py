@@ -69,6 +69,27 @@ class AddContributorThrottle(BaseThrottle, UserRateThrottle):
         return super().allow_request(request, view)
 
 
+class AddContributorUnregisteredThrottle(BaseThrottle, UserRateThrottle):
+
+    scope = 'add-contributor-unregistered'
+
+    def allow_request(self, request, view):
+        """
+        Allow all add contributor requests that do not contain unregistered contributors.
+        """
+        if request.method == 'POST':
+            data = request.data
+            items = data if isinstance(data, list) else [data]
+            contains_unregistered_contributor = any(
+                isinstance(item, dict) and item.get('email') and not item.get('id')
+                for item in items
+            )
+            if not contains_unregistered_contributor:
+                return True
+
+        return super().allow_request(request, view)
+
+
 class CreateGuidThrottle(BaseThrottle, UserRateThrottle):
 
     scope = 'create-guid'

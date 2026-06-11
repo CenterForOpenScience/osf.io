@@ -190,6 +190,7 @@ REST_FRAMEWORK = {
         'user': '10000/day',
         'non-cookie-auth': '100/hour',
         'add-contributor': '10/second',
+        'add-contributor-unregistered': '30/hour',
         'create-guid': '1000/hour',
         'root-anon-throttle': '1000/hour',
         'test-user': '2/hour',

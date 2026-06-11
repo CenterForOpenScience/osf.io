@@ -13,6 +13,7 @@ REST_FRAMEWORK['DEFAULT_THROTTLE_RATES'] = {
     'user': '1000000/second',
     'non-cookie-auth': '1000000/second',
     'add-contributor': '1000000/second',
+    'add-contributor-unregistered': '1000000/second',
     'create-guid': '1000000/second',
     'root-anon-throttle': '1000000/second',
     'test-user': '2/hour',
