@@ -22,6 +22,34 @@ from django.dispatch import receiver
 
 logger = logging.getLogger(__name__)
 
+
+def _cedar_record_context(cedar_template_jsonschema):
+    try:
+        props = cedar_template_jsonschema['properties']['@context']['properties']
+    except (KeyError, TypeError):
+        return None
+    return _cedar_record_context_obj(props)
+
+
+def _cedar_record_context_obj(cedar_context_properties):
+    return {
+        prop: _cedar_record_context_val(prop_schema)
+        for prop, prop_schema in cedar_context_properties.items()
+    }
+
+
+def _cedar_record_context_val(cedar_context_property_schema):
+    try:
+        return cedar_context_property_schema['enum'][0]
+    except (LookupError, TypeError):
+        pass
+    if cedar_context_property_schema.get('type') == 'object':
+        return _cedar_record_context_obj(
+            cedar_context_property_schema.get('properties', {})
+        )
+    raise ValueError(cedar_context_property_schema)
+
+
 class CollectionSubmission(TaxonomizableMixin, BaseModel):
     primary_identifier_name = 'guid___id'
 
@@ -488,12 +516,16 @@ class CollectionSubmission(TaxonomizableMixin, BaseModel):
             for field in self.CEDAR_METADATA_FIELDS
             if getattr(self, field)
         }
-        metadata['@context'] = template.cedar_id
-        CedarMetadataRecord.objects.update_or_create(
+        context = _cedar_record_context(template.template)
+        if context is not None:
+            metadata['@context'] = context
+        record, _ = CedarMetadataRecord.objects.get_or_create(
             guid=self.guid,
             template=template,
-            defaults={'metadata': metadata, 'is_published': True},
         )
+        record.metadata = metadata
+        record.is_published = True
+        record.save()
 
     def save(self, *args, **kwargs):
         ret = super().save(*args, **kwargs)

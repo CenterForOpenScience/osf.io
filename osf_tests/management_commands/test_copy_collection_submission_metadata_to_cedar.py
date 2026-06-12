@@ -87,7 +87,7 @@ class TestCopyCollectionSubmissionMetadataToCedar:
         copy_collection_submission_metadata_to_cedar()
 
         record = CedarMetadataRecord.objects.get(guid=submission.guid, template=cedar_template)
-        assert record.metadata == {'collected_type': 'dataset', '@context': cedar_template.cedar_id}
+        assert record.metadata == {'collected_type': 'dataset'}
 
     def test_record_is_published(self, provider_with_template, cedar_template):
         collection = make_collection(provider_with_template)
@@ -111,7 +111,7 @@ class TestCopyCollectionSubmissionMetadataToCedar:
         copy_collection_submission_metadata_to_cedar()
 
         record = CedarMetadataRecord.objects.get(guid=submission.guid, template=cedar_template)
-        assert record.metadata == {'status': 'new', '@context': cedar_template.cedar_id}
+        assert record.metadata == {'status': 'new'}
         assert record.is_published is True
 
     def test_skips_submissions_without_required_template(self, provider_without_template):
@@ -207,5 +207,4 @@ class TestCopyCollectionSubmissionMetadataToCedar:
             'data_type': 'quantitative',
             'disease': 'cancer',
             'grade_levels': 'K-12',
-            '@context': cedar_template.cedar_id,
         }
