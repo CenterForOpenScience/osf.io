@@ -7,13 +7,19 @@ from elasticsearch8 import dsl as esdsl
 from osf.metadata.osf_gathering import OsfmapPartition
 from osf.metrics.monthly_reports import MonthlyPublicItemUsageReport
 from osf.metrics.events import OsfCountedUsageEvent
-from osf.metrics.utils import YearMonth, cycle_coverage_yearmonth
+from osf.metrics.utils import (
+    YearMonth,
+    cycle_coverage_yearmonth,
+    iter_composite_bucket_keys,
+)
 from ._base import MonthlyReporter
 
 
 _CHUNK_SIZE = 500
 
 _MAX_CARDINALITY_PRECISION = 40000  # https://www.elastic.co/guide/en/elasticsearch/reference/current/search-aggregations-metrics-cardinality-aggregation.html#_precision_control
+
+_NOT_BEFORE = YearMonth(2025, 6)
 
 
 class _SkipItem(Exception):
@@ -25,6 +31,14 @@ class PublicItemUsageReporter(MonthlyReporter):
 
     includes projects, project components, registrations, registration components, and preprints
     '''
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if self.yearmonth < _NOT_BEFORE:
+            raise RuntimeError(
+                f'{self.__class__.__name__} cannot see before {_NOT_BEFORE} '
+                '(when we started letting old event data expire)'
+            )
+
     def iter_report_kwargs(self, continue_after: dict | None = None):
         _after_item_iri = continue_after['item_iri'] if continue_after else None
         for _item_iri in self._each_item_iri(_after_item_iri):
@@ -58,7 +72,7 @@ class PublicItemUsageReporter(MonthlyReporter):
             sources=[{'item_iri': {'terms': {'field': 'item_iri'}}}],
             size=_CHUNK_SIZE,
         )
-        return _iter_composite_bucket_keys(_search, 'agg_item_iri', 'item_iri', after=after_item_iri)
+        return iter_composite_bucket_keys(_search, 'agg_item_iri', 'item_iri', after=after_item_iri)
 
     def _build_report(self, item_iri) -> MonthlyPublicItemUsageReport:
         # get usage metrics from OsfCountedUsageEvent:
@@ -160,37 +174,3 @@ class PublicItemUsageReporter(MonthlyReporter):
 
 def _bucket_keys(buckets):
     return [_bucket['key'] for _bucket in buckets]
-
-
-def _iter_composite_bucket_keys(
-    search: esdsl.Search,
-    composite_agg_name: str,
-    composite_source_name: str,
-    after: str | None = None,
-) -> typing.Iterator[str]:
-    '''iterate thru *all* buckets of a composite aggregation, requesting new pages as needed
-
-    assumes the given search has a composite aggregation of the given name
-    with a single value source of the given name
-
-    updates the search in-place for subsequent pages
-    '''
-    if after is not None:
-        search.aggs[composite_agg_name].after = {composite_source_name: after}
-    while True:
-        _page_response = search.execute(ignore_cache=True)  # reused search object has the previous page cached
-        try:
-            _agg_result = _page_response.aggregations[composite_agg_name]
-        except KeyError:
-            return  # no data; all done
-        for _bucket in _agg_result.buckets:
-            _key = _bucket.key.to_dict()
-            assert set(_key.keys()) == {composite_source_name}, f'expected only one key ("{composite_source_name}") in {_bucket.key}'
-            yield _key[composite_source_name]
-        # update the search for the next page
-        try:
-            _next_after = _agg_result.after_key
-        except AttributeError:
-            return  # all done
-        else:
-            search.aggs[composite_agg_name].after = _next_after
