@@ -11,7 +11,8 @@ from api.cedar_metadata_records.utils import get_guids_related_view, get_guids_r
 from api.cedar_metadata_records.utils import can_create_record
 
 from osf.exceptions import ValidationError
-from osf.models import CedarMetadataRecord, CedarMetadataTemplate, Guid
+from osf.models import CedarMetadataRecord, CedarMetadataTemplate, CollectionSubmission, Guid
+from osf.utils.workflows import CollectionSubmissionStates
 
 logger = logging.getLogger(__name__)
 
@@ -115,13 +116,35 @@ class CedarMetadataRecordsCreateSerializer(CedarMetadataRecordsBaseSerializer):
             raise PermissionDenied
         if not template.is_active():
             raise NotFound
-        record = CedarMetadataRecord(guid=guid, template=template, metadata=metadata, is_published=is_published)
-        try:
-            record.save()
-        except ValidationError as e:
-            raise InvalidModelValueError(detail=e.messages[0])
-        except IntegrityError:
-            raise JSONAPIException(detail=f'Cedar metadata record already exists: guid=[{guid._id}], template=[{template._id}]')
+        already_submitted = (
+            template.is_for_collections
+            and CollectionSubmission.objects.filter(
+                guid=guid,
+                collection__provider__required_metadata_template=template,
+                state__in=[CollectionSubmissionStates.PENDING, CollectionSubmissionStates.ACCEPTED],
+            ).exists()
+        )
+        if template.is_for_collections and not already_submitted:
+            record, _ = CedarMetadataRecord.objects.get_or_create(
+                guid=guid,
+                template=template,
+                defaults={'metadata': metadata, 'is_published': is_published},
+            )
+            if record.metadata != metadata or record.is_published != is_published:
+                record.metadata = metadata
+                record.is_published = is_published
+                try:
+                    record.save()
+                except ValidationError as e:
+                    raise InvalidModelValueError(detail=e.messages[0])
+        else:
+            record = CedarMetadataRecord(guid=guid, template=template, metadata=metadata, is_published=is_published)
+            try:
+                record.save()
+            except ValidationError as e:
+                raise InvalidModelValueError(detail=e.messages[0])
+            except IntegrityError:
+                raise JSONAPIException(detail=f'Cedar metadata record already exists: guid=[{guid._id}], template=[{template._id}]')
         return record
 
     def update(self, instance, validated_data):
