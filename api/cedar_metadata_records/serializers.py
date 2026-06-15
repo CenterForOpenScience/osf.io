@@ -119,7 +119,7 @@ class CedarMetadataRecordsCreateSerializer(CedarMetadataRecordsBaseSerializer):
         has_active_collection_submission = CollectionSubmission.objects.filter(
             guid=guid,
             collection__provider__required_metadata_template=template,
-            state__in=[CollectionSubmissionStates.PENDING, CollectionSubmissionStates.ACCEPTED],
+            machine_state__in=[CollectionSubmissionStates.PENDING.value, CollectionSubmissionStates.ACCEPTED.value],
         ).exists()
         if template.is_for_collections and not has_active_collection_submission:
             record, _ = CedarMetadataRecord.objects.get_or_create(
