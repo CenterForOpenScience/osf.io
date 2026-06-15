@@ -376,3 +376,11 @@ class ProjectCreationNotAllowed(permissions.BasePermission):
         if request.method == 'POST' and waffle.flag_is_active(request, features.PREVENT_PROJECT_CREATION):
             raise exceptions.MethodNotAllowed(request.method, detail='Project creation is currently disabled.')
         return True
+
+
+class ProjectEditingNotAllowed(permissions.BasePermission):
+
+    def has_permission(self, request, view):
+        if request.method in ['PUT', 'PATCH'] and waffle.flag_is_active(request, features.PREVENT_PROJECT_EDITING):
+            raise exceptions.MethodNotAllowed(request.method, detail='Project editing is currently disabled.')
+        return True
