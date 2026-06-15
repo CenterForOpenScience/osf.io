@@ -417,6 +417,8 @@ def _es6_preprint_osfid_count(preprint_metric_cls) -> int:
 def _es6_cu_osfid_count() -> int:
     _search = (
         es6_metrics.CountedAuthUsage.search()
+        .filter('term', item_public=True)
+        .filter('terms', action_labels=['view', 'download'])
         .filter('range', timestamp={'lt': _FIX_YEARMONTH.month_end()})
         .extra(size=0)  # only aggregations, no hits
     )
