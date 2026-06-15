@@ -381,6 +381,6 @@ class ProjectCreationNotAllowed(permissions.BasePermission):
 class ProjectEditingNotAllowed(permissions.BasePermission):
 
     def has_permission(self, request, view):
-        if request.method in ['PUT', 'PATCH'] and waffle.flag_is_active(request, features.PREVENT_PROJECT_EDITING):
+        if request.method in ['PUT', 'PATCH'] and waffle.flag_is_active(request, features.PROJECT_READ_ONLY):
             raise exceptions.MethodNotAllowed(request.method, detail='Project editing is currently disabled.')
         return True
