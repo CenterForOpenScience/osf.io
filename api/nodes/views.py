@@ -101,6 +101,7 @@ from api.nodes.permissions import (
     NodeLinksShowIfVersion,
     ReadOnlyIfWithdrawn,
     ProjectCreationNotAllowed,
+    ProjectEditingNotAllowed,
 )
 from osf.utils import permissions as osf_permissions
 from api.nodes.serializers import (
@@ -255,6 +256,7 @@ class NodeList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_views.Bul
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
         ProjectCreationNotAllowed,
+        ProjectEditingNotAllowed,
     )
 
     required_read_scopes = [CoreScopes.NODE_BASE_READ]
