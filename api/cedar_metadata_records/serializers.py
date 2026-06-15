@@ -116,15 +116,12 @@ class CedarMetadataRecordsCreateSerializer(CedarMetadataRecordsBaseSerializer):
             raise PermissionDenied
         if not template.is_active():
             raise NotFound
-        already_submitted = (
-            template.is_for_collections
-            and CollectionSubmission.objects.filter(
-                guid=guid,
-                collection__provider__required_metadata_template=template,
-                state__in=[CollectionSubmissionStates.PENDING, CollectionSubmissionStates.ACCEPTED],
-            ).exists()
-        )
-        if template.is_for_collections and not already_submitted:
+        has_active_collection_submission = CollectionSubmission.objects.filter(
+            guid=guid,
+            collection__provider__required_metadata_template=template,
+            state__in=[CollectionSubmissionStates.PENDING, CollectionSubmissionStates.ACCEPTED],
+        ).exists()
+        if template.is_for_collections and not has_active_collection_submission:
             record, _ = CedarMetadataRecord.objects.get_or_create(
                 guid=guid,
                 template=template,
