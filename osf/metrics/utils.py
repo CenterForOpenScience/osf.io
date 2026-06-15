@@ -2,6 +2,7 @@ from __future__ import annotations
 import collections.abc as cabc
 import calendar
 import dataclasses
+import functools
 import re
 import datetime
 from hashlib import sha256
@@ -107,6 +108,7 @@ def get_immediate_wrapper(osfid_referent):
     )
 
 
+@functools.total_ordering
 @dataclasses.dataclass(frozen=True)
 class YearMonth:
     """YearMonth: represents a specific month in a specific year"""
@@ -150,6 +152,9 @@ class YearMonth:
     def __str__(self):
         """convert to string of "YYYY-MM" format"""
         return f'{self.year}-{self.month:0>2}'
+
+    def __le__(self, other):
+        return (self.year <= other.year) and (self.month <= other.month)
 
     def next(self) -> YearMonth:
         """get a new YearMonth for the month after this one"""
