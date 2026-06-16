@@ -2,6 +2,7 @@ from __future__ import annotations
 import datetime
 import typing
 
+from django.conf import settings
 from elasticsearch8 import dsl as esdsl
 
 from osf.metadata.osf_gathering import OsfmapPartition
@@ -19,8 +20,6 @@ _CHUNK_SIZE = 500
 
 _MAX_CARDINALITY_PRECISION = 40000  # https://www.elastic.co/guide/en/elasticsearch/reference/current/search-aggregations-metrics-cardinality-aggregation.html#_precision_control
 
-_NOT_BEFORE = YearMonth(2025, 6)
-
 
 class _SkipItem(Exception):
     pass
@@ -33,10 +32,10 @@ class PublicItemUsageReporter(MonthlyReporter):
     '''
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        if self.yearmonth < _NOT_BEFORE:
+        if self.yearmonth <= YearMonth.from_str(settings.MONTHLY_USAGE_REPORT_EPOCH):
             raise RuntimeError(
-                f'{self.__class__.__name__} cannot see before {_NOT_BEFORE} '
-                '(when we started letting old event data expire)'
+                f'{self.__class__.__name__} cannot see before {settings.MONTHLY_USAGE_REPORT_EPOCH}'
+                ' (when we started letting old event data expire)'
             )
 
     def iter_report_kwargs(self, continue_after: dict | None = None):

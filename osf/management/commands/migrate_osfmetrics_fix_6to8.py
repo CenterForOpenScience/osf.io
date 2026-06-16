@@ -3,6 +3,7 @@ import heapq
 import itertools
 import logging
 
+from django.conf import settings as api_settings
 from django.core.management.base import BaseCommand
 from django.db import OperationalError as DjangoOperationalError
 from elasticsearch6.exceptions import ConnectionError as Elastic6ConnectionError
@@ -30,7 +31,7 @@ from website import settings as website_settings
 ###
 # constants
 
-_FIX_YEARMONTH = YearMonth(2026, 5)
+_EPOCH_YEARMONTH = YearMonth.from_str(api_settings.MONTHLY_USAGE_REPORT_EPOCH)
 
 _MAX_CARDINALITY_PRECISION = 40000  # https://www.elastic.co/guide/en/elasticsearch/reference/current/search-aggregations-metrics-cardinality-aggregation.html#_precision_control
 
@@ -54,7 +55,7 @@ _TASK_KWARGS = dict(
 
 @celery_app.task(**_TASK_KWARGS)
 def schedule_fix_usage_reports(after_osfid: str | None = None):
-    _until_when = _FIX_YEARMONTH.month_end()
+    _until_when = _EPOCH_YEARMONTH.month_end()
     _last_osfid = None
     try:
         for _osfid in _merge_sorted_osfids(
@@ -84,7 +85,7 @@ def add_fixed_usage_report(osfid: str):
     # from PublicItemUsageReport to MonthlyPublicItemUsageReportEs8
     _osfobj, _ = osfdb.Guid.load_referent(osfid)
     if _osfobj:
-        _usage_report = _make_usage_report(_osfobj, _FIX_YEARMONTH)
+        _usage_report = _make_usage_report(_osfobj, _EPOCH_YEARMONTH)
         _usage_report.save()
     else:
         raise RuntimeError('osfid does not exist! skipping...', osfid)
@@ -380,7 +381,7 @@ def _es8_usage_report_count(yearmonth: YearMonth) -> int:
 def _es8_usage_report_osfid_count() -> int:
     _search = (
         MonthlyPublicItemUsageReport.search()
-        .filter('range', cycle_coverage={'lte': _semverish_from_yearmonth(_FIX_YEARMONTH)})
+        .filter('range', cycle_coverage={'lte': _semverish_from_yearmonth(_EPOCH_YEARMONTH)})
         .extra(size=0)  # only aggs, no hits
     )
     _search.aggs.metric(
@@ -400,7 +401,7 @@ def _es8_usage_report_osfid_count() -> int:
 def _es6_preprint_osfid_count(preprint_metric_cls) -> int:
     _search = (
         preprint_metric_cls.search()
-        .filter('range', timestamp={'lt': _FIX_YEARMONTH.month_end()})
+        .filter('range', timestamp={'lt': _EPOCH_YEARMONTH.month_end()})
         .extra(size=0)  # only aggregations, no hits
     )
     _search.aggs.metric(
@@ -422,7 +423,7 @@ def _es6_cu_osfid_count() -> int:
         es6_metrics.CountedAuthUsage.search()
         .filter('term', item_public=True)
         .filter('terms', action_labels=['view', 'download'])
-        .filter('range', timestamp={'lt': _FIX_YEARMONTH.month_end()})
+        .filter('range', timestamp={'lt': _EPOCH_YEARMONTH.month_end()})
         .extra(size=0)  # only aggregations, no hits
     )
     _search.aggs.metric(
@@ -457,17 +458,17 @@ class Command(BaseCommand):
         self._quiet_chatty_loggers()
         if not no_counts:
             # display counts of reports and distinct items
-            _prior_ym = _FIX_YEARMONTH.prior()
+            _prior_ym = _EPOCH_YEARMONTH.prior()
             self.stdout.write(
-                f'total osfids with preprint views thru {_FIX_YEARMONTH} in es6'
+                f'total osfids with preprint views thru {_EPOCH_YEARMONTH} in es6'
                 f': {_es6_preprint_osfid_count(es6_metrics.PreprintView)}'
             )
             self.stdout.write(
-                f'total osfids with preprint downloads thru {_FIX_YEARMONTH} in es6'
+                f'total osfids with preprint downloads thru {_EPOCH_YEARMONTH} in es6'
                 f': {_es6_preprint_osfid_count(es6_metrics.PreprintDownload)}'
             )
             self.stdout.write(
-                f'total osfids with with counted usage thru {_FIX_YEARMONTH} in es6'
+                f'total osfids with with counted usage thru {_EPOCH_YEARMONTH} in es6'
                 f': {_es6_cu_osfid_count()}'
             )
             self.stdout.write(
@@ -479,14 +480,14 @@ class Command(BaseCommand):
                 f': {_es8_usage_report_count(_prior_ym)}'
             )
             self.stdout.write(
-                f'total usage reports for {_FIX_YEARMONTH} in es8'
-                f': {_es8_usage_report_count(_FIX_YEARMONTH)}\t<== to this'
+                f'total usage reports for {_EPOCH_YEARMONTH} in es8'
+                f': {_es8_usage_report_count(_EPOCH_YEARMONTH)}\t<== to this'
             )
         # (if --start) schedule task per item (by composite agg on es6 usage reports and events)
         # each item-task iter thru reports oldest to newest, adding cumulative counts
         if start:
             self.stdout.write(
-                f'starting per-item tasks to add a corrected usage report for {_FIX_YEARMONTH}'
+                f'starting per-item tasks to add a corrected usage report for {_EPOCH_YEARMONTH}'
             )
             schedule_fix_usage_reports.delay()
 
