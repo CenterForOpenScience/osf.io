@@ -103,6 +103,7 @@ from api.nodes.permissions import (
     ProjectCreationNotAllowed,
     ProjectEditingNotAllowed,
 )
+from api.wikis.permissions import WikisEditingNotAllowed
 from osf.utils import permissions as osf_permissions
 from api.nodes.serializers import (
     NodeSerializer,
@@ -1869,6 +1870,7 @@ class NodeWikiList(JSONAPIBaseView, generics.ListCreateAPIView, NodeMixin, ListF
         base_permissions.TokenHasScope,
         ContributorOrPublic,
         ExcludeWithdrawals,
+        WikisEditingNotAllowed,
     )
 
     required_read_scopes = [CoreScopes.WIKI_BASE_READ]
