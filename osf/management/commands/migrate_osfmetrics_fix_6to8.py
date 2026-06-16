@@ -86,6 +86,8 @@ def add_fixed_usage_report(osfid: str):
     if _osfobj:
         _usage_report = _make_usage_report(_osfobj, _FIX_YEARMONTH)
         _usage_report.save()
+    else:
+        raise RuntimeError('osfid does not exist! skipping...', osfid)
 
 
 ###
