@@ -380,6 +380,7 @@ def _es8_usage_report_count(yearmonth: YearMonth) -> int:
 def _es8_usage_report_osfid_count() -> int:
     _search = (
         MonthlyPublicItemUsageReport.search()
+        .filter('range', cycle_coverage={'lte': _semverish_from_yearmonth(_FIX_YEARMONTH)})
         .extra(size=0)  # only aggs, no hits
     )
     _search.aggs.metric(
