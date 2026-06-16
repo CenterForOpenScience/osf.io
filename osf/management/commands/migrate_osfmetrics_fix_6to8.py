@@ -453,9 +453,15 @@ class Command(BaseCommand):
             '--start',
             action='store_true',
         )
+        parser.add_argument(
+            '--find-anomaly',
+            action='store_true',
+        )
 
-    def handle(self, *, start, no_counts, **kwargs):
+    def handle(self, *, start, no_counts, find_anomaly, **kwargs):
         self._quiet_chatty_loggers()
+        if find_anomaly:
+            self._find_anomalous_osfids()
         if not no_counts:
             # display counts of reports and distinct items
             _prior_ym = _EPOCH_YEARMONTH.prior()
@@ -499,3 +505,35 @@ class Command(BaseCommand):
         ]
         for logger_name in _chatty_loggers:
             logging.getLogger(logger_name).setLevel(logging.ERROR)
+
+    def _find_anomalous_osfids(self):
+        _epoch_term = _semverish_from_yearmonth(_EPOCH_YEARMONTH)
+        _all_report_search = (
+            MonthlyPublicItemUsageReport.search()
+            .filter('range', cycle_coverage={'lte': _epoch_term})
+            .extra(size=0)  # only aggs, no hits
+        )
+        _epoch_report_search = (
+            MonthlyPublicItemUsageReport.search()
+            .filter('term', cycle_coverage=_epoch_term)
+            .extra(track_total_hits=True)
+        )
+        _all_report_search.aggs.bucket(
+            'agg_each_osfid',
+            'composite',
+            sources=[{'osfid': {'terms': {'field': 'item_osfids'}}}],
+            size=500,
+        )
+        _epoch_report_search.aggs.bucket(
+            'agg_each_osfid',
+            'composite',
+            sources=[{'osfid': {'terms': {'field': 'item_osfids'}}}],
+            size=500,
+        )
+        _all_report_osfids = iter_composite_bucket_keys(_all_report_search, 'agg_each_osfid', 'osfid')
+        _epoch_report_osfids = iter_composite_bucket_keys(_epoch_report_search, 'agg_each_osfid', 'osfid')
+        _anomalous_osfids = set(_all_report_osfids).difference(_epoch_report_osfids)
+        if _anomalous_osfids:
+            self.stdout.write(f'osfids with past report but not {_EPOCH_YEARMONTH}: {_anomalous_osfids}')
+        else:
+            self.stdout.write('no anomalous osfids found')

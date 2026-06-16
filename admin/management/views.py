@@ -212,6 +212,7 @@ class MigrateOsfmetricsFix6to8(ManagementCommandPermissionView):
         _command_kwargs = {
             'no_color': True,
             'no_counts': request.POST.get('no_counts'),
+            'find_anomaly': request.POST.get('find_anomaly'),
             'start': request.POST.get('start'),
         }
         _out_io = StringIO()
