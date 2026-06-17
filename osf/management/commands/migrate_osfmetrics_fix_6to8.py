@@ -530,10 +530,28 @@ class Command(BaseCommand):
             sources=[{'osfid': {'terms': {'field': 'item_osfids'}}}],
             size=500,
         )
-        _all_report_osfids = iter_composite_bucket_keys(_all_report_search, 'agg_each_osfid', 'osfid')
-        _epoch_report_osfids = iter_composite_bucket_keys(_epoch_report_search, 'agg_each_osfid', 'osfid')
-        _anomalous_osfids = set(_all_report_osfids).difference(_epoch_report_osfids)
-        if _anomalous_osfids:
-            self.stdout.write(f'osfids with past report but not {_EPOCH_YEARMONTH}: {_anomalous_osfids}')
-        else:
-            self.stdout.write('no anomalous osfids found')
+        _all_event_osfids = set(_merge_sorted_osfids(
+            _each_countedusage_osfid(_EPOCH_YEARMONTH.month_end()),
+            _each_preprintview_osfid(_EPOCH_YEARMONTH.month_end()),
+            _each_preprintdownload_osfid(_EPOCH_YEARMONTH.month_end()),
+        ))
+        _all_report_osfids = set(_merge_sorted_osfids(iter_composite_bucket_keys(_all_report_search, 'agg_each_osfid', 'osfid')))
+        _epoch_report_osfids = set(_merge_sorted_osfids(iter_composite_bucket_keys(_epoch_report_search, 'agg_each_osfid', 'osfid')))
+        self.stdout.write(
+            f'osfids with report but no event: {_all_report_osfids - _all_event_osfids}'
+        )
+        self.stdout.write(
+            f'osfids with event but no report: {_all_event_osfids - _all_report_osfids}'
+        )
+        self.stdout.write(
+            f'osfids with event but no report in {_EPOCH_YEARMONTH}: {_all_event_osfids - _epoch_report_osfids}'
+        )
+        self.stdout.write(
+            f'osfids with report but not {_EPOCH_YEARMONTH}: {_all_report_osfids - _epoch_report_osfids}'
+        )
+        self.stdout.write(
+            f'osfids with report in {_EPOCH_YEARMONTH} but no report?: {_epoch_report_osfids - _all_report_osfids}'
+        )
+        self.stdout.write(
+            f'osfids with report in {_EPOCH_YEARMONTH} but no event?: {_epoch_report_osfids - _all_event_osfids}'
+        )
