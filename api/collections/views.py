@@ -21,6 +21,7 @@ from api.collections.permissions import (
     CollectionWriteOrPublicForRelationshipPointers,
     CanSubmitToCollectionOrPublic,
     CanUpdateDeleteCollectionSubmissionOrPublic,
+    CollectionSubmissionsNotAllowed,
     ReadOnlyIfCollectedRegistration,
 )
 from api.collections.serializers import (
@@ -324,6 +325,7 @@ class CollectionDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, C
 class CollectionSubmissionList(JSONAPIBaseView, generics.ListCreateAPIView, CollectionMixin, ListFilterMixin):
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
+        CollectionSubmissionsNotAllowed,
         CanSubmitToCollectionOrPublic,
         base_permissions.TokenHasScope,
     )
