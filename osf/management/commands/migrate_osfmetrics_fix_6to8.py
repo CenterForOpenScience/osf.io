@@ -81,6 +81,9 @@ def schedule_fix_usage_reports(after_osfid: str | None = None):
 def add_fixed_usage_report(osfid: str):
     # from PublicItemUsageReport to MonthlyPublicItemUsageReportEs8
     _osfobj, _ = osfdb.Guid.load_referent(osfid)
+    if isinstance(_osfobj, osfdb.Preprint) and '_' not in osfid:
+        osfid = f'{osfid}_v1'
+        _osfobj, _ = osfdb.Guid.load_referent(osfid)
     if _osfobj:
         _usage_report = _make_usage_report(osfid, _osfobj, _EPOCH_YEARMONTH)
         _usage_report.save()
@@ -99,8 +102,6 @@ def _semverish_from_yearmonth(given_yearmonth):
 def _make_usage_report(osfid: str, osf_obj, yearmonth: YearMonth):
     # add a "last month" report with cumulative counts up to that point
     _is_preprint = isinstance(osf_obj, osfdb.Preprint)
-    if _is_preprint and '_' not in osfid:
-        osfid = osf_obj._id
     # total counts
     _c_views, _c_view_sess, _c_downloads, _c_download_sess = _get_cumulative_usage(
         osfid=osfid,
