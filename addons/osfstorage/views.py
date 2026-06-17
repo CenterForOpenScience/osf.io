@@ -2,16 +2,19 @@ from rest_framework import status as http_status
 import logging
 
 from django.core.exceptions import ValidationError
+from django.contrib.contenttypes.models import ContentType
 from django.db import IntegrityError
 from django.db import connection
 from django.db import transaction
-
+from django.db.models import Case, CharField, F, Value, When
+from django.db.models.functions import Concat
 from flask import request
 
 from framework.auth import Auth
 from framework.exceptions import HTTPError
 from framework.auth.decorators import must_be_signed, must_be_logged_in
 
+from api.base.utils import is_truthy
 from osf.exceptions import InvalidTagError, TagNotFoundError
 from osf.models import FileVersion, Node, OSFUser
 from osf.utils.permissions import WRITE
@@ -25,7 +28,7 @@ from website.files import exceptions
 from website.settings import StorageLimits
 from addons.osfstorage import utils
 from addons.osfstorage import decorators
-from addons.osfstorage.models import OsfStorageFolder
+from addons.osfstorage.models import OsfStorageFileNode, OsfStorageFolder
 from addons.osfstorage import settings as osf_storage_settings
 
 
@@ -183,12 +186,59 @@ def osfstorage_get_metadata(file_node, **kwargs):
     return file_node.serialize(version=version, include_full=True)
 
 
-@must_be_signed
-@decorators.autoload_filenode(must_be='folder')
-def osfstorage_get_children(file_node, **kwargs):
-    from django.contrib.contenttypes.models import ContentType
+# TODO: Remove _osfstorage_minimal_metadata_sql if the Django ORM implementation
+# performs well in production benchmarks and zip/DAZ workloads.
+def _osfstorage_minimal_metadata_sql(file_node):
+    with connection.cursor() as cursor:
+        cursor.execute("""
+            SELECT json_agg(
+                CASE
+                    WHEN F.type = 'osf.osfstoragefile' THEN
+                        json_build_object(
+                            'kind', 'file',
+                            'name', F.name,
+                            'path', '/' || F._id
+                        )
+                    ELSE
+                        json_build_object(
+                            'kind', 'folder',
+                            'name', F.name,
+                            'path', '/' || F._id || '/'
+                        )
+                END
+            )
+            FROM osf_basefilenode AS F
+            WHERE F.parent_id = %s
+            AND F.type IN ('osf.osfstoragefile', 'osf.osfstoragefolder')
+        """, [file_node.id])
+        return cursor.fetchone()[0] or []
+
+
+def _osfstorage_minimal_metadata_orm(file_node):
+    return list(
+        OsfStorageFileNode.objects
+        .filter(
+            parent_id=file_node.id,
+            type__in=('osf.osfstoragefile', 'osf.osfstoragefolder'),
+        )
+        .annotate(
+            kind=Case(
+                When(type='osf.osfstoragefile', then=Value('file')),
+                default=Value('folder'),
+                output_field=CharField(),
+            ),
+            path=Case(
+                When(type='osf.osfstoragefile', then=Concat(Value('/'), F('_id'))),
+                default=Concat(Value('/'), F('_id'), Value('/')),
+                output_field=CharField(),
+            ),
+        )
+        .values('kind', 'name', 'path')
+    )
+
+
+def _osfstorage_full_metadata(file_node, user_id):
     from osf.models.preprint import Preprint
-    user_id = request.args.get('user_id')
     user_content_type_id = ContentType.objects.get_for_model(OSFUser).id
     user_pk = OSFUser.objects.filter(guids___id=user_id, guids___id__isnull=False).values_list('pk', flat=True).first()
     guid_id = file_node.target.get_guid().id if isinstance(file_node.target, Preprint) else file_node.target.guids.first().id,
@@ -292,6 +342,16 @@ def osfstorage_get_children(file_node, **kwargs):
             file_node.id
         ])
         return cursor.fetchone()[0] or []
+
+
+@must_be_signed
+@decorators.autoload_filenode(must_be='folder')
+def osfstorage_get_children(file_node, **kwargs):
+    if is_truthy(request.args.get('minimal')):
+        if is_truthy(request.args.get('orm')):
+            return _osfstorage_minimal_metadata_orm(file_node)
+        return _osfstorage_minimal_metadata_sql(file_node)
+    return _osfstorage_full_metadata(file_node, request.args.get('user_id'))
 
 
 @must_be_signed
