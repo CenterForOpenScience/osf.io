@@ -213,6 +213,7 @@ class MigrateOsfmetricsFix6to8(ManagementCommandPermissionView):
             'no_color': True,
             'no_counts': request.POST.get('no_counts'),
             'find_anomaly': request.POST.get('find_anomaly'),
+            'delete_es8_epoch_reports': request.POST.get('delete_es8_epoch_reports'),
             'start': request.POST.get('start'),
         }
         _out_io = StringIO()

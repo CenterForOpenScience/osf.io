@@ -7,10 +7,7 @@ from django.conf import settings as api_settings
 from django.core.management.base import BaseCommand
 from django.db import OperationalError as DjangoOperationalError
 from elasticsearch6.exceptions import ConnectionError as Elastic6ConnectionError
-from elasticsearch6 import helpers as es6_helpers
-from elasticsearch6_dsl.connections import connections as es6_connections
 from elasticsearch8.exceptions import TransportError as Elastic8TransportError
-from elasticsearch8.helpers import BulkIndexError as Elastic8BulkIndexError
 from psycopg2 import OperationalError as PostgresOperationalError
 
 from framework.celery_tasks import app as celery_app
@@ -85,7 +82,7 @@ def add_fixed_usage_report(osfid: str):
     # from PublicItemUsageReport to MonthlyPublicItemUsageReportEs8
     _osfobj, _ = osfdb.Guid.load_referent(osfid)
     if _osfobj:
-        _usage_report = _make_usage_report(_osfobj, _EPOCH_YEARMONTH)
+        _usage_report = _make_usage_report(osfid, _osfobj, _EPOCH_YEARMONTH)
         _usage_report.save()
     else:
         raise RuntimeError('osfid does not exist! skipping...', osfid)
@@ -94,66 +91,33 @@ def add_fixed_usage_report(osfid: str):
 ###
 # various helper functions
 
-def _es6_connection():
-    return es6_connections.get_connection('osfmetrics_es6')
-
-
-def _es8_bulk_save(es8_recordtype, each_new_record):
-    try:
-        es8_recordtype.bulk(each_new_record, stats_only=True)
-    except Elastic8BulkIndexError as _bulk_error:
-        # so actual errors show in celery task result
-        raise Exception(_bulk_error.errors) from _bulk_error
-
-
-def _es6_scan_range(
-    es6_recordtype,
-    *,
-    from_when: str = '',
-    until_when: str,
-    addl_filter=None,
-):
-    _timestamp_range = {'lt': until_when}
-    if from_when:
-        _timestamp_range['gte'] = from_when
-    _filters = [
-        {'range': {'timestamp': _timestamp_range}},
-    ]
-    if addl_filter:
-        _filters.append(addl_filter)
-    _query_body = {'query': {'bool': {'filter': _filters}}}
-    return es6_helpers.scan(
-        _es6_connection(),
-        index=es6_recordtype._template_pattern,
-        query=_query_body,
-    )
-
-
 def _semverish_from_yearmonth(given_yearmonth):
     _ym = YearMonth.from_any(given_yearmonth)
     return f'{_ym.year}.{_ym.month}'
 
 
-def _make_usage_report(osf_obj, yearmonth: YearMonth):
+def _make_usage_report(osfid: str, osf_obj, yearmonth: YearMonth):
     # add a "last month" report with cumulative counts up to that point
     _is_preprint = isinstance(osf_obj, osfdb.Preprint)
+    if _is_preprint and '_' not in osfid:
+        osfid = osf_obj._id
     # total counts
     _c_views, _c_view_sess, _c_downloads, _c_download_sess = _get_cumulative_usage(
-        osfid=osf_obj._id,
+        osfid=osfid,
         until_when=yearmonth.month_end().isoformat(),
         is_preprint=_is_preprint,
     )
     # counts for last month only
     _views, _view_sess, _downloads, _download_sess = _get_cumulative_usage(
-        osfid=osf_obj._id,
+        osfid=osfid,
         until_when=yearmonth.month_end().isoformat(),
         from_when=yearmonth.month_start().isoformat(),
         is_preprint=_is_preprint,
     )
     return MonthlyPublicItemUsageReport(
         cycle_coverage=_semverish_from_yearmonth(yearmonth),
-        item_iri=osfid_iri(osf_obj._id),
-        item_osfids=[osf_obj._id],
+        item_iri=osfid_iri(osfid),
+        item_osfids=[osfid],
         item_types=[get_item_type(osf_obj)],
         provider_ids=[_get_provider_id(osf_obj)],
         database_iris=[get_database_iri(osf_obj)],
@@ -457,11 +421,17 @@ class Command(BaseCommand):
             '--find-anomaly',
             action='store_true',
         )
+        parser.add_argument(
+            '--delete-es8-epoch-reports',
+            action='store_true',
+        )
 
-    def handle(self, *, start, no_counts, find_anomaly, **kwargs):
+    def handle(self, *, start, no_counts, find_anomaly, delete_es8_epoch_reports, **kwargs):
         self._quiet_chatty_loggers()
         if find_anomaly:
             self._find_anomalous_osfids()
+        if delete_es8_epoch_reports:
+            self._clear_es8_epoch_reports()
         if not no_counts:
             # display counts of reports and distinct items
             _prior_ym = _EPOCH_YEARMONTH.prior()
@@ -555,3 +525,14 @@ class Command(BaseCommand):
         self.stdout.write(
             f'osfids with report in {_EPOCH_YEARMONTH} but no event?: {_epoch_report_osfids - _all_event_osfids}'
         )
+
+    def _clear_es8_epoch_reports(self):
+        self.stdout.write(
+            f'clearing monthly usage reports in {_EPOCH_YEARMONTH}', self.style.NOTICE
+        )
+        _epoch_term = _semverish_from_yearmonth(_EPOCH_YEARMONTH)
+        _to_delete = (
+            MonthlyPublicItemUsageReport.search()
+            .filter('term', cycle_coverage=_epoch_term)
+        )
+        _to_delete.delete()
