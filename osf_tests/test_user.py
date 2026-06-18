@@ -1344,7 +1344,7 @@ class TestTagging:
 
         assert len(user.system_tags) == 1
 
-        tag = Tag.all_tags.get(name=tag_name, system=True)
+        tag = Tag.all_tags.get(name=tag_name.lower(), system=True)
         assert tag in user.all_tags.all()
 
     def test_add_system_tag_instance(self, user):

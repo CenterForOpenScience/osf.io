@@ -7,6 +7,7 @@ from rest_framework.views import APIView
 
 from api.crossref.permissions import RequestComesFromMailgun
 from osf.models import Preprint, NotificationTypeEnum
+from osf.models.base import Guid
 from website import settings
 from website.preprints.tasks import mint_doi_on_crossref_fail
 
@@ -48,6 +49,23 @@ class ParseCrossRefConfirmation(APIView):
                 if record.get('status').lower() == 'success' and doi:
                     msg = record.find('msg').text
                     created = bool(msg == 'Successfully added')
+                    # Unversioned DOIs (no _vN suffix, e.g. 10.31233/osf.io/tnaqp) are routing
+                    # aliases that always resolve to the latest version via OSF's GUID routing.
+                    # Store them as 'doi_unversioned' on the v1 preprint so we can track which
+                    # preprint series have had their unversioned DOI registered.
+                    _, version = Guid.split_guid(guid) if guid else (None, None)
+                    if not version:
+                        logger.info(f'Unversioned DOI confirmed by CrossRef: {doi}')
+                        if created and guid:
+                            v1_preprint = Preprint.objects.filter(
+                                versioned_guids__guid___id=guid,
+                                versioned_guids__version=1,
+                            ).first()
+                            if v1_preprint:
+                                v1_preprint.set_identifier_value(category='doi_unversioned', value=doi)
+                        dois_processed += 1
+                        continue
+
                     legacy_doi = preprint.get_identifier(category='legacy_doi')
                     if created or legacy_doi:
                         # Sets preprint_doi_created and saves the preprint
@@ -67,9 +85,14 @@ class ParseCrossRefConfirmation(APIView):
                     if 'Relation target DOI does not exist' in record.find('msg').text:
                         logger.warning('Related publication DOI does not exist, sending metadata again without it...')
                         mint_doi_on_crossref_fail.apply_async(kwargs={'preprint_id': preprint._id})
-                    # This error occurs when a single preprint is being updated several times in a row with the same metadata [#PLAT-944]
-                    elif 'less or equal to previously submitted version' in record.find('msg').text and record_count == 2:
-                        break
+                    # This error occurs when a single preprint is being updated several times in a row
+                    # with the same metadata [#PLAT-944]. Previously this broke out of the loop when
+                    # record_count == 2 (single DOI submitted twice). Now batches legitimately contain
+                    # 2 records (versioned + unversioned DOI), so we continue instead of break to allow
+                    # the remaining record to be processed.
+                    elif 'less or equal to previously submitted version' in record.find('msg').text:
+                        dois_processed += 1
+                        continue
                     else:
                         unexpected_errors = True
             logger.info(f'Creation success email received from CrossRef for preprints: {guids}')
