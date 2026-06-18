@@ -50,6 +50,18 @@ def _cedar_record_context_val(cedar_context_property_schema):
     raise ValueError(cedar_context_property_schema)
 
 
+def _cedar_record_field_entry(cedar_template_jsonschema, field_name, value):
+
+    properties = cedar_template_jsonschema.get('properties', {})
+    normalized_target = field_name.replace('_', '')
+    for prop_key, prop_schema in properties.items():
+        if prop_key.lower().replace(' ', '').replace('_', '') == normalized_target:
+            if prop_schema.get('type') == 'object' and '@value' in prop_schema.get('properties', {}):
+                return prop_key, {'@value': value}
+            return prop_key, value
+    return None
+
+
 class CollectionSubmission(TaxonomizableMixin, BaseModel):
     primary_identifier_name = 'guid___id'
 
@@ -511,11 +523,17 @@ class CollectionSubmission(TaxonomizableMixin, BaseModel):
     def sync_cedar_metadata(self):
         from osf.models.cedar_metadata import CedarMetadataRecord
         template = self.collection.provider.required_metadata_template
-        metadata = {
-            field: getattr(self, field)
-            for field in self.CEDAR_METADATA_FIELDS
-            if getattr(self, field)
-        }
+        metadata = {}
+        for field in self.CEDAR_METADATA_FIELDS:
+            value = getattr(self, field)
+            if not value:
+                continue
+            entry = _cedar_record_field_entry(template.template, field, value)
+            if entry is None:
+                logger.warning(f'No CEDAR property matches field "{field}" on template "{template.schema_name}"')
+                continue
+            prop_key, prop_value = entry
+            metadata[prop_key] = prop_value
         context = _cedar_record_context(template.template)
         if context is not None:
             metadata['@context'] = context
