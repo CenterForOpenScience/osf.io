@@ -468,18 +468,12 @@ class Command(BaseCommand):
             action='store_true',
         )
         parser.add_argument(
-            '--find-anomaly',
-            action='store_true',
-        )
-        parser.add_argument(
             '--delete-es8-usage-reports',
             action='store_true',
         )
 
-    def handle(self, *, start, no_counts, find_anomaly, delete_es8_usage_reports, **kwargs):
+    def handle(self, *, start, no_counts, delete_es8_usage_reports, **kwargs):
         self._quiet_chatty_loggers()
-        if find_anomaly:
-            self._find_anomalous_osfids()
         if delete_es8_usage_reports:
             self._delete_es8_usage_reports()
         if not no_counts:
@@ -525,56 +519,6 @@ class Command(BaseCommand):
         ]
         for logger_name in _chatty_loggers:
             logging.getLogger(logger_name).setLevel(logging.ERROR)
-
-    def _find_anomalous_osfids(self):
-        _epoch_term = _semverish_from_yearmonth(_EPOCH_YEARMONTH)
-        _all_report_search = (
-            MonthlyPublicItemUsageReport.search()
-            .filter('range', cycle_coverage={'lte': _epoch_term})
-            .extra(size=0)  # only aggs, no hits
-        )
-        _epoch_report_search = (
-            MonthlyPublicItemUsageReport.search()
-            .filter('term', cycle_coverage=_epoch_term)
-            .extra(track_total_hits=True)
-        )
-        _all_report_search.aggs.bucket(
-            'agg_each_osfid',
-            'composite',
-            sources=[{'osfid': {'terms': {'field': 'item_osfids'}}}],
-            size=500,
-        )
-        _epoch_report_search.aggs.bucket(
-            'agg_each_osfid',
-            'composite',
-            sources=[{'osfid': {'terms': {'field': 'item_osfids'}}}],
-            size=500,
-        )
-        _all_event_osfids = set(_merge_sorted_osfids(
-            _each_countedusage_osfid(_EPOCH_YEARMONTH.month_end()),
-            _each_preprintview_osfid(_EPOCH_YEARMONTH.month_end()),
-            _each_preprintdownload_osfid(_EPOCH_YEARMONTH.month_end()),
-        ))
-        _all_report_osfids = set(_merge_sorted_osfids(iter_composite_bucket_keys(_all_report_search, 'agg_each_osfid', 'osfid')))
-        _epoch_report_osfids = set(_merge_sorted_osfids(iter_composite_bucket_keys(_epoch_report_search, 'agg_each_osfid', 'osfid')))
-        self.stdout.write(
-            f'osfids with report but no event: {_all_report_osfids - _all_event_osfids}'
-        )
-        self.stdout.write(
-            f'osfids with event but no report: {_all_event_osfids - _all_report_osfids}'
-        )
-        self.stdout.write(
-            f'osfids with event but no report in {_EPOCH_YEARMONTH}: {_all_event_osfids - _epoch_report_osfids}'
-        )
-        self.stdout.write(
-            f'osfids with report but not {_EPOCH_YEARMONTH}: {_all_report_osfids - _epoch_report_osfids}'
-        )
-        self.stdout.write(
-            f'osfids with report in {_EPOCH_YEARMONTH} but no report?: {_epoch_report_osfids - _all_report_osfids}'
-        )
-        self.stdout.write(
-            f'osfids with report in {_EPOCH_YEARMONTH} but no event?: {_epoch_report_osfids - _all_event_osfids}'
-        )
 
     def _delete_es8_usage_reports(self):
         self.stdout.write('deleting monthly usage reports in es8', self.style.NOTICE)
