@@ -268,7 +268,7 @@ def make_copy_request(self, job_pk, url, data):
     src, dst, user = job.info()
     logger.info(f"Sending copy request for addon: {data['provider']} on node: {dst._id}")
     cookie = furl(url).query.params.get('cookie')
-    res = requests.post(url, data=json.dumps(data), cookies={settings.COOKIE_NAME: cookie})
+    res = requests.post(url, data=json.dumps(data), cookies={settings.COOKIE_NAME: cookie}, timeout=settings.EXTERNAL_REQUEST_TIMEOUT)
     if res.status_code not in (http_status.HTTP_200_OK, http_status.HTTP_201_CREATED, http_status.HTTP_202_ACCEPTED):
         raise HTTPError(res.status_code)
 

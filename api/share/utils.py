@@ -72,6 +72,8 @@ def _enqueue_update_share(osfresource):
     acks_late=True,
     max_retries=4,
     retry_backoff=True,
+    soft_time_limit=120,
+    time_limit=180,
 )
 def task__update_share(self, guid: str, is_backfill=False, osfmap_partition_name='MAIN'):
     """
@@ -195,6 +197,7 @@ def pls_send_trove_record(osf_item, *, is_backfill: bool, osfmap_partition: Osfm
             **_shtrove_auth_headers(osf_item),
         },
         data=ensure_bytes(_serialized_record),
+        timeout=settings.EXTERNAL_REQUEST_TIMEOUT,
     )
 
 
@@ -205,6 +208,7 @@ def pls_delete_trove_record(osf_item, osfmap_partition: OsfmapPartition):
             'record_identifier': _shtrove_record_identifier(osf_item, osfmap_partition),
         },
         headers=_shtrove_auth_headers(osf_item),
+        timeout=settings.EXTERNAL_REQUEST_TIMEOUT,
     )
 
 

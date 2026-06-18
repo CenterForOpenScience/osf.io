@@ -3,7 +3,7 @@ from framework.celery_tasks import app as celery_app
 from osf.external.askismet.client import AkismetClient
 
 
-@celery_app.task()
+@celery_app.task(soft_time_limit=60, time_limit=90)
 def submit_spam(guid):
     from osf.models import Guid
     resource = Guid.load(guid).referent
@@ -20,7 +20,7 @@ def submit_spam(guid):
     )
 
 
-@celery_app.task()
+@celery_app.task(soft_time_limit=60, time_limit=90)
 def submit_ham(guid):
     from osf.models import Guid
     resource = Guid.load(guid).referent

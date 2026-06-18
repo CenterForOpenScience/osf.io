@@ -5,7 +5,6 @@ from framework import sentry
 from framework.celery_tasks import app as celery_app
 from framework.postcommit_tasks.handlers import run_postcommit
 from django.contrib.contenttypes.models import ContentType
-from django.db import transaction
 from osf.external.askismet.client import AkismetClient
 from osf.external.oopspam.client import OOPSpamClient
 from osf.utils.fields import ensure_str
@@ -24,20 +23,19 @@ def reclassify_domain_references(notable_domain_id, current_note, previous_note)
     from osf.models.notable_domain import DomainReference, NotableDomain
     domain = NotableDomain.load(notable_domain_id)
     references = DomainReference.objects.filter(domain=domain)
-    with transaction.atomic():
-        for item in references:
-            item.is_triaged = current_note != NotableDomain.Note.UNKNOWN
-            if current_note == NotableDomain.Note.EXCLUDE_FROM_ACCOUNT_CREATION_AND_CONTENT:
-                item.referrer.confirm_spam(save=False, domains=[domain.domain])
-            elif previous_note == NotableDomain.Note.EXCLUDE_FROM_ACCOUNT_CREATION_AND_CONTENT:
-                try:
-                    item.referrer.spam_data['domains'].remove(domain.domain)
-                except (KeyError, AttributeError, ValueError) as error:
-                    logger.info(error)
-                if not item.referrer.spam_data.get('domains') and not item.referrer.spam_data.get('who_flagged'):
-                    item.referrer.unspam(save=False)
-            item.save()
-            item.referrer.save()
+    for item in references:
+        item.is_triaged = current_note != NotableDomain.Note.UNKNOWN
+        if current_note == NotableDomain.Note.EXCLUDE_FROM_ACCOUNT_CREATION_AND_CONTENT:
+            item.referrer.confirm_spam(save=False, domains=[domain.domain])
+        elif previous_note == NotableDomain.Note.EXCLUDE_FROM_ACCOUNT_CREATION_AND_CONTENT:
+            try:
+                item.referrer.spam_data['domains'].remove(domain.domain)
+            except (KeyError, AttributeError, ValueError) as error:
+                logger.info(error)
+            if not item.referrer.spam_data.get('domains') and not item.referrer.spam_data.get('who_flagged'):
+                item.referrer.unspam(save=False)
+        item.save()
+        item.referrer.save()
 
 
 def _check_resource_for_domains(resource, content):
