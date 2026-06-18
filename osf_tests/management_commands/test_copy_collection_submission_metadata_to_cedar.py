@@ -18,12 +18,41 @@ from tests.utils import capture_notifications
 fake = Faker()
 
 
-def make_cedar_template():
+def _value_property():
+    return {'type': 'object', 'properties': {'@value': {'type': 'string'}}}
+
+
+CEDAR_SCHEMA = {
+    'type': 'object',
+    'properties': {
+        '@context': {'type': 'object'},
+        'Collected Type': _value_property(),
+        'Status': _value_property(),
+        'Volume': _value_property(),
+        'Issue': _value_property(),
+        'Program Area': _value_property(),
+        'School Type': _value_property(),
+        'Study Design': _value_property(),
+        'Data Type': _value_property(),
+        'Disease': _value_property(),
+        'Grade Levels': _value_property(),
+    },
+    'required': ['@id', 'pav:createdOn', 'pav:createdBy', 'pav:lastUpdatedOn', 'oslc:modifiedBy'],
+    'additionalProperties': True,
+}
+
+CEDAR_SCHEMA_WITH_REQUIRED_FIELD = {
+    **CEDAR_SCHEMA,
+    'required': CEDAR_SCHEMA['required'] + ['School Type'],
+}
+
+
+def make_cedar_template(template=CEDAR_SCHEMA):
     return CedarMetadataTemplate.objects.create(
         schema_name=fake.bs(),
         cedar_id=fake.md5(),
         template_version=1,
-        template={},
+        template=template,
         active=True,
     )
 
@@ -87,7 +116,7 @@ class TestCopyCollectionSubmissionMetadataToCedar:
         copy_collection_submission_metadata_to_cedar()
 
         record = CedarMetadataRecord.objects.get(guid=submission.guid, template=cedar_template)
-        assert record.metadata == {'collected_type': 'dataset'}
+        assert record.metadata == {'Collected Type': {'@value': 'dataset'}}
 
     def test_record_is_published(self, provider_with_template, cedar_template):
         collection = make_collection(provider_with_template)
@@ -111,7 +140,7 @@ class TestCopyCollectionSubmissionMetadataToCedar:
         copy_collection_submission_metadata_to_cedar()
 
         record = CedarMetadataRecord.objects.get(guid=submission.guid, template=cedar_template)
-        assert record.metadata == {'status': 'new'}
+        assert record.metadata == {'Status': {'@value': 'new'}}
         assert record.is_published is True
 
     def test_skips_submissions_without_required_template(self, provider_without_template):
@@ -197,14 +226,26 @@ class TestCopyCollectionSubmissionMetadataToCedar:
 
         record = CedarMetadataRecord.objects.get(guid=submission.guid, template=cedar_template)
         assert record.metadata == {
-            'collected_type': 'software',
-            'status': 'active',
-            'volume': '1',
-            'issue': '2',
-            'program_area': 'health',
-            'school_type': 'university',
-            'study_design': 'rct',
-            'data_type': 'quantitative',
-            'disease': 'cancer',
-            'grade_levels': 'K-12',
+            'Collected Type': {'@value': 'software'},
+            'Status': {'@value': 'active'},
+            'Volume': {'@value': '1'},
+            'Issue': {'@value': '2'},
+            'Program Area': {'@value': 'health'},
+            'School Type': {'@value': 'university'},
+            'Study Design': {'@value': 'rct'},
+            'Data Type': {'@value': 'quantitative'},
+            'Disease': {'@value': 'cancer'},
+            'Grade Levels': {'@value': 'K-12'},
         }
+
+    def test_satisfies_template_required_field(self, provider_with_template, cedar_template):
+        cedar_template.template = CEDAR_SCHEMA_WITH_REQUIRED_FIELD
+        cedar_template.save()
+        collection = make_collection(provider_with_template)
+        submission = make_submission(collection, school_type='university')
+
+        copy_collection_submission_metadata_to_cedar()
+
+        record = CedarMetadataRecord.objects.get(guid=submission.guid, template=cedar_template)
+        assert record.is_published is True
+        assert record.metadata == {'School Type': {'@value': 'university'}}
