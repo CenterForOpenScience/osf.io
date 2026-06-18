@@ -60,7 +60,7 @@ def schedule_fix_usage_reports(after_osfid: str | None = None):
             _each_preprintview_osfid(_until_when, after_osfid),
             _each_preprintdownload_osfid(_until_when, after_osfid),
         ):
-            add_fixed_usage_report.delay(_osfid)
+            add_fixed_usage_reports.delay(_osfid)
             _last_osfid = _osfid
     except _RETRY_ERRORS as _error:
         if _last_osfid is None:
@@ -78,15 +78,16 @@ def schedule_fix_usage_reports(after_osfid: str | None = None):
 
 
 @celery_app.task(**_TASK_KWARGS)
-def add_fixed_usage_report(osfid: str):
+def add_fixed_usage_reports(osfid: str):
     # from PublicItemUsageReport to MonthlyPublicItemUsageReportEs8
     _osfobj, _ = osfdb.Guid.load_referent(osfid)
     if isinstance(_osfobj, osfdb.Preprint) and '_' not in osfid:
         osfid = f'{osfid}_v1'
         _osfobj, _ = osfdb.Guid.load_referent(osfid)
     if _osfobj:
-        _usage_report = _make_usage_report(osfid, _osfobj, _EPOCH_YEARMONTH)
-        _usage_report.save()
+        for _ym in _yearmonth_range_to_epoch(_osfobj.created):
+            _usage_report = _make_usage_report(osfid, _osfobj, _ym)
+            _usage_report.save()
     else:
         raise RuntimeError('osfid does not exist! skipping...', osfid)
 
@@ -94,21 +95,28 @@ def add_fixed_usage_report(osfid: str):
 ###
 # various helper functions
 
+def _yearmonth_range_to_epoch(start):
+    _ym = max(YearMonth.from_any(start), YearMonth(2025, 1))
+    while _ym <= _EPOCH_YEARMONTH:
+        yield _ym
+        _ym = _ym.next()
+
+
 def _semverish_from_yearmonth(given_yearmonth):
     _ym = YearMonth.from_any(given_yearmonth)
     return f'{_ym.year}.{_ym.month}'
 
 
 def _make_usage_report(osfid: str, osf_obj, yearmonth: YearMonth):
-    # add a "last month" report with cumulative counts up to that point
+    # add a report for the given month with cumulative counts up to that point
     _is_preprint = isinstance(osf_obj, osfdb.Preprint)
-    # total counts
+    # cumulative counts
     _c_views, _c_view_sess, _c_downloads, _c_download_sess = _get_cumulative_usage(
         osfid=osfid,
         until_when=yearmonth.month_end().isoformat(),
         is_preprint=_is_preprint,
     )
-    # counts for last month only
+    # counts for that month only
     _views, _view_sess, _downloads, _download_sess = _get_cumulative_usage(
         osfid=osfid,
         until_when=yearmonth.month_end().isoformat(),
@@ -423,16 +431,16 @@ class Command(BaseCommand):
             action='store_true',
         )
         parser.add_argument(
-            '--delete-es8-epoch-reports',
+            '--delete-es8-usage-reports',
             action='store_true',
         )
 
-    def handle(self, *, start, no_counts, find_anomaly, delete_es8_epoch_reports, **kwargs):
+    def handle(self, *, start, no_counts, find_anomaly, delete_es8_usage_reports, **kwargs):
         self._quiet_chatty_loggers()
         if find_anomaly:
             self._find_anomalous_osfids()
-        if delete_es8_epoch_reports:
-            self._clear_es8_epoch_reports()
+        if delete_es8_usage_reports:
+            self._delete_es8_usage_reports()
         if not no_counts:
             # display counts of reports and distinct items
             _prior_ym = _EPOCH_YEARMONTH.prior()
@@ -527,13 +535,6 @@ class Command(BaseCommand):
             f'osfids with report in {_EPOCH_YEARMONTH} but no event?: {_epoch_report_osfids - _all_event_osfids}'
         )
 
-    def _clear_es8_epoch_reports(self):
-        self.stdout.write(
-            f'clearing monthly usage reports in {_EPOCH_YEARMONTH}', self.style.NOTICE
-        )
-        _epoch_term = _semverish_from_yearmonth(_EPOCH_YEARMONTH)
-        _to_delete = (
-            MonthlyPublicItemUsageReport.search()
-            .filter('term', cycle_coverage=_epoch_term)
-        )
-        _to_delete.delete()
+    def _delete_es8_usage_reports(self):
+        self.stdout.write('deleting monthly usage reports in es8', self.style.NOTICE)
+        MonthlyPublicItemUsageReport.do_teardown(keep_templates=True)
