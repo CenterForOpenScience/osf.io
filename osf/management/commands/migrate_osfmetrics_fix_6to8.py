@@ -85,7 +85,9 @@ def add_fixed_usage_reports(osfid: str):
         osfid = f'{osfid}_v1'
         _osfobj, _ = osfdb.Guid.load_referent(osfid)
     if _osfobj:
-        for _ym in _yearmonth_range_to_epoch(_osfobj.created):
+        _months = _months_with_usage(osfid, _osfobj, _EPOCH_YEARMONTH.month_end())
+        _months.add(_EPOCH_YEARMONTH)  # guarantee at least the one
+        for _ym in _months:
             _usage_report = _make_usage_report(osfid, _osfobj, _ym)
             _usage_report.save()
     else:
@@ -96,10 +98,40 @@ def add_fixed_usage_reports(osfid: str):
 # various helper functions
 
 def _yearmonth_range_to_epoch(start):
-    _ym = max(YearMonth.from_any(start), YearMonth(2025, 1))
+    _ym = max(YearMonth.from_any(start), YearMonth(2026, 1))
     while _ym <= _EPOCH_YEARMONTH:
         yield _ym
         _ym = _ym.next()
+
+
+def _months_with_usage(osfid, osf_obj, until_when) -> set[YearMonth]:
+    _months = set()
+    if isinstance(osf_obj, osfdb.Preprint):
+        _searches = [
+            _es6_osfid_preprint_event_search(es6_metrics.PreprintView, osfid, until_when),
+            _es6_osfid_preprint_event_search(es6_metrics.PreprintDownload, osfid, until_when),
+        ]
+    else:
+        _searches = [
+            _es6_osfid_nonpreprint_view_search(osfid, until_when),
+            _es6_osfid_nonpreprint_download_search(osfid, until_when),
+        ]
+    for _search in _searches:
+        _search.aggs.bucket(
+            'agg_months',
+            'date_histogram',
+            field='timestamp',
+            interval='month',
+            format='yyyy-MM',
+            min_doc_count=1,
+        )
+        _response = _search.execute()
+        if 'agg_months' in _response.aggregations:
+            _months.update(
+                YearMonth.from_str(_bucket.key_as_string)
+                for _bucket in _response.aggregations.agg_months.buckets
+            )
+    return _months
 
 
 def _semverish_from_yearmonth(given_yearmonth):
@@ -186,18 +218,7 @@ def _cumulative_countedusage_views(
 ) -> tuple[int, int]:
     # copied/adapted from osf.metrics.reporters.public_item_usage
     _search = (
-        es6_metrics.CountedAuthUsage.search()
-        .filter('term', item_public=True)
-        .filter('range', timestamp={'lt': until_when})
-        .filter('term', action_labels='view')
-        .filter(
-            'bool',
-            should=[
-                {'term': {'item_guid': osfid}},
-                {'term': {'surrounding_guids': osfid}},
-            ],
-            minimum_should_match=1,
-        )
+        _es6_osfid_nonpreprint_view_search(osfid, until_when)
         .extra(size=0)  # only aggregations, no hits
     )
     if from_when:
@@ -218,18 +239,69 @@ def _cumulative_countedusage_views(
     return (_view_count, _view_session_count)
 
 
-def _cumulative_countedusage_downloads(osfid, *, until_when, from_when) -> tuple[int, int]:
-    '''aggregate downloads on each osfid (not including components/files)'''
-    # copied/adapted from osf.metrics.reporters.public_item_usage
+def _es6_preprint_event_search(preprint_metric_cls, until_when, from_when=None):
     _search = (
-        es6_metrics.CountedAuthUsage.search()
-        .filter('term', item_public=True)
+        preprint_metric_cls.search()
         .filter('range', timestamp={'lt': until_when})
-        .filter('term', action_labels='download')
-        .filter('term', item_guid=osfid)
+        .extra(size=0)  # no hits; only aggs
     )
     if from_when:
         _search = _search.filter('range', timestamp={'gte': from_when})
+    return _search
+
+
+def _es6_osfid_preprint_event_search(preprint_metric_cls, osfid, until_when, from_when=None):
+    return (
+        _es6_preprint_event_search(preprint_metric_cls, until_when, from_when)
+        .filter('terms', preprint_id=_synonymous_osfids(osfid))
+    )
+
+def _es6_nonpreprint_event_search(until_when, from_when='', *, action_labels=None):
+    _search = (
+        es6_metrics.CountedAuthUsage.search()
+        .filter('term', item_public=True)
+        .filter('terms', action_labels=(action_labels or ['view', 'download']))
+        .filter('range', timestamp={'lt': until_when})
+        .extra(size=0)  # only aggregations, no hits
+    )
+    if from_when:
+        _search = _search.filter('range', timestamp={'gte': from_when})
+    return _search
+
+
+def _es6_nonpreprint_download_search(until_when, from_when=''):
+    return _es6_nonpreprint_event_search(until_when, from_when, action_labels=['download'])
+
+
+def _es6_osfid_nonpreprint_download_search(osfid, until_when, from_when=''):
+    return (
+        _es6_nonpreprint_download_search(until_when, from_when)
+        .filter('term', item_guid=osfid)
+    )
+
+
+def _es6_nonpreprint_view_search(until_when, from_when=''):
+    return _es6_nonpreprint_event_search(until_when, from_when, action_labels=['view'])
+
+
+def _es6_osfid_nonpreprint_view_search(osfid, until_when, from_when=''):
+    return (
+        _es6_nonpreprint_view_search(until_when, from_when)
+        .filter(
+            'bool',
+            should=[
+                {'term': {'item_guid': osfid}},
+                {'term': {'surrounding_guids': osfid}},
+            ],
+            minimum_should_match=1,
+        )
+    )
+
+
+def _cumulative_countedusage_downloads(osfid, *, until_when, from_when) -> tuple[int, int]:
+    '''aggregate downloads on each osfid (not including components/files)'''
+    # copied/adapted from osf.metrics.reporters.public_item_usage
+    _search = _es6_osfid_nonpreprint_download_search(osfid, until_when, from_when)
     _search.aggs.metric(
         'agg_session_count',
         'cardinality',
@@ -251,14 +323,7 @@ def _cumulative_preprint_count(
 ) -> int:
     '''aggregate counts on given preprint'''
     # copied/adapted from osf.metrics.preprint_metrics
-    _search = (
-        preprint_metric_cls.search()
-        .filter('terms', preprint_id=_synonymous_osfids(osfid))
-        .filter('range', timestamp={'lt': until_when})
-        .extra(size=0)  # no hits; only aggs
-    )
-    if from_when:
-        _search = _search.filter('range', timestamp={'gte': from_when})
+    _search = _es6_osfid_preprint_event_search(preprint_metric_cls, osfid, until_when, from_when)
     _search.aggs.metric('agg_count', 'sum', field='count')
     _response = _search.execute()
     return (
@@ -280,13 +345,7 @@ def _synonymous_osfids(osfid: str) -> list[str]:
 
 
 def _each_countedusage_osfid(until_when, after_osfid=None) -> collections.abc.Iterator[str]:
-    _search = (
-        es6_metrics.CountedAuthUsage.search()
-        .filter('term', item_public=True)
-        .filter('terms', action_labels=['view', 'download'])
-        .filter('range', timestamp={'lt': until_when})
-        .extra(size=0)  # only aggregations, no hits
-    )
+    _search = _es6_nonpreprint_event_search(until_when)
     _search.aggs.bucket(
         'agg_osfid',
         'composite',
@@ -297,11 +356,7 @@ def _each_countedusage_osfid(until_when, after_osfid=None) -> collections.abc.It
 
 
 def _each_preprintview_osfid(until_when, after_osfid=None) -> collections.abc.Iterator[str]:
-    _search = (
-        es6_metrics.PreprintView.search()
-        .filter('range', timestamp={'lt': until_when})
-        .extra(size=0)  # only aggregations, no hits
-    )
+    _search = _es6_preprint_event_search(es6_metrics.PreprintView, until_when)
     _search.aggs.bucket(
         'agg_osfid',
         'composite',
@@ -312,11 +367,7 @@ def _each_preprintview_osfid(until_when, after_osfid=None) -> collections.abc.It
 
 
 def _each_preprintdownload_osfid(until_when, after_osfid=None) -> collections.abc.Iterator[str]:
-    _search = (
-        es6_metrics.PreprintDownload.search()
-        .filter('range', timestamp={'lt': until_when})
-        .extra(size=0)  # only aggregations, no hits
-    )
+    _search = _es6_preprint_event_search(es6_metrics.PreprintDownload, until_when)
     _search.aggs.bucket(
         'agg_osfid',
         'composite',
@@ -372,11 +423,7 @@ def _es8_usage_report_osfid_count() -> int:
 
 
 def _es6_preprint_osfid_count(preprint_metric_cls) -> int:
-    _search = (
-        preprint_metric_cls.search()
-        .filter('range', timestamp={'lt': _EPOCH_YEARMONTH.month_end()})
-        .extra(size=0)  # only aggregations, no hits
-    )
+    _search = _es6_preprint_event_search(preprint_metric_cls, _EPOCH_YEARMONTH.month_end())
     _search.aggs.metric(
         'agg_osfid_count',
         'cardinality',
@@ -392,13 +439,7 @@ def _es6_preprint_osfid_count(preprint_metric_cls) -> int:
 
 
 def _es6_cu_osfid_count() -> int:
-    _search = (
-        es6_metrics.CountedAuthUsage.search()
-        .filter('term', item_public=True)
-        .filter('terms', action_labels=['view', 'download'])
-        .filter('range', timestamp={'lt': _EPOCH_YEARMONTH.month_end()})
-        .extra(size=0)  # only aggregations, no hits
-    )
+    _search = _es6_nonpreprint_event_search(_EPOCH_YEARMONTH.month_end())
     _search.aggs.metric(
         'agg_osfid_count',
         'cardinality',
