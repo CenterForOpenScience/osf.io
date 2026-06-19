@@ -201,13 +201,9 @@ class RejectPendingCollectionSubmissions(ManagementCommandPermissionView):
         if not user_guid:
             messages.error(request, 'A user GUID must be provided.')
             return redirect(reverse('management:commands'))
-        try:
-            reject_pending_collection_submissions(
-                user_guid=user_guid,
-                comment=comment,
-            )
-        except RuntimeError as e:
-            messages.error(request, str(e))
-            return redirect(reverse('management:commands'))
-        messages.success(request, 'Pending collection submissions have been rejected.')
+        reject_pending_collection_submissions.apply_async(kwargs={
+            'user_guid': user_guid,
+            'comment': comment,
+        })
+        messages.success(request, 'Pending collection submissions have been queued for rejection.')
         return redirect(reverse('management:commands'))
