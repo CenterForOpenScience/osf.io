@@ -214,13 +214,16 @@ def _osfstorage_minimal_metadata_sql(file_node):
         return cursor.fetchone()[0] or []
 
 
-def _osfstorage_minimal_metadata_orm(file_node):
-    return list(
-        OsfStorageFileNode.objects
-        .filter(
-            parent_id=file_node.id,
-            type__in=('osf.osfstoragefile', 'osf.osfstoragefolder'),
-        )
+def _osfstorage_minimal_metadata_orm(file_node, *, limit=None, after=None):
+    qs = OsfStorageFileNode.objects.filter(
+        parent_id=file_node.id,
+        type__in=('osf.osfstoragefile', 'osf.osfstoragefolder'),
+    )
+    if after is not None:
+        qs = qs.filter(id__gt=after)
+
+    qs = (
+        qs
         .annotate(
             kind=Case(
                 When(type='osf.osfstoragefile', then=Value('file')),
@@ -233,8 +236,14 @@ def _osfstorage_minimal_metadata_orm(file_node):
                 output_field=CharField(),
             ),
         )
-        .values('kind', 'name', 'path')
+        .order_by('id')
+        .values('id', 'kind', 'name', 'path')
     )
+
+    if limit is not None:
+        qs = qs[:limit]
+
+    return list(qs)
 
 
 def _osfstorage_full_metadata(file_node, user_id):
@@ -349,7 +358,11 @@ def _osfstorage_full_metadata(file_node, user_id):
 def osfstorage_get_children(file_node, **kwargs):
     if is_truthy(request.args.get('minimal')):
         if is_truthy(request.args.get('orm')):
-            return _osfstorage_minimal_metadata_orm(file_node)
+            return _osfstorage_minimal_metadata_orm(
+                file_node,
+                limit=request.args.get('limit', type=int, default=None),
+                after=request.args.get('after', type=int, default=None),
+            )
         return _osfstorage_minimal_metadata_sql(file_node)
     return _osfstorage_full_metadata(file_node, request.args.get('user_id'))
 
