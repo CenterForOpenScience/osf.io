@@ -67,16 +67,6 @@ class HookTestCase(StorageTestCase):
 @pytest.mark.django_db
 class TestGetMetadataHook(HookTestCase):
 
-    def test_empty(self):
-        res = self.send_hook(
-            'osfstorage_get_children',
-            {'fid': self.node_settings.get_root()._id, 'user_id': self.user._id},
-            {},
-            self.node
-        )
-        assert isinstance(res.json, list)
-        assert res.json == []
-
     def test_file_metadata(self):
         path = 'kind/of/magíc.mp3'
         record = recursively_create_file(self.node_settings, path)
@@ -106,6 +96,97 @@ class TestGetMetadataHook(HookTestCase):
         )
         assert isinstance(res.json, dict)
         assert res.json == record.parent.serialize(True)
+
+    def test_osf_storage_root(self):
+        auth = Auth(self.project.creator)
+        result = osf_storage_root(self.node_settings.config, self.node_settings, auth)
+        node = self.project
+        expected = rubeus.build_addon_root(
+            node_settings=self.node_settings,
+            name='',
+            permissions=auth,
+            user=auth.user,
+            nodeUrl=node.url,
+            nodeApiUrl=node.api_url,
+        )
+        root = result[0]
+        assert root == expected
+
+    def test_root_default(self):
+        res = self.send_hook('osfstorage_get_metadata', {}, {}, self.node)
+
+        assert res.json['fullPath'] == '/'
+        assert res.json['id'] == self.node_settings.get_root()._id
+
+    def test_root_preprint_default(self):
+        preprint = PreprintFactory()
+        res = self.send_hook('osfstorage_get_metadata', {}, {}, preprint)
+
+        assert res.json['fullPath'] == '/'
+        assert res.json['id'] == preprint.root_folder._id
+
+    def test_metadata_not_found(self):
+        res = self.send_hook(
+            'osfstorage_get_metadata',
+            {'fid': 'somebogusid'}, {},
+            self.node,
+        )
+        assert res.status_code == 404
+
+    def test_metadata_not_found_lots_of_slashes(self):
+        res = self.send_hook(
+            'osfstorage_get_metadata',
+            {'fid': '/not/fo/u/nd/'}, {},
+            self.node,
+        )
+        assert res.status_code == 302
+        assert '/login?service=' in res.location
+
+        self.node.is_public = True
+        self.node.save()
+        res = self.send_hook(
+            'osfstorage_get_metadata',
+            {'fid': '/not/fo/u/nd/'}, {},
+            self.node,
+        )
+        assert res.status_code == 404
+
+
+@pytest.mark.django_db
+class TestGetChildrenHook(HookTestCase):
+
+    def get_children(self, parent, target=None, *, orm=False, **query_params):
+        params = {
+            'fid': parent._id,
+            'user_id': self.user._id,
+            'minimal': 'true',
+            **query_params,
+        }
+        if orm:
+            params['orm'] = 'true'
+        return self.send_hook(
+            'osfstorage_get_children',
+            params,
+            {},
+            target or self.node,
+        )
+
+    def _create_child_file(self, parent, name):
+        record = parent.append_file(name)
+        version = factories.FileVersionFactory()
+        record.add_version(version)
+        record.save()
+        return record
+
+    def test_empty(self):
+        res = self.send_hook(
+            'osfstorage_get_children',
+            {'fid': self.node_settings.get_root()._id, 'user_id': self.user._id},
+            {},
+            self.node
+        )
+        assert isinstance(res.json, list)
+        assert res.json == []
 
     def test_children_metadata(self):
         path = 'kind/of/magíc.mp3'
@@ -176,59 +257,58 @@ class TestGetMetadataHook(HookTestCase):
         assert res_date_modified == expected_date_modified
         assert res_date_created == expected_date_created
 
-    def test_osf_storage_root(self):
-        auth = Auth(self.project.creator)
-        result = osf_storage_root(self.node_settings.config, self.node_settings, auth)
-        node = self.project
-        expected = rubeus.build_addon_root(
-            node_settings=self.node_settings,
-            name='',
-            permissions=auth,
-            user=auth.user,
-            nodeUrl=node.url,
-            nodeApiUrl=node.api_url,
+    def test_minimal_child_fields(self):
+        for orm in (False, True):
+            with self.subTest(orm='orm' if orm else 'sql'):
+                parent = self.node_settings.get_root().append_folder(
+                    f'minimal-child-fields-{"orm" if orm else "sql"}'
+                )
+                record = self._create_child_file(parent, 'magíc.mp3')
+                folder = parent.append_folder('nested')
+                res = self.get_children(parent, orm=orm)
+                assert res.status_code == 200
+                assert len(res.json) == 2
+                assert {item['name'] for item in res.json} == {record.name, folder.name}
+                expected_keys = {'kind', 'name', 'path'}
+                if orm:
+                    expected_keys.add('id')
+                for item in res.json:
+                    assert set(item.keys()) == expected_keys
+                    if item['kind'] == 'file':
+                        assert item['path'] == f'/{record._id}'
+                        if orm:
+                            assert item['id'] == record.id
+                    else:
+                        assert item['path'] == f'/{folder._id}/'
+                        if orm:
+                            assert item['id'] == folder.id
+
+    def test_minimal_pagination(self):
+        parent = self.node_settings.get_root().append_folder('pagination')
+        children = [
+            self._create_child_file(parent, name)
+            for name in ('a.mp3', 'b.mp3', 'c.mp3')
+        ]
+        children.sort(key=lambda c: c.id)
+        first_page = self.get_children(parent, orm=True, limit='2')
+        assert first_page.status_code == 200
+        assert [item['id'] for item in first_page.json] == [children[0].id, children[1].id]
+        second_page = self.get_children(
+            parent,
+            orm=True,
+            limit='2',
+            after=str(children[1].id),
         )
-        root = result[0]
-        assert root == expected
+        assert second_page.status_code == 200
+        assert len(second_page.json) == 1
+        assert second_page.json[0]['id'] == children[2].id
 
-    def test_root_default(self):
-        res = self.send_hook('osfstorage_get_metadata', {}, {}, self.node)
-
-        assert res.json['fullPath'] == '/'
-        assert res.json['id'] == self.node_settings.get_root()._id
-
-    def test_root_preprint_default(self):
-        preprint = PreprintFactory()
-        res = self.send_hook('osfstorage_get_metadata', {}, {}, preprint)
-
-        assert res.json['fullPath'] == '/'
-        assert res.json['id'] == preprint.root_folder._id
-
-    def test_metadata_not_found(self):
-        res = self.send_hook(
-            'osfstorage_get_metadata',
-            {'fid': 'somebogusid'}, {},
-            self.node,
-        )
-        assert res.status_code == 404
-
-    def test_metadata_not_found_lots_of_slashes(self):
-        res = self.send_hook(
-            'osfstorage_get_metadata',
-            {'fid': '/not/fo/u/nd/'}, {},
-            self.node,
-        )
-        assert res.status_code == 302
-        assert '/login?service=' in res.location
-
-        self.node.is_public = True
-        self.node.save()
-        res = self.send_hook(
-            'osfstorage_get_metadata',
-            {'fid': '/not/fo/u/nd/'}, {},
-            self.node,
-        )
-        assert res.status_code == 404
+    def test_minimal_pagination_after_beyond_last_child(self):
+        parent = self.node_settings.get_root()
+        record = self._create_child_file(parent, 'only.mp3')
+        res = self.get_children(parent, orm=True, after=str(record.id))
+        assert res.status_code == 200
+        assert res.json == []
 
 
 @pytest.mark.django_db
