@@ -522,6 +522,8 @@ class CollectionSubmission(TaxonomizableMixin, BaseModel):
 
     def sync_cedar_metadata(self):
         from osf.models.cedar_metadata import CedarMetadataRecord
+        if getattr(self.guid.referent, 'is_deleted', False):
+            return
         template = self.collection.provider.required_metadata_template
         metadata = {}
         for field in self.CEDAR_METADATA_FIELDS:
