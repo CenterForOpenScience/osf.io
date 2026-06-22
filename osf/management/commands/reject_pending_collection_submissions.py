@@ -1,6 +1,6 @@
 import logging
 
-from django.core.management.base import BaseCommand
+from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
 from framework.celery_tasks import app as celery_app
 from transitions import MachineError
@@ -14,7 +14,6 @@ DEFAULT_COMMENT = 'This collection submission has been rejected.'
 
 
 @celery_app.task(name='osf.management.commands.reject_pending_collection_submissions')
-@transaction.atomic
 def reject_pending_collection_submissions(user_guid, comment, dry_run=False):
     comment = comment or DEFAULT_COMMENT
     user = OSFUser.load(user_guid)
@@ -36,7 +35,11 @@ def reject_pending_collection_submissions(user_guid, comment, dry_run=False):
     for submission in pending_submissions.iterator():
         guid = submission.guid._id if submission.guid else 'unknown'
         try:
-            submission.reject(user=user, comment=comment, force=True)
+            # Each submission commits independently: a failure here rolls back this submission, not others  already processed.
+            with transaction.atomic():
+                submission.reject(user=user, comment=comment, force=True)
+                if dry_run:
+                    transaction.set_rollback(True)
         except MachineError:
             logger.exception(
                 f'{"[DRY RUN] " if dry_run else ""}'
@@ -60,9 +63,6 @@ def reject_pending_collection_submissions(user_guid, comment, dry_run=False):
         f'{"[DRY RUN] " if dry_run else ""}'
         f'Done. Rejected {rejected_count}/{total} submission(s), {error_count} error(s).'
     )
-
-    if dry_run:
-        raise RuntimeError('Dry run, transaction rolled back')
 
     return rejected_count
 
@@ -90,8 +90,14 @@ class Command(BaseCommand):
         )
 
     def handle(self, *args, **options):
-        reject_pending_collection_submissions(
-            user_guid=options['user_guid'],
-            comment=options['comment'],
-            dry_run=options['dry_run'],
-        )
+        try:
+            rejected_count = reject_pending_collection_submissions(
+                user_guid=options['user_guid'],
+                comment=options['comment'],
+                dry_run=options['dry_run'],
+            )
+        except RuntimeError as e:
+            raise CommandError(str(e))
+
+        prefix = '[DRY RUN] ' if options['dry_run'] else ''
+        self.stdout.write(self.style.SUCCESS(f'{prefix}Rejected {rejected_count} submission(s).'))
