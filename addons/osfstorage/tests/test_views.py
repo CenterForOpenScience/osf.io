@@ -290,7 +290,7 @@ class TestGetChildrenHook(HookTestCase):
             for name in ('a.mp3', 'b.mp3', 'c.mp3')
         ]
         children.sort(key=lambda c: c.id)
-        first_page = self.get_children(parent, orm=True, limit='2')
+        first_page = self.get_children(parent, orm=True, limit=2)
         assert first_page.status_code == 200
         assert [item['id'] for item in first_page.json] == [children[0].id, children[1].id]
         second_page = self.get_children(
