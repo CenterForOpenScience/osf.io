@@ -21,5 +21,7 @@ urlpatterns = [
     re_path(r'^sync_notification_templates', views.SyncNotificationTemplates.as_view(),
             name='sync_notification_templates'),
     re_path(r'^remove_orcid_from_user_social', views.RemoveOrcidFromUserSocial.as_view(),
-            name='remove_orcid_from_user_social')
+            name='remove_orcid_from_user_social'),
+    re_path(r'^reject_pending_collection_submissions', views.RejectPendingCollectionSubmissions.as_view(),
+            name='reject_pending_collection_submissions'),
 ]

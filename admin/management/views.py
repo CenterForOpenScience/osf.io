@@ -13,6 +13,7 @@ from osf.management.commands.fetch_cedar_metadata_templates import ingest_cedar_
 from osf.management.commands.sync_doi_metadata import sync_doi_metadata, sync_doi_empty_metadata_dataarchive_registrations
 from osf.management.commands.populate_notification_types import populate_notification_types
 from osf.management.commands.remove_orcid_from_user_social import remove_orcid_from_user_social
+from osf.management.commands.reject_pending_collection_submissions import reject_pending_collection_submissions
 from scripts.find_spammy_content import manage_spammy_content
 from django.urls import reverse
 from django.shortcuts import redirect
@@ -189,4 +190,20 @@ class RemoveOrcidFromUserSocial(ManagementCommandPermissionView):
     def post(self, request):
         remove_orcid_from_user_social()
         messages.success(request, 'Orcid from user social have been successfully removed.')
+        return redirect(reverse('management:commands'))
+
+
+class RejectPendingCollectionSubmissions(ManagementCommandPermissionView):
+
+    def post(self, request):
+        user_guid = request.user._id
+        comment = request.POST.get('comment', '').strip()
+        if not user_guid:
+            messages.error(request, 'A user GUID must be provided.')
+            return redirect(reverse('management:commands'))
+        reject_pending_collection_submissions.apply_async(kwargs={
+            'user_guid': user_guid,
+            'comment': comment,
+        })
+        messages.success(request, 'Pending collection submissions have been queued for rejection.')
         return redirect(reverse('management:commands'))

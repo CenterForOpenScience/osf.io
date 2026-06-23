@@ -178,6 +178,21 @@
                     </nav>
                 </form>
             </section>
+            <section>
+                <h4><u>Reject pending collection submissions</u></h4>
+                <p>
+                    Use this management command to reject all collection submissions currently in the pending state.
+                </p>
+                <form method="post"
+                      action="{% url 'management:reject_pending_collection_submissions'%}">
+                    {% csrf_token %}
+                    Comment: <input type="text" name="comment" style="width: 550px;"
+                                    placeholder="Leave blank for default rejection message 'This collection submission has been rejected.'" />
+                    <nav>
+                        <input class="btn btn-success" type="submit" value="Run" />
+                    </nav>
+                </form>
+            </section>
         </div>
     </section>
 {% endblock %}
