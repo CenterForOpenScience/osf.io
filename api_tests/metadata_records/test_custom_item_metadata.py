@@ -1,6 +1,8 @@
 import pytest
+from waffle.testutils import override_flag
 
 from api.base.settings.defaults import API_BASE
+from osf import features
 from osf.models import GuidMetadataRecord, Preprint
 from osf.utils import permissions
 from osf_tests.factories import (
@@ -513,3 +515,46 @@ class TestCustomItemMetadataRecordDetail:
                 assert res.json['errors'] == bad_funding_info['expected_errors']
                 # check it hasn't changed in the db
                 expected.assert_expectations(db_record=db_record, api_record=None)
+
+
+@pytest.mark.django_db
+class TestCustomItemMetadataProjectReadOnly:
+
+    @pytest.fixture()
+    def user(self):
+        return AuthUserFactory()
+
+    @pytest.fixture()
+    def project(self, user):
+        return ProjectFactory(creator=user, is_public=False)
+
+    @pytest.fixture()
+    def url(self, project):
+        return f'/{API_BASE}custom_item_metadata_records/{project._id}/'
+
+    @pytest.fixture()
+    def payload(self, project):
+        return {
+            'data': {
+                'id': project._id,
+                'type': 'custom-item-metadata-records',
+                'attributes': {
+                    'language': 'en',
+                    'resource_type_general': 'Text',
+                },
+            }
+        }
+
+    def test_put_blocked_when_project_read_only_flag_active(self, app, user, url, payload):
+        with override_flag(features.PROJECT_READ_ONLY, active=True):
+            res = app.put_json_api(url, payload, auth=user.auth, expect_errors=True)
+        assert res.status_code == 405
+        assert res.json['errors'][0]['detail'] == 'This action is no longer available. Contact support if you have any questions.'
+
+    def test_put_allowed_when_project_read_only_flag_inactive(self, app, user, project, url, payload):
+        with override_flag(features.PROJECT_READ_ONLY, active=False):
+            res = app.put_json_api(url, payload, auth=user.auth)
+        assert res.status_code == 200
+        record = GuidMetadataRecord.objects.get(guid=project.guids.first())
+        assert record.language == 'en'
+        assert record.resource_type_general == 'Text'
