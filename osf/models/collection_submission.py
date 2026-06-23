@@ -23,6 +23,45 @@ from django.dispatch import receiver
 logger = logging.getLogger(__name__)
 
 
+def _cedar_record_context(cedar_template_jsonschema):
+    try:
+        props = cedar_template_jsonschema['properties']['@context']['properties']
+    except (KeyError, TypeError):
+        return None
+    return _cedar_record_context_obj(props)
+
+
+def _cedar_record_context_obj(cedar_context_properties):
+    return {
+        prop: _cedar_record_context_val(prop_schema)
+        for prop, prop_schema in cedar_context_properties.items()
+    }
+
+
+def _cedar_record_context_val(cedar_context_property_schema):
+    try:
+        return cedar_context_property_schema['enum'][0]
+    except (LookupError, TypeError):
+        pass
+    if cedar_context_property_schema.get('type') == 'object':
+        return _cedar_record_context_obj(
+            cedar_context_property_schema.get('properties', {})
+        )
+    raise ValueError(cedar_context_property_schema)
+
+
+def _cedar_record_field_entry(cedar_template_jsonschema, field_name, value):
+
+    properties = cedar_template_jsonschema.get('properties', {})
+    normalized_target = field_name.replace('_', '')
+    for prop_key, prop_schema in properties.items():
+        if prop_key.lower().replace(' ', '').replace('_', '') == normalized_target:
+            if prop_schema.get('type') == 'object' and '@value' in prop_schema.get('properties', {}):
+                return prop_key, {'@value': value}
+            return prop_key, value
+    return None
+
+
 class CollectionSubmission(TaxonomizableMixin, BaseModel):
     primary_identifier_name = 'guid___id'
 
@@ -474,6 +513,37 @@ class CollectionSubmission(TaxonomizableMixin, BaseModel):
         except SearchUnavailableError as e:
             logger.exception(e)
             sentry.log_exception(e)
+
+    CEDAR_METADATA_FIELDS = (
+        'collected_type', 'status', 'volume', 'issue',
+        'program_area', 'school_type', 'study_design',
+        'data_type', 'disease', 'grade_levels',
+    )
+
+    def sync_cedar_metadata(self):
+        from osf.models.cedar_metadata import CedarMetadataRecord
+        template = self.collection.provider.required_metadata_template
+        metadata = {}
+        for field in self.CEDAR_METADATA_FIELDS:
+            value = getattr(self, field)
+            if not value:
+                continue
+            entry = _cedar_record_field_entry(template.template, field, value)
+            if entry is None:
+                logger.warning(f'No CEDAR property matches field "{field}" on template "{template.schema_name}"')
+                continue
+            prop_key, prop_value = entry
+            metadata[prop_key] = prop_value
+        context = _cedar_record_context(template.template)
+        if context is not None:
+            metadata['@context'] = context
+        record, _ = CedarMetadataRecord.objects.get_or_create(
+            guid=self.guid,
+            template=template,
+        )
+        record.metadata = metadata
+        record.is_published = True
+        record.save()
 
     def save(self, *args, **kwargs):
         ret = super().save(*args, **kwargs)

@@ -160,15 +160,20 @@ class TestPreprintShare:
             with expect_preprint_ingest_request(_mock_share_responses, preprint, count=5):
                 preprint.update_search()
 
-    def test_no_call_async_update_on_400_failure(self, preprint, auth):
+    @mock.patch('api.share.utils.task__update_share.delay')
+    def test_no_call_async_update_on_400_failure(self, share_delay, mock_share_responses, preprint, auth):
         with capture_notifications():
+            mock_share_responses.replace(responses.POST, shtrove_ingest_url(), status=400)
             preprint.set_published(True, auth=auth, save=True)
-            with (
-                mock_share_responses() as _mock_share_responses,
-                expect_preprint_ingest_request(_mock_share_responses, preprint, count=1, error_response=True),
-            ):
-                _mock_share_responses.replace(responses.POST, shtrove_ingest_url(), status=400)
-                preprint.update_search()
+            with expect_preprint_ingest_request(mock_share_responses, preprint, count=1, error_response=True):
+                try:
+                    preprint.update_search()
+                except Exception as err:
+                    share_delay.assert_not_called()
+                    assert str(err).startswith("Retry in 180s: HTTPError('400 Client Error:")
+                    assert len(mock_share_responses.calls) == 1
+                else:
+                    pytest.fail('Expected Retry(HTTPError) to be raised')
 
     def test_delete_from_share(self):
         preprint = PreprintFactory()
