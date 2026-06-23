@@ -1453,6 +1453,9 @@ class DraftRegistration(ObjectIDMixin, RegistrationResponseMixin, DirtyFieldsMix
     def register(self, auth, save=False, child_ids=None, manual_guid=None):
         node = self.branched_from
 
+        if not self.subjects.exists():
+            raise NodeStateError('Registration must have at least one subject to be registered')
+
         if not self.title:
             raise NodeStateError('Draft Registration must have title to be registered')
 
