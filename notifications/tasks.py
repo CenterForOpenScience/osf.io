@@ -94,7 +94,7 @@ def send_user_email_task(self, user_id, notification_ids, **kwargs):
             return
 
     try:
-        notifications_qs = Notification.objects.filter(id__in=notification_ids)
+        notifications_qs = Notification.objects.filter(id__in=notification_ids, sent__isnull=True)
         rendered_notifications, failed_notifications = safe_render_notification(notifications_qs, email_task)
         notifications_qs = notifications_qs.exclude(id__in=failed_notifications)
 
@@ -168,7 +168,7 @@ def send_moderator_email_task(self, user_id, notification_ids, provider_content_
             return
 
     try:
-        notifications_qs = Notification.objects.filter(id__in=notification_ids)
+        notifications_qs = Notification.objects.filter(id__in=notification_ids, sent__isnull=True)
         rendered_notifications, failed_notifications = safe_render_notification(notifications_qs, email_task)
         notifications_qs = notifications_qs.exclude(id__in=failed_notifications)
 

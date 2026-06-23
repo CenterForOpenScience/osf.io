@@ -14,7 +14,7 @@ from osf.external.gravy_valet.translations import EphemeralNodeSettings
 import waffle
 from django.db import transaction
 from django.contrib.contenttypes.models import ContentType
-from elasticsearch import exceptions as es_exceptions
+from elasticsearch8 import exceptions as es_exceptions
 from rest_framework import status as http_status
 
 from api.caching.tasks import update_storage_usage_with_size
@@ -34,6 +34,7 @@ from framework.exceptions import HTTPError
 from framework.flask import redirect
 from framework.sentry import log_exception
 from framework.transactions.handlers import no_auto_transaction
+from osf.metrics.events import OsfCountedUsageEvent
 from website import settings
 from addons.base import signals as file_signals
 from addons.base.utils import format_last_known_metadata, get_mfr_url
@@ -53,7 +54,6 @@ from osf.models import (
     FileVersionUserMetadata,
     FileVersion, NotificationTypeEnum
 )
-from osf.metrics import PreprintView, PreprintDownload
 from osf.utils import permissions
 from osf.external.gravy_valet import request_helpers
 from website.profile.utils import get_profile_image_url
@@ -685,11 +685,17 @@ def osfstoragefile_viewed_update_metrics(self, auth, fileversion, file_node):
         return
     if waffle.switch_is_active(features.ELASTICSEARCH_METRICS) and isinstance(resource, Preprint):
         try:
-            PreprintView.record_for_preprint(
-                preprint=resource,
-                user=auth.user,
-                version=fileversion.identifier,
-                path=file_node.path,
+            OsfCountedUsageEvent.record(
+                user_id=getattr(user, '_id', None),
+                item_osfid=resource._id,
+                action_labels=[
+                    OsfCountedUsageEvent.ActionLabel.VIEW.value,
+                    OsfCountedUsageEvent.ActionLabel.WEB.value,
+                ],
+                # HACK: we don't have the user request, so fabricate a one-off session id
+                # (this means no double-click filtering for anonymous users (same as before)
+                # and potentially inflated "unique" sessionhour view counts)
+                client_session_id=str(uuid.uuid4()),
             )
         except es_exceptions.ConnectionError:
             log_exception()
@@ -712,11 +718,16 @@ def osfstoragefile_downloaded_update_metrics(self, auth, fileversion, file_node)
         return
     if waffle.switch_is_active(features.ELASTICSEARCH_METRICS) and isinstance(resource, Preprint):
         try:
-            PreprintDownload.record_for_preprint(
-                preprint=resource,
-                user=auth.user,
-                version=fileversion.identifier,
-                path=file_node.path,
+            OsfCountedUsageEvent.record(
+                user_id=getattr(user, '_id', None),
+                item_osfid=resource._id,
+                action_labels=[
+                    OsfCountedUsageEvent.ActionLabel.DOWNLOAD.value,
+                ],
+                # HACK: we don't have the user request, so fabricate a one-off session id
+                # (this means no double-click filtering for anonymous users (same as before)
+                # and potentially inflated "unique" sessionhour view counts)
+                client_session_id=str(uuid.uuid4()),
             )
         except es_exceptions.ConnectionError:
             log_exception()

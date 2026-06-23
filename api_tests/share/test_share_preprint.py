@@ -17,8 +17,11 @@ from osf_tests.factories import (
 )
 from website import settings
 from website.preprints.tasks import on_preprint_updated
-from ._utils import expect_preprint_ingest_request
 from tests.utils import capture_notifications
+from ._utils import (
+    expect_preprint_ingest_request,
+    mock_share_responses,
+)
 
 
 @pytest.mark.django_db
@@ -26,7 +29,10 @@ from tests.utils import capture_notifications
 class TestPreprintShare:
     @pytest.fixture(scope='class', autouse=True)
     def _patches(self):
-        with mock.patch.object(settings, 'USE_CELERY', False):
+        with (
+            mock.patch.object(settings, 'USE_CELERY', False),
+            mock.patch('osf.metadata.osf_gathering.MonthlyPublicItemUsageReport.from_last_month', return_value=()),
+        ):
             yield
 
     @pytest.fixture
@@ -45,7 +51,7 @@ class TestPreprintShare:
         )
 
     @pytest.fixture
-    def project(self, user, mock_share_responses):
+    def project(self, user):
         return ProjectFactory(creator=user, is_public=True)
 
     @pytest.fixture
@@ -67,97 +73,121 @@ class TestPreprintShare:
             is_published=False
         )
 
-    def test_save_unpublished_not_called(self, mock_share_responses, preprint):
+    def test_save_unpublished_not_called(self, preprint):
         # expecting no ingest requests (delete or otherwise)
-        with expect_preprint_ingest_request(mock_share_responses, preprint, count=0):
+        with (
+            mock_share_responses() as _mock_share_responses,
+            expect_preprint_ingest_request(_mock_share_responses, preprint, count=0),
+        ):
             preprint.save()
 
-    def test_save_published_called(self, mock_share_responses, preprint, user, auth):
-        with capture_notifications():
-            with expect_preprint_ingest_request(mock_share_responses, preprint):
-                preprint.set_published(True, auth=auth, save=True)
+    def test_save_published_called(self, preprint, user, auth):
+        with (
+            capture_notifications(),
+            mock_share_responses() as _mock_share_responses,
+            expect_preprint_ingest_request(_mock_share_responses, preprint),
+        ):
+            preprint.set_published(True, auth=auth, save=True)
 
     # This covers an edge case where a preprint is forced back to unpublished
     # that it sends the information back to share
-    def test_save_unpublished_called_forced(self, mock_share_responses, auth, preprint):
-        with capture_notifications():
-            with expect_preprint_ingest_request(mock_share_responses, preprint):
+    def test_save_unpublished_called_forced(self, auth, preprint):
+        with (
+            capture_notifications(),
+            mock_share_responses() as _mock_share_responses,
+        ):
+            with expect_preprint_ingest_request(_mock_share_responses, preprint):
                 preprint.set_published(True, auth=auth, save=True)
-            with expect_preprint_ingest_request(mock_share_responses, preprint, delete=True):
+            with expect_preprint_ingest_request(_mock_share_responses, preprint, delete=True):
                 preprint.is_published = False
                 preprint.save(**{'force_update': True})
 
-    def test_save_published_subject_change_called(self, mock_share_responses, auth, preprint, subject, subject_two):
+    def test_save_published_subject_change_called(self, auth, preprint, subject, subject_two):
         with capture_notifications():
             preprint.set_published(True, auth=auth, save=True)
-            with expect_preprint_ingest_request(mock_share_responses, preprint):
+            with (
+                mock_share_responses() as _mock_share_responses,
+                expect_preprint_ingest_request(_mock_share_responses, preprint),
+            ):
                 preprint.set_subjects([[subject_two._id]], auth=auth)
 
-    def test_save_unpublished_subject_change_not_called(self, mock_share_responses, auth, preprint, subject_two):
-        with expect_preprint_ingest_request(mock_share_responses, preprint, delete=True):
+    def test_save_unpublished_subject_change_not_called(self, auth, preprint, subject_two):
+        with (
+            mock_share_responses() as _mock_share_responses,
+            expect_preprint_ingest_request(_mock_share_responses, preprint, delete=True),
+        ):
             preprint.set_subjects([[subject_two._id]], auth=auth)
 
-    def test_send_to_share_is_true(self, mock_share_responses, auth, preprint):
+    def test_send_to_share_is_true(self, auth, preprint):
         with capture_notifications():
             preprint.set_published(True, auth=auth, save=True)
-            with expect_preprint_ingest_request(mock_share_responses, preprint):
+            with (
+                mock_share_responses() as _mock_share_responses,
+                expect_preprint_ingest_request(_mock_share_responses, preprint),
+            ):
                 on_preprint_updated(preprint._id, saved_fields=['title'])
 
-    def test_preprint_contributor_changes_updates_preprints_share(self, mock_share_responses, user, auth):
+    def test_preprint_contributor_changes_updates_preprints_share(self, user, auth):
         with capture_notifications():
             preprint = PreprintFactory(is_published=True, creator=user)
             preprint.set_published(True, auth=auth, save=True)
             user2 = AuthUserFactory()
 
-            with expect_preprint_ingest_request(mock_share_responses, preprint):
-                preprint.add_contributor(contributor=user2, auth=auth, save=True)
+            with mock_share_responses() as _mock_share_responses:
+                with expect_preprint_ingest_request(_mock_share_responses, preprint):
+                    preprint.add_contributor(contributor=user2, auth=auth, save=True)
 
-            with expect_preprint_ingest_request(mock_share_responses, preprint):
-                preprint.move_contributor(contributor=user, index=0, auth=auth, save=True)
+                with expect_preprint_ingest_request(_mock_share_responses, preprint):
+                    preprint.move_contributor(contributor=user, index=0, auth=auth, save=True)
 
-            data = [{'id': user._id, 'permissions': ADMIN, 'visible': True},
-                    {'id': user2._id, 'permissions': WRITE, 'visible': False}]
+                data = [{'id': user._id, 'permissions': ADMIN, 'visible': True},
+                        {'id': user2._id, 'permissions': WRITE, 'visible': False}]
 
-            with expect_preprint_ingest_request(mock_share_responses, preprint):
-                preprint.manage_contributors(data, auth=auth, save=True)
+                with expect_preprint_ingest_request(_mock_share_responses, preprint):
+                    preprint.manage_contributors(data, auth=auth, save=True)
 
-            with expect_preprint_ingest_request(mock_share_responses, preprint):
-                preprint.update_contributor(user2, READ, True, auth=auth, save=True)
+                with expect_preprint_ingest_request(_mock_share_responses, preprint):
+                    preprint.update_contributor(user2, READ, True, auth=auth, save=True)
 
-            with expect_preprint_ingest_request(mock_share_responses, preprint):
-                preprint.remove_contributor(contributor=user2, auth=auth)
+                with expect_preprint_ingest_request(_mock_share_responses, preprint):
+                    preprint.remove_contributor(contributor=user2, auth=auth)
 
     @pytest.mark.skip('Synchronous retries not supported if celery >=5.0')
-    def test_call_async_update_on_500_failure(self, mock_share_responses, preprint, auth):
-        mock_share_responses.replace(responses.POST, shtrove_ingest_url(), status=500)
+    def test_call_async_update_on_500_failure(self, preprint, auth):
         preprint.set_published(True, auth=auth, save=True)
-        with expect_preprint_ingest_request(mock_share_responses, preprint, count=5):
-            preprint.update_search()
+        with mock_share_responses() as _mock_share_responses:
+            _mock_share_responses.replace(responses.POST, shtrove_ingest_url(), status=500)
+            with expect_preprint_ingest_request(_mock_share_responses, preprint, count=5):
+                preprint.update_search()
 
-    @mock.patch('api.share.utils.task__update_share.delay')
-    def test_no_call_async_update_on_400_failure(self, share_delay, mock_share_responses, preprint, auth):
+    def test_no_call_async_update_on_400_failure(self, preprint, auth):
         with capture_notifications():
-            mock_share_responses.replace(responses.POST, shtrove_ingest_url(), status=400)
             preprint.set_published(True, auth=auth, save=True)
-            with expect_preprint_ingest_request(mock_share_responses, preprint, count=1, error_response=True):
-                try:
-                    preprint.update_search()
-                except Exception as err:
-                    share_delay.assert_not_called()
-                    assert str(err).startswith("Retry in 180s: HTTPError('400 Client Error:")
-                    assert len(mock_share_responses.calls) == 1
-                else:
-                    pytest.fail('Expected Retry(HTTPError) to be raised')
+            with (
+                mock_share_responses() as _mock_share_responses,
+                expect_preprint_ingest_request(_mock_share_responses, preprint, count=1, error_response=True),
+            ):
+                _mock_share_responses.replace(responses.POST, shtrove_ingest_url(), status=400)
+                preprint.update_search()
 
-    def test_delete_from_share(self, mock_share_responses):
+    def test_delete_from_share(self):
         preprint = PreprintFactory()
-        with expect_preprint_ingest_request(mock_share_responses, preprint):
+        with (
+            mock_share_responses() as _mock_share_responses,
+            expect_preprint_ingest_request(_mock_share_responses, preprint),
+        ):
             preprint.update_search()
         preprint.date_withdrawn = datetime.now()
         preprint.save()
-        with expect_preprint_ingest_request(mock_share_responses, preprint):
+        with (
+            mock_share_responses() as _mock_share_responses,
+            expect_preprint_ingest_request(_mock_share_responses, preprint),
+        ):
             preprint.update_search()
         preprint.spam_status = SpamStatus.SPAM
         preprint.save()
-        with expect_preprint_ingest_request(mock_share_responses, preprint, delete=True):
+        with (
+            mock_share_responses() as _mock_share_responses,
+            expect_preprint_ingest_request(_mock_share_responses, preprint, delete=True),
+        ):
             preprint.update_search()

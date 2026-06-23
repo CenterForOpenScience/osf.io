@@ -74,6 +74,7 @@ REGISTRATION_UPDATE_APPROVAL_TIME = datetime.timedelta(days=2)
 # Date range for embargo periods
 EMBARGO_END_DATE_MIN = datetime.timedelta(days=2)
 EMBARGO_END_DATE_MAX = datetime.timedelta(days=1460)  # Four years
+EMBARGO_REPORT_PAGE_SIZE = 10
 
 # Question titles to be reomved for anonymized VOL
 ANONYMIZED_TITLES = ['Authors']
@@ -108,7 +109,11 @@ ALLOW_LOGIN = True
 
 SEARCH_ENGINE = 'elastic'  # Can be 'elastic', or None
 ELASTIC_URI = '127.0.0.1:9200'
-ELASTIC6_URI = os.environ.get('ELASTIC6_URI', '127.0.0.1:9201')
+ELASTIC8_URI = os.environ.get('ELASTIC8_URI')
+ELASTIC8_CERT_PATH = os.environ.get('ELASTIC8_CERT_PATH')
+ELASTIC8_ASSERT_HOSTNAME = os.environ.get('ELASTIC8_ASSERT_HOSTNAME')
+ELASTIC8_USERNAME = os.environ.get('ELASTIC8_USERNAME', 'elastic')
+ELASTIC8_SECRET = os.environ.get('ELASTIC8_SECRET')
 ELASTIC_TIMEOUT = 10
 ELASTIC_INDEX = 'website'
 ELASTIC_KWARGS = {
@@ -413,6 +418,7 @@ class CeleryConfig:
     task_account_status_changes_queue = 'account_status_changes'
     task_external_high_queue = 'external_high'
     task_external_low_queue = 'external_low'
+    task_background_migration_queue = 'background_migration'
 
     external_high_modules = {
         'osf.tasks.log_gv_addon',
@@ -478,6 +484,9 @@ class CeleryConfig:
         'scripts.enhanced_stuck_registration_audit',
     }
 
+    background_migration_modules = {
+    }
+
     try:
         from kombu import Queue, Exchange
     except ImportError:
@@ -531,12 +540,19 @@ class CeleryConfig:
                 routing_key=task_external_low_queue,
                 consumer_arguments={'x-priority': -2},
             ),
+            Queue(
+                task_background_migration_queue,
+                Exchange(task_background_migration_queue),
+                routing_key=task_background_migration_queue,
+                consumer_arguments={'x-priority': -1},
+            ),
         )
 
         task_default_exchange_type = 'direct'
         task_routes = ('framework.celery_tasks.routers.CeleryRouter', )
         task_ignore_result = True
         task_store_errors_even_if_ignored = True
+        result_extended = True
 
     broker_url = os.environ.get('BROKER_URL', f'amqp://{RABBITMQ_USERNAME}:{RABBITMQ_PASSWORD}@{RABBITMQ_HOST}:{RABBITMQ_PORT}/{RABBITMQ_VHOST}')
     broker_use_ssl = False
@@ -712,6 +728,10 @@ class CeleryConfig:
             'task': 'osf.management.commands.approve_pending_schema_responses',
             'schedule': crontab(minute=0, hour=5),  # Daily 12 a.m
             'kwargs': {'dry_run': False},
+        },
+        'delete_expired_djelme_indexes': {
+            'task': 'osf.metrics.events.delete_expired_djelme_indexes',
+            'schedule': crontab(minute=30, hour=7, day_of_month=5),     # Fifth day of month 2:30 a.m. EST
         },
     }
 
@@ -2125,8 +2145,6 @@ PIGEON_CALLBACK_BEARER_TOKEN = os.getenv('PIGEON_CALLBACK_BEARER_TOKEN')
 PRODUCT_OWNER_EMAIL_ADDRESS = {}
 
 CAS_LOG_LEVEL = 3  # ERROR
-
-PREPRINT_METRICS_START_DATE = datetime.datetime(2019, 1, 1)
 
 WAFFLE_VALUES_YAML = 'osf/features.yaml'
 DEFAULT_DRAFT_NODE_TITLE = 'Untitled'

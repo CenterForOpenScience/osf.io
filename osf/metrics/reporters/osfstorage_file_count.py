@@ -2,10 +2,10 @@ from django.contrib.contenttypes.models import ContentType
 from django.db.models import Q
 import logging
 
-from osf.metrics.reports import OsfstorageFileCountReport, FileRunningTotals
 from osf.models import AbstractNode, Preprint
+from osf.metrics.daily_reports import DailyOsfstorageFileCountReport
+from osf.metrics.utils import cycle_coverage_date
 from ._base import DailyReporter
-
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
@@ -32,9 +32,9 @@ class OsfstorageFileCountReporter(DailyReporter):
 
         daily_query = Q(created__date=date)
 
-        report = OsfstorageFileCountReport(
-            report_date=date,
-            files=FileRunningTotals(
+        yield DailyOsfstorageFileCountReport(
+            cycle_coverage=cycle_coverage_date(date),
+            files=dict(
                 total=file_qs.count(),
                 public=file_qs.filter(public_query).count(),
                 private=file_qs.filter(private_query).count(),
@@ -43,5 +43,3 @@ class OsfstorageFileCountReporter(DailyReporter):
                 private_daily=file_qs.filter(private_query & daily_query).count(),
             ),
         )
-
-        return [report]
