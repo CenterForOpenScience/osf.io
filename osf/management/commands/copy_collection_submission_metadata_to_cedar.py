@@ -1,6 +1,7 @@
 import logging
 
 from django.core.management.base import BaseCommand
+from django.db import transaction
 
 from osf.models import CollectionSubmission
 
@@ -66,8 +67,9 @@ class Command(BaseCommand):
         )
 
     def handle(self, *args, **options):
-        copy_collection_submission_metadata_to_cedar(
-            dry_run=options['dry_run'],
-            batch_size=options['batch_size'],
-            provider_id=options.get('provider_id'),
-        )
+        with transaction.atomic():
+            copy_collection_submission_metadata_to_cedar(
+                dry_run=options['dry_run'],
+                batch_size=options['batch_size'],
+                provider_id=options.get('provider_id'),
+            )
