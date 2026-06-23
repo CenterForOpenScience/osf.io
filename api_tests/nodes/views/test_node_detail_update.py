@@ -1,6 +1,7 @@
 from unittest import mock
 import pytest
 from rest_framework import exceptions
+from waffle.testutils import override_flag
 
 from api.base.settings.defaults import API_BASE
 from api.caching import settings as cache_settings
@@ -8,6 +9,7 @@ from api.caching.utils import storage_usage_cache
 from api_tests.nodes.views.utils import NodeCRUDTestCase
 from api_tests.subjects.mixins import UpdateSubjectsMixin
 from framework.auth.core import Auth
+from osf import features
 from osf.models import NodeLog, NotificationTypeEnum
 from osf.utils.sanitize import strip_html
 from osf.utils import permissions
@@ -698,6 +700,48 @@ class TestNodeUpdate(NodeCRUDTestCase):
         # Turning supplemental_project private no longer turns preprint private
         assert target_object.is_public
         assert not mock_update_doi_metadata.called
+
+
+@pytest.mark.django_db
+class TestNodeUpdateProjectReadOnly(NodeCRUDTestCase):
+
+    def test_patch_metadata_blocked_when_project_read_only_flag_active(
+            self, app, user, title_new, description_new, category_new,
+            project_private, url_private, make_node_payload):
+        with override_flag(features.PROJECT_READ_ONLY, active=True):
+            res = app.patch_json_api(
+                url_private,
+                make_node_payload(project_private, {
+                    'title': title_new,
+                    'description': description_new,
+                    'category': category_new,
+                }),
+                auth=user.auth,
+                expect_errors=True
+            )
+        assert res.status_code == 405
+        assert res.json['errors'][0]['detail'] == 'This action is no longer available. Contact support if you have any questions.'
+        project_private.reload()
+        assert project_private.title != title_new
+        assert project_private.description != description_new
+
+    def test_patch_metadata_allowed_when_project_read_only_flag_inactive(
+            self, app, user, title_new, description_new, category_new,
+            project_private, url_private, make_node_payload):
+        with override_flag(features.PROJECT_READ_ONLY, active=False):
+            res = app.patch_json_api(
+                url_private,
+                make_node_payload(project_private, {
+                    'title': title_new,
+                    'description': description_new,
+                    'category': category_new,
+                }),
+                auth=user.auth
+            )
+        assert res.status_code == 200
+        project_private.reload()
+        assert project_private.title == title_new
+        assert project_private.description == description_new
 
 
 @pytest.mark.django_db

@@ -384,6 +384,7 @@ class NodeDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, NodeMix
         ReadOnlyIfRegistration,
         base_permissions.TokenHasScope,
         ExcludeWithdrawals,
+        ProjectEditingNotAllowed,
     )
 
     required_read_scopes = [CoreScopes.NODE_BASE_READ]
