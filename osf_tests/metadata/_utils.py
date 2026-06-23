@@ -23,6 +23,14 @@ def assert_graphs_equal(actual_rdflib_graph, expected_rdflib_graph, label=''):
     ))
 
 
+def assert_equivalent_turtle(actual_turtle, expected_turtle, label):
+    _actual = rdflib.Graph()
+    _actual.parse(data=actual_turtle, format='turtle')
+    _expected = rdflib.Graph()
+    _expected.parse(data=expected_turtle, format='turtle')
+    assert_graphs_equal(_actual, _expected, label=label)
+
+
 def _get_graph_and_focuses(triples):
     _graph = rdflib.Graph()
     _focuses = set()
