@@ -551,9 +551,14 @@ class TestCustomItemMetadataProjectReadOnly:
         assert res.status_code == 405
         assert res.json['errors'][0]['detail'] == 'This action is no longer available. Contact support if you have any questions.'
 
+    def test_patch_blocked_when_project_read_only_flag_active(self, app, user, url, payload):
+        with override_flag(features.PROJECT_READ_ONLY, active=True):
+            res = app.patch_json_api(url, payload, auth=user.auth, expect_errors=True)
+        assert res.status_code == 405
+        assert res.json['errors'][0]['detail'] == 'This action is no longer available. Contact support if you have any questions.'
+
     def test_put_allowed_when_project_read_only_flag_inactive(self, app, user, project, url, payload):
-        with override_flag(features.PROJECT_READ_ONLY, active=False):
-            res = app.put_json_api(url, payload, auth=user.auth)
+        res = app.put_json_api(url, payload, auth=user.auth)
         assert res.status_code == 200
         record = GuidMetadataRecord.objects.get(guid=project.guids.first())
         assert record.language == 'en'
@@ -576,5 +581,25 @@ class TestCustomItemMetadataProjectReadOnly:
             res = app.put_json_api(url, payload, auth=user.auth)
         assert res.status_code == 200
         record = GuidMetadataRecord.objects.get(guid=registration.guids.first())
+        assert record.language == 'en'
+        assert record.resource_type_general == 'Text'
+
+    def test_put_not_blocked_for_preprint_when_project_read_only_flag_active(self, app, user):
+        preprint = PreprintFactory(creator=user)
+        url = f'/{API_BASE}custom_item_metadata_records/{preprint._id}/'
+        payload = {
+            'data': {
+                'id': preprint._id,
+                'type': 'custom-item-metadata-records',
+                'attributes': {
+                    'language': 'en',
+                    'resource_type_general': 'Text',
+                },
+            }
+        }
+        with override_flag(features.PROJECT_READ_ONLY, active=True):
+            res = app.put_json_api(url, payload, auth=user.auth)
+        assert res.status_code == 200
+        record = GuidMetadataRecord.objects.get(guid=preprint.guids.first())
         assert record.language == 'en'
         assert record.resource_type_general == 'Text'

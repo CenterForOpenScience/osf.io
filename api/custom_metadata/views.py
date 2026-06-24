@@ -6,6 +6,7 @@ from framework.auth.oauth_scopes import CoreScopes
 
 from api.base import permissions as base_permissions
 from api.base.views import JSONAPIBaseView
+
 import osf.models as osfdb
 from .permissions import CustomMetadataPermission, ItemMetadataEditingNotAllowed
 from .serializers import CustomFileMetadataSerializer, CustomItemMetadataSerializer
