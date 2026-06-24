@@ -16,7 +16,7 @@ from django.utils import timezone
 from framework.auth import Auth
 from framework.celery_tasks.handlers import celery_teardown_request
 from osf.email import _render_email_html
-from osf_tests.factories import DraftRegistrationFactory
+from osf_tests.factories import DraftRegistrationFactory, SubjectFactory
 from osf.models import Sanction, NotificationType, Notification
 from tests.base import get_default_metaschema
 from website.archiver import ARCHIVER_SUCCESS
@@ -136,8 +136,10 @@ def mock_archive(project, schema=None, auth=None, draft_registration=None, paren
     draft_registration = draft_registration or DraftRegistrationFactory(
         branched_from=project, registration_schema=schema
     )
+    draft_registration.subjects.add(SubjectFactory())
 
     with mock.patch('framework.celery_tasks.handlers.enqueue_task'):
+        draft_registration.subjects.add(SubjectFactory())
         registration = draft_registration.register(auth=auth, save=True)
 
     if embargo:
