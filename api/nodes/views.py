@@ -1848,6 +1848,7 @@ class NodeSubjectsRelationship(SubjectRelationshipBaseView, NodeMixin):
         base_permissions.TokenHasScope,
         ContributorOrPublic,
         ExcludeWithdrawals,
+        ProjectEditingNotAllowed,
     )
 
     required_read_scopes = [CoreScopes.NODE_BASE_READ]
