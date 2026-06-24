@@ -1615,6 +1615,7 @@ class TestRegistrationCreate(TestNodeRegistrationCreate):
 
         # User is admin on draft and node
         draft_registration = DraftRegistrationFactory(creator=user, registration_schema=schema)
+        draft_registration.subjects.add(SubjectFactory())
         assert draft_registration.branched_from.is_admin_contributor(user) is True
         assert draft_registration.has_permission(user, permissions.ADMIN) is True
         payload_ver['data']['attributes']['draft_registration_id'] = draft_registration._id
@@ -1626,6 +1627,7 @@ class TestRegistrationCreate(TestNodeRegistrationCreate):
 
         # User is an admin contributor on node but not on draft registration
         draft_registration = DraftRegistrationFactory(creator=user_two, registration_schema=schema)
+        draft_registration.subjects.add(SubjectFactory())
         draft_registration.add_contributor(user, permissions.WRITE)
         draft_registration.branched_from.add_contributor(user, permissions.ADMIN)
         payload_ver['data']['attributes']['draft_registration_id'] = draft_registration._id

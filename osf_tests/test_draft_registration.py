@@ -78,6 +78,7 @@ class TestDraftRegistrations:
         auth = Auth(user)
         project = factories.ProjectFactory(creator=user)
         draft = factories.DraftRegistrationFactory(branched_from=project)
+        draft.subjects.add(factories.SubjectFactory())
         assert not draft.registered_node
         draft.register(auth)
         assert draft.registered_node
