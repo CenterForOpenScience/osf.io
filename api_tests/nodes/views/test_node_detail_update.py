@@ -724,6 +724,7 @@ class TestNodeUpdateProjectReadOnly(NodeCRUDTestCase):
         project_private.reload()
         assert project_private.title != title_new
         assert project_private.description != description_new
+        assert project_private.category != category_new
 
     def test_patch_metadata_allowed_when_project_read_only_flag_inactive(
             self, app, user, title_new, description_new, category_new,
@@ -742,6 +743,7 @@ class TestNodeUpdateProjectReadOnly(NodeCRUDTestCase):
         project_private.reload()
         assert project_private.title == title_new
         assert project_private.description == description_new
+        assert project_private.category == category_new
 
 
 @pytest.mark.django_db
