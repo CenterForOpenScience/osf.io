@@ -558,3 +558,23 @@ class TestCustomItemMetadataProjectReadOnly:
         record = GuidMetadataRecord.objects.get(guid=project.guids.first())
         assert record.language == 'en'
         assert record.resource_type_general == 'Text'
+
+    def test_put_not_blocked_for_registration_when_project_read_only_flag_active(self, app, user, project):
+        registration = RegistrationFactory(project=project, is_public=True)
+        url = f'/{API_BASE}custom_item_metadata_records/{registration._id}/'
+        payload = {
+            'data': {
+                'id': registration._id,
+                'type': 'custom-item-metadata-records',
+                'attributes': {
+                    'language': 'en',
+                    'resource_type_general': 'Text',
+                },
+            }
+        }
+        with override_flag(features.PROJECT_READ_ONLY, active=True):
+            res = app.put_json_api(url, payload, auth=user.auth)
+        assert res.status_code == 200
+        record = GuidMetadataRecord.objects.get(guid=registration.guids.first())
+        assert record.language == 'en'
+        assert record.resource_type_general == 'Text'
