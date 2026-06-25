@@ -103,6 +103,7 @@ from api.nodes.permissions import (
     ProjectCreationNotAllowed,
     ProjectEditingNotAllowed,
     NodeIdentifierCreationNotAllowed,
+    NodeAffiliationUpdateNotAllowed,
 )
 from api.wikis.permissions import WikisEditingNotAllowed
 from osf.utils import permissions as osf_permissions
@@ -1751,6 +1752,7 @@ class NodeInstitutionsRelationship(JSONAPIBaseView, generics.RetrieveUpdateDestr
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
         WriteOrPublicForRelationshipInstitutions,
+        NodeAffiliationUpdateNotAllowed,
     )
     required_read_scopes = [CoreScopes.NODE_BASE_READ]
     required_write_scopes = [CoreScopes.NODE_BASE_WRITE]
