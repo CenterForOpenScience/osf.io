@@ -578,6 +578,10 @@ class TestNodeIdentifierCreationProjectReadOnly:
             }
         }
 
+    @pytest.fixture()
+    def registration(self, user):
+        return RegistrationFactory(creator=user, is_public=True)
+
     def test_post_blocked_when_project_read_only_flag_active(self, app, user, url, payload):
         with override_flag(features.PROJECT_READ_ONLY, active=True):
             res = app.post_json_api(url, payload, auth=user.auth, expect_errors=True)
@@ -605,5 +609,31 @@ class TestNodeIdentifierCreationProjectReadOnly:
             )
         )
         res = app.post_json_api(url, payload, auth=user.auth)
+        assert res.status_code == 201
+        assert res.json['data']['attributes']['category'] == 'doi'
+
+    @pytest.mark.usefixtures('mock_gravy_valet_get_verified_links')
+    @responses.activate
+    def test_post_not_blocked_for_registration_when_project_read_only_flag_active(self, app, user, registration, payload):
+        registration_url = f'/{API_BASE}registrations/{registration._id}/identifiers/'
+        client = DataCiteClient(registration)
+        responses.add(
+            responses.Response(
+                responses.POST,
+                f'{settings.DATACITE_URL}/metadata/{client.build_doi(registration)}',
+                body='OK (10.70102/FK2osf.io/dp438)',
+                status=201,
+            )
+        )
+        responses.add(
+            responses.Response(
+                responses.POST,
+                f'{settings.DATACITE_URL}/doi',
+                body='OK (10.70102/FK2osf.io/dp438)',
+                status=201,
+            )
+        )
+        with override_flag(features.PROJECT_READ_ONLY, active=True):
+            res = app.post_json_api(registration_url, payload, auth=user.auth)
         assert res.status_code == 201
         assert res.json['data']['attributes']['category'] == 'doi'
