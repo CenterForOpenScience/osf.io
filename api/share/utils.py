@@ -170,6 +170,8 @@ def _schedule_cedar_record_updates(guid_instance):
     acks_late=True,
     max_retries=4,
     retry_backoff=True,
+    soft_time_limit=settings.SHARE_UPDATE_TASK_SOFT_TIME_LIMIT,
+    time_limit=settings.SHARE_UPDATE_TASK_HARD_TIME_LIMIT,
 )
 def task__update_share(self, guid: str, is_backfill=False, osfmap_partition_name='MAIN'):
     """
@@ -278,6 +280,7 @@ def pls_send_trove_record(osf_item, *, is_backfill: bool, osfmap_partition: Osfm
             **_shtrove_auth_headers(osf_item),
         },
         data=ensure_bytes(_serialized_record),
+        timeout=settings.EXTERNAL_REQUEST_TIMEOUT,
     )
 
 
@@ -288,6 +291,7 @@ def pls_delete_trove_record(osf_item, osfmap_partition: OsfmapPartition):
             'record_identifier': _shtrove_record_identifier(osf_item, osfmap_partition),
         },
         headers=_shtrove_auth_headers(osf_item),
+        timeout=settings.EXTERNAL_REQUEST_TIMEOUT,
     )
 
 
