@@ -5,8 +5,10 @@ from urllib.parse import urlparse
 import responses
 from django.utils import timezone
 from framework.auth.core import Auth
+from waffle.testutils import override_flag
 
 from api.base.settings.defaults import API_BASE
+from osf import features
 from osf.models import Identifier
 from osf_tests.factories import (
     RegistrationFactory,
@@ -548,3 +550,60 @@ class TestRegistrationIdentifierCreate(TestNodeIdentifierCreate):
     def test_create_doi_for_withdrawn_registration(self, app, user, retraction, identifier_url, identifier_payload):
         res = app.post_json_api(identifier_url, identifier_payload, auth=user.auth, expect_errors=True)
         assert res.status_code == 403
+
+
+@pytest.mark.django_db
+class TestNodeIdentifierCreationProjectReadOnly:
+
+    @pytest.fixture()
+    def user(self):
+        return AuthUserFactory()
+
+    @pytest.fixture()
+    def node(self, user):
+        return NodeFactory(creator=user, is_public=True)
+
+    @pytest.fixture()
+    def url(self, node):
+        return f'/{API_BASE}nodes/{node._id}/identifiers/'
+
+    @pytest.fixture()
+    def payload(self):
+        return {
+            'data': {
+                'type': 'identifiers',
+                'attributes': {
+                    'category': 'doi',
+                },
+            }
+        }
+
+    def test_post_blocked_when_project_read_only_flag_active(self, app, user, url, payload):
+        with override_flag(features.PROJECT_READ_ONLY, active=True):
+            res = app.post_json_api(url, payload, auth=user.auth, expect_errors=True)
+        assert res.status_code == 405
+        assert res.json['errors'][0]['detail'] == 'This action is no longer available. Contact support if you have any questions.'
+
+    @pytest.mark.usefixtures('mock_gravy_valet_get_verified_links')
+    @responses.activate
+    def test_post_allowed_when_project_read_only_flag_inactive(self, app, user, node, url, payload):
+        client = DataCiteClient(node)
+        responses.add(
+            responses.Response(
+                responses.POST,
+                f'{settings.DATACITE_URL}/metadata/{client.build_doi(node)}',
+                body='OK (10.70102/FK2osf.io/dp438)',
+                status=201,
+            )
+        )
+        responses.add(
+            responses.Response(
+                responses.POST,
+                f'{settings.DATACITE_URL}/doi',
+                body='OK (10.70102/FK2osf.io/dp438)',
+                status=201,
+            )
+        )
+        res = app.post_json_api(url, payload, auth=user.auth)
+        assert res.status_code == 201
+        assert res.json['data']['attributes']['category'] == 'doi'
