@@ -102,6 +102,7 @@ from api.nodes.permissions import (
     ReadOnlyIfWithdrawn,
     ProjectCreationNotAllowed,
     ProjectEditingNotAllowed,
+    NodeIdentifierCreationNotAllowed,
 )
 from api.wikis.permissions import WikisEditingNotAllowed
 from osf.utils import permissions as osf_permissions
@@ -2201,6 +2202,8 @@ class NodeViewOnlyLinkDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIV
 class NodeIdentifierList(NodeMixin, IdentifierList):
     """See [documentation for this endpoint](https://developer.osf.io/#operation/nodes_identifiers_list).
     """
+
+    permission_classes = IdentifierList.permission_classes + (NodeIdentifierCreationNotAllowed,)
 
     serializer_class = NodeIdentifierSerializer
     node_lookup_url_kwarg = 'node_id'
