@@ -72,8 +72,8 @@ def _enqueue_update_share(osfresource):
     acks_late=True,
     max_retries=4,
     retry_backoff=True,
-    soft_time_limit=120,
-    time_limit=180,
+    soft_time_limit=settings.SHARE_UPDATE_TASK_SOFT_TIME_LIMIT,
+    time_limit=settings.SHARE_UPDATE_TASK_HARD_TIME_LIMIT,
 )
 def task__update_share(self, guid: str, is_backfill=False, osfmap_partition_name='MAIN'):
     """
