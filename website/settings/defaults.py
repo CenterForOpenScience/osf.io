@@ -376,6 +376,13 @@ SHARE_REGISTRATION_URL = ''
 SHARE_URL = 'https://share.osf.io/'
 SHARE_API_TOKEN = None  # Required to send project updates to SHARE
 
+EXTERNAL_REQUEST_TIMEOUT = (10, 30)  # (connect, read) timeout for outbound requests to external services
+
+SHARE_UPDATE_TASK_SOFT_TIME_LIMIT = 90
+SHARE_UPDATE_TASK_HARD_TIME_LIMIT = 120
+SPAM_SUBMIT_TASK_SOFT_TIME_LIMIT = 60
+SPAM_SUBMIT_TASK_HARD_TIME_LIMIT = 90
+
 CAS_SERVER_URL = 'http://localhost:8080'
 MFR_SERVER_URL = 'http://localhost:7778'
 

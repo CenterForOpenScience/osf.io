@@ -19,7 +19,7 @@ class CedarClient:
     def retrieve_all_template_ids(self):
         url = f'{self.host}folders/{self.home_folder_id}/contents/?resource_types=template'
         try:
-            r = requests.get(url, headers=self.headers)
+            r = requests.get(url, headers=self.headers, timeout=settings.EXTERNAL_REQUEST_TIMEOUT)
             r.raise_for_status()
         except RequestException:
             raise CedarClientRequestError(
@@ -36,7 +36,7 @@ class CedarClient:
     def retrieve_template_by_id(self, template_id):
         url = f'{self.host}templates/{quote_plus(template_id)}'
         try:
-            r = requests.get(url, headers=self.headers)
+            r = requests.get(url, headers=self.headers, timeout=settings.EXTERNAL_REQUEST_TIMEOUT)
             r.raise_for_status()
         except RequestException:
             raise CedarClientRequestError(reason=f'Fail to complete Cedar API request: template_id={template_id}')
