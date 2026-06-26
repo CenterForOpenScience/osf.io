@@ -6,7 +6,7 @@ from framework.auth.oauth_scopes import CoreScopes
 
 from addons.base.views import DOWNLOAD_ACTIONS
 from website.archiver import signals, ARCHIVER_NETWORK_ERROR, ARCHIVER_SUCCESS, ARCHIVER_FAILURE
-from website.project import signals as project_signals
+from website.archiver.tasks import archive_callback
 
 from osf.models import Registration, OSFUser, RegistrationProvider, OutcomeArtifact, CedarMetadataRecord
 from osf.models.spam import SpamStatus
@@ -1114,7 +1114,7 @@ class RegistrationCallbackView(JSONAPIBaseView, generics.UpdateAPIView, Registra
                     src_provider,
                     ARCHIVER_SUCCESS,
                 )
-            project_signals.archive_callback.send(registration)
+            archive_callback(registration)
             return Response(status=status.HTTP_200_OK)
         except HTTPError as e:
             registration.archive_status = ARCHIVER_NETWORK_ERROR

@@ -10,7 +10,7 @@ from celery.utils.log import get_task_logger
 from django.utils import timezone
 from datetime import timedelta
 
-from framework.celery_tasks import app as celery_app
+from framework.celery_tasks import app as celery_app, handlers
 from framework.celery_tasks.utils import logged
 from framework.exceptions import HTTPError
 from framework import sentry
@@ -30,11 +30,11 @@ from website.archiver import (
 )
 from website.archiver import utils
 from website.archiver.utils import normalize_unicode_filenames
+from website.archiver import utils as archiver_utils
 from website.archiver import signals as archiver_signals
 
 from scripts.check_manual_restart_approval import delayed_manual_restart_approval
 
-from website.project import signals as project_signals
 from website import settings
 from website.app import init_addons
 
@@ -361,15 +361,27 @@ def archive_node(self, stat_results, job_pk):
         if not stat_result.targets:
             job.status = ARCHIVER_SUCCESS
             job.save()
+
+        addon_tasks = []
         for result in stat_result.targets:
             if not result['num_files']:
                 job.update_target(result['target_name'], ARCHIVER_SUCCESS)
             else:
-                archive_addon.delay(
+                addon_tasks.append(archive_addon.si(
                     addon_short_name=result['target_name'],
                     job_pk=job_pk
-                )
-        project_signals.archive_callback.send(dst)
+                ))
+
+        handlers.enqueue_task(
+            celery.chain(
+                [
+                    celery.group(addon_tasks),
+                    archive_callback.si(
+                        dst=dst
+                    )
+                ]
+            )
+        )
 
 
 def archive(job_pk):
@@ -488,3 +500,29 @@ def force_archive(self, registration_id, permissible_addons, allow_unconfigured=
         sentry.log_message(f'Archive task failed for {registration_id}: {exc}')
         sentry.log_exception(exc)
         return f'{exc.__class__.__name__}: {str(exc)}'
+
+
+@celery_app.task
+@logged('archive_callback')
+def archive_callback(dst):
+    """Blinker task for updates to the archive task. When the tree of ArchiveJob
+    instances is complete, proceed to send success or failure mails
+
+    :param dst: registration Node
+    """
+    root = dst.root
+    root_job = root.archive_job
+    if not root_job.archive_tree_finished():
+        return
+    if root_job.sent:
+        return
+    if root_job.success:
+        archive_success.delay(dst_pk=root._id, job_pk=root_job._id)
+    else:
+        archiver_utils.handle_archive_fail(
+            ARCHIVER_UNCAUGHT_ERROR,
+            root.registered_from,
+            root,
+            root.registered_user,
+            dst.archive_job.target_info(),
+        )
