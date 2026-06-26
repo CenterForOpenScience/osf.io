@@ -492,7 +492,8 @@ class TestInstitutionNodesRelationshipProjectReadOnly:
         assert res.json['errors'][0]['detail'] == 'This action is no longer available. Contact support if you have any questions.'
 
     def test_delete_allowed_when_project_read_only_flag_inactive(self, app, user, node, institution, url, payload):
-        res = app.delete_json_api(url, payload, auth=user.auth)
+        with capture_notifications():
+            res = app.delete_json_api(url, payload, auth=user.auth)
         assert res.status_code == 204
         node.reload()
         assert institution not in node.affiliated_institutions.all()

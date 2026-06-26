@@ -742,6 +742,7 @@ class TestNodeRelationshipInstitutionsProjectReadOnly:
         assert res.json['errors'][0]['detail'] == 'This action is no longer available. Contact support if you have any questions.'
 
     def test_put_allowed_when_project_read_only_flag_inactive(self, app, user, node, institution, url, payload):
-        res = app.put_json_api(url, payload, auth=user.auth)
+        with capture_notifications():
+            res = app.put_json_api(url, payload, auth=user.auth)
         assert res.status_code == 200
         assert institution in node.affiliated_institutions.all()
