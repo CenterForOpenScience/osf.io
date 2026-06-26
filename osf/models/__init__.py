@@ -52,7 +52,7 @@ from .institution import Institution
 from .institution_affiliation import InstitutionAffiliation
 from .institution_storage_region import InstitutionStorageRegion
 from .licenses import NodeLicense, NodeLicenseRecord
-from .maintenance_state import MaintenanceState
+from .maintenance_state import MaintenanceState, MaintenanceMode
 from .metadata import GuidMetadataRecord
 from .metaschema import (
     FileMetadataSchema,

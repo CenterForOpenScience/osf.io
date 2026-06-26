@@ -878,6 +878,10 @@ class RegistrationApproval(SanctionCallbackMixin, EmailApprovableSanction):
 
     initiated_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.CASCADE)
 
+    @property
+    def auto_approval_time(self):
+        return self.initiation_date + osf_settings.REGISTRATION_APPROVAL_TIME
+
     @staticmethod
     def find_approval_backlog():
         """
