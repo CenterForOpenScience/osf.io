@@ -1114,7 +1114,7 @@ class RegistrationCallbackView(JSONAPIBaseView, generics.UpdateAPIView, Registra
                     src_provider,
                     ARCHIVER_SUCCESS,
                 )
-            archive_callback(registration)
+            archive_callback(registration._id)
             return Response(status=status.HTTP_200_OK)
         except HTTPError as e:
             registration.archive_status = ARCHIVER_NETWORK_ERROR

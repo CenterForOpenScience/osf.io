@@ -254,22 +254,35 @@ def stat_addon(self, addon_short_name, job_pk):
     default_retry_delay=60,
 )
 @logged('make_copy_request')
-def make_copy_request(self, job_pk, url, data):
+def make_copy_request(self, params, job_pk):
     """Make the copy request to the WaterButler API and handle
     successful and failed responses
 
+    :param params: dict returned by archive_addon containing addon_short_name, url, and data
     :param job_pk: primary key of ArchiveJob
-    :param url: URL to send request to
-    :param data: <dict> of setting to send in POST to WaterButler API
     :return: None
     """
     create_app_context()
     job = self.load_archive_job(job_pk)
     src, dst, user = job.info()
+    addon_short_name = params['addon_short_name']
+    url = params['url']
+    data = params['data']
     logger.info(f"Sending copy request for addon: {data['provider']} on node: {dst._id}")
     cookie = furl(url).query.params.get('cookie')
-    res = requests.post(url, data=json.dumps(data), cookies={settings.COOKIE_NAME: cookie}, timeout=settings.EXTERNAL_REQUEST_TIMEOUT)
+    try:
+        res = requests.post(
+            url,
+            data=json.dumps(data),
+            cookies={settings.COOKIE_NAME: cookie},
+            timeout=settings.EXTERNAL_REQUEST_TIMEOUT,
+        )
+    except requests.RequestException as exc:
+        job.update_target(addon_short_name, ARCHIVER_FAILURE, errors=[str(exc)])
+        raise
+
     if res.status_code not in (http_status.HTTP_200_OK, http_status.HTTP_201_CREATED, http_status.HTTP_202_ACCEPTED):
+        job.update_target(addon_short_name, ARCHIVER_FAILURE, errors=[res.text or f'WaterButler request failed with status {res.status_code}'])
         raise HTTPError(res.status_code)
 
 def make_waterbutler_payload(dst_id, rename):
@@ -324,7 +337,11 @@ def archive_addon(self, addon_short_name, job_pk):
     rename = f'{folder_name_nfd}{rename_suffix}'
     url = waterbutler_api_url_for(src._id, addon_short_name, _internal=True, base_url=src.osfstorage_region.waterbutler_url, **params)
     data = make_waterbutler_payload(dst._id, rename)
-    make_copy_request.delay(job_pk=job_pk, url=url, data=data)
+    return {
+        'addon_short_name': addon_short_name,
+        'url': url,
+        'data': data,
+    }
 
 @celery_app.task(
     bind=True,
@@ -367,18 +384,29 @@ def archive_node(self, stat_results, job_pk):
             if not result['num_files']:
                 job.update_target(result['target_name'], ARCHIVER_SUCCESS)
             else:
-                addon_tasks.append(archive_addon.si(
-                    addon_short_name=result['target_name'],
-                    job_pk=job_pk
-                ))
+                addon_tasks.append(
+                    celery.chain(
+                        [
+                            archive_addon.si(
+                                addon_short_name=result['target_name'],
+                                job_pk=job_pk,
+                            ),
+                            make_copy_request.s(
+                                job_pk=job_pk,
+                            ),
+                        ]
+                    )
+                )
+
+        if not addon_tasks:
+            handlers.enqueue_task(archive_callback.si(dst_id=dst._id))
+            return
 
         handlers.enqueue_task(
             celery.chain(
                 [
                     celery.group(addon_tasks),
-                    archive_callback.si(
-                        dst=dst
-                    )
+                    archive_callback.si(dst_id=dst._id),
                 ]
             )
         )
@@ -504,12 +532,13 @@ def force_archive(self, registration_id, permissible_addons, allow_unconfigured=
 
 @celery_app.task
 @logged('archive_callback')
-def archive_callback(dst):
+def archive_callback(dst_id):
     """Blinker task for updates to the archive task. When the tree of ArchiveJob
     instances is complete, proceed to send success or failure mails
 
     :param dst: registration Node
     """
+    dst = Registration.load(dst_id)
     root = dst.root
     root_job = root.archive_job
     if not root_job.archive_tree_finished():

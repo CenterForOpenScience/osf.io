@@ -155,7 +155,7 @@ def mock_archive(project, schema=None, auth=None, data=None, parent=None,
         sanction = registration.sanction
         mock.patch.object(root_job, 'archive_tree_finished', mock.Mock(return_value=True)),
         mock.patch('website.archiver.tasks.archive_success.delay', mock.Mock())
-        archive_callback(registration)
+        archive_callback(registration._id)
 
     if autoapprove:
         sanction = registration.sanction
