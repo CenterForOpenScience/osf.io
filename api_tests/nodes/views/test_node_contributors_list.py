@@ -3011,6 +3011,12 @@ class TestNodeContributorListProjectReadOnly:
         assert res.status_code == 405
         assert res.json['errors'][0]['detail'] == 'This action is no longer available. Contact support if you have any questions.'
 
+    def test_put_blocked_when_project_read_only_flag_active(self, app, user, url, bulk_patch_payload):
+        with override_flag(features.PROJECT_READ_ONLY, active=True):
+            res = app.put_json_api(url, bulk_patch_payload, auth=user.auth, expect_errors=True, bulk=True)
+        assert res.status_code == 405
+        assert res.json['errors'][0]['detail'] == 'This action is no longer available. Contact support if you have any questions.'
+
     def test_patch_blocked_when_project_read_only_flag_active(self, app, user, url, bulk_patch_payload):
         with override_flag(features.PROJECT_READ_ONLY, active=True):
             res = app.patch_json_api(url, bulk_patch_payload, auth=user.auth, expect_errors=True, bulk=True)
@@ -3030,3 +3036,9 @@ class TestNodeContributorListProjectReadOnly:
         with capture_notifications():
             res = app.post_json_api(url, add_payload, auth=user.auth)
         assert res.status_code == 201
+
+    def test_patch_allowed_when_project_read_only_flag_inactive(self, app, user, node, contrib, url, bulk_patch_payload):
+        res = app.patch_json_api(url, bulk_patch_payload, auth=user.auth, bulk=True)
+        assert res.status_code == 200
+        contrib.reload()
+        assert not node.get_visible(contrib)
