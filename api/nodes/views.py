@@ -103,6 +103,7 @@ from api.nodes.permissions import (
     ProjectCreationNotAllowed,
     ProjectEditingNotAllowed,
     NodeIdentifierCreationNotAllowed,
+    NodeContributorWriteNotAllowed,
 )
 from api.wikis.permissions import WikisEditingNotAllowed
 from osf.utils import permissions as osf_permissions
@@ -433,6 +434,7 @@ class NodeContributorsList(BaseContributorList, bulk_views.BulkUpdateJSONAPIView
         drf_permissions.IsAuthenticatedOrReadOnly,
         ReadOnlyIfRegistration,
         base_permissions.TokenHasScope,
+        NodeContributorWriteNotAllowed,
     )
 
     required_read_scopes = [CoreScopes.NODE_CONTRIBUTORS_READ]
@@ -541,6 +543,7 @@ class NodeContributorDetail(BaseContributorDetail, generics.RetrieveUpdateDestro
         drf_permissions.IsAuthenticatedOrReadOnly,
         ReadOnlyIfRegistration,
         base_permissions.TokenHasScope,
+        NodeContributorWriteNotAllowed,
     )
 
     required_read_scopes = [CoreScopes.NODE_CONTRIBUTORS_READ]

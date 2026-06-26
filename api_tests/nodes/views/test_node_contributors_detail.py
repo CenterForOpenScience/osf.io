@@ -2,6 +2,7 @@ import pytest
 
 from api.base.settings.defaults import API_BASE
 from framework.auth.core import Auth
+from osf import features
 from osf.models import NodeLog
 from osf_tests.factories import (
     ProjectFactory,
@@ -10,6 +11,7 @@ from osf_tests.factories import (
 from tests.utils import assert_latest_log
 from osf.utils import permissions
 from api_tests.utils import disconnected_from_listeners
+from waffle.testutils import override_flag
 from website.project.signals import contributor_removed
 
 
@@ -522,3 +524,55 @@ class TestNodeContributorDelete:
 
         assert user_write_contrib in project.contributors
         assert user_write_contrib in child.contributors
+
+
+@pytest.mark.django_db
+class TestNodeContributorDetailProjectReadOnly:
+
+    @pytest.fixture()
+    def user(self):
+        return AuthUserFactory()
+
+    @pytest.fixture()
+    def contrib(self):
+        return AuthUserFactory()
+
+    @pytest.fixture()
+    def node(self, user, contrib):
+        project = ProjectFactory(creator=user)
+        project.add_contributor(contrib, permissions=permissions.WRITE, visible=True, save=True)
+        return project
+
+    @pytest.fixture()
+    def url_contrib(self, node, contrib):
+        return f'/{API_BASE}nodes/{node._id}/contributors/{contrib._id}/'
+
+    @pytest.fixture()
+    def patch_payload(self, node, contrib):
+        return {
+            'data': {
+                'id': f'{node._id}-{contrib._id}',
+                'type': 'contributors',
+                'attributes': {'bibliographic': False},
+            }
+        }
+
+    def test_patch_blocked_when_project_read_only_flag_active(self, app, user, url_contrib, patch_payload):
+        with override_flag(features.PROJECT_READ_ONLY, active=True):
+            res = app.patch_json_api(url_contrib, patch_payload, auth=user.auth, expect_errors=True)
+        assert res.status_code == 405
+        assert res.json['errors'][0]['detail'] == 'This action is no longer available. Contact support if you have any questions.'
+
+    def test_delete_allowed_when_project_read_only_flag_active(self, app, user, node, contrib, url_contrib):
+        with override_flag(features.PROJECT_READ_ONLY, active=True):
+            with disconnected_from_listeners(contributor_removed):
+                res = app.delete(url_contrib, auth=user.auth)
+        assert res.status_code == 204
+        node.reload()
+        assert contrib not in node.contributors
+
+    def test_patch_allowed_when_project_read_only_flag_inactive(self, app, user, node, contrib, url_contrib, patch_payload):
+        res = app.patch_json_api(url_contrib, patch_payload, auth=user.auth)
+        assert res.status_code == 200
+        node.reload()
+        assert not node.get_visible(contrib)
