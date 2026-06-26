@@ -451,22 +451,6 @@ class TestArchiverTasks(ArchiverTestCase):
             ]
         )
 
-    @mock.patch('website.archiver.tasks.delayed_manual_restart_approval.delay')
-    @mock.patch('osf.management.commands.force_archive.archive')
-    @mock.patch('osf.management.commands.force_archive.verify')
-    def test_force_archive_schedules_manual_restart_approval_check(
-        self, mock_verify, mock_archive, mock_delayed_check
-    ):
-        result = force_archive(
-            registration_id=self.dst._id,
-            permissible_addons=['osfstorage'],
-        )
-
-        assert result == f'Registration {self.dst._id} archive completed'
-        mock_verify.assert_called_once()
-        mock_archive.assert_called_once()
-        mock_delayed_check.assert_called_once_with(self.dst._id, delay_minutes=5)
-
     def test_stat_addon(self):
         with mock.patch.object(BaseStorageAddon, '_get_file_tree') as mock_file_tree:
             mock_file_tree.return_value = FILE_TREE

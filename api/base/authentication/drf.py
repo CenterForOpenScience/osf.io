@@ -21,7 +21,6 @@ from osf import features
 from osf.models import OSFUser
 from osf.utils.fields import ensure_str
 from website import settings
-from framework import sentry
 
 SessionStore = import_module(api_settings.SESSION_ENGINE).SessionStore
 
@@ -93,20 +92,6 @@ def check_user(user):
     # For all other cases, the user status is invalid. Although such status can't be reached with
     # normal user-facing web application flow, it is still possible as a result of direct database
     # access, coding bugs, database corruption, etc.
-    extra_data = {
-        'user_id': user.id,
-        'user_guid': user._id,
-        'is_active': user.is_active,
-        'is_disabled': user.is_disabled,
-        'is_merged': user.is_merged,
-        'date_disabled': user.date_disabled,
-        'is_confirmed': user.is_confirmed,
-        'is_registered': user.is_registered,
-        'can_login': user.has_usable_password() or (
-            'VERIFIED' in sum([list(each.values()) for each in user.external_identity.values()], [])
-        ),
-    }
-    sentry.log_message(f'Invalid user account status detected: user_id={user._id}', extra_data=extra_data)
     raise InvalidAccountError
 
 

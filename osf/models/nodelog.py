@@ -16,7 +16,6 @@ class NodeLog(ObjectIDMixin, BaseModel):
     }
 
     DATE_FORMAT = '%m/%d/%Y %H:%M UTC'
-    SUPPORT_USER_LABEL = 'an OSF Support Team Member'
 
     # Log action constants -- NOTE: templates stored in log_templates.mako
     CREATED_FROM = 'created_from'

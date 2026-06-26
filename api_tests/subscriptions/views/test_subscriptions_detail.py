@@ -342,5 +342,3 @@ class TestSubscriptionDetail:
         res = app.patch_json_api(url_user_global_file_updated, payload, auth=user.auth)
         assert res.status_code == 200
         assert res.json['data']['attributes']['frequency'] == 'none'
-        assert res.json['data'].get('id') is not None
-        assert res.json['data']['attributes'].get('event_name') is not None

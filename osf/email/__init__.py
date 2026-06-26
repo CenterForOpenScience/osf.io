@@ -149,7 +149,7 @@ NOTIFY_BASE_DEFAULTS = {
     'domain': settings.DOMAIN,
 }
 
-def _render_email_html(notification_type, ctx: dict, return_original_error: bool = False) -> str:
+def _render_email_html(notification_type, ctx: dict) -> str:
     template_text = notification_type.template
     if not template_text:
         return ''
@@ -172,9 +172,7 @@ def _render_email_html(notification_type, ctx: dict, return_original_error: bool
             strict_undefined=True,
         ).render(**(ctx or {}))
 
-    except Exception as e:
-        if return_original_error:
-            raise e
+    except Exception:
         logging.exception(
             f'Mako render failed. type {notification_type.name} provided_keys=%s inline_uri=%s base_uri=%s lookup_dirs=%s',
             sorted((ctx or {}).keys()), uri, NOTIFY_BASE_URI, LOOKUP_DIRS,

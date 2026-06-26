@@ -192,17 +192,7 @@ class EmptyMetadataDataarchiveRegistrationBulkResync(ManagementCommandPermission
 class SyncNotificationTemplates(ManagementCommandPermissionView):
 
     def post(self, request):
-        run_type = request.POST.get('run_type')
-        if run_type == 'restore_one':
-            template_name = request.POST.get('template_name')
-            if not template_name:
-                messages.error(request, 'A template name must be specified when restoring one template. Check your inputs and try again')
-                return redirect(reverse('management:commands'))
-            populate_notification_types(restore_one=template_name)
-        elif run_type == 'restore_all':
-            populate_notification_types(restore_all=True)
-        else:
-            populate_notification_types()
+        populate_notification_types()
         messages.success(request, 'Notification templates have been successfully synced.')
         return redirect(reverse('management:commands'))
 

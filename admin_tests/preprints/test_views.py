@@ -542,8 +542,7 @@ class TestRemoveContributor(AdminTestCase):
         assert len(list(self.preprint.get_admin_contributors(self.preprint.contributors))) == 1
         assert AdminLogEntry.objects.count() == count
 
-    def test_log(self):
-        assert not self.preprint.logs.filter(action=PreprintLog.CONTRIB_REMOVED).exists()
+    def test_no_log(self):
         view = setup_log_view(
             self.view(),
             self.request,
@@ -551,7 +550,7 @@ class TestRemoveContributor(AdminTestCase):
             user_id=self.user_2.id
         )
         view.post(self.request)
-        assert self.preprint.logs.filter(action=PreprintLog.CONTRIB_REMOVED).exists()
+        assert self.preprint.logs.latest().action != PreprintLog.CONTRIB_REMOVED
 
 
 @pytest.mark.urls('admin.base.urls')

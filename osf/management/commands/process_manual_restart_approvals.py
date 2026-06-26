@@ -4,6 +4,7 @@ from django.core.management.base import BaseCommand
 from django.utils import timezone
 from osf.models import Registration
 from osf.models.admin_log_entry import AdminLogEntry, MANUAL_ARCHIVE_RESTART
+from website import settings
 from scripts.approve_registrations import approve_past_pendings
 
 logger = logging.getLogger(__name__)
@@ -133,9 +134,9 @@ class Command(BaseCommand):
         if approval.is_rejected:
             return 'approval was rejected'
 
-        auto_approval_time = approval.auto_approval_time
-        if timezone.now() < auto_approval_time:
-            remaining = auto_approval_time - timezone.now()
+        time_since_initiation = timezone.now() - approval.initiation_date
+        if time_since_initiation < settings.REGISTRATION_APPROVAL_TIME:
+            remaining = settings.REGISTRATION_APPROVAL_TIME - time_since_initiation
             return f'not ready yet ({remaining} remaining)'
 
         if registration.is_stuck_registration:
