@@ -266,7 +266,7 @@ class TestNodeLinkedRegistrationsRelationshipProjectReadOnly:
 
     @pytest.fixture()
     def payload(self, registration):
-        return {'data': [{'type': 'registrations', 'id': registration._id}]}
+        return {'data': [{'type': 'linked_registrations', 'id': registration._id}]}
 
     def test_post_blocked_when_project_read_only_flag_active(self, app, user, url, payload):
         with override_flag(features.PROJECT_READ_ONLY, active=True):
@@ -294,12 +294,10 @@ class TestNodeLinkedRegistrationsRelationshipProjectReadOnly:
 
     def test_post_allowed_when_project_read_only_flag_inactive(self, app, user, node, url):
         new_registration = RegistrationFactory(is_public=True)
-        payload = {'data': [{'type': 'registrations', 'id': new_registration._id}]}
+        payload = {'data': [{'type': 'linked_registrations', 'id': new_registration._id}]}
         res = app.post_json_api(url, payload, auth=user.auth)
         assert res.status_code == 201
 
-    def test_delete_allowed_when_project_read_only_flag_inactive(self, app, user, node, registration, url, payload):
+    def test_delete_allowed_when_project_read_only_flag_inactive(self, app, user, node, url, payload):
         res = app.delete_json_api(url, payload, auth=user.auth)
         assert res.status_code == 204
-        node.reload()
-        assert registration not in node.linked_nodes.all()

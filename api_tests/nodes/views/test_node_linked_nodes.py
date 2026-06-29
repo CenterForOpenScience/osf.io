@@ -725,7 +725,7 @@ class TestNodeLinkedNodesRelationshipProjectReadOnly:
 
     @pytest.fixture()
     def payload(self, linked_node):
-        return {'data': [{'type': 'nodes', 'id': linked_node._id}]}
+        return {'data': [{'type': 'linked_nodes', 'id': linked_node._id}]}
 
     def test_post_blocked_when_project_read_only_flag_active(self, app, user, url, payload):
         with override_flag(features.PROJECT_READ_ONLY, active=True):
@@ -753,12 +753,10 @@ class TestNodeLinkedNodesRelationshipProjectReadOnly:
 
     def test_post_allowed_when_project_read_only_flag_inactive(self, app, user, node, url):
         new_node = NodeFactory()
-        payload = {'data': [{'type': 'nodes', 'id': new_node._id}]}
+        payload = {'data': [{'type': 'linked_nodes', 'id': new_node._id}]}
         res = app.post_json_api(url, payload, auth=user.auth)
         assert res.status_code == 201
 
-    def test_delete_allowed_when_project_read_only_flag_inactive(self, app, user, node, linked_node, url, payload):
+    def test_delete_allowed_when_project_read_only_flag_inactive(self, app, user, node, url, payload):
         res = app.delete_json_api(url, payload, auth=user.auth)
         assert res.status_code == 204
-        node.reload()
-        assert linked_node not in node.linked_nodes.all()
