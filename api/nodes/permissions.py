@@ -401,3 +401,19 @@ class NodeAffiliationWriteNotAllowed(permissions.BasePermission):
         if request.method not in permissions.SAFE_METHODS and isinstance(obj['self'], Node) and waffle.flag_is_active(request, features.PROJECT_READ_ONLY):
             raise exceptions.MethodNotAllowed(request.method, detail='This action is no longer available. Contact support if you have any questions.')
         return True
+
+
+class NodeContributorWriteNotAllowed(permissions.BasePermission):
+
+    def has_permission(self, request, view):
+        if not waffle.flag_is_active(request, features.PROJECT_READ_ONLY):
+            return True
+        if request.method in ['POST', 'PUT', 'PATCH']:
+            raise exceptions.MethodNotAllowed(request.method, detail='This action is no longer available. Contact support if you have any questions.')
+        if request.method == 'DELETE':
+            user_id = view.kwargs.get('user_id')
+            if user_id:
+                auth = get_user_auth(request)
+                if not auth.user or auth.user._id != user_id:
+                    raise exceptions.MethodNotAllowed(request.method, detail='This action is no longer available. Contact support if you have any questions.')
+        return True
