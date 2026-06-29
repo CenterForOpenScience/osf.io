@@ -733,6 +733,18 @@ class TestNodeLinkedNodesRelationshipProjectReadOnly:
         assert res.status_code == 405
         assert res.json['errors'][0]['detail'] == 'This action is no longer available. Contact support if you have any questions.'
 
+    def test_put_blocked_when_project_read_only_flag_active(self, app, user, url, payload):
+        with override_flag(features.PROJECT_READ_ONLY, active=True):
+            res = app.put_json_api(url, payload, auth=user.auth, expect_errors=True)
+        assert res.status_code == 405
+        assert res.json['errors'][0]['detail'] == 'This action is no longer available. Contact support if you have any questions.'
+
+    def test_patch_blocked_when_project_read_only_flag_active(self, app, user, url, payload):
+        with override_flag(features.PROJECT_READ_ONLY, active=True):
+            res = app.patch_json_api(url, payload, auth=user.auth, expect_errors=True)
+        assert res.status_code == 405
+        assert res.json['errors'][0]['detail'] == 'This action is no longer available. Contact support if you have any questions.'
+
     def test_delete_blocked_when_project_read_only_flag_active(self, app, user, url, payload):
         with override_flag(features.PROJECT_READ_ONLY, active=True):
             res = app.delete_json_api(url, payload, auth=user.auth, expect_errors=True)

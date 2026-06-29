@@ -397,6 +397,6 @@ class NodeIdentifierCreationNotAllowed(permissions.BasePermission):
 class NodeLinkedWriteNotAllowed(permissions.BasePermission):
 
     def has_permission(self, request, view):
-        if request.method in ['POST', 'DELETE'] and waffle.flag_is_active(request, features.PROJECT_READ_ONLY):
+        if request.method not in permissions.SAFE_METHODS and waffle.flag_is_active(request, features.PROJECT_READ_ONLY):
             raise exceptions.MethodNotAllowed(request.method, detail='This action is no longer available. Contact support if you have any questions.')
         return True
