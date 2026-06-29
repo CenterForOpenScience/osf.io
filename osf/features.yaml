@@ -74,11 +74,6 @@ flags:
     note: When active, disables all project/node editing on OSF (PATCH and PUT to node endpoints is blocked).
     everyone: false
 
-  - flag_name: CEDAR_METADATA_RECORDS_READ_ONLY
-    name: cedar_metadata_records_read_only
-    note: When active, disables creation and editing of Cedar (community) metadata records via API (POST and PATCH to cedar_metadata_records endpoints is blocked).
-    everyone: false
-
 switches:
   - flag_name: DISABLE_ENGAGEMENT_EMAILS
     name: disable_engagement_emails

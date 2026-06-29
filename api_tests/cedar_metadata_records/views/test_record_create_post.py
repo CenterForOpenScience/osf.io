@@ -254,17 +254,17 @@ class TestCedarMetadataRecordCreateForFiles(TestCedarMetadataRecord):
 
 
 @pytest.mark.django_db
-class TestCedarMetadataRecordCreateReadOnly(TestCedarMetadataRecord):
+class TestCedarMetadataRecordCreateProjectReadOnly(TestCedarMetadataRecord):
 
-    def test_record_create_blocked_when_cedar_metadata_records_read_only_flag_active(self, app, user, payload_node):
-        with override_flag(features.CEDAR_METADATA_RECORDS_READ_ONLY, active=True):
+    def test_record_create_blocked_when_project_read_only_flag_active(self, app, user, payload_node):
+        with override_flag(features.PROJECT_READ_ONLY, active=True):
             resp = app.post_json('/_/cedar_metadata_records/', payload_node, auth=user.auth, expect_errors=True)
         assert resp.status_code == 405
         assert resp.json['errors'][0]['detail'] == 'This action is no longer available. Contact support if you have any questions.'
         assert not CedarMetadataRecord.objects.exists()
 
-    def test_record_create_allowed_when_cedar_metadata_records_read_only_flag_inactive(self, app, user, payload_node):
-        with override_flag(features.CEDAR_METADATA_RECORDS_READ_ONLY, active=False):
+    def test_record_create_allowed_when_project_read_only_flag_inactive(self, app, user, payload_node):
+        with override_flag(features.PROJECT_READ_ONLY, active=False):
             resp = app.post_json('/_/cedar_metadata_records/', payload_node, auth=user.auth)
         assert resp.status_code == 201
         assert CedarMetadataRecord.objects.exists()
