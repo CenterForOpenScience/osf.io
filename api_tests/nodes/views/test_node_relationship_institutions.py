@@ -1,6 +1,8 @@
 import pytest
+from waffle.testutils import override_flag
 
 from api.base.settings.defaults import API_BASE
+from osf import features
 from osf.models import NotificationTypeEnum
 from osf_tests.factories import (
     InstitutionFactory,
@@ -684,3 +686,63 @@ class TestNodeRelationshipInstitutions(RelationshipInstitutionsTestMixin):
             expect_errors=True)
         assert res.status_code == 403
         assert read_contrib_institution in node.affiliated_institutions.all()
+
+
+@pytest.mark.django_db
+class TestNodeRelationshipInstitutionsProjectReadOnly:
+
+    @pytest.fixture()
+    def institution(self):
+        return InstitutionFactory()
+
+    @pytest.fixture()
+    def user(self, institution):
+        user_auth = AuthUserFactory()
+        user_auth.add_or_update_affiliated_institution(institution)
+        user_auth.save()
+        return user_auth
+
+    @pytest.fixture()
+    def node(self, user):
+        return NodeFactory(creator=user)
+
+    @pytest.fixture()
+    def url(self, node):
+        return f'/{API_BASE}nodes/{node._id}/relationships/institutions/'
+
+    @pytest.fixture()
+    def payload(self, institution):
+        return {'data': [{'type': 'institutions', 'id': institution._id}]}
+
+    def test_put_blocked_when_project_read_only_flag_active(self, app, user, url, payload):
+        with override_flag(features.PROJECT_READ_ONLY, active=True):
+            res = app.put_json_api(url, payload, auth=user.auth, expect_errors=True)
+        assert res.status_code == 405
+        assert res.json['errors'][0]['detail'] == 'This action is no longer available. Contact support if you have any questions.'
+
+    def test_patch_blocked_when_project_read_only_flag_active(self, app, user, url, payload):
+        with override_flag(features.PROJECT_READ_ONLY, active=True):
+            res = app.patch_json_api(url, payload, auth=user.auth, expect_errors=True)
+        assert res.status_code == 405
+        assert res.json['errors'][0]['detail'] == 'This action is no longer available. Contact support if you have any questions.'
+
+    def test_delete_blocked_when_project_read_only_flag_active(self, app, user, node, institution, url):
+        node.affiliated_institutions.add(institution)
+        node.save()
+        delete_payload = {'data': [{'type': 'institutions', 'id': institution._id}]}
+        with override_flag(features.PROJECT_READ_ONLY, active=True):
+            res = app.delete_json_api(url, delete_payload, auth=user.auth, expect_errors=True)
+        assert res.status_code == 405
+        assert res.json['errors'][0]['detail'] == 'This action is no longer available. Contact support if you have any questions.'
+
+    def test_post_blocked_when_project_read_only_flag_active(self, app, user, url, payload):
+        with override_flag(features.PROJECT_READ_ONLY, active=True):
+            res = app.post_json_api(url, payload, auth=user.auth, expect_errors=True)
+        assert res.status_code == 405
+        assert res.json['errors'][0]['detail'] == 'This action is no longer available. Contact support if you have any questions.'
+
+    def test_put_allowed_when_project_read_only_flag_inactive(self, app, user, node, institution, url, payload):
+        with capture_notifications():
+            res = app.put_json_api(url, payload, auth=user.auth)
+        assert res.status_code == 200
+        assert institution in node.affiliated_institutions.all()
