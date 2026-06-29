@@ -1456,6 +1456,9 @@ class DraftRegistration(ObjectIDMixin, RegistrationResponseMixin, DirtyFieldsMix
         if not self.title:
             raise NodeStateError('Draft Registration must have title to be registered')
 
+        if not self.subjects.exists():
+            raise NodeStateError('Registration must have at least one subject to be registered')
+
         # Create the registration
         registration = node.register_node(
             schema=self.registration_schema,

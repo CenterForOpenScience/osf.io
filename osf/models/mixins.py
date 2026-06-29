@@ -21,6 +21,7 @@ from framework.analytics import increment_user_activity_counters
 from framework.exceptions import PermissionsError
 from osf.exceptions import (
     InvalidTriggerError,
+    NodeStateError,
     ValidationValueError,
     UserStateError,
     UserNotAffiliatedError,
@@ -1184,6 +1185,10 @@ class TaxonomizableMixin(models.Model):
 
         :return: None
         """
+        from osf.models import Registration, DraftRegistration
+        if isinstance(self, (Registration, DraftRegistration)) and not new_subjects:
+            raise NodeStateError('Registration must have at least one subject to be registered')
+
         if auth:
             self.check_subject_perms(auth, **kwargs)
         self.assert_subject_format(new_subjects, expect_list=True, error_msg='Expecting list of lists.')
@@ -1217,6 +1222,10 @@ class TaxonomizableMixin(models.Model):
 
         :return: None
         """
+        from osf.models import Registration, DraftRegistration
+        if isinstance(self, (Registration, DraftRegistration)) and not subjects_list:
+            raise NodeStateError('Registration must have at least one subject to be registered')
+
         self.check_subject_perms(auth, **kwargs)
         self.assert_subject_format(subjects_list, expect_list=True, error_msg='Expecting a list of subjects.')
         if subjects_list:
