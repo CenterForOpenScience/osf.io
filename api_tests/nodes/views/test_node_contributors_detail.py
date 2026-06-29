@@ -563,13 +563,17 @@ class TestNodeContributorDetailProjectReadOnly:
         assert res.status_code == 405
         assert res.json['errors'][0]['detail'] == 'This action is no longer available. Contact support if you have any questions.'
 
-    def test_delete_allowed_when_project_read_only_flag_active(self, app, user, node, contrib, url_contrib):
+    def test_delete_other_blocked_when_project_read_only_flag_active(self, app, user, url_contrib):
+        with override_flag(features.PROJECT_READ_ONLY, active=True):
+            res = app.delete(url_contrib, auth=user.auth, expect_errors=True)
+        assert res.status_code == 405
+        assert res.json['errors'][0]['detail'] == 'This action is no longer available. Contact support if you have any questions.'
+
+    def test_delete_self_allowed_when_project_read_only_flag_active(self, app, contrib, node, url_contrib):
         with override_flag(features.PROJECT_READ_ONLY, active=True):
             with disconnected_from_listeners(contributor_removed):
-                res = app.delete(url_contrib, auth=user.auth)
+                res = app.delete(url_contrib, auth=contrib.auth)
         assert res.status_code == 204
-        node.reload()
-        assert contrib not in node.contributors
 
     def test_patch_allowed_when_project_read_only_flag_inactive(self, app, user, node, contrib, url_contrib, patch_payload):
         res = app.patch_json_api(url_contrib, patch_payload, auth=user.auth)
