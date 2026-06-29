@@ -752,7 +752,7 @@ class TestNodeLinkedNodesRelationshipProjectReadOnly:
         assert res.json['errors'][0]['detail'] == 'This action is no longer available. Contact support if you have any questions.'
 
     def test_post_allowed_when_project_read_only_flag_inactive(self, app, user, node, url):
-        new_node = NodeFactory()
+        new_node = NodeFactory(is_public=True)
         payload = {'data': [{'type': 'linked_nodes', 'id': new_node._id}]}
         res = app.post_json_api(url, payload, auth=user.auth)
         assert res.status_code == 201
