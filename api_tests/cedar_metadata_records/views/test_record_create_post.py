@@ -1,8 +1,10 @@
 import pytest
 from urllib.parse import urlparse
+from waffle.testutils import override_flag
 
 from .test_record import TestCedarMetadataRecord
 from api.base.settings import API_BASE, API_PRIVATE_BASE
+from osf import features
 from osf.models import CedarMetadataRecord
 from osf.utils.permissions import READ, WRITE
 from osf_tests.factories import AuthUserFactory
@@ -249,3 +251,20 @@ class TestCedarMetadataRecordCreateForFiles(TestCedarMetadataRecord):
 
         resp = app.post_json('/_/cedar_metadata_records/', payload_file, auth=None, expect_errors=True)
         assert resp.status_code == 401
+
+
+@pytest.mark.django_db
+class TestCedarMetadataRecordCreateReadOnly(TestCedarMetadataRecord):
+
+    def test_record_create_blocked_when_cedar_metadata_records_read_only_flag_active(self, app, user, payload_node):
+        with override_flag(features.CEDAR_METADATA_RECORDS_READ_ONLY, active=True):
+            resp = app.post_json('/_/cedar_metadata_records/', payload_node, auth=user.auth, expect_errors=True)
+        assert resp.status_code == 405
+        assert resp.json['errors'][0]['detail'] == 'This action is no longer available. Contact support if you have any questions.'
+        assert not CedarMetadataRecord.objects.exists()
+
+    def test_record_create_allowed_when_cedar_metadata_records_read_only_flag_inactive(self, app, user, payload_node):
+        with override_flag(features.CEDAR_METADATA_RECORDS_READ_ONLY, active=False):
+            resp = app.post_json('/_/cedar_metadata_records/', payload_node, auth=user.auth)
+        assert resp.status_code == 201
+        assert CedarMetadataRecord.objects.exists()
