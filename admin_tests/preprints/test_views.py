@@ -1008,7 +1008,7 @@ class TestRecoverDeletedPreprintView(AdminTestCase):
         super().setUp()
         self.user = AuthUserFactory()
         self.user.user_permissions.add(Permission.objects.get(codename='change_preprint'))
-        self.provider = PreprintProviderFactory()
+        self.provider = PreprintProviderFactory(doi_prefix='10.31219')
 
     def _post(self, data):
         request = RequestFactory().post(reverse('preprints:recover'), data=data)
@@ -1016,39 +1016,49 @@ class TestRecoverDeletedPreprintView(AdminTestCase):
         patch_messages(request)
         return views.RecoverDeletedPreprintView.as_view()(request)
 
-    def test_recreates_preprint_at_guid_with_doi_and_audit(self):
+    def _base_data(self, **overrides):
         data = {
             'provider': self.provider.id,
             'guid': 'abcde',
-            'doi': '10.31219/osf.io/abcde_v1',
             'title': 'Recovered Title',
             'description': 'desc',
+            'file_guid': '',
             'ticket_reference': 'ENG-1234',
         }
-        response = self._post(data)
+        data.update(overrides)
+        return data
+
+    def test_first_run_recreates_version_1_with_audit(self):
+        response = self._post(self._base_data())
         assert response.status_code == 302
 
         preprint = Preprint.load('abcde')
         assert preprint is not None
+        assert preprint._id == 'abcde_v1'
         assert preprint.title == 'Recovered Title'
-        assert preprint.get_identifier_value('doi') == '10.31219/osf.io/abcde_v1'
 
         log = AdminLogEntry.objects.get(action_flag=PREPRINT_RECOVERED)
         assert log.user_id == self.user.id
         assert 'ENG-1234' in log.change_message
 
-    def test_existing_guid_is_refused(self):
+    def test_second_run_adds_next_version(self):
         from osf.models import Guid
-        Guid.objects.create(_id='abcde')
-        data = {
-            'provider': self.provider.id,
-            'guid': 'abcde',
-            'doi': '',
-            'title': 'Should Not Apply',
-            'description': '',
-            'ticket_reference': 'ENG-1234',
-        }
-        response = self._post(data)
+        assert self._post(self._base_data()).status_code == 302
+        assert self._post(self._base_data()).status_code == 302
+
+        versions = Guid.load('abcde').versions.order_by('version')
+        assert list(versions.values_list('version', flat=True)) == [1, 2]
+        for version_through in versions:
+            assert version_through.referent._id == f'abcde_v{version_through.version}'
+
+    def test_copies_primary_file_from_source_guid(self):
+        source = PreprintFactory(provider=self.provider)
+        source_file = source.primary_file
+        file_guid = source_file.get_guid(create=True)._id
+
+        response = self._post(self._base_data(file_guid=file_guid))
         assert response.status_code == 302
-        assert Preprint.load('abcde') is None
-        assert not AdminLogEntry.objects.filter(action_flag=PREPRINT_RECOVERED).exists()
+
+        recovered = Preprint.load('abcde')
+        assert recovered.primary_file is not None
+        assert recovered.primary_file.copied_from_id == source_file.id

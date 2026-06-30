@@ -11,9 +11,14 @@ class RecoverDeletedPreprintForm(forms.Form):
     """
     provider = forms.ModelChoiceField(queryset=PreprintProvider.objects.all())
     guid = forms.CharField(max_length=5, min_length=5, label='Base GUID')
-    doi = forms.CharField(max_length=255, required=False)
     title = forms.CharField(max_length=512)
     description = forms.CharField(widget=forms.Textarea, required=False)
+    file_guid = forms.CharField(
+        required=False,
+        label='Source file GUID',
+        help_text='Optional: an existing file GUID; its latest version is copied into this '
+                  'version as the primary file.',
+    )
     ticket_reference = forms.CharField(
         max_length=255,
         label='Support ticket / JIRA reference',
