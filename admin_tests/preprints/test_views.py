@@ -1007,7 +1007,7 @@ class TestRecoverDeletedPreprintView(AdminTestCase):
         super().setUp()
         self.user = AuthUserFactory()
         self.user.user_permissions.add(Permission.objects.get(codename='change_preprint'))
-        self.provider = PreprintProviderFactory()
+        self.provider = PreprintProviderFactory(doi_prefix='10.31219')
 
     def _post(self, data):
         request = RequestFactory().post(reverse('preprints:recover'), data=data)
@@ -1015,13 +1015,13 @@ class TestRecoverDeletedPreprintView(AdminTestCase):
         patch_messages(request)
         return views.RecoverDeletedPreprintView.as_view()(request)
 
-    def test_recreates_preprint_at_guid_with_doi_and_audit(self):
+    def test_recreates_single_version_with_audit(self):
         data = {
             'provider': self.provider.id,
             'guid': 'abcde',
-            'doi': '10.31219/osf.io/abcde_v1',
             'title': 'Recovered Title',
             'description': 'desc',
+            'number_of_versions': 1,
             'ticket_reference': 'ENG-1234',
         }
         response = self._post(data)
@@ -1030,11 +1030,28 @@ class TestRecoverDeletedPreprintView(AdminTestCase):
         preprint = Preprint.load('abcde')
         assert preprint is not None
         assert preprint.title == 'Recovered Title'
-        assert preprint.get_identifier_value('doi') == '10.31219/osf.io/abcde_v1'
 
         log = AdminLogEntry.objects.get(action_flag=PREPRINT_RECOVERED)
         assert log.user_id == self.user.id
         assert 'ENG-1234' in log.change_message
+
+    def test_recreates_all_versions_in_order(self):
+        from osf.models import Guid
+        data = {
+            'provider': self.provider.id,
+            'guid': 'abcde',
+            'title': 'Recovered Title',
+            'description': 'desc',
+            'number_of_versions': 3,
+            'ticket_reference': 'ENG-1234',
+        }
+        response = self._post(data)
+        assert response.status_code == 302
+
+        versions = Guid.load('abcde').versions.order_by('version')
+        assert list(versions.values_list('version', flat=True)) == [1, 2, 3]
+        for version_through in versions:
+            assert version_through.referent._id == f'abcde_v{version_through.version}'
 
     def test_existing_guid_is_refused(self):
         from osf.models import Guid
@@ -1042,9 +1059,9 @@ class TestRecoverDeletedPreprintView(AdminTestCase):
         data = {
             'provider': self.provider.id,
             'guid': 'abcde',
-            'doi': '',
             'title': 'Should Not Apply',
             'description': '',
+            'number_of_versions': 1,
             'ticket_reference': 'ENG-1234',
         }
         response = self._post(data)

@@ -11,9 +11,13 @@ class RecoverDeletedPreprintForm(forms.Form):
     """
     provider = forms.ModelChoiceField(queryset=PreprintProvider.objects.all())
     guid = forms.CharField(max_length=5, min_length=5, label='Base GUID')
-    doi = forms.CharField(max_length=255, required=False)
     title = forms.CharField(max_length=512)
     description = forms.CharField(widget=forms.Textarea, required=False)
+    number_of_versions = forms.IntegerField(
+        min_value=1,
+        initial=1,
+        help_text='All versions are recreated in order; each version DOI is rebuilt as <prefix>/osf.io/<guid>_v<n>.',
+    )
     ticket_reference = forms.CharField(
         max_length=255,
         label='Support ticket / JIRA reference',

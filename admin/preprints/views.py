@@ -252,13 +252,14 @@ class PreprintReVersion(PreprintMixin, View):
 
 class RecoverDeletedPreprintView(PermissionRequiredMixin, FormView):
     """Recreate a preprint that was hard-deleted by the Create-New-Version bug
-    (ENG-11012), restoring its original GUID and DOI so existing links and the
-    registered DOI keep resolving. Runs in an atomic transaction and records the
-    acting admin, timestamp and ticket reference in the admin log.
+    (ENG-11012), restoring its original GUID. All versions are recreated in order
+    within a single atomic transaction, and the acting admin, timestamp and ticket
+    reference are recorded in the admin log.
 
-    Only the base preprint record/GUID/DOI is recreated here; the admin then
-    attaches the file, sets contributors/metadata, publishes and resyncs CrossRef
-    using the existing preprint admin actions.
+    Only the version records are recreated here; the admin then attaches files,
+    sets contributors/metadata, publishes and resyncs CrossRef using the existing
+    preprint admin actions. The DOIs are deterministic from the GUID, so resyncing
+    CrossRef restores each version's original DOI.
     """
     template_name = 'preprints/recover_preprint.html'
     permission_required = ('osf.change_preprint',)
@@ -267,33 +268,44 @@ class RecoverDeletedPreprintView(PermissionRequiredMixin, FormView):
 
     def form_valid(self, form):
         data = form.cleaned_data
+        guid = data['guid']
+        number_of_versions = data['number_of_versions']
         try:
             with transaction.atomic():
-                preprint = Preprint.create(
+                Preprint.create(
                     provider=data['provider'],
                     title=data['title'],
                     creator=self.request.user,
                     description=data['description'],
-                    manual_guid=data['guid'],
-                    manual_doi=data['doi'] or None,
+                    manual_guid=guid,
                 )
+                for version_number in range(2, number_of_versions + 1):
+                    Preprint.create_version(
+                        create_from_guid=guid,
+                        assign_version_number=version_number,
+                        auth=self.request,
+                        ignore_permission=True,
+                        ignore_existing_versions=True,
+                    )
                 update_admin_log(
                     user_id=self.request.user.id,
-                    object_id=preprint._id,
+                    object_id=guid,
                     object_repr='Preprint',
-                    message=f'Preprint {preprint._id} recreated after deletion (ref: {data["ticket_reference"]}).',
+                    message=f'Preprint {guid} recreated with {number_of_versions} version(s) after deletion '
+                            f'(ref: {data["ticket_reference"]}).',
                     action_flag=PREPRINT_RECOVERED,
                 )
-        except ValidationError as exc:
-            messages.error(self.request, f'Could not recover preprint: {"; ".join(exc.messages)}')
+        except (ValidationError, ValueError) as exc:
+            reason = '; '.join(exc.messages) if isinstance(exc, ValidationError) else str(exc)
+            messages.error(self.request, f'Could not recover preprint: {reason}')
             return redirect(reverse_lazy('preprints:recover'))
 
         messages.success(
             self.request,
-            f'Recreated preprint {preprint._id}. Attach the file, set contributors/metadata, '
-            'then publish and resync CrossRef.',
+            f'Recreated {number_of_versions} version(s) of preprint {guid}. Attach files, set '
+            'contributors/metadata, then publish and resync CrossRef.',
         )
-        return redirect(reverse_lazy('preprints:preprint', kwargs={'guid': preprint._id}))
+        return redirect(reverse_lazy('preprints:preprint', kwargs={'guid': guid}))
 
 
 class PreprintReindexElastic(PreprintMixin, View):
