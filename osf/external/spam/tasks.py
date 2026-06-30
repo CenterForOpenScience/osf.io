@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
 
 
-DOMAIN_REGEX = re.compile(r'\W*(?P<protocol>\w+://)?(?P<www>www\.)?(?P<domain>([\w-]+\.)+[a-zA-Z]+)(?P<path>[/\-\.\w]*)?\W*')
+DOMAIN_REGEX = re.compile(r'(?:'r'(?P<protocol>\w+://)'r'|'r'(?P<www>www\.)'r')'r'(?P<domain>([\w-]+\.)*[\w-]+)'r'(?P<path>[/\-\.\w]*)?', re.IGNORECASE)
 REDIRECT_CODES = {301, 302, 303, 307, 308}
 
 
