@@ -1,7 +1,24 @@
 from django import forms
 
-from osf.models import Preprint
+from osf.models import Preprint, PreprintProvider
 from osf.utils.workflows import ReviewStates
+
+
+class RecoverDeletedPreprintForm(forms.Form):
+    """Inputs needed to recreate a preprint that was hard-deleted by the
+    Create-New-Version bug (ENG-11012). The GUID and DOI are recreated exactly
+    as they were so existing DOIs and links keep resolving.
+    """
+    provider = forms.ModelChoiceField(queryset=PreprintProvider.objects.all())
+    guid = forms.CharField(max_length=5, min_length=5, label='Base GUID')
+    doi = forms.CharField(max_length=255, required=False)
+    title = forms.CharField(max_length=512)
+    description = forms.CharField(widget=forms.Textarea, required=False)
+    ticket_reference = forms.CharField(
+        max_length=255,
+        label='Support ticket / JIRA reference',
+        help_text='Recorded in the admin log so the recreated preprint is traceable.',
+    )
 
 class ChangeProviderForm(forms.ModelForm):
     class Meta:

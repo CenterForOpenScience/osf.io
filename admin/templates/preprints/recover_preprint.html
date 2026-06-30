@@ -1,0 +1,34 @@
+
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}
+    <title>Recover Deleted Preprint</title>
+{% endblock title %}
+{% block content %}
+    <div class="container-fluid">
+        <h2>Recover Deleted Preprint</h2>
+        <p>
+            Recreates a preprint that was hard-deleted by the Create-New-Version bug,
+            restoring its original GUID and DOI. After recovering, attach the file,
+            set contributors/metadata, then publish and resync CrossRef.
+        </p>
+        <div class="row">
+            <form action="{% url 'preprints:recover' %}" method="post">
+                {% csrf_token %}
+                {% if form.errors %}
+                    <div class="alert alert-danger">{{ form.errors }}</div>
+                {% endif %}
+                {% for field in form %}
+                    <div class="form-group">
+                        <label for="{{ field.id_for_label }}">{{ field.label }}:</label>
+                        {{ field }}
+                        {% if field.help_text %}
+                            <p class="help-block">{{ field.help_text }}</p>
+                        {% endif %}
+                    </div>
+                {% endfor %}
+                <input type="submit" class="btn btn-primary" value="Recover" />
+            </form>
+        </div>
+    </div>
+{% endblock content %}
