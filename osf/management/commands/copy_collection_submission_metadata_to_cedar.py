@@ -23,15 +23,30 @@ def copy_collection_submission_metadata_to_cedar(dry_run=False, batch_size=100, 
     logger.info(f'{"[DRY RUN] " if dry_run else ""}Found {total} collection submissions to process')
 
     processed = errors = 0
+    succeeded = []
+    failed = []
     for submission in qs.iterator(chunk_size=batch_size):
         if dry_run:
             logger.info(f'[DRY RUN] Would sync cedar metadata for submission {submission._id}')
             continue
         try:
-            submission.sync_cedar_metadata()
+            record = submission.sync_cedar_metadata()
+            succeeded.append((
+                submission.guid._id,
+                submission.collection._id,
+                record._id,
+                record.template.cedar_id,
+            ))
             processed += 1
         except Exception as e:
             logger.error(f'Failed to sync cedar metadata for submission {submission._id}: {e}')
+            template = submission.collection.provider.required_metadata_template
+            failed.append((
+                submission.guid._id,
+                submission.collection._id,
+                template.cedar_id,
+                e,
+            ))
             errors += 1
 
     logger.info(
@@ -39,6 +54,14 @@ def copy_collection_submission_metadata_to_cedar(dry_run=False, batch_size=100, 
         f'Done. Processed {processed}/{total} submissions'
         f'{f", {errors} error(s)" if errors else ""}'
     )
+    if succeeded:
+        logger.info('Successfully synced (node_guid, collection_id, cedar_record_id, cedar_template_id):')
+        for node_guid, collection_id, record_id, template_cedar_id in succeeded:
+            logger.info(f'  node={node_guid}, collection={collection_id}, record={record_id}, template={template_cedar_id}')
+    if failed:
+        logger.info('Failed (node_guid, collection_id, cedar_template_id):')
+        for node_guid, collection_id, template_cedar_id, exc in failed:
+            logger.info(f'  node={node_guid}, collection={collection_id}, template={template_cedar_id}, error={exc}')
 
 
 class Command(BaseCommand):
