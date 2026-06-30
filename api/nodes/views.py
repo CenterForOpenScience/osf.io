@@ -104,6 +104,7 @@ from api.nodes.permissions import (
     ProjectEditingNotAllowed,
     NodeIdentifierCreationNotAllowed,
     NodeAffiliationWriteNotAllowed,
+    NodeLinkedWriteNotAllowed,
     NodeContributorWriteNotAllowed,
 )
 from api.wikis.permissions import WikisEditingNotAllowed
@@ -1967,6 +1968,8 @@ class NodeLinkedNodesRelationship(LinkedNodesRelationship, NodeMixin):
     corresponding node_id in the request.
     """
 
+    permission_classes = LinkedNodesRelationship.permission_classes + (NodeLinkedWriteNotAllowed,)
+
     view_category = 'nodes'
     view_name = 'node-pointer-relationship'
 
@@ -2055,6 +2058,8 @@ class NodeLinkedRegistrationsRelationship(LinkedRegistrationsRelationship, NodeM
     This requires edit permission on the node. This will delete any node_links that have a
     corresponding node_id in the request.
     """
+
+    permission_classes = LinkedRegistrationsRelationship.permission_classes + (NodeLinkedWriteNotAllowed,)
 
     view_category = 'nodes'
     view_name = 'node-registration-pointer-relationship'
