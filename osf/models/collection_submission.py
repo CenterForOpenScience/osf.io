@@ -524,10 +524,15 @@ class CollectionSubmission(TaxonomizableMixin, BaseModel):
         from osf.models.cedar_metadata import CedarMetadataRecord
         template = self.collection.provider.required_metadata_template
         metadata = {}
+        # Some ibdgc collection projects lacks values on some metadata fields; use "N/A" as a placeholder for missing values.
+        ibdgc_provider = self.collection.provider._id == 'ibdgc'
         for field in self.CEDAR_METADATA_FIELDS:
             value = getattr(self, field)
             if not value:
-                continue
+                if ibdgc_provider:
+                    value = 'N/A'  # ibdgc: populate missing fields rather than omitting them
+                else:
+                    continue
             entry = _cedar_record_field_entry(template.template, field, value)
             if entry is None:
                 logger.warning(f'No CEDAR property matches field "{field}" on template "{template.schema_name}"')
@@ -544,6 +549,7 @@ class CollectionSubmission(TaxonomizableMixin, BaseModel):
         record.metadata = metadata
         record.is_published = True
         record.save()
+        return record
 
     def save(self, *args, **kwargs):
         ret = super().save(*args, **kwargs)
