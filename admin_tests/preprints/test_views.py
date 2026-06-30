@@ -19,7 +19,7 @@ from osf_tests.factories import (
     SubjectFactory,
 
 )
-from osf.models.admin_log_entry import AdminLogEntry
+from osf.models.admin_log_entry import AdminLogEntry, PREPRINT_RECOVERED
 from osf.models.spam import SpamStatus
 from osf.utils.workflows import DefaultStates, RequestTypes
 from osf.utils.permissions import ADMIN
@@ -999,3 +999,55 @@ class TestPreprintFixCOIView:
 
         assert preprint.has_coi
         assert preprint.conflict_of_interest_statement == ''
+
+
+@pytest.mark.urls('admin.base.urls')
+class TestRecoverDeletedPreprintView(AdminTestCase):
+    def setUp(self):
+        super().setUp()
+        self.user = AuthUserFactory()
+        self.user.user_permissions.add(Permission.objects.get(codename='change_preprint'))
+        self.provider = PreprintProviderFactory()
+
+    def _post(self, data):
+        request = RequestFactory().post(reverse('preprints:recover'), data=data)
+        request.user = self.user
+        patch_messages(request)
+        return views.RecoverDeletedPreprintView.as_view()(request)
+
+    def test_recreates_preprint_at_guid_with_doi_and_audit(self):
+        data = {
+            'provider': self.provider.id,
+            'guid': 'abcde',
+            'doi': '10.31219/osf.io/abcde_v1',
+            'title': 'Recovered Title',
+            'description': 'desc',
+            'ticket_reference': 'ENG-1234',
+        }
+        response = self._post(data)
+        assert response.status_code == 302
+
+        preprint = Preprint.load('abcde')
+        assert preprint is not None
+        assert preprint.title == 'Recovered Title'
+        assert preprint.get_identifier_value('doi') == '10.31219/osf.io/abcde_v1'
+
+        log = AdminLogEntry.objects.get(action_flag=PREPRINT_RECOVERED)
+        assert log.user_id == self.user.id
+        assert 'ENG-1234' in log.change_message
+
+    def test_existing_guid_is_refused(self):
+        from osf.models import Guid
+        Guid.objects.create(_id='abcde')
+        data = {
+            'provider': self.provider.id,
+            'guid': 'abcde',
+            'doi': '',
+            'title': 'Should Not Apply',
+            'description': '',
+            'ticket_reference': 'ENG-1234',
+        }
+        response = self._post(data)
+        assert response.status_code == 302
+        assert Preprint.load('abcde') is None
+        assert not AdminLogEntry.objects.filter(action_flag=PREPRINT_RECOVERED).exists()
