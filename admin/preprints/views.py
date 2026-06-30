@@ -33,7 +33,9 @@ from osf.models import (
     Preprint,
     PreprintLog,
     PreprintRequest,
-    PreprintProvider
+    PreprintProvider,
+    Guid,
+    BaseFileNode,
 )
 
 from osf.models.admin_log_entry import (
@@ -256,43 +258,58 @@ class RecoverDeletedPreprintView(PermissionRequiredMixin, FormView):
     within a single atomic transaction, and the acting admin, timestamp and ticket
     reference are recorded in the admin log.
 
-    Only the version records are recreated here; the admin then attaches files,
-    sets contributors/metadata, publishes and resyncs CrossRef using the existing
-    preprint admin actions. The DOIs are deterministic from the GUID, so resyncing
-    CrossRef restores each version's original DOI.
+    Recovers one version at a time: the first run on a GUID recreates version 1,
+    each subsequent run on the same GUID adds the next version. This lets Product
+    give each version its own file and metadata. Optionally copies the latest
+    version of an existing file (referenced by GUID) into the recreated version as
+    its primary file, so admins copy from a project of uploaded files rather than
+    uploading here. The DOIs are deterministic from the GUID, so resyncing CrossRef
+    restores each version's original DOI.
     """
     template_name = 'preprints/recover_preprint.html'
     permission_required = ('osf.change_preprint',)
     raise_exception = True
     form_class = RecoverDeletedPreprintForm
 
+    def _copy_primary_file(self, preprint, file_guid):
+        source_file = getattr(Guid.load(file_guid), 'referent', None)
+        if not isinstance(source_file, BaseFileNode):
+            raise ValueError(f'No file found for guid "{file_guid}".')
+        latest_version = source_file.versions.order_by('-created').first()
+        if latest_version is None:
+            raise ValueError(f'File "{file_guid}" has no versions to copy.')
+        copied = copy_files(source_file, target_node=preprint, identifier=latest_version.identifier)
+        preprint.set_primary_file(copied, auth=self.request, save=True)
+
     def form_valid(self, form):
         data = form.cleaned_data
         guid = data['guid']
-        number_of_versions = data['number_of_versions']
+        file_guid = data['file_guid'].strip()
         try:
             with transaction.atomic():
-                Preprint.create(
-                    provider=data['provider'],
-                    title=data['title'],
-                    creator=self.request.user,
-                    description=data['description'],
-                    manual_guid=guid,
-                )
-                for version_number in range(2, number_of_versions + 1):
-                    Preprint.create_version(
+                if Preprint.load(guid):
+                    # GUID already recovered: add the next version.
+                    version, _ = Preprint.create_version(
                         create_from_guid=guid,
-                        assign_version_number=version_number,
                         auth=self.request,
                         ignore_permission=True,
                         ignore_existing_versions=True,
                     )
+                else:
+                    version = Preprint.create(
+                        provider=data['provider'],
+                        title=data['title'],
+                        creator=self.request.user,
+                        description=data['description'],
+                        manual_guid=guid,
+                    )
+                if file_guid:
+                    self._copy_primary_file(version, file_guid)
                 update_admin_log(
                     user_id=self.request.user.id,
-                    object_id=guid,
+                    object_id=version._id,
                     object_repr='Preprint',
-                    message=f'Preprint {guid} recreated with {number_of_versions} version(s) after deletion '
-                            f'(ref: {data["ticket_reference"]}).',
+                    message=f'Preprint {version._id} recreated after deletion (ref: {data["ticket_reference"]}).',
                     action_flag=PREPRINT_RECOVERED,
                 )
         except (ValidationError, ValueError) as exc:
@@ -302,10 +319,10 @@ class RecoverDeletedPreprintView(PermissionRequiredMixin, FormView):
 
         messages.success(
             self.request,
-            f'Recreated {number_of_versions} version(s) of preprint {guid}. Attach files, set '
-            'contributors/metadata, then publish and resync CrossRef.',
+            f'Recreated preprint version {version._id}. Set contributors/metadata, then publish '
+            'and resync CrossRef. Run again on the same GUID to add the next version.',
         )
-        return redirect(reverse_lazy('preprints:preprint', kwargs={'guid': guid}))
+        return redirect(reverse_lazy('preprints:preprint', kwargs={'guid': version._id}))
 
 
 class PreprintReindexElastic(PreprintMixin, View):

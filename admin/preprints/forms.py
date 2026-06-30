@@ -13,10 +13,11 @@ class RecoverDeletedPreprintForm(forms.Form):
     guid = forms.CharField(max_length=5, min_length=5, label='Base GUID')
     title = forms.CharField(max_length=512)
     description = forms.CharField(widget=forms.Textarea, required=False)
-    number_of_versions = forms.IntegerField(
-        min_value=1,
-        initial=1,
-        help_text='All versions are recreated in order; each version DOI is rebuilt as <prefix>/osf.io/<guid>_v<n>.',
+    file_guid = forms.CharField(
+        required=False,
+        label='Source file GUID',
+        help_text='Optional: an existing file GUID; its latest version is copied into this '
+                  'version as the primary file.',
     )
     ticket_reference = forms.CharField(
         max_length=255,
