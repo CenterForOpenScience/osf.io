@@ -136,8 +136,9 @@ class RawMetricsView(GenericAPIView):
             {'Content-Type': _content_type, 'Accept': 'application/json'}
             if _content_type else None
         )
+        _perform_fn = getattr(_client, 'perform_request', None) or _client.transport.perform_request
         try:
-            _response = _client.perform_request(
+            _response = _perform_fn(
                 method,
                 f'/{path}',
                 params=django_request.GET.dict(),
@@ -150,7 +151,7 @@ class RawMetricsView(GenericAPIView):
                 content_type='text/plain; charset=utf-8',
                 status=_api_error.status_code,
             )
-        return JsonResponse(_response.body)
+        return JsonResponse(_response if isinstance(_response, dict) else _response.body)
 
     def _get_es_client(self, djelme_backend_name):
         try:
