@@ -2310,6 +2310,7 @@ class NodeSettings(JSONAPIBaseView, generics.RetrieveUpdateAPIView, NodeMixin):
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
         IsContributorOrGroupMember,
+        ProjectEditingNotAllowed,
     )
 
     required_read_scopes = [CoreScopes.NODE_SETTINGS_READ]
