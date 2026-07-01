@@ -10,7 +10,7 @@ class DropboxSerializer(StorageAddonSerializer):
     addon_short_name = 'dropbox'
 
     def credentials_are_valid(self, user_settings, client):
-        if user_settings:
+        if user_settings and user_settings.external_accounts:
             client = client or Dropbox(user_settings.external_accounts[0].oauth_key)
             try:
                 client.users_get_current_account()
