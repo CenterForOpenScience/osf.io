@@ -1,12 +1,15 @@
 from __future__ import annotations
+import collections.abc as cabc
 import calendar
 import dataclasses
+import functools
 import re
 import datetime
 from hashlib import sha256
 from typing import ClassVar
 
-from elasticsearch_metrics.util.timeparts import format_timeparts
+from elasticsearch8 import dsl as es8dsl
+from elasticsearch_metrics.util.timeparts import serialize_timeparts
 
 from osf.metadata.osfmap_utils import (
     osfmap_type,
@@ -22,7 +25,7 @@ def cycle_coverage_date(given_date: datetime.date) -> str:
     >>> cycle_coverage_date(datetime.datetime(7654, 3, 2, 1))
     '7654.3.2'
     """
-    return format_timeparts(given_date, 3)
+    return serialize_timeparts((given_date.year, given_date.month, given_date.day), 3)
 
 
 def cycle_coverage_yearmonth(given_ym: YearMonth | datetime.date) -> str:
@@ -32,7 +35,7 @@ def cycle_coverage_yearmonth(given_ym: YearMonth | datetime.date) -> str:
     >>> cycle_coverage_yearmonth(datetime.date(1234, 5, 6))
     '1234.5'
     """
-    return format_timeparts((given_ym.year, given_ym.month), 2)
+    return serialize_timeparts((given_ym.year, given_ym.month), 2)
 
 
 def stable_key(*key_parts):
@@ -75,6 +78,37 @@ def get_item_type_from_iri(type_iri) -> str:
     return _shortname
 
 
+def get_surrounding_osfids(osfid_referent):
+    """get all the parent/owner/surrounding osfids for the given osfid_referent
+
+    @param osfid_referent: instance of a model that has GuidMixin
+    @returns list of str
+
+    For AbstractNode, goes up the node hierarchy up to the root.
+    For WikiPage or BaseFileNode, grab the node it belongs to and
+    follow the node hierarchy from there.
+    """
+    _surrounding_osfids = []
+    _current_referent = osfid_referent
+    while _current_referent:
+        next_referent = get_immediate_wrapper(_current_referent)
+        if next_referent:
+            _surrounding_osfids.append(next_referent._id)
+        _current_referent = next_referent
+    return _surrounding_osfids
+
+
+def get_immediate_wrapper(osfid_referent):
+    if hasattr(osfid_referent, 'verified_publishable'):
+        return None                                     # quacks like Preprint
+    return (
+        getattr(osfid_referent, 'parent_node', None)     # quacks like AbstractNode
+        or getattr(osfid_referent, 'node', None)         # quacks like WikiPage, Comment
+        or getattr(osfid_referent, 'target', None)       # quacks like BaseFileNode
+    )
+
+
+@functools.total_ordering
 @dataclasses.dataclass(frozen=True)
 class YearMonth:
     """YearMonth: represents a specific month in a specific year"""
@@ -87,6 +121,11 @@ class YearMonth:
     def from_date(cls, date: datetime.date) -> YearMonth:
         """construct a YearMonth from a `datetime.date` (or `datetime.datetime`)"""
         return cls(date.year, date.month)
+
+    @classmethod
+    def from_today(cls) -> YearMonth:
+        """construct a YearMonth from the current moment"""
+        return cls.from_date(datetime.date.today())
 
     @classmethod
     def from_str(cls, input_str: str) -> YearMonth:
@@ -114,6 +153,9 @@ class YearMonth:
         """convert to string of "YYYY-MM" format"""
         return f'{self.year}-{self.month:0>2}'
 
+    def __le__(self, other):
+        return (self.year <= other.year) and (self.month <= other.month)
+
     def next(self) -> YearMonth:
         """get a new YearMonth for the month after this one"""
         return (
@@ -137,3 +179,37 @@ class YearMonth:
     def month_end(self) -> datetime.datetime:
         """get a datetime (in UTC timezone) when this YearMonth ends (the start of next month)"""
         return self.next().month_start()
+
+
+def iter_composite_bucket_keys(
+    search: es8dsl.Search,
+    composite_agg_name: str,
+    composite_source_name: str,
+    after: str | None = None,
+) -> cabc.Iterator[str]:
+    '''iterate thru *all* buckets of a composite aggregation, requesting new pages as needed
+
+    assumes the given search has a composite aggregation of the given name
+    with a single value source of the given name
+
+    updates the search in-place for subsequent pages
+    '''
+    if after is not None:
+        search.aggs[composite_agg_name].after = {composite_source_name: after}
+    while True:
+        _page_response = search.execute(ignore_cache=True)  # reused search object has the previous page cached
+        try:
+            _agg_result = _page_response.aggregations[composite_agg_name]
+        except KeyError:
+            return  # no data; all done
+        for _bucket in _agg_result.buckets:
+            _key = _bucket.key.to_dict()
+            assert set(_key.keys()) == {composite_source_name}, f'expected only one key ("{composite_source_name}") in {_bucket.key}'
+            yield _key[composite_source_name]
+        # update the search for the next page
+        try:
+            _next_after = _agg_result.after_key
+        except AttributeError:
+            return  # all done
+        else:
+            search.aggs[composite_agg_name].after = _next_after

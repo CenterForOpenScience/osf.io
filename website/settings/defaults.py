@@ -486,7 +486,7 @@ class CeleryConfig:
     }
 
     background_migration_modules = {
-        'osf.management.commands.migrate_osfmetrics_6to8',
+        'osf.management.commands.migrate_osfmetrics_fix_6to8',
     }
 
     try:
@@ -603,7 +603,7 @@ class CeleryConfig:
         'scripts.remove_after_use.merge_notification_subscription_provider_ct',
         'scripts.disable_removed_beat_tasks',
         'osf.management.commands.delete_withdrawn_or_failed_registration_files',
-        'osf.management.commands.migrate_osfmetrics_6to8',
+        'osf.management.commands.migrate_osfmetrics_fix_6to8',
     )
 
     # Modules that need metrics and release requirements
@@ -731,6 +731,10 @@ class CeleryConfig:
             'task': 'osf.management.commands.approve_pending_schema_responses',
             'schedule': crontab(minute=0, hour=5),  # Daily 12 a.m
             'kwargs': {'dry_run': False},
+        },
+        'delete_expired_djelme_indexes': {
+            'task': 'osf.metrics.events.delete_expired_djelme_indexes',
+            'schedule': crontab(minute=30, hour=7, day_of_month=5),     # Fifth day of month 2:30 a.m. EST
         },
     }
 
@@ -2144,8 +2148,6 @@ PIGEON_CALLBACK_BEARER_TOKEN = os.getenv('PIGEON_CALLBACK_BEARER_TOKEN')
 PRODUCT_OWNER_EMAIL_ADDRESS = {}
 
 CAS_LOG_LEVEL = 3  # ERROR
-
-PREPRINT_METRICS_START_DATE = datetime.datetime(2019, 1, 1)
 
 WAFFLE_VALUES_YAML = 'osf/features.yaml'
 DEFAULT_DRAFT_NODE_TITLE = 'Untitled'

@@ -494,6 +494,12 @@ class TestOSFUser:
         with pytest.raises(ValidationError):
             u.save()
 
+    def test_cant_create_user_with_url_full_name(self):
+        for field in OSFUser.DOMAIN_VALIDATION_FIELDS:
+            u = OSFUser({'username': fake_email(), **{field: 'http://example.com'}})
+            with pytest.raises(ValidationError):
+                u.save()
+
     def test_add_blocked_domain_unconfirmed_email(self, user):
         NotableDomain.objects.get_or_create(
             domain='mailinator.com',
@@ -2068,6 +2074,17 @@ class TestUserValidation(OsfTestCase):
             }]
             with pytest.raises(ValidationError):
                 self.user.save()
+
+    def test_validate_domains_field(self):
+        for field in self.user.DOMAIN_VALIDATION_FIELDS:
+            setattr(self.user, field, 'http://example.com')
+            self.user.save()
+            self.user.refresh_from_db()
+
+            assert self.user.is_spammy is True
+            self.user.unspam(save=True)
+            setattr(self.user, field, 'not a url')
+            self.user.save()
 
 
 class TestUserGdprDelete:

@@ -3,14 +3,12 @@ import logging
 
 from django.core.management.base import BaseCommand
 from django.db import OperationalError as DjangoOperationalError
-from elasticsearch6.exceptions import ConnectionError as Elastic6ConnectionError
 from elasticsearch8.exceptions import ConnectionError as Elastic8ConnectionError
 from psycopg2 import OperationalError as PostgresOperationalError
 
 from framework.celery_tasks import app as celery_app
 import framework.sentry
 from osf.metrics.reporters import AllMonthlyReporters
-from osf.metrics.reports import MonthlyReport
 from osf.metrics.utils import YearMonth
 
 
@@ -19,7 +17,6 @@ logger = logging.getLogger(__name__)
 
 _CONTINUE_AFTER_ERRORS = (
     DjangoOperationalError,
-    Elastic6ConnectionError,
     Elastic8ConnectionError,
     PostgresOperationalError,
 )
@@ -74,7 +71,7 @@ def schedule_monthly_reporter(
 @celery_app.task(
     name='management.commands.monthly_reporter_do',
     autoretry_for=_CONTINUE_AFTER_ERRORS,
-    max_retries=5,
+    max_retries=15,
     retry_backoff=True,
 )
 def monthly_reporter_do(reporter_key: str, yearmonth: str, report_kwargs: dict):
@@ -86,8 +83,6 @@ def monthly_reporter_do(reporter_key: str, yearmonth: str, report_kwargs: dict):
 
     _reports = _reporter.report(**report_kwargs)
     for _report in _reports:
-        if isinstance(_report, MonthlyReport) and (_report.report_yearmonth is None):
-            _report.report_yearmonth = _reporter.yearmonth
         _report.save()
         _followup_task = _reporter.followup_task(_report)
         if _followup_task is not None:

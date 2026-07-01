@@ -2,6 +2,40 @@
 
 We follow the CalVer (https://calver.org/) versioning scheme: YY.MINOR.MICRO.
 
+26.13.0 (2026-07-01)
+====================
+
+- add migrate_osfmetrics_fix_6to8 command to correct monthly usage reports
+- temporarily re-add elasticsearch6 and some es6-based osf-metrics models
+
+
+26.12.0 (2026-06-23)
+====================
+
+- ES2 Consolidation
+
+26.11.0 (2026-06-10)
+====================
+
+- Stop using elasticsearch6
+- Change all osfmetrics-consuming code to use es8 from data migration in 26.10.0
+
+
+26.10.7 (2026-06-10)
+====================
+
+- Fix typo in pyproject.toml
+
+26.10.6 (2026-06-10)
+====================
+
+- Disable Preprint DELETE from API
+
+26.10.5 (2026-06-09)
+====================
+
+- Prevent users from using URLs/domains in their names
+
 26.10.4 (2026-06-04)
 ====================
 

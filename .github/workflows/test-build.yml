@@ -8,7 +8,6 @@ permissions:
 env:
   WHEELHOUSE: ~/.cache/wheelhouse
   ELASTICSEARCH_ARCHIVE: elasticsearch-2.4.5.tar.gz
-  ELASTICSEARCH6_ARCHIVE: elasticsearch-6.3.1.tar.gz
   OSF_DB_PORT: 5432
   OSF_DB_PASSWORD: postgres
   GITHUB_ACTIONS: true
@@ -49,6 +48,15 @@ jobs:
           --health-interval 10s
           --health-timeout 30s
           --health-retries 5
+      elasticsearch6: &ES6_SERVICE
+        image: elasticsearch:6.8.23
+        ports:
+          - 9201:9200
+        options: >-
+          --health-cmd "curl -sf http://localhost:9200/_cluster/health?wait_for_status=yellow&timeout=30s"
+          --health-interval 10s
+          --health-timeout 30s
+          --health-retries 5
       postgres: &POSTGRES_SERVICE
         image: postgres
         env:
@@ -68,6 +76,7 @@ jobs:
       run: poetry run python3 -m invoke test-ci-addons --junit
       env:
         ELASTIC8_URI: http://localhost:9202
+        ELASTIC6_URI: http://localhost:9201
     - name: Upload report
       if: (success() || failure())    # run this step even if previous step failed
       uses: ./.github/actions/gen-report
@@ -95,6 +104,7 @@ jobs:
       checks: write
     services:
       elasticsearch8: *ES8_SERVICE
+      elasticsearch6: *ES6_SERVICE
       postgres: *POSTGRES_SERVICE
     steps:
       - uses: actions/checkout@v6
@@ -105,6 +115,7 @@ jobs:
         run: poetry run python3 -m invoke test-ci-api1-and-js --junit
         env:
           ELASTIC8_URI: http://localhost:9202
+          ELASTIC6_URI: http://localhost:9201
       - name: Upload report
         if: (success() || failure())    # run this step even if previous step failed
         uses: ./.github/actions/gen-report
@@ -116,6 +127,7 @@ jobs:
       checks: write
     services:
       elasticsearch8: *ES8_SERVICE
+      elasticsearch6: *ES6_SERVICE
       postgres: *POSTGRES_SERVICE
     steps:
     - uses: actions/checkout@v6
@@ -124,6 +136,7 @@ jobs:
       run: poetry run python3 -m invoke test-ci-api2 --junit
       env:
         ELASTIC8_URI: http://localhost:9202
+        ELASTIC6_URI: http://localhost:9201
     - name: Upload report
       if: (success() || failure())    # run this step even if previous step failed
       uses: ./.github/actions/gen-report
@@ -140,6 +153,9 @@ jobs:
     - uses: ./.github/actions/start-build
     - name: Run tests
       run: poetry run python3 -m invoke test-ci-api3-and-osf --junit
+      env:
+        ELASTIC8_URI: http://localhost:9202
+        ELASTIC6_URI: http://localhost:9201
     - name: Upload report
       if: (success() || failure())    # run this step even if previous step failed
       uses: ./.github/actions/gen-report
