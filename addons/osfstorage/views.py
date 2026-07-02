@@ -6,8 +6,9 @@ from django.contrib.contenttypes.models import ContentType
 from django.db import IntegrityError
 from django.db import connection
 from django.db import transaction
-from django.db.models import Case, CharField, F, Value, When
-from django.db.models.functions import Concat
+from django.db.models import Case, CharField, F, JSONField, OuterRef, Subquery, Value, When
+from django.db.models.fields.json import KeyTextTransform
+from django.db.models.functions import Coalesce, Concat, JSONObject
 from flask import request
 
 from framework.auth import Auth
@@ -16,7 +17,7 @@ from framework.auth.decorators import must_be_signed, must_be_logged_in
 
 from api.base.utils import is_truthy
 from osf.exceptions import InvalidTagError, TagNotFoundError
-from osf.models import FileVersion, Node, OSFUser
+from osf.models import BaseFileVersionsThrough, FileVersion, Node, OSFUser
 from osf.utils.permissions import WRITE
 from osf.utils.requests import check_select_for_update
 from website.project.decorators import (
@@ -189,56 +190,100 @@ def osfstorage_get_metadata(file_node, **kwargs):
 # TODO: Remove _osfstorage_minimal_metadata_sql if the Django ORM implementation
 # performs well in production benchmarks and zip/DAZ workloads.
 def _osfstorage_minimal_metadata_sql(file_node):
+    waterbutler_resource = osf_storage_settings.WATERBUTLER_RESOURCE
     with connection.cursor() as cursor:
         cursor.execute("""
             SELECT json_agg(
-                CASE
-                    WHEN F.type = 'osf.osfstoragefile' THEN
-                        json_build_object(
-                            'kind', 'file',
-                            'name', F.name,
-                            'path', '/' || F._id
-                        )
-                    ELSE
-                        json_build_object(
-                            'kind', 'folder',
-                            'name', F.name,
-                            'path', '/' || F._id || '/'
-                        )
-                END
+                json_build_object(
+                    'kind', CASE
+                        WHEN F.type = 'osf.osfstoragefile' THEN 'file'
+                        ELSE 'folder'
+                    END,
+                    'name', F.name,
+                    'path', CASE
+                        WHEN F.type = 'osf.osfstoragefile' THEN '/' || F._id
+                        ELSE '/' || F._id || '/'
+                    END,
+                    'storage', CASE
+                        WHEN F.type = 'osf.osfstoragefile' THEN
+                            json_build_object(
+                                'data', json_build_object(
+                                    'name', COALESCE(LATEST_VERSION.version_name, F.name),
+                                    'path', LATEST_VERSION.location ->> 'object'
+                                ),
+                                'settings', json_build_object(
+                                    %s, LATEST_VERSION.location ->> %s
+                                )
+                            )
+                        ELSE NULL
+                    END
+                )
             )
             FROM osf_basefilenode AS F
+            LEFT JOIN LATERAL (
+                SELECT
+                    osf_fileversion.location,
+                    osf_basefileversionsthrough.version_name
+                FROM osf_fileversion
+                JOIN osf_basefileversionsthrough
+                    ON osf_fileversion.id = osf_basefileversionsthrough.fileversion_id
+                WHERE osf_basefileversionsthrough.basefilenode_id = F.id
+                ORDER BY osf_fileversion.created DESC
+                LIMIT 1
+            ) LATEST_VERSION ON F.type = 'osf.osfstoragefile'
             WHERE F.parent_id = %s
             AND F.type IN ('osf.osfstoragefile', 'osf.osfstoragefolder')
-        """, [file_node.id])
+        """, [waterbutler_resource, waterbutler_resource, file_node.id])
         return cursor.fetchone()[0] or []
 
 
 def _osfstorage_minimal_metadata_orm(file_node, *, limit=None, after=None):
+    waterbutler_resource = osf_storage_settings.WATERBUTLER_RESOURCE
+    latest_version = BaseFileVersionsThrough.objects.filter(
+        basefilenode_id=OuterRef('pk'),
+    ).order_by('-fileversion__created')
+
+    file_storage = Subquery(
+        latest_version.annotate(
+            _storage=JSONObject(
+                data=JSONObject(
+                    name=Coalesce(F('version_name'), OuterRef('name')),
+                    path=KeyTextTransform('object', 'fileversion__location'),
+                ),
+                settings=JSONObject(**{
+                    waterbutler_resource: KeyTextTransform(
+                        waterbutler_resource, 'fileversion__location',
+                    ),
+                }),
+            ),
+        ).values('_storage')[:1],
+    )
+
     qs = OsfStorageFileNode.objects.filter(
         parent_id=file_node.id,
         type__in=('osf.osfstoragefile', 'osf.osfstoragefolder'),
-    )
+    ).annotate(
+        kind=Case(
+            When(type='osf.osfstoragefile', then=Value('file')),
+            default=Value('folder'),
+            output_field=CharField(),
+        ),
+        path=Case(
+            When(type='osf.osfstoragefile', then=Concat(Value('/'), F('_id'))),
+            default=Concat(Value('/'), F('_id'), Value('/')),
+            output_field=CharField(),
+        ),
+        storage=Case(
+            When(type='osf.osfstoragefile', then=file_storage),
+            default=Value(None, output_field=JSONField()),
+            output_field=JSONField(),
+        ),
+    ).values('id', 'name', 'kind', 'path', 'storage')
+
     if after is not None:
         qs = qs.filter(id__gt=after)
 
-    qs = (
-        qs
-        .annotate(
-            kind=Case(
-                When(type='osf.osfstoragefile', then=Value('file')),
-                default=Value('folder'),
-                output_field=CharField(),
-            ),
-            path=Case(
-                When(type='osf.osfstoragefile', then=Concat(Value('/'), F('_id'))),
-                default=Concat(Value('/'), F('_id'), Value('/')),
-                output_field=CharField(),
-            ),
-        )
-        .order_by('id')
-        .values('id', 'kind', 'name', 'path')
-    )
+    qs = qs.order_by('id')
 
     if limit is not None:
         qs = qs[:limit]
