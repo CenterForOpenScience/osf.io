@@ -1095,13 +1095,14 @@ develop = false
 
 [package.extras]
 anydjango = ["django"]
+elastic6 = ["elasticsearch6-dsl (>=6.3.0,<7.0.0)"]
 elastic8 = ["elasticsearch8 (>=8.0.0,<9.0.0)"]
 
 [package.source]
 type = "git"
 url = "https://github.com/CenterForOpenScience/django-elasticsearch-metrics.git"
-reference = "22cea2531783d3f06da3f4407624aae0bbb50c02"
-resolved_reference = "22cea2531783d3f06da3f4407624aae0bbb50c02"
+reference = "b5026b0878db738c7c62205819b72cdfbe1c2da6"
+resolved_reference = "b5026b0878db738c7c62205819b72cdfbe1c2da6"
 
 [[package]]
 name = "django-extensions"
@@ -1388,6 +1389,45 @@ files = [
 
 [package.dependencies]
 urllib3 = ">=1.8,<2.0"
+
+[[package]]
+name = "elasticsearch6"
+version = "6.8.2"
+description = "Python client for Elasticsearch"
+optional = false
+python-versions = ">=2.6, !=3.0.*, !=3.1.*, !=3.2.*, <4"
+groups = ["main"]
+files = [
+    {file = "elasticsearch6-6.8.2-py2.py3-none-any.whl", hash = "sha256:4edf2d61f854f642185d5af915b23c57e70d9f2b54f558b62ae55fa720583f5e"},
+    {file = "elasticsearch6-6.8.2.tar.gz", hash = "sha256:7c215910b6bc18928d24d6c1d0b09b0684c824af609906d5e007a9a268109678"},
+]
+
+[package.dependencies]
+urllib3 = ">=1.21.1"
+
+[package.extras]
+develop = ["coverage", "mock", "nose", "nosexcover", "numpy", "pandas", "pyyaml", "requests (>=2.0.0,<3.0.0)", "sphinx (<1.7)", "sphinx-rtd-theme"]
+requests = ["requests (>=2.4.0,<3.0.0)"]
+
+[[package]]
+name = "elasticsearch6-dsl"
+version = "6.4.0"
+description = "Python client for Elasticsearch"
+optional = false
+python-versions = "*"
+groups = ["main"]
+files = [
+    {file = "elasticsearch6-dsl-6.4.0.tar.gz", hash = "sha256:4bbc60919b73484d028eca31f749f0eea80d8b0bfe0a9a33b54eb0afca1d9b5f"},
+    {file = "elasticsearch6_dsl-6.4.0-py2.py3-none-any.whl", hash = "sha256:a5767ef65c50f7c8af7ba6c176bd8df2c1fb501c644bc196cbd675f15c0f2be1"},
+]
+
+[package.dependencies]
+elasticsearch6 = ">=6.0.0,<7.0.0"
+python-dateutil = "*"
+six = "*"
+
+[package.extras]
+develop = ["coverage (<5.0.0)", "mock", "pytest (>=3.0.0)", "pytest-cov", "pytz", "sphinx", "sphinx-rtd-theme"]
 
 [[package]]
 name = "elasticsearch8"
@@ -4687,4 +4727,4 @@ testing = ["coverage (>=5.0.3)", "zope.event", "zope.testing"]
 [metadata]
 lock-version = "2.1"
 python-versions = "^3.12"
-content-hash = "287ebe4055cbb4338c81ad9f5658650e41042447548c151f49b6ef20f9cf57db"
+content-hash = "9b2f29b9b4958b47e4c428f4225d04bbd12f239c02f9afc186989a49547b83ed"
