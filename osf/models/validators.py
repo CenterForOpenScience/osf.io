@@ -120,7 +120,7 @@ def has_domain_in_user_fields_for_names(user):
         return False
 
     text = name_content.lower()
-    if any(suffix in text for suffix in ['m.sc.', 'msc.', 'phd.', 'ph.d.', 'msc.pt', 'pt.', 'prof.', 'dr.','md.', 'jd.', 'esq.']):
+    if any(suffix in text for suffix in ['m.sc.', 'msc.', 'phd.', 'ph.d.', 'msc.pt', 'pt.', 'prof.', 'dr.', 'md.', 'jd.', 'esq.']):
         return False
 
     if re.search(r'\b[a-z]\.[a-z0-9-]+\b', text):
