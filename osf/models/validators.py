@@ -114,7 +114,18 @@ def validate_email(value):
 
 
 def has_domain_in_user_fields_for_names(user):
-    name_content = ' '.join([getattr(user, field) or '' for field in user.DOMAIN_VALIDATION_FIELDS])
+    name_content = ' '.join(getattr(user, field) or '' for field in user.DOMAIN_VALIDATION_FIELDS).strip()
+
+    if not name_content:
+        return False
+
+    text = name_content.lower()
+    if any(suffix in text for suffix in ['m.sc.', 'msc.', 'phd.', 'ph.d.', 'msc.pt', 'pt.', 'prof.', 'dr.','md.', 'jd.', 'esq.']):
+        return False
+
+    if re.search(r'\b[a-z]\.[a-z0-9-]+\b', text):
+        return False
+
     return True if DOMAIN_REGEX.search(name_content) else False
 
 
