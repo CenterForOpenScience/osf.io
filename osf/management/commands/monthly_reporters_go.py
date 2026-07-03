@@ -71,7 +71,7 @@ def schedule_monthly_reporter(
 @celery_app.task(
     name='management.commands.monthly_reporter_do',
     autoretry_for=_CONTINUE_AFTER_ERRORS,
-    max_retries=5,
+    max_retries=15,
     retry_backoff=True,
 )
 def monthly_reporter_do(reporter_key: str, yearmonth: str, report_kwargs: dict):

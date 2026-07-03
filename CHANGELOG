@@ -2,6 +2,13 @@
 
 We follow the CalVer (https://calver.org/) versioning scheme: YY.MINOR.MICRO.
 
+26.13.0 (2026-07-01)
+====================
+
+- add migrate_osfmetrics_fix_6to8 command to correct monthly usage reports
+- temporarily re-add elasticsearch6 and some es6-based osf-metrics models
+
+
 26.12.0 (2026-06-23)
 ====================
 
