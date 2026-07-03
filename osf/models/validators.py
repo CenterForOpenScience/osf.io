@@ -1,4 +1,5 @@
 import re
+from urllib.parse import urlsplit
 import waffle
 
 from jsonschema import ValidationError as JsonSchemaValidationError, SchemaError, Draft7Validator, validate, validators
@@ -115,19 +116,17 @@ def validate_email(value):
 
 def has_domain_in_user_fields_for_names(user):
     name_content = ' '.join(getattr(user, field) or '' for field in user.DOMAIN_VALIDATION_FIELDS).strip()
+    for match in DOMAIN_REGEX.finditer(name_content):
+        candidate = match.group(0).strip()
+        if looks_like_url(candidate):
+            return True
+    return False
 
-    if not name_content:
-        return False
-
-    text = name_content.lower()
-    if any(suffix in text for suffix in ['m.sc.', 'msc.', 'phd.', 'ph.d.', 'msc.pt', 'pt.', 'prof.', 'dr.', 'md.', 'jd.', 'esq.']):
-        return False
-
-    if re.search(r'\b[a-z]\.[a-z0-9-]+\b', text):
-        return False
-
-    return True if DOMAIN_REGEX.search(name_content) else False
-
+def looks_like_url(candidate):
+    if candidate.startswith('www.'):
+        candidate = f'https://{candidate}'
+    parsed = urlsplit(candidate)
+    return bool(parsed.scheme and parsed.netloc)
 
 def validate_subject_hierarchy_length(parent):
     from osf.models import Subject

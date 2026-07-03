@@ -1,17 +1,20 @@
 import pytest
 from osf.exceptions import ValidationValueError
 
-from osf.models import validators
+from types import SimpleNamespace
+from osf.models import validators, OSFUser
 from osf.models.validators import has_domain_in_user_fields_for_names
-from osf_tests.factories import SubjectFactory, AuthUserFactory
+from osf_tests.factories import SubjectFactory
 
 
 # Ported from tests/framework/test_mongo.py
 
-@pytest.fixture()
-def user(user_data):
-    return AuthUserFactory(**user_data)
-
+def mock_user(user_data):
+    user = SimpleNamespace()
+    user.DOMAIN_VALIDATION_FIELDS = OSFUser.DOMAIN_VALIDATION_FIELDS
+    for field in user.DOMAIN_VALIDATION_FIELDS:
+        setattr(user, field, user_data.get(field, ''))
+    return user
 
 def test_string_required_passes_with_string():
     assert validators.string_required('Hi!') is True
@@ -155,13 +158,36 @@ def test_validate_expand_subject_hierarchy():
         }
     ]
 )
-def test_has_domain_in_user_fields_for_names_returns_false(user, user_data):
-    user.DOMAIN_VALIDATION_FIELDS = [
-        'fullname',
-        'given_name',
-        'middle_names',
-        'family_name',
-        'suffix',
-    ]
-
+def test_has_domain_in_user_fields(user_data):
+    user = mock_user(user_data)
     assert has_domain_in_user_fields_for_names(user) is False
+
+
+@pytest.mark.parametrize(
+    'user_data',
+    [
+        {
+            'fullname': 'Judith Sarah',
+            'given_name': 'Judith',
+            'family_name': 'Preuss',
+            'middle_names': 'https://www.google.com',
+            'suffix': 'M.Sc.',
+        },
+        {
+            'fullname': 'J.H. van Hateren',
+            'given_name': 'J.H.',
+            'family_name': 'https://google.com',
+            'middle_names': '',
+        },
+        {
+            'fullname': 'Judith Sarah',
+            'given_name': 'Judith',
+            'family_name': 'Preuss',
+            'middle_names': 'www.google.com',
+            'suffix': 'M.Sc.',
+        },
+    ]
+)
+def test_has_domain_in_user_fields_fail(user_data):
+    user = mock_user(user_data)
+    assert has_domain_in_user_fields_for_names(user) is True

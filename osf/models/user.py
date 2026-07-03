@@ -1068,7 +1068,10 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         dirty_fields = self.get_dirty_fields(check_relationship=True)
         ret = super().save(*args, **kwargs)  # must save BEFORE spam check, as user needs guid.
 
-        if has_domain and not was_creating:
+        if has_domain and self.is_hammy:
+            self.flag_spam()
+
+        if has_domain and not was_creating and not self.is_hammy:
             self.confirm_spam()
 
         if set(self.SPAM_USER_PROFILE_FIELDS.keys()).intersection(dirty_fields):
@@ -1482,7 +1485,8 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         return True
 
     def confirm_spam(self, domains=None, save=True, train_spam_services=False, skip_resources_spam=False):
-        self.deactivate_account()
+        if not self.is_hammy:
+            self.deactivate_account()
         super().confirm_spam(domains=domains, save=save, train_spam_services=train_spam_services)
 
         if skip_resources_spam:
