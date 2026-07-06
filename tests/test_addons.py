@@ -1818,7 +1818,6 @@ class TestNodeChooseAddonsProjectReadOnly(OsfTestCase):
                 self.url,
                 json={'github': True},
                 auth=self.user.auth,
-                expect_errors=True,
             )
         assert res.status_code == 405
 
@@ -1828,6 +1827,5 @@ class TestNodeChooseAddonsProjectReadOnly(OsfTestCase):
                 self.url,
                 json={'github': True},
                 auth=self.user.auth,
-                expect_errors=True,
             )
         assert res.status_code == 200
