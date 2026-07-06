@@ -18,6 +18,7 @@ from django.conf import settings
 from django.contrib.auth.base_user import AbstractBaseUser, BaseUserManager
 from django.contrib.auth.hashers import check_password
 from django.contrib.auth.models import PermissionsMixin
+from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import FieldDoesNotExist
 from django.dispatch import receiver
 from django.db import models
@@ -68,6 +69,7 @@ from website import settings as website_settings
 from website import filters
 from website.project import new_bookmark_collection
 from website.util.metrics import OsfSourceTags, unregistered_created_source_tag
+from website.settings import CeleryConfig
 from importlib import import_module
 from osf.models.notification_type import NotificationTypeEnum
 from osf.utils.requests import string_type_request_headers
@@ -741,7 +743,9 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         # Capture content to SHARE reindex BEFORE merge transfers contributors
         # After merge, user.contributed and user.preprints will be empty
         nodes_to_reindex = list(user.contributed)
+        node_ids_to_reindex = [node.id for node in nodes_to_reindex]
         preprints_to_reindex = list(user.preprints.all())
+        preprint_ids_to_reindex = [preprint.id for preprint in preprints_to_reindex]
 
         # Move over the other user's attributes
         # TODO: confirm
@@ -885,6 +889,29 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
                 update_share(preprint)
             except Exception as e:
                 logger.exception(f'Failed to SHARE reindex preprint {preprint._id} during user merge: {e}')
+
+        from osf.models import AbstractNode, Preprint
+        from addons.osfstorage.models import OsfStorageFile
+        node_ctype = ContentType.objects.get_for_model(AbstractNode)
+        preprint_ctype = ContentType.objects.get_for_model(Preprint)
+        nodes_files_to_reindex = OsfStorageFile.objects.filter(
+            target_object_id__in=node_ids_to_reindex, target_content_type=node_ctype,
+            guids__isnull=False
+        )
+        preprints_files_to_reindex = OsfStorageFile.objects.filter(
+            target_object_id__in=preprint_ids_to_reindex, target_content_type=preprint_ctype,
+            guids__isnull=False
+        )
+        for file in nodes_files_to_reindex.iterator(chunk_size=100):
+            try:
+                update_share(file, target_queue=CeleryConfig.task_low_queue)
+            except Exception as e:
+                logger.exception(f'Failed to SHARE reindex file {file._id} during user merge: {e}')
+        for file in preprints_files_to_reindex.iterator(chunk_size=100):
+            try:
+                update_share(file, target_queue=CeleryConfig.task_low_queue)
+            except Exception as e:
+                logger.exception(f'Failed to SHARE reindex preprints file {file._id} during user merge: {e}')
 
     def _merge_users_preprints(self, user):
         """

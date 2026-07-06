@@ -445,6 +445,7 @@ class TestOSFUser:
     @mock.patch('api.share.utils.update_share')
     def test_merge_user_triggers_share_reindex(self, mock_update_share):
         from osf.models import Preprint
+        from addons.osfstorage.models import OsfStorageFile
 
         user = AuthUserFactory()
         user2 = AuthUserFactory()
@@ -457,25 +458,38 @@ class TestOSFUser:
         preprint_two = PreprintFactory(title='preprint_two')
         preprint_two.add_contributor(user2)
 
+        node_file = OsfStorageFile.create(
+            target=node_one, path='/node_file.txt', name='node_file.txt', materialized_path='/node_file.txt'
+        )
+        node_file.save(skip_search=True)
+        node_file.get_guid(create=True)
+
+        preprint_file = OsfStorageFile.create(
+            target=preprint_one, path='/preprint_file.txt', name='preprint_file.txt',
+            materialized_path='/preprint_file.txt'
+        )
+        preprint_file.save(skip_search=True)
+        preprint_file.get_guid(create=True)
+
         user.merge_user(user2)
 
+        all_reindexed = [call[0][0] for call in mock_update_share.call_args_list]
         # Verify update_share was called for both nodes
-        nodes_reindexed = [
-            call[0][0] for call in mock_update_share.call_args_list
-            if isinstance(call[0][0], AbstractNode)
-        ]
+        nodes_reindexed = [node_reindexed for node_reindexed in all_reindexed if isinstance(node_reindexed, AbstractNode)]
         assert len(nodes_reindexed) == 2
         assert node_one in nodes_reindexed
         assert node_two in nodes_reindexed
 
         # Verify update_share was called for both preprints
-        preprints_reindexed = [
-            call[0][0] for call in mock_update_share.call_args_list
-            if isinstance(call[0][0], Preprint)
-        ]
+        preprints_reindexed = [preprint_reindexed for preprint_reindexed in all_reindexed if isinstance(preprint_reindexed, Preprint)]
         assert len(preprints_reindexed) == 2
         assert preprint_one in preprints_reindexed
         assert preprint_two in preprints_reindexed
+
+        # Verify update_share was called for files belonging to user2's nodes and preprints
+        files_reindexed = [file_reindexed for file_reindexed in all_reindexed if isinstance(file_reindexed, OsfStorageFile)]
+        assert node_file in files_reindexed
+        assert preprint_file in files_reindexed
 
     def test_cant_create_user_without_username(self):
         u = OSFUser()  # No username given
