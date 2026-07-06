@@ -9,7 +9,7 @@ from osf.utils import permissions
 from osf.models import RegistrationSchema
 
 from tests.base import OsfTestCase
-from osf_tests.factories import AuthUserFactory, ProjectFactory, DraftRegistrationFactory
+from osf_tests.factories import AuthUserFactory, ProjectFactory, DraftRegistrationFactory, SubjectFactory
 
 class RegistrationsTestBase(OsfTestCase):
     def setUp(self):
@@ -37,6 +37,7 @@ class RegistrationsTestBase(OsfTestCase):
                 'summary': {'value': 'Some airy'}
             }
         )
+        self.draft.subjects.add(SubjectFactory())
 
         current_month = timezone.now().strftime('%B')
         current_year = timezone.now().strftime('%Y')

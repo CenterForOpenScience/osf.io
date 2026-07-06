@@ -2,6 +2,73 @@
 
 We follow the CalVer (https://calver.org/) versioning scheme: YY.MINOR.MICRO.
 
+26.13.0 (2026-07-01)
+====================
+
+- add migrate_osfmetrics_fix_6to8 command to correct monthly usage reports
+- temporarily re-add elasticsearch6 and some es6-based osf-metrics models
+
+
+26.12.0 (2026-06-23)
+====================
+
+- ES2 Consolidation
+
+26.11.0 (2026-06-10)
+====================
+
+- Stop using elasticsearch6
+- Change all osfmetrics-consuming code to use es8 from data migration in 26.10.0
+
+
+26.10.7 (2026-06-10)
+====================
+
+- Fix typo in pyproject.toml
+
+26.10.6 (2026-06-10)
+====================
+
+- Disable Preprint DELETE from API
+
+26.10.5 (2026-06-09)
+====================
+
+- Prevent users from using URLs/domains in their names
+
+26.10.4 (2026-06-04)
+====================
+
+- Fix duplication in scheduled notifications
+
+26.10.3 (2026-06-02)
+====================
+
+- Update how invalid cookie/session is handled
+
+26.10.2 (2026-05-27)
+====================
+
+- Fix admin embargo report page by paging
+
+26.10.1 (2026-05-22)
+====================
+
+- Hotfix to resume (rather than restart) a long task after connection error
+
+26.10.0 (2026-05-19)
+===================
+
+- osfmetrics data migration from elasticsearch6 to elasticsearch8
+  - add configuration for osfmetrics with es8 (in parallel with es6)
+  - save new osfmetrics event records and periodic reports in both es6 and es8
+  - add migrate_osfmetrics_6to8 command to copy old data from es6 to es8
+
+26.9.1 (2026-05-15)
+===================
+
+- Hotfix for registrations stuck archiving
+
 26.9.0 (2026-05-07)
 ===================
 

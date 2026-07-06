@@ -14,15 +14,17 @@ from guardian.models import (
     UserObjectPermissionBase,
 )
 from dirtyfields import DirtyFieldsMixin
+import waffle
 
 from framework.auth import Auth
 from framework.exceptions import PermissionsError
+from osf import features
 from osf.models import Identifier
 from osf.utils.fields import NonNaiveDateTimeField, LowercaseCharField
 from osf.utils.permissions import ADMIN, READ, WRITE
 from osf.exceptions import NodeStateError, DraftRegistrationStateError
 from osf.external.internet_archive.tasks import archive_to_ia, update_ia_metadata
-from osf.metrics import RegistriesModerationMetrics
+from osf.metrics.events import RegistriesModerationEvent
 from osf.models.notification_type import NotificationTypeEnum
 from .action import RegistrationAction
 from .archive import ArchiveJob
@@ -235,7 +237,7 @@ class Registration(AbstractNode):
 
     @property
     def archive_job(self):
-        return self.archive_jobs.first() if self.archive_jobs.count() else None
+        return self.archive_jobs.first()
 
     @property
     def sanction(self):
@@ -782,7 +784,16 @@ class Registration(AbstractNode):
             comment=comment
         )
         action.save()
-        RegistriesModerationMetrics.record_transitions(action)
+        if waffle.switch_is_active(features.ELASTICSEARCH_METRICS):
+            RegistriesModerationEvent.record(
+                registration_id=action.target._id,
+                provider_id=action.target.provider._id,
+                from_state=action.from_state,
+                to_state=action.to_state,
+                trigger=action.trigger,
+                user_id=action.creator._id,
+                comment=action.comment,
+            )
 
         moderation_notifications = {
             RegistrationModerationTriggers.SUBMIT: notify.notify_submit,
@@ -1444,6 +1455,9 @@ class DraftRegistration(ObjectIDMixin, RegistrationResponseMixin, DirtyFieldsMix
 
         if not self.title:
             raise NodeStateError('Draft Registration must have title to be registered')
+
+        if not self.subjects.exists():
+            raise NodeStateError('Registration must have at least one subject to be registered')
 
         # Create the registration
         registration = node.register_node(

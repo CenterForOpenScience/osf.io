@@ -1,4 +1,4 @@
-from django.urls import re_path
+from django.urls import re_path, path
 
 from admin.management import views
 
@@ -21,5 +21,6 @@ urlpatterns = [
     re_path(r'^sync_notification_templates', views.SyncNotificationTemplates.as_view(),
             name='sync_notification_templates'),
     re_path(r'^remove_orcid_from_user_social', views.RemoveOrcidFromUserSocial.as_view(),
-            name='remove_orcid_from_user_social')
+            name='remove_orcid_from_user_social'),
+    path('migrate_osfmetrics_fix_6to8', views.MigrateOsfmetricsFix6to8.as_view(), name='migrate_osfmetrics_fix_6to8'),
 ]

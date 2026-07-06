@@ -309,6 +309,9 @@ class GuidVersionsThrough(BaseModel):
             UniqueConstraint(fields=['guid', 'version'], name='unique_guid_version')
         ]
 
+    def versioned_osfid(self):
+        return f'{self.guid._id}{VersionedGuidMixin.GUID_VERSION_DELIMITER}{self.version}'
+
 
 class BlackListGuid(BaseModel):
     id = models.AutoField(primary_key=True)
@@ -553,12 +556,11 @@ class VersionedGuidMixin(GuidMixin):
                     f'`self.versioned_guids` does not exist: [self={self.pk}, type={type(self).__name__}]'
                 )
                 return None
-            guid = versioned_guid.first().guid
-            version = versioned_guid.first().version
+            _current_versioned_guid = versioned_guid.first()
         except IndexError as e:
             sentry.log_exception(e)
             return None
-        return f'{guid._id}{VersionedGuidMixin.GUID_VERSION_DELIMITER}{version}'
+        return _current_versioned_guid.versioned_osfid()
 
     @_id.setter
     def _id(self, value):

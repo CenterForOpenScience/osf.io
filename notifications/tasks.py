@@ -94,7 +94,7 @@ def send_user_email_task(self, user_id, notification_ids, **kwargs):
             return
 
     try:
-        notifications_qs = Notification.objects.filter(id__in=notification_ids)
+        notifications_qs = Notification.objects.filter(id__in=notification_ids, sent__isnull=True)
         rendered_notifications, failed_notifications = safe_render_notification(notifications_qs, email_task)
         notifications_qs = notifications_qs.exclude(id__in=failed_notifications)
 
@@ -133,6 +133,7 @@ def send_user_email_task(self, user_id, notification_ids, **kwargs):
             email_task.error_message = email_task.error_message + f'Max retries reached: {str(e)} \n'
             email_task.save()
             logger.error(f'Max retries reached for send_moderator_email_task for user {user_id}. Task id: {self.request.id}. Errors: {email_task.error_message}')
+            notifications_qs.update(scheduled=None)
             return
 
         email_task, _ = EmailTask.objects.get_or_create(task_id=self.request.id)
@@ -168,7 +169,7 @@ def send_moderator_email_task(self, user_id, notification_ids, provider_content_
             return
 
     try:
-        notifications_qs = Notification.objects.filter(id__in=notification_ids)
+        notifications_qs = Notification.objects.filter(id__in=notification_ids, sent__isnull=True)
         rendered_notifications, failed_notifications = safe_render_notification(notifications_qs, email_task)
         notifications_qs = notifications_qs.exclude(id__in=failed_notifications)
 
@@ -291,6 +292,7 @@ def send_moderator_email_task(self, user_id, notification_ids, provider_content_
             email_task.error_message = email_task.error_message + f'\nMax retries reached: {str(e)}'
             email_task.save()
             logger.error(f'Max retries reached for send_moderator_email_task for user {user_id}. Task id: {self.request.id}. Errors: {email_task.error_message}')
+            notifications_qs.update(scheduled=None)
             return
 
         email_task.status = 'RETRY'
@@ -314,6 +316,8 @@ def send_users_digest_email(dry_run=False):
             user_id = group['user_id']
             notification_ids = [msg['notification_id'] for msg in group['info']]
             if not dry_run:
+                notifications_qs = Notification.objects.filter(id__in=notification_ids)
+                notifications_qs.update(scheduled=timezone.now())
                 send_user_email_task.delay(user_id, notification_ids)
 
 @celery_app.task(name='notifications.tasks.send_moderators_digest_email')
@@ -334,6 +338,8 @@ def send_moderators_digest_email(dry_run=False):
             provider_content_type_id = group['provider_content_type_id']
             notification_ids = [msg['notification_id'] for msg in group['info']]
             if not dry_run:
+                notifications_qs = Notification.objects.filter(id__in=notification_ids)
+                notifications_qs.update(scheduled=timezone.now())
                 send_moderator_email_task.delay(user_id, notification_ids, provider_content_type_id, provider_id)
 
 def get_moderators_emails(message_freq: str):
@@ -358,6 +364,7 @@ def get_moderators_emails(message_freq: str):
         INNER JOIN osf_notificationtype AS nt ON ns.notification_type_id = nt.id
         LEFT JOIN osf_guid ON ns.user_id = osf_guid.object_id
         WHERE n.sent IS NULL
+            AND n.scheduled IS NULL
             AND ns.message_frequency = %s
             AND nt.name IN (%s, %s)
             AND nt.name NOT IN (%s, %s, %s)
@@ -401,6 +408,7 @@ def get_users_emails(message_freq):
         INNER JOIN osf_notificationtype AS nt ON ns.notification_type_id = nt.id
         LEFT JOIN osf_guid ON ns.user_id = osf_guid.object_id
         WHERE n.sent IS NULL
+            AND n.scheduled IS NULL
             AND ns.message_frequency = %s
             AND nt.name NOT IN (%s, %s, %s, %s, %s)
             AND osf_guid.content_type_id = (

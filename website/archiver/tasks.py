@@ -7,10 +7,7 @@ from rest_framework import status as http_status
 import celery
 from celery.utils.log import get_task_logger
 
-from django.utils import timezone
-from datetime import timedelta
-
-from framework.celery_tasks import app as celery_app
+from framework.celery_tasks import app as celery_app, handlers
 from framework.celery_tasks.utils import logged
 from framework.exceptions import HTTPError
 from framework import sentry
@@ -30,15 +27,14 @@ from website.archiver import (
 )
 from website.archiver import utils
 from website.archiver.utils import normalize_unicode_filenames
+from website.archiver import utils as archiver_utils
 from website.archiver import signals as archiver_signals
 
 from scripts.check_manual_restart_approval import delayed_manual_restart_approval
 
-from website.project import signals as project_signals
 from website import settings
 from website.app import init_addons
 
-from osf.models.admin_log_entry import AdminLogEntry, MANUAL_ARCHIVE_RESTART
 from osf.models import (
     ArchiveJob,
     AbstractNode,
@@ -87,18 +83,52 @@ class ArchiverTask(celery.Task):
     max_retries = 0
     ignore_result = False
 
+    def load_archive_job(self, job_pk, retry_if_missing=True, task_id=None, kwargs=None):
+        """Load an ArchiveJob and optionally retry bound tasks if row is missing."""
+        job = ArchiveJob.load(job_pk)
+        if job:
+            return job
+
+        request = getattr(self, 'request', None)
+        request_kwargs = kwargs or getattr(request, 'kwargs', None) or {}
+        context = {
+            'job_pk': job_pk,
+            'registration_id': request_kwargs.get('dst_pk'),
+            'task_id': task_id or getattr(request, 'id', None),
+            'task_name': self.name,
+            'retries': getattr(request, 'retries', None),
+            'max_retries': self.max_retries,
+        }
+        should_retry = (
+            retry_if_missing
+            and context['retries'] is not None
+            and context['max_retries'] is not None
+            and context['retries'] < context['max_retries']
+        )
+        context['should_retry'] = should_retry
+
+        error = ArchiverStateError({
+            'error': 'ArchiveJob not found',
+            **context,
+        })
+        if should_retry:
+            raise self.retry(exc=error)
+
+        sentry.log_message(
+            f'ArchiveJob {job_pk} not found during archiver task execution',
+            extra_data=context,
+        )
+        sentry.log_exception(error)
+        raise error
+
     def on_failure(self, exc, task_id, args, kwargs, einfo):
-        job = ArchiveJob.load(kwargs.get('job_pk'))
-        compact_traceback = utils.compact_traceback(einfo)
-        if not job:
-            archiver_state_exc = ArchiverStateError({
-                'exception': exc,
-                'args': args,
-                'kwargs': kwargs,
-                'einfo': compact_traceback,
-            })
-            sentry.log_exception(archiver_state_exc)
-            raise archiver_state_exc
+        job_pk = kwargs.get('job_pk')
+        job = self.load_archive_job(job_pk, retry_if_missing=False, task_id=task_id, kwargs=kwargs)
+        compact_traceback = utils.compact_traceback(
+            einfo,
+            max_lines=20,
+            max_chars=3000,
+        )
 
         if job.status == ARCHIVER_FAILURE:
             # already captured
@@ -161,9 +191,15 @@ def get_addon_from_gv(src_node, addon_name, requesting_user):
     )
 
 
-@celery_app.task(base=ArchiverTask, ignore_result=False)
+@celery_app.task(
+    bind=True,
+    base=ArchiverTask,
+    ignore_result=False,
+    max_retries=3,
+    default_retry_delay=60,
+)
 @logged('stat_addon')
-def stat_addon(addon_short_name, job_pk):
+def stat_addon(self, addon_short_name, job_pk):
     """Collect metadata about the file tree of a given addon
 
     :param addon_short_name: AddonConfig.short_name of the addon to be examined
@@ -178,7 +214,7 @@ def stat_addon(addon_short_name, job_pk):
         addon_name = 'dataverse'
         version = 'latest' if addon_short_name.split('-')[-1] == 'draft' else 'latest-published'
     create_app_context()
-    job = ArchiveJob.load(job_pk)
+    job = self.load_archive_job(job_pk)
     src, dst, user = job.info()
 
     src_addon = None
@@ -206,24 +242,43 @@ def stat_addon(addon_short_name, job_pk):
     return result
 
 
-@celery_app.task(base=ArchiverTask, ignore_result=False)
+@celery_app.task(
+    bind=True,
+    base=ArchiverTask,
+    ignore_result=False,
+    max_retries=3,
+    default_retry_delay=60,
+)
 @logged('make_copy_request')
-def make_copy_request(job_pk, url, data):
+def make_copy_request(self, params, job_pk):
     """Make the copy request to the WaterButler API and handle
     successful and failed responses
 
+    :param params: dict returned by archive_addon containing addon_short_name, url, and data
     :param job_pk: primary key of ArchiveJob
-    :param url: URL to send request to
-    :param data: <dict> of setting to send in POST to WaterButler API
     :return: None
     """
     create_app_context()
-    job = ArchiveJob.load(job_pk)
+    job = self.load_archive_job(job_pk)
     src, dst, user = job.info()
+    addon_short_name = params['addon_short_name']
+    url = params['url']
+    data = params['data']
     logger.info(f"Sending copy request for addon: {data['provider']} on node: {dst._id}")
     cookie = furl(url).query.params.get('cookie')
-    res = requests.post(url, data=json.dumps(data), cookies={settings.COOKIE_NAME: cookie})
+    try:
+        res = requests.post(
+            url,
+            data=json.dumps(data),
+            cookies={settings.COOKIE_NAME: cookie},
+            timeout=settings.EXTERNAL_REQUEST_TIMEOUT,
+        )
+    except requests.RequestException as exc:
+        job.update_target(addon_short_name, ARCHIVER_FAILURE, errors=[str(exc)])
+        raise
+
     if res.status_code not in (http_status.HTTP_200_OK, http_status.HTTP_201_CREATED, http_status.HTTP_202_ACCEPTED):
+        job.update_target(addon_short_name, ARCHIVER_FAILURE, errors=[res.text or f'WaterButler request failed with status {res.status_code}'])
         raise HTTPError(res.status_code)
 
 def make_waterbutler_payload(dst_id, rename):
@@ -235,9 +290,15 @@ def make_waterbutler_payload(dst_id, rename):
         'provider': settings.ARCHIVE_PROVIDER,
     }
 
-@celery_app.task(base=ArchiverTask, ignore_result=False)
+@celery_app.task(
+    bind=True,
+    base=ArchiverTask,
+    ignore_result=False,
+    max_retries=3,
+    default_retry_delay=60,
+)
 @logged('archive_addon')
-def archive_addon(addon_short_name, job_pk):
+def archive_addon(self, addon_short_name, job_pk):
     """Archive the contents of an addon by making a copy request to the
     WaterButler API
 
@@ -246,7 +307,7 @@ def archive_addon(addon_short_name, job_pk):
     :return: None
     """
     create_app_context()
-    job = ArchiveJob.load(job_pk)
+    job = self.load_archive_job(job_pk)
     src, dst, user = job.info()
     logger.info(f'Archiving addon: {addon_short_name} on node: {src._id}')
 
@@ -272,11 +333,21 @@ def archive_addon(addon_short_name, job_pk):
     rename = f'{folder_name_nfd}{rename_suffix}'
     url = waterbutler_api_url_for(src._id, addon_short_name, _internal=True, base_url=src.osfstorage_region.waterbutler_url, **params)
     data = make_waterbutler_payload(dst._id, rename)
-    make_copy_request.delay(job_pk=job_pk, url=url, data=data)
+    return {
+        'addon_short_name': addon_short_name,
+        'url': url,
+        'data': data,
+    }
 
-@celery_app.task(base=ArchiverTask, ignore_result=False)
+@celery_app.task(
+    bind=True,
+    base=ArchiverTask,
+    ignore_result=False,
+    max_retries=3,
+    default_retry_delay=60,
+)
 @logged('archive_node')
-def archive_node(stat_results, job_pk):
+def archive_node(self, stat_results, job_pk):
     """First use the results of #stat_node to check disk usage of the
     initiated registration, then either fail the registration or
     create a celery.group group of subtasks to archive addons
@@ -286,7 +357,7 @@ def archive_node(stat_results, job_pk):
     :return: None
     """
     create_app_context()
-    job = ArchiveJob.load(job_pk)
+    job = self.load_archive_job(job_pk)
     src, dst, user = job.info()
     logger.info(f'Archiving node: {src._id}')
 
@@ -303,15 +374,38 @@ def archive_node(stat_results, job_pk):
         if not stat_result.targets:
             job.status = ARCHIVER_SUCCESS
             job.save()
+
+        addon_tasks = []
         for result in stat_result.targets:
             if not result['num_files']:
                 job.update_target(result['target_name'], ARCHIVER_SUCCESS)
             else:
-                archive_addon.delay(
-                    addon_short_name=result['target_name'],
-                    job_pk=job_pk
+                addon_tasks.append(
+                    celery.chain(
+                        [
+                            archive_addon.si(
+                                addon_short_name=result['target_name'],
+                                job_pk=job_pk,
+                            ),
+                            make_copy_request.s(
+                                job_pk=job_pk,
+                            ),
+                        ]
+                    )
                 )
-        project_signals.archive_callback.send(dst)
+
+        if not addon_tasks:
+            handlers.enqueue_task(archive_callback.si(dst_id=dst._id))
+            return
+
+        handlers.enqueue_task(
+            celery.chain(
+                [
+                    celery.group(addon_tasks),
+                    archive_callback.si(dst_id=dst._id),
+                ]
+            )
+        )
 
 
 def archive(job_pk):
@@ -381,27 +475,13 @@ def archive_success(self, dst_pk, job_pk):
         )
         self.retry(exc=err)
 
-    job = ArchiveJob.load(job_pk)
+    job = self.load_archive_job(job_pk)
     if not job.sent:
         job.sent = True
         job.save()
         dst.sanction.ask(dst.get_active_contributors_recursive(unique_users=True))
 
-    if was_manually_restarted(dst):
-        logger.info(f'Registration {dst._id} was manually restarted, scheduling approval check')
-        delayed_manual_restart_approval.delay(dst._id, delay_minutes=5)
-
     dst.update_search()
-
-
-def was_manually_restarted(registration):
-    recent_logs = AdminLogEntry.objects.filter(
-        object_id=registration.pk,
-        action_flag=MANUAL_ARCHIVE_RESTART,
-        action_time__gte=timezone.now() - timedelta(hours=48)
-    )
-
-    return recent_logs.exists()
 
 
 @celery_app.task(bind=True)
@@ -424,9 +504,40 @@ def force_archive(self, registration_id, permissible_addons, allow_unconfigured=
             skip_collisions=skip_collisions,
             delete_collisions=delete_collisions,
         )
+
+        logger.info(f'Registration {registration._id} was manually restarted, scheduling approval check')
+        delayed_manual_restart_approval.delay(registration._id, delay_minutes=5)
+
         return f'Registration {registration_id} archive completed'
 
     except Exception as exc:
         sentry.log_message(f'Archive task failed for {registration_id}: {exc}')
         sentry.log_exception(exc)
         return f'{exc.__class__.__name__}: {str(exc)}'
+
+
+@celery_app.task
+@logged('archive_callback')
+def archive_callback(dst_id):
+    """Blinker task for updates to the archive task. When the tree of ArchiveJob
+    instances is complete, proceed to send success or failure mails
+
+    :param dst: registration Node
+    """
+    dst = Registration.load(dst_id)
+    root = dst.root
+    root_job = root.archive_job
+    if not root_job.archive_tree_finished():
+        return
+    if root_job.sent:
+        return
+    if root_job.success:
+        archive_success.delay(dst_pk=root._id, job_pk=root_job._id)
+    else:
+        archiver_utils.handle_archive_fail(
+            ARCHIVER_UNCAUGHT_ERROR,
+            root.registered_from,
+            root,
+            root.registered_user,
+            dst.archive_job.target_info(),
+        )

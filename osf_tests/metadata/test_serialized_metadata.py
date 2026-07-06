@@ -8,9 +8,10 @@ from osf import models as osfdb
 from osf.metadata.osf_gathering import OsfmapPartition
 from osf.metadata.rdfutils import OSF, DCTERMS
 from osf.metadata.tools import pls_gather_metadata_file
-from osf.metrics.reports import PublicItemUsageReport
+from osf.metrics.monthly_reports import MonthlyPublicItemUsageReport
 from osf.metrics.utils import YearMonth
 from osf.models.licenses import NodeLicense
+from osf.models.nodelog import NodeLog
 from api_tests.utils import create_test_file
 from osf_tests import factories
 from osf_tests.metadata._utils import assert_equivalent_turtle
@@ -204,12 +205,14 @@ class TestSerializers(OsfTestCase):
         super().setUp()
         # patch auto-generated fields into predictable values
         osfguid_sequence = OsfguidSequence('wibble')
+        _nodelog_date_field = NodeLog._meta.get_field('date')
         for patcher in (
             mock.patch('osf.models.base.generate_guid', new=osfguid_sequence),
             mock.patch('osf.models.base.Guid.objects.get_or_create', new=osfguid_sequence.get_or_create),
             mock.patch('django.utils.timezone.now', new=forever_now),
             mock.patch('osf.models.mixins.timezone.now', new=forever_now),
             mock.patch('osf.models.nodelog.timezone.now', new=forever_now),
+            mock.patch.dict(_nodelog_date_field.__dict__, {'_get_default': forever_now}),
             mock.patch('osf.models.metaschema.RegistrationSchema.absolute_api_v2_url', new='http://fake.example/schema/for/test'),
             mock.patch('osf.models.node.Node.get_verified_links', return_value=[
                 {'target_url': 'https://foo.bar', 'resource_type': 'Other'}
@@ -311,14 +314,14 @@ class TestSerializers(OsfTestCase):
             'resource_type_general': 'StudyRegistration',
         }, auth=self.user)
         self.enterContext(mock.patch(
-            'osf.metrics.reports.PublicItemUsageReport.for_last_month',
-            return_value=PublicItemUsageReport(
+            'osf.metrics.monthly_reports.MonthlyPublicItemUsageReport.from_last_month',
+            return_value=[MonthlyPublicItemUsageReport(
                 report_yearmonth=YearMonth.from_date(forever_now()),
                 view_count=7,
                 view_session_count=5,
                 download_count=3,
                 download_session_count=2,
-            ),
+            )],
         ))
         self.guid_dict = {
             OSF.Project: self.project._id,

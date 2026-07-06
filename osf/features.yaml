@@ -93,11 +93,6 @@ switches:
     name: enable_inactive_schemas
     note: This is no longer used
 
-  - flag_name: COUNTEDUSAGE_UNIFIED_METRICS_2024
-    name: countedusage_unified_metrics_2024
-    note: use only `osf.metrics.counted_usage`-based metrics where possible; un-use PageCounter, PreprintView, PreprintDownload, etc
-    active: false
-
   - flag_name: ENABLE_MAILHOG
     name: enable_mailhog
     note: This is used to enable the MailHog email testing service, this will allow emails to be sent to the
@@ -117,4 +112,4 @@ switches:
   - flag_name: COLLECTION_SUBMISSION_WITH_CEDAR
     name: collection_submission_with_cedar
     note: When active, enforces that objects submitted to a collection have a CEDAR metadata record matching the provider's required_metadata_template.
-    active: false
+    active: true

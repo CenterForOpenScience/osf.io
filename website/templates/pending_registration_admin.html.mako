@@ -32,7 +32,7 @@
     To cancel this registration: <a href="${disapproval_link}">Click here</a>.
     </p>
     <p>
-    % if not reviewable_provider__id != 'gfs':
+    % if reviewable_provider__id != 'gfs':
         Note: If any admin clicks their cancel link, the submission will be canceled immediately, and the
         pending registration will be reverted to draft state to revise and resubmit. This operation is irreversible.
     % else:

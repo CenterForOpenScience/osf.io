@@ -833,7 +833,8 @@ class TestCollectionSubmissionWithCedarRecord:
             },
             'identifier': {}
         }
-        with mock.patch('api.share.utils.pls_send_trove_record'):
+        with mock.patch('api.share.utils.pls_send_trove_record'), \
+                mock.patch('api.share.utils.share_update_cedar_metadata_record'):
             record = CedarMetadataRecord.objects.create(
                 guid=unmoderated_collection_submission_public.guid,
                 template=cedar_template,
@@ -873,12 +874,12 @@ class TestCollectionSubmissionWithCedarRecord:
             with mock.patch('api.share.utils._shtrove_cedar_record_identifier') as mock_identifier:
                 unmoderated_collection_submission_public.save()
                 mock_identifier.assert_called_with(
-                    to_create_record._id,
+                    to_create_record.guid._id,
                     to_create_record.template.cedar_id
                 )
                 assert (
-                    _shtrove_cedar_record_identifier(to_create_record._id, to_create_record.template.cedar_id) ==
-                    f'{to_create_record._id}/CedarMetadataRecord:http26'
+                    _shtrove_cedar_record_identifier(to_create_record.guid._id, to_create_record.template.cedar_id) ==
+                    f'{to_create_record.guid._id}/CedarMetadataRecord:http26'
                 )
 
     @mock.patch('api.share.utils.pls_send_trove_record')
@@ -896,10 +897,10 @@ class TestCollectionSubmissionWithCedarRecord:
         with mock.patch('api.share.utils.requests.delete'):
             with mock.patch('api.share.utils._shtrove_cedar_record_identifier') as mock_identifier:
                 unmoderated_collection_submission_public.save()
-                mock_identifier.assert_called_with(to_delete_record._id, to_delete_record.template.cedar_id)
+                mock_identifier.assert_called_with(to_delete_record.guid._id, to_delete_record.template.cedar_id)
                 assert (
-                    _shtrove_cedar_record_identifier(to_delete_record._id, to_delete_record.template.cedar_id) ==
-                    f'{to_delete_record._id}/CedarMetadataRecord:http25'
+                    _shtrove_cedar_record_identifier(to_delete_record.guid._id, to_delete_record.template.cedar_id) ==
+                    f'{to_delete_record.guid._id}/CedarMetadataRecord:http25'
                 )
 
     @mock.patch('api.share.utils.share_update_cedar_metadata_record')

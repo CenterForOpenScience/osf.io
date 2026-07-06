@@ -21,6 +21,7 @@ from framework.analytics import increment_user_activity_counters
 from framework.exceptions import PermissionsError
 from osf.exceptions import (
     InvalidTriggerError,
+    NodeStateError,
     ValidationValueError,
     UserStateError,
     UserNotAffiliatedError,
@@ -1184,6 +1185,10 @@ class TaxonomizableMixin(models.Model):
 
         :return: None
         """
+        from osf.models import Registration, DraftRegistration
+        if isinstance(self, (Registration, DraftRegistration)) and not new_subjects:
+            raise NodeStateError('Registration must have at least one subject to be registered')
+
         if auth:
             self.check_subject_perms(auth, **kwargs)
         self.assert_subject_format(new_subjects, expect_list=True, error_msg='Expecting list of lists.')
@@ -1217,6 +1222,10 @@ class TaxonomizableMixin(models.Model):
 
         :return: None
         """
+        from osf.models import Registration, DraftRegistration
+        if isinstance(self, (Registration, DraftRegistration)) and not subjects_list:
+            raise NodeStateError('Registration must have at least one subject to be registered')
+
         self.check_subject_perms(auth, **kwargs)
         self.assert_subject_format(subjects_list, expect_list=True, error_msg='Expecting a list of subjects.')
         if subjects_list:
@@ -1796,7 +1805,7 @@ class ContributorMixin(models.Model):
                 contributor.save()
 
     # TODO: optimize me
-    def update_contributor(self, user, permission, visible, auth, save=False, skip_permission=False):
+    def update_contributor(self, user, permission, visible, auth, save=False, skip_permission=False, log=True):
         """ TODO: this method should be updated as a replacement for the main loop of
         Node#manage_contributors. Right now there are redundancies, but to avoid major
         feature creep this will not be included as this time.
@@ -1826,14 +1835,15 @@ class ContributorMixin(models.Model):
                 permissions_changed = {
                     user._id: permission
                 }
-                params = self.log_params
-                params['contributors'] = permissions_changed
-                self.add_log(
-                    action=self.log_class.PERMISSIONS_UPDATED,
-                    params=params,
-                    auth=auth,
-                    save=False
-                )
+                if log:
+                    params = self.log_params
+                    params['contributors'] = permissions_changed
+                    self.add_log(
+                        action=self.log_class.PERMISSIONS_UPDATED,
+                        params=params,
+                        auth=auth,
+                        save=False
+                    )
                 with transaction.atomic():
                     if [READ] in permissions_changed.values():
                         project_signals.write_permissions_revoked.send(self)

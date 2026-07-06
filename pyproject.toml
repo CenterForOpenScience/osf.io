@@ -1,8 +1,13 @@
 [tool.poetry]
 name = "osf-io"
-version = "26.9.0"
+version = "26.13.0"
 description = "The code for [https://osf.io](https://osf.io)."
-authors = ["Your Name <you@example.com>"]
+authors = [
+    "Brian J. Geiger <bgeiger@pobox.com>",
+    "Longze Chen <cslzchen@gmail.com>",
+    "Yuhuai Liu <yuhuai@cos.io>",
+    "Ostap Zherebetskyi <ozherebetskyi@exoft.net>",
+]
 license = "Apache License 2.0"
 readme = "README.md"
 packages = [{include = "osf"}]
@@ -31,9 +36,10 @@ Markupsafe = "2.1.5"
 blinker = "1.7.0"
 furl = "2.1.3"
 elasticsearch2 = "2.5.1"
-elasticsearch = "6.8.2" # max version to support elasticsearch6
-elasticsearch-dsl = "6.4.0" # max version to support elasticsearch6
-elastic-transport = "8.13.0"
+elasticsearch6= "6.8.2"
+elasticsearch6-dsl = "6.4.0"
+elasticsearch8 = "8.19.3"
+elastic-transport = "8.17.1"
 google-api-python-client = "2.123.0"
 google-auth = "2.29.0"
 Babel = "2.14.0"
@@ -90,7 +96,7 @@ datacite = "1.1.3"
 rdflib = "7.0.0"
 colorlog = "6.8.2"
 # Metrics
-django-elasticsearch-metrics = {git ="https://github.com/CenterForOpenScience/django-elasticsearch-metrics.git", rev = "f5b9312914154e213aa01731e934c593e3434269"} # branch is feature/pin-esdsl
+django-elasticsearch-metrics = {git ="https://github.com/CenterForOpenScience/django-elasticsearch-metrics.git", rev = "b5026b0878db738c7c62205819b72cdfbe1c2da6"}
 # Impact Metrics CSV Export
 djangorestframework-csv = "3.0.2"
 gevent = "24.2.1"

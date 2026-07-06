@@ -71,8 +71,7 @@ from api.requests.permissions import PreprintRequestPermission
 from api.requests.serializers import PreprintRequestSerializer, PreprintRequestCreateSerializer
 from api.requests.views import PreprintRequestMixin
 from api.subjects.views import BaseResourceSubjectsList, SubjectRelationshipBaseView
-from api.base.metrics import PreprintMetricsViewMixin
-from osf.metrics import PreprintDownload, PreprintView
+from api.base.metrics import UsageMetricsViewMixin
 
 
 class PreprintOldVersionsImmutableMixin:
@@ -172,7 +171,7 @@ class PreprintMixin(NodeMixin):
 
         return preprint
 
-class PreprintList(PreprintMetricsViewMixin, JSONAPIBaseView, generics.ListCreateAPIView, PreprintFilterMixin):
+class PreprintList(JSONAPIBaseView, generics.ListCreateAPIView, PreprintFilterMixin):
     """See [documentation for this endpoint](https://developer.osf.io/#operation/preprints_list).
     """
     # These permissions are not checked for the list of preprints, permissions handled by the query
@@ -194,10 +193,6 @@ class PreprintList(PreprintMetricsViewMixin, JSONAPIBaseView, generics.ListCreat
     ordering_fields = ('created', 'date_last_transitioned')
     view_category = 'preprints'
     view_name = 'preprint-list'
-    metric_map = {
-        'downloads': PreprintDownload,
-        'views': PreprintView,
-    }
 
     def get_serializer_class(self):
         if self.request.method == 'POST':
@@ -208,38 +203,15 @@ class PreprintList(PreprintMetricsViewMixin, JSONAPIBaseView, generics.ListCreat
     def get_default_queryset(self):
         auth = get_user_auth(self.request)
         auth_user = getattr(auth, 'user', None)
-
         # Permissions on the list objects are handled by the query
-        public_only = self.metrics_requested
-        queryset = self.preprints_queryset(Preprint.objects.all(), auth_user, public_only=public_only)
-        # Use get_metrics_queryset to return a queryset with annotated metrics
-        # iff ?metrics query param is present
-        if self.metrics_requested:
-            return self.get_metrics_queryset(queryset)
-        else:
-            return queryset
+        return self.preprints_queryset(Preprint.objects.all(), auth_user)
 
     # overrides ListAPIView
     def get_queryset(self):
         return self.get_queryset_from_request()
 
-    # overrides PreprintMetricsViewMixin
-    def get_annotated_queryset_with_metrics(self, queryset, metric_class, metric_name, after):
-        return metric_class.get_top_by_count(
-            qs=queryset,
-            model_field='guids___id',
-            metric_field='preprint_id',
-            annotation=metric_name,
-            after=after,
-            # Limit the bucket size
-            # of the ES aggregation. Otherwise,
-            # the number of buckets == the number of total preprints,
-            # which is too many for ES to handle
-            size=200,
-        )
 
-
-class PreprintVersionsList(PreprintMetricsViewMixin, JSONAPIBaseView, generics.ListCreateAPIView, PreprintFilterMixin):
+class PreprintVersionsList(JSONAPIBaseView, generics.ListCreateAPIView, PreprintFilterMixin):
     """List existing versions of a preprint or create a new version.
 
     GET: Returns a collection of preprint resources representing all versions of the given preprint.
@@ -265,10 +237,6 @@ class PreprintVersionsList(PreprintMetricsViewMixin, JSONAPIBaseView, generics.L
     ordering_fields = ('created', 'date_last_transitioned')
     view_category = 'preprints'
     view_name = 'preprint-versions'
-    metric_map = {
-        'downloads': PreprintDownload,
-        'views': PreprintView,
-    }
 
     def get_serializer_class(self):
         if self.request.method == 'POST':
@@ -288,8 +256,7 @@ class PreprintVersionsList(PreprintMetricsViewMixin, JSONAPIBaseView, generics.L
         auth_user = getattr(auth, 'user', None)
 
         # Permissions on the list objects are handled by the query
-        public_only = self.metrics_requested
-        qs = qs.filter(Preprint.objects.preprint_versions_permissions_query(auth_user, public_only=public_only))
+        qs = qs.filter(Preprint.objects.preprint_versions_permissions_query(auth_user))
 
         return qs
 
@@ -299,7 +266,7 @@ class PreprintVersionsList(PreprintMetricsViewMixin, JSONAPIBaseView, generics.L
         return super().create(request, *args, **kwargs)
 
 
-class PreprintDetail(PreprintOldVersionsImmutableMixin, PreprintMetricsViewMixin, JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, PreprintMixin, WaterButlerMixin):
+class PreprintDetail(PreprintOldVersionsImmutableMixin, UsageMetricsViewMixin, JSONAPIBaseView, generics.RetrieveUpdateAPIView, PreprintMixin, WaterButlerMixin):
     """See [documentation for this endpoint](https://developer.osf.io/#operation/preprints_read).
 
     Note: The resource now exposes a `versions` relationship pointing to
@@ -324,15 +291,6 @@ class PreprintDetail(PreprintOldVersionsImmutableMixin, PreprintMetricsViewMixin
 
     view_category = 'preprints'
     view_name = 'preprint-detail'
-    metric_map = {
-        'downloads': PreprintDownload,
-        'views': PreprintView,
-    }
-
-    def add_metric_to_object(self, obj, metric_class, metric_name, after):
-        count = metric_class.get_count_for_preprint(obj, after=after)
-        setattr(obj, metric_name, count)
-        return obj
 
     def get_object(self):
         preprint = self.get_preprint()
@@ -348,12 +306,6 @@ class PreprintDetail(PreprintOldVersionsImmutableMixin, PreprintMetricsViewMixin
         res = super().get_parser_context(http_request)
         res['legacy_type_allowed'] = True
         return res
-
-    def delete(self, request, *args, **kwargs):
-        if self.get_preprint().machine_state in ['initial', 'rejected']:
-            return super().delete(request, *args, **kwargs)
-
-        raise ValidationError('You cannot delete created preprint')
 
 class PreprintNodeRelationship(PreprintOldVersionsImmutableMixin, JSONAPIBaseView, generics.RetrieveUpdateAPIView, PreprintMixin):
     permission_classes = (

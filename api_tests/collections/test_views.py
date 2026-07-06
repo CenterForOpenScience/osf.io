@@ -10,6 +10,7 @@ from api_tests.share._utils import mock_update_share
 from api_tests.subjects.mixins import UpdateSubjectsMixin, SubjectsFilterMixin, SubjectsListMixin, \
     SubjectsRelationshipMixin
 from api_tests.utils import disconnected_from_listeners
+from tests.utils import capture_notifications
 from framework.auth.core import Auth
 from osf import features
 from osf.models import Collection, VersionedGuidMixin
@@ -4450,16 +4451,70 @@ class TestCollectionSubmissionWithCedarSwitch:
                 )
         assert res.status_code == 201
 
-    def test_switch_active_missing_cedar_record_submission_fails(self, app, user_one, project, url, payload):
-        with override_switch(features.COLLECTION_SUBMISSION_WITH_CEDAR, active=True):
-            res = app.post_json_api(
-                url,
-                payload(guid=project._id),
-                auth=user_one.auth,
-                expect_errors=True,
-            )
+    def test_switch_active_submission_without_cedar_record_fails(
+            self, app, user_one, project, url, payload, cedar_template):
+        with capture_notifications(expect_none=True):
+            with mock_update_share():
+                with override_switch(features.COLLECTION_SUBMISSION_WITH_CEDAR, active=True):
+                    res = app.post_json_api(
+                        url,
+                        payload(guid=project._id),
+                        auth=user_one.auth,
+                        expect_errors=True,
+                    )
         assert res.status_code == 400
-        assert 'CEDAR metadata record' in res.json['errors'][0]['detail']
+
+    def test_switch_active_submission_with_cedar_record_succeeds(
+            self, app, user_one, project, url, payload, cedar_template):
+        from osf.models import CedarMetadataRecord
+        CedarMetadataRecord.objects.create(
+            guid=project.guids.first(),
+            template=cedar_template,
+            metadata={'title': 'Test'},
+            is_published=True,
+        )
+        with capture_notifications():
+            with mock_update_share():
+                with override_switch(features.COLLECTION_SUBMISSION_WITH_CEDAR, active=True):
+                    res = app.post_json_api(
+                        url,
+                        payload(guid=project._id),
+                        auth=user_one.auth,
+                    )
+        assert res.status_code == 201
+
+    def test_switch_inactive_submission_without_cedar_record_succeeds(
+            self, app, user_one, project, url, payload, cedar_template):
+        with capture_notifications():
+            with mock_update_share():
+                with override_switch(features.COLLECTION_SUBMISSION_WITH_CEDAR, active=False):
+                    res = app.post_json_api(url, payload(guid=project._id), auth=user_one.auth)
+        assert res.status_code == 201
+
+    def test_switch_active_update_does_not_alter_cedar_record(
+            self, app, user_one, project, url, payload, cedar_template, collection):
+        from osf.models import CedarMetadataRecord
+        original_metadata = {'title': 'Original'}
+        CedarMetadataRecord.objects.create(
+            guid=project.guids.first(),
+            template=cedar_template,
+            metadata=original_metadata,
+            is_published=True,
+        )
+        collection.status_choices = ['pending', 'approved']
+        collection.save()
+        with capture_notifications():
+            with mock_update_share():
+                with override_switch(features.COLLECTION_SUBMISSION_WITH_CEDAR, active=True):
+                    res = app.post_json_api(url, payload(guid=project._id, status='pending'), auth=user_one.auth)
+        assert res.status_code == 201
+
+        detail_url = f'/{API_BASE}collections/{collection._id}/collected_metadata/{project._id}/'
+        with override_switch(features.COLLECTION_SUBMISSION_WITH_CEDAR, active=True):
+            app.patch_json_api(detail_url, payload(status='approved'), auth=user_one.auth)
+
+        record = CedarMetadataRecord.objects.get(guid__in=project.guids.all(), template=cedar_template)
+        assert record.metadata == original_metadata
 
 
 class TestCollectedMetaSubjectFiltering(SubjectsFilterMixin):
