@@ -2,12 +2,15 @@ import logging
 import pytest
 import requests
 from http import HTTPStatus
+from waffle.testutils import override_flag
 
+from osf import features
 from osf.external.gravy_valet import (
     auth_helpers as gv_auth,
     translations,
     request_helpers as gv_requests
 )
+from osf.utils import permissions as osf_permissions
 from osf_tests import factories
 from osf_tests.external.gravy_valet import gv_fakes
 from website.settings import GRAVYVALET_URL
@@ -550,3 +553,46 @@ class TestEphemeralSettings:
                 'folder': fake_box_addon.root_folder.split(':')[1],
                 'service': 'box'
             }
+
+
+@pytest.mark.django_db
+class TestMakePermissionsHeadersProjectReadOnly:
+
+    @pytest.fixture
+    def contributor(self):
+        return factories.AuthUserFactory()
+
+    @pytest.fixture
+    def project(self, contributor):
+        return factories.ProjectFactory(creator=contributor)
+
+    def test_write_permissions_stripped_when_project_read_only_active(self, contributor, project):
+        with override_flag(features.PROJECT_READ_ONLY, active=True):
+            headers = gv_auth.make_permissions_headers(
+                requesting_user=contributor,
+                requested_resource=project,
+            )
+        permissions = headers[gv_auth.PERMISSIONS_HEADER].split(';')
+        assert osf_permissions.WRITE not in permissions
+        assert osf_permissions.ADMIN not in permissions
+        assert osf_permissions.READ in permissions
+
+    def test_admin_permissions_stripped_when_project_read_only_active(self, contributor, project):
+        with override_flag(features.PROJECT_READ_ONLY, active=True):
+            headers = gv_auth.make_permissions_headers(
+                requesting_user=contributor,
+                requested_resource=project,
+            )
+        permissions = headers[gv_auth.PERMISSIONS_HEADER].split(';')
+        assert osf_permissions.ADMIN not in permissions
+
+    def test_permissions_not_stripped_when_project_read_only_inactive(self, contributor, project):
+        with override_flag(features.PROJECT_READ_ONLY, active=False):
+            headers = gv_auth.make_permissions_headers(
+                requesting_user=contributor,
+                requested_resource=project,
+            )
+        permissions = headers[gv_auth.PERMISSIONS_HEADER].split(';')
+        assert osf_permissions.WRITE in permissions
+        assert osf_permissions.ADMIN in permissions
+        assert osf_permissions.READ in permissions

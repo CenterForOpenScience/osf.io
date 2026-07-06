@@ -6,8 +6,11 @@ import re
 import urllib
 from typing import TYPE_CHECKING
 from django.utils import timezone
+import waffle
 
+from osf import features
 from osf.utils import permissions as osf_permissions
+from osf.utils.requests import get_current_request
 from website import settings
 
 if TYPE_CHECKING:
@@ -72,6 +75,12 @@ def make_permissions_headers(
             user_permissions = ';'.join(requested_resource.get_permissions(requesting_user))
         if (not requesting_user or not user_permissions) and requested_resource.is_public:
             user_permissions = osf_permissions.READ
+        if waffle.flag_is_active(get_current_request(), features.PROJECT_READ_ONLY):
+            # strip write/admin to prevent addon connections
+            user_permissions = ';'.join(
+                p for p in user_permissions.split(';')
+                if p not in (osf_permissions.WRITE, osf_permissions.ADMIN)
+            )
         osf_permissions_headers[PERMISSIONS_HEADER] = user_permissions
     if auth and auth.private_link and auth.private_link.nodes.contains(requested_resource):
         user_permissions = osf_permissions.READ

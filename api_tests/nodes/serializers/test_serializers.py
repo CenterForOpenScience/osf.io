@@ -1,6 +1,9 @@
 from dateutil.parser import parse as parse_date
 import pytest
 from urllib.parse import urlparse
+from waffle.testutils import override_flag
+from osf import features
+from osf.utils import permissions as osf_permissions
 
 from api.base.settings.defaults import API_BASE
 from api.nodes.serializers import NodeSerializer
@@ -236,3 +239,35 @@ class TestSparseRegistrationSerializer:
         assert 'forked_from' not in relationships
         assert 'sparse' not in relationships['detail']['links']['related']['href']
         assert 'sparse' in relationships['children']['links']['related']['href']
+
+
+@pytest.mark.django_db
+class TestGetCurrentUserPermissionsProjectReadOnly:
+
+    @pytest.fixture
+    def contributor(self):
+        return AuthUserFactory()
+
+    @pytest.fixture
+    def project(self, contributor):
+        return ProjectFactory(creator=contributor)
+
+    def test_write_and_admin_stripped_when_project_read_only_active(self, contributor, project):
+        request = make_drf_request_with_version(version='2.0')
+        request.user = contributor
+        with override_flag(features.PROJECT_READ_ONLY, active=True):
+            serializer = NodeSerializer(project, context={'request': request})
+            perms = serializer.get_current_user_permissions(project)
+        assert osf_permissions.WRITE not in perms
+        assert osf_permissions.ADMIN not in perms
+        assert osf_permissions.READ in perms
+
+    def test_permissions_not_stripped_when_project_read_only_inactive(self, contributor, project):
+        request = make_drf_request_with_version(version='2.0')
+        request.user = contributor
+        with override_flag(features.PROJECT_READ_ONLY, active=False):
+            serializer = NodeSerializer(project, context={'request': request})
+            perms = serializer.get_current_user_permissions(project)
+        assert osf_permissions.WRITE in perms
+        assert osf_permissions.ADMIN in perms
+        assert osf_permissions.READ in perms
