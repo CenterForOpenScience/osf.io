@@ -217,6 +217,22 @@
                     </nav>
                 </form>
             </section>
+            <section>
+                <h4><u>Update ROR funder names to be consistent and proper.</u></h4>
+                <p>
+                    Take a csv file of <code>ROR ID</code>, <code>ROR
+                    Name</code> (without column headers) and update
+                    all ROR funder entries to use the same name for a
+                    given id.
+                </p>
+                <form method="post"
+                      action="{% url 'management:migrate_funder_names_to_ror'%}">
+                    {% csrf_token %}
+                    <nav>
+                        <input class="btn btn-success" type="submit" value="Run" />
+                    </nav>
+                </form>
+            </section>
         </div>
     </section>
 {% endblock %}
