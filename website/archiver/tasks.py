@@ -7,9 +7,6 @@ from rest_framework import status as http_status
 import celery
 from celery.utils.log import get_task_logger
 
-from django.utils import timezone
-from datetime import timedelta
-
 from framework.celery_tasks import app as celery_app
 from framework.celery_tasks.utils import logged
 from framework.exceptions import HTTPError
@@ -38,7 +35,6 @@ from website.project import signals as project_signals
 from website import settings
 from website.app import init_addons
 
-from osf.models.admin_log_entry import AdminLogEntry, MANUAL_ARCHIVE_RESTART
 from osf.models import (
     ArchiveJob,
     AbstractNode,
@@ -445,21 +441,7 @@ def archive_success(self, dst_pk, job_pk):
         job.save()
         dst.sanction.ask(dst.get_active_contributors_recursive(unique_users=True))
 
-    if was_manually_restarted(dst):
-        logger.info(f'Registration {dst._id} was manually restarted, scheduling approval check')
-        delayed_manual_restart_approval.delay(dst._id, delay_minutes=5)
-
     dst.update_search()
-
-
-def was_manually_restarted(registration):
-    recent_logs = AdminLogEntry.objects.filter(
-        object_id=registration.pk,
-        action_flag=MANUAL_ARCHIVE_RESTART,
-        action_time__gte=timezone.now() - timedelta(hours=48)
-    )
-
-    return recent_logs.exists()
 
 
 @celery_app.task(bind=True)
@@ -482,6 +464,10 @@ def force_archive(self, registration_id, permissible_addons, allow_unconfigured=
             skip_collisions=skip_collisions,
             delete_collisions=delete_collisions,
         )
+
+        logger.info(f'Registration {registration._id} was manually restarted, scheduling approval check')
+        delayed_manual_restart_approval.delay(registration._id, delay_minutes=5)
+
         return f'Registration {registration_id} archive completed'
 
     except Exception as exc:

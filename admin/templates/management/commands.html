@@ -172,6 +172,16 @@
                 <form method="post"
                       action="{% url 'management:sync_notification_templates'%}">
                     {% csrf_token %}
+
+                    <label for="run_type">Select a command behavior:</label>
+                    <select id="run_type" name="run_type">
+                        <option value="">Default: Only upload new templates</option>
+                        <option value="restore_one">Restore specific template</option>
+                        <option value="restore_all">Restore all templates</option>
+                    </select><br>
+
+                    <label>Template name (when restoring one):</label> <input type="text" name="template_name"/><br>
+
                     <nav>
                         <input class="btn btn-success" type="submit" value="Run" />
                     </nav>
@@ -202,6 +212,22 @@
                     <label><input type="checkbox" name="no_counts"> no counts</label>
                     <label><input type="checkbox" name="delete_es8_usage_reports"> delete es8 usage reports (caution)</label>
                     <label><input type="checkbox" name="start"> start tasks (caution)</label>
+                    <nav>
+                        <input class="btn btn-success" type="submit" value="Run" />
+                    </nav>
+                </form>
+            </section>
+            <section>
+                <h4><u>Update ROR funder names to be consistent and proper.</u></h4>
+                <p>
+                    Take a csv file of <code>ROR ID</code>, <code>ROR
+                    Name</code> (without column headers) and update
+                    all ROR funder entries to use the same name for a
+                    given id.
+                </p>
+                <form method="post"
+                      action="{% url 'management:migrate_funder_names_to_ror'%}">
+                    {% csrf_token %}
                     <nav>
                         <input class="btn btn-success" type="submit" value="Run" />
                     </nav>

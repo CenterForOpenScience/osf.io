@@ -1,4 +1,5 @@
 import pytest
+from django.utils import timezone
 from django.contrib.contenttypes.models import ContentType
 
 from osf.models import Notification, NotificationType, NotificationTypeEnum, EmailTask, Email
@@ -186,6 +187,26 @@ class TestNotificationDigestTasks:
         assert user_info['user_id'] == user._id
         assert any(msg['notification_id'] == notification1.id for msg in user_info['info'])
 
+    def test_get_users_emails_ignore_scheduled(self):
+        user = AuthUserFactory()
+        notification_type = NotificationType.objects.get(name=NotificationTypeEnum.USER_FILE_UPDATED)
+        notification1 = Notification.objects.create(
+            subscription=add_notification_subscription(user, notification_type, 'daily'),
+            event_context={},
+            sent=None
+        )
+        Notification.objects.create(
+            subscription=add_notification_subscription(user, notification_type, 'daily'),
+            event_context={},
+            sent=None,
+            scheduled=timezone.now()
+        )
+        res = list(get_users_emails('daily'))
+        assert len(res) == 1
+        user_info = res[0]
+        assert user_info['user_id'] == user._id
+        assert any(msg['notification_id'] == notification1.id for msg in user_info['info'])
+
     def test_get_moderators_emails(self):
         user = AuthUserFactory()
         provider = RegistrationProviderFactory()
@@ -196,6 +217,30 @@ class TestNotificationDigestTasks:
             subscription=subscription,
             event_context={},
             sent=None
+        )
+        res = list(get_moderators_emails('daily'))
+        assert len(res) >= 1
+        entry = [
+            x for x in res if x['user_id'] == user._id and subscription.subscribed_object.id == reg.id
+        ]
+        assert entry, 'Expected moderator digest group'
+
+    def test_get_moderators_emails_ignore_scheduled(self):
+        user = AuthUserFactory()
+        provider = RegistrationProviderFactory()
+        reg = RegistrationFactory(provider=provider)
+        notification_type = NotificationType.objects.get(name=NotificationTypeEnum.PROVIDER_NEW_PENDING_SUBMISSIONS)
+        subscription = add_notification_subscription(user, notification_type, 'daily', subscribed_object=reg)
+        Notification.objects.create(
+            subscription=subscription,
+            event_context={},
+            sent=None
+        )
+        Notification.objects.create(
+            subscription=subscription,
+            event_context={},
+            sent=None,
+            scheduled=timezone.now()
         )
         res = list(get_moderators_emails('daily'))
         assert len(res) >= 1

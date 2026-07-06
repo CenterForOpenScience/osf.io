@@ -194,7 +194,17 @@ class EmptyMetadataDataarchiveRegistrationBulkResync(ManagementCommandPermission
 class SyncNotificationTemplates(ManagementCommandPermissionView):
 
     def post(self, request):
-        populate_notification_types()
+        run_type = request.POST.get('run_type')
+        if run_type == 'restore_one':
+            template_name = request.POST.get('template_name')
+            if not template_name:
+                messages.error(request, 'A template name must be specified when restoring one template. Check your inputs and try again')
+                return redirect(reverse('management:commands'))
+            populate_notification_types(restore_one=template_name)
+        elif run_type == 'restore_all':
+            populate_notification_types(restore_all=True)
+        else:
+            populate_notification_types()
         messages.success(request, 'Notification templates have been successfully synced.')
         return redirect(reverse('management:commands'))
 
@@ -217,6 +227,18 @@ class MigrateOsfmetricsFix6to8(ManagementCommandPermissionView):
         }
         _out_io = StringIO()
         call_command('migrate_osfmetrics_fix_6to8', **_command_kwargs, stdout=_out_io)
+        for _line in _out_io.getvalue().split('\n'):
+            messages.info(request, _line)
+        return redirect(reverse('management:commands'))
+
+
+class MigrateFunderNamesToRor(ManagementCommandPermissionView):
+
+    def post(self, request):
+        _command_kwargs = {}
+        _out_io = StringIO()
+        call_command('migrate_funder_names_to_ror', **_command_kwargs, stdout=_out_io)
+        messages.success(request, 'ROR funder names have been successfully updated and made consistent.')
         for _line in _out_io.getvalue().split('\n'):
             messages.info(request, _line)
         return redirect(reverse('management:commands'))

@@ -2,6 +2,12 @@
 
 We follow the CalVer (https://calver.org/) versioning scheme: YY.MINOR.MICRO.
 
+26.14.0 (2026-07-06)
+====================
+
+- Bug-fixes & improvements 26-9 release
+- ROR admin tool update
+
 26.13.0 (2026-07-01)
 ====================
 
