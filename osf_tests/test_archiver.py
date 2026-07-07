@@ -617,7 +617,6 @@ class TestArchiverTasks(ArchiverTestCase):
 
         mock_archive_callback.assert_not_called()
 
-    @mock.patch('website.archiver.tasks.handlers.enqueue_task')
     @mock.patch('website.archiver.tasks.archive_callback.si')
     @mock.patch('website.archiver.tasks.make_copy_request.s')
     @mock.patch('website.archiver.tasks.celery.chain')
@@ -630,7 +629,6 @@ class TestArchiverTasks(ArchiverTestCase):
         mock_chain,
         mock_make_copy_request_s,
         mock_archive_callback,
-        mock_enqueue_task,
     ):
         settings.MAX_ARCHIVE_SIZE = 1024 ** 3
         with mock.patch.object(BaseStorageAddon, '_get_file_tree') as mock_file_tree:
@@ -653,7 +651,6 @@ class TestArchiverTasks(ArchiverTestCase):
             mock_group.return_value,
             mock_archive_callback.return_value,
         ])
-        mock_enqueue_task.assert_called_once_with(mock_chain.return_value)
 
     @pytest.mark.usefixtures('mock_gravy_valet_get_verified_links')
     def test_archive_success(self):

@@ -7,7 +7,7 @@ from rest_framework import status as http_status
 import celery
 from celery.utils.log import get_task_logger
 
-from framework.celery_tasks import app as celery_app, handlers
+from framework.celery_tasks import app as celery_app
 from framework.celery_tasks.utils import logged
 from framework.exceptions import HTTPError
 from framework import sentry
@@ -395,16 +395,15 @@ def archive_node(self, stat_results, job_pk):
                 )
 
         if not addon_tasks:
-            handlers.enqueue_task(archive_callback.si(dst_id=dst._id))
-            return
+            return celery.chain([
+                archive_callback.si(dst_id=dst._id)
+            ])
 
-        handlers.enqueue_task(
-            celery.chain(
-                [
-                    celery.group(addon_tasks),
-                    archive_callback.si(dst_id=dst._id),
-                ]
-            )
+        return celery.chain(
+            [
+                celery.group(addon_tasks),
+                archive_callback.si(dst_id=dst._id),
+            ]
         )
 
 
