@@ -269,11 +269,25 @@ class TestGetChildrenHook(HookTestCase):
                 assert res.status_code == 200
                 assert len(res.json) == 2
                 assert {item['name'] for item in res.json} == {record.name, folder.name}
-                expected_keys = {'kind', 'name', 'path'}
+                expected_keys = {'kind', 'name', 'path', 'storage'}
                 if orm:
                     expected_keys.add('id')
                 for item in res.json:
                     assert set(item.keys()) == expected_keys
+                    if item['kind'] == 'file':
+                        assert item['storage'] == {
+                            'data': {
+                                'name': record.name,
+                                'path': record.versions.first().location_hash,
+                            },
+                            'settings': {
+                                storage_settings.WATERBUTLER_RESOURCE: record.versions.first().location[
+                                    storage_settings.WATERBUTLER_RESOURCE
+                                ],
+                            },
+                        }
+                    else:
+                        assert item['storage'] is None
                     if item['kind'] == 'file':
                         assert item['path'] == f'/{record._id}'
                         if orm:
