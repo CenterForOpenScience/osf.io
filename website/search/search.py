@@ -159,11 +159,3 @@ def delete_index(index):
 def create_index(index=None):
     index = index or settings.ELASTIC_INDEX
     search_engine.create_index(index=index)
-
-
-@requires_search
-def search_contributor(query, page=0, size=10, exclude=None, current_user=None):
-    exclude = exclude or []
-    result = search_engine.search_contributor(query=query, page=page, size=size,
-                                              exclude=exclude, current_user=current_user)
-    return result
