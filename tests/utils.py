@@ -139,7 +139,6 @@ def mock_archive(project, schema=None, auth=None, draft_registration=None, paren
     draft_registration.subjects.add(SubjectFactory())
 
     with mock.patch('framework.celery_tasks.handlers.enqueue_task'):
-        draft_registration.subjects.add(SubjectFactory())
         registration = draft_registration.register(auth=auth, save=True)
 
     if embargo:
