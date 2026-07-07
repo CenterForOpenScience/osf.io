@@ -181,7 +181,7 @@ class Registration(AbstractNode):
             is_public=True,
         ).exclude(
             moderation_state='withdrawn',
-        ).distinct()
+        )
 
     @staticmethod
     def find_doi_backlog():
