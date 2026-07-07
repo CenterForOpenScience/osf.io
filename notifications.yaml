@@ -801,3 +801,10 @@ notification_types:
     object_content_type_model_name: abstractnode
     template: 'website/templates/empty.html.mako'
     tests: []
+
+  - name: blank
+    subject: '{subject}'
+    __docs__: ...
+    object_content_type_model_name: osfuser
+    template: 'website/templates/blank.html.mako'
+    tests: []
