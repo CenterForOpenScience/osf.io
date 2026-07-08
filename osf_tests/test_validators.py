@@ -211,7 +211,7 @@ def test_has_domain_in_user_fields_fail(user_data):
             'given_name': 'Judith',
             'family_name': 'Preuss',
             'middle_names': 'osf.io',
-            'suffix' : 'M.Sc.',
+            'suffix': 'M.Sc.',
         },
     ]
 )
