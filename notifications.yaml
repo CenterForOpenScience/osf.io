@@ -803,7 +803,7 @@ notification_types:
     tests: []
 
   - name: blank
-    subject: '{subject}'
+    subject: 'PLACEHOLDER FOR EMAIL SUBJECT'
     __docs__: ...
     object_content_type_model_name: osfuser
     template: 'website/templates/blank.html.mako'
