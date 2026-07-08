@@ -1,8 +1,9 @@
 import logging
 import requests
 
-from osf.metrics import PreprintSummaryReport
 from website import settings
+from osf.metrics.daily_reports import DailyPreprintSummaryReport
+from osf.metrics.utils import cycle_coverage_date
 from ._base import DailyReporter
 
 logger = logging.getLogger(__name__)
@@ -44,17 +45,12 @@ class PreprintCountReporter(DailyReporter):
     def report(self, date):
         from osf.models import PreprintProvider
 
-        reports = []
         for preprint_provider in PreprintProvider.objects.all():
             elastic_query = get_elastic_query(date, preprint_provider)
             resp = requests.post(f'{settings.SHARE_URL}api/v2/search/creativeworks/_search', json=elastic_query).json()
-            reports.append(
-                PreprintSummaryReport(
-                    report_date=date,
-                    provider_key=preprint_provider._id,
-                    preprint_count=resp['hits']['total'],
-                )
-            )
-            logger.info('{} Preprints counted for the provider {}'.format(resp['hits']['total'], preprint_provider.name))
 
-        return reports
+            yield DailyPreprintSummaryReport(
+                cycle_coverage=cycle_coverage_date(date),
+                provider_key=preprint_provider._id,
+                preprint_count=resp['hits']['total'],
+            )

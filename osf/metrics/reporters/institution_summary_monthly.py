@@ -4,12 +4,11 @@ from django.db.models import Q, F, Sum, OuterRef, Exists
 from osf.models import Institution, Preprint, AbstractNode, FileVersion, NodeLog, PreprintLog
 from osf.models.spam import SpamStatus
 from addons.osfstorage.models import OsfStorageFile
-from osf.metrics.reports import InstitutionMonthlySummaryReport
+from osf.metrics.monthly_reports import MonthlyInstitutionSummaryReport
 from ._base import MonthlyReporter
 
-
 class InstitutionalSummaryMonthlyReporter(MonthlyReporter):
-    """Generate an InstitutionMonthlySummaryReport for each institution."""
+    """Generate a MonthlyInstitutionSummaryReport for each institution."""
 
     def iter_report_kwargs(self, continue_after: dict | None = None):
         _inst_qs = Institution.objects.order_by('pk')
@@ -19,20 +18,16 @@ class InstitutionalSummaryMonthlyReporter(MonthlyReporter):
             yield {'institution_pk': _pk}
 
     def report(self, **report_kwargs):
-        _institution = Institution.objects.get(pk=report_kwargs['institution_pk'])
-        return self.generate_report(_institution)
-
-    def generate_report(self, institution):
+        institution = Institution.objects.get(pk=report_kwargs['institution_pk'])
         node_queryset = institution.nodes.filter(
             deleted__isnull=True,
             created__lt=self.yearmonth.month_end()
         ).exclude(
             spam_status=SpamStatus.SPAM,
         )
-
         preprint_queryset = self.get_published_preprints(institution, self.yearmonth)
-
-        return InstitutionMonthlySummaryReport(
+        yield MonthlyInstitutionSummaryReport(
+            report_yearmonth=self.yearmonth,
             institution_id=institution._id,
             user_count=institution.get_institution_users().count(),
             private_project_count=self._get_count(node_queryset, 'osf.node', is_public=False),

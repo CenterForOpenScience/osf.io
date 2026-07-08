@@ -1,14 +1,25 @@
-import pytest
 from urllib.parse import urlparse
 
+import pytest
 from django.utils.timezone import now
+from waffle.testutils import override_switch
 
 from api.base.settings.defaults import API_BASE
 from api.taxonomies.serializers import subjects_as_relationships_version
-from api_tests.subjects.mixins import UpdateSubjectsMixin, SubjectsFilterMixin, SubjectsListMixin, SubjectsRelationshipMixin
+from api_tests.share._utils import mock_update_share
+from api_tests.subjects.mixins import UpdateSubjectsMixin, SubjectsFilterMixin, SubjectsListMixin, \
+    SubjectsRelationshipMixin
+from api_tests.utils import disconnected_from_listeners
+from tests.utils import capture_notifications
 from framework.auth.core import Auth
+from osf import features
+from osf.models import Collection, VersionedGuidMixin
+from osf.utils.permissions import ADMIN, WRITE, READ
+from osf.utils.sanitize import strip_html
 from osf_tests.factories import (
+    CedarMetadataTemplateFactory,
     CollectionFactory,
+    CollectionProviderFactory,
     NodeFactory,
     RegistrationFactory,
     PreprintFactory,
@@ -16,14 +27,8 @@ from osf_tests.factories import (
     AuthUserFactory,
     SubjectFactory,
 )
-from osf.models import Collection, VersionedGuidMixin
-from osf.utils.sanitize import strip_html
-from osf.utils.permissions import ADMIN, WRITE, READ
 from website.project.signals import contributor_removed
-from api_tests.utils import disconnected_from_listeners
-from api_tests.share._utils import mock_update_share
 from website.views import find_bookmark_collection
-
 
 url_collection_list = f'/{API_BASE}collections/'
 
@@ -4382,6 +4387,134 @@ class TestCollectionSubmissionList:
         res = app.get(f'{url.format(collection_with_three_collection_submission._id)}?filter[collected_type]=asdf', auth=user_one.auth)
         assert res.status_code == 200
         assert len(res.json['data']) == 1
+
+
+@pytest.mark.django_db
+class TestCollectionSubmissionWithCedarSwitch:
+
+    @pytest.fixture()
+    def cedar_template(self):
+        return CedarMetadataTemplateFactory(
+            schema_name='Test Schema',
+            cedar_id='https://cedar.example.com/template/1',
+            template_version=1,
+        )
+
+    @pytest.fixture()
+    def provider(self, cedar_template):
+        provider = CollectionProviderFactory()
+        provider.required_metadata_template = cedar_template
+        provider.save()
+        return provider
+
+    @pytest.fixture()
+    def collection(self, user_one, provider):
+        c = CollectionFactory(creator=user_one)
+        c.provider = provider
+        c.save()
+        return c
+
+    @pytest.fixture()
+    def collection_no_provider(self, user_one):
+        return CollectionFactory(creator=user_one)
+
+    @pytest.fixture()
+    def project(self, user_one):
+        return ProjectFactory(creator=user_one)
+
+    @pytest.fixture()
+    def url(self, collection):
+        return f'/{API_BASE}collections/{collection._id}/collected_metadata/'
+
+    @pytest.fixture()
+    def url_no_provider(self, collection_no_provider):
+        return f'/{API_BASE}collections/{collection_no_provider._id}/collected_metadata/'
+
+    @pytest.fixture()
+    def payload(self):
+        def make_collection_payload(**attributes):
+            return {
+                'data': {
+                    'type': 'collected-metadata',
+                    'attributes': attributes,
+                }
+            }
+        return make_collection_payload
+
+    def test_switch_active_no_provider_submission_succeeds(self, app, user_one, project, url_no_provider, payload):
+        with mock_update_share():
+            with override_switch(features.COLLECTION_SUBMISSION_WITH_CEDAR, active=True):
+                res = app.post_json_api(
+                    url_no_provider,
+                    payload(guid=project._id),
+                    auth=user_one.auth,
+                )
+        assert res.status_code == 201
+
+    def test_switch_active_submission_without_cedar_record_fails(
+            self, app, user_one, project, url, payload, cedar_template):
+        with capture_notifications(expect_none=True):
+            with mock_update_share():
+                with override_switch(features.COLLECTION_SUBMISSION_WITH_CEDAR, active=True):
+                    res = app.post_json_api(
+                        url,
+                        payload(guid=project._id),
+                        auth=user_one.auth,
+                        expect_errors=True,
+                    )
+        assert res.status_code == 400
+
+    def test_switch_active_submission_with_cedar_record_succeeds(
+            self, app, user_one, project, url, payload, cedar_template):
+        from osf.models import CedarMetadataRecord
+        CedarMetadataRecord.objects.create(
+            guid=project.guids.first(),
+            template=cedar_template,
+            metadata={'title': 'Test'},
+            is_published=True,
+        )
+        with capture_notifications():
+            with mock_update_share():
+                with override_switch(features.COLLECTION_SUBMISSION_WITH_CEDAR, active=True):
+                    res = app.post_json_api(
+                        url,
+                        payload(guid=project._id),
+                        auth=user_one.auth,
+                    )
+        assert res.status_code == 201
+
+    def test_switch_inactive_submission_without_cedar_record_succeeds(
+            self, app, user_one, project, url, payload, cedar_template):
+        with capture_notifications():
+            with mock_update_share():
+                with override_switch(features.COLLECTION_SUBMISSION_WITH_CEDAR, active=False):
+                    res = app.post_json_api(url, payload(guid=project._id), auth=user_one.auth)
+        assert res.status_code == 201
+
+    def test_switch_active_update_does_not_alter_cedar_record(
+            self, app, user_one, project, url, payload, cedar_template, collection):
+        from osf.models import CedarMetadataRecord
+        original_metadata = {'title': 'Original'}
+        CedarMetadataRecord.objects.create(
+            guid=project.guids.first(),
+            template=cedar_template,
+            metadata=original_metadata,
+            is_published=True,
+        )
+        collection.status_choices = ['pending', 'approved']
+        collection.save()
+        with capture_notifications():
+            with mock_update_share():
+                with override_switch(features.COLLECTION_SUBMISSION_WITH_CEDAR, active=True):
+                    res = app.post_json_api(url, payload(guid=project._id, status='pending'), auth=user_one.auth)
+        assert res.status_code == 201
+
+        detail_url = f'/{API_BASE}collections/{collection._id}/collected_metadata/{project._id}/'
+        with override_switch(features.COLLECTION_SUBMISSION_WITH_CEDAR, active=True):
+            app.patch_json_api(detail_url, payload(status='approved'), auth=user_one.auth)
+
+        record = CedarMetadataRecord.objects.get(guid__in=project.guids.all(), template=cedar_template)
+        assert record.metadata == original_metadata
 
 
 class TestCollectedMetaSubjectFiltering(SubjectsFilterMixin):

@@ -1796,7 +1796,7 @@ class ContributorMixin(models.Model):
                 contributor.save()
 
     # TODO: optimize me
-    def update_contributor(self, user, permission, visible, auth, save=False, skip_permission=False):
+    def update_contributor(self, user, permission, visible, auth, save=False, skip_permission=False, log=True):
         """ TODO: this method should be updated as a replacement for the main loop of
         Node#manage_contributors. Right now there are redundancies, but to avoid major
         feature creep this will not be included as this time.
@@ -1826,14 +1826,15 @@ class ContributorMixin(models.Model):
                 permissions_changed = {
                     user._id: permission
                 }
-                params = self.log_params
-                params['contributors'] = permissions_changed
-                self.add_log(
-                    action=self.log_class.PERMISSIONS_UPDATED,
-                    params=params,
-                    auth=auth,
-                    save=False
-                )
+                if log:
+                    params = self.log_params
+                    params['contributors'] = permissions_changed
+                    self.add_log(
+                        action=self.log_class.PERMISSIONS_UPDATED,
+                        params=params,
+                        auth=auth,
+                        save=False
+                    )
                 with transaction.atomic():
                     if [READ] in permissions_changed.values():
                         project_signals.write_permissions_revoked.send(self)

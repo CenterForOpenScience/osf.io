@@ -57,12 +57,13 @@ from .mixins import AddonModelMixin, ShareIndexMixin
 from .spam import SpamMixin
 from .session import UserSessionMap
 from .tag import Tag
-from .validators import validate_email, validate_social, validate_history_item
+from .validators import validate_email, validate_social, validate_history_item, has_domain_in_user_fields_for_names
 from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
 from osf.utils.fields import NonNaiveDateTimeField, LowercaseEmailField, ensure_str
 from osf.utils.names import impute_names
 from osf.utils.requests import check_select_for_update
 from osf.utils.permissions import API_CONTRIBUTOR_PERMISSIONS, MANAGER, MEMBER, ADMIN
+from osf.exceptions import ValidationError
 from website import settings as website_settings
 from website import filters
 from website.project import new_bookmark_collection
@@ -186,6 +187,14 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
     # Normalized form of the SPAM_USER_PROFILE_FIELDS to match other SPAM_CHECK_FIELDS formats
     SPAM_CHECK_FIELDS = [
         'social__profileWebsites'
+    ]
+
+    DOMAIN_VALIDATION_FIELDS = [
+        'fullname',
+        'given_name',
+        'middle_names',
+        'family_name',
+        'suffix',
     ]
 
     # The primary email address for the account.
@@ -1045,11 +1054,23 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
     def save(self, *args, **kwargs):
         from website import mailchimp_utils
 
+        was_creating = self._state.adding
+        has_domain = False
+        if not self.is_spammy:
+            has_domain = has_domain_in_user_fields_for_names(self)
+
+        if has_domain and was_creating:
+            raise ValidationError('Invalid personal information.')
+
         self.update_is_active()
         self.username = self.username.lower().strip() if self.username else None
 
         dirty_fields = self.get_dirty_fields(check_relationship=True)
         ret = super().save(*args, **kwargs)  # must save BEFORE spam check, as user needs guid.
+
+        if has_domain and not was_creating:
+            self.confirm_spam()
+
         if set(self.SPAM_USER_PROFILE_FIELDS.keys()).intersection(dirty_fields):
             request = get_current_request()
             headers = string_type_request_headers(request)

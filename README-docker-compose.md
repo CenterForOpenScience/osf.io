@@ -116,11 +116,7 @@
 
   #### Special Instructions for Apple Chipset (M1, M2, etc.) and other ARM64 architecture
 
-  * _NOTE: The default `elasticsearch`, `elasticsearch6`, and `sharejs` containers are incompatible with ARM64._
-
-  - To run `elasticsearch6` on ARM64 architecture:
-
-    - Copy `docker-compose-dist-arm64.override.yml` into your `docker-compose.override.yml` file
+  * _NOTE: The default `elasticsearch`  and `sharejs` containers are incompatible with ARM64._
 
   - Running containers with docker compose
 
@@ -194,7 +190,7 @@
 
 - Start all containers
   ```bash
-  alias dcsa="docker compose up -d assets admin_assets mfr wb fakecas sharejs worker elasticsearch elasticsearch6 web api admin preprints gv"
+  alias dcsa="docker compose up -d assets admin_assets mfr wb fakecas sharejs worker elasticsearch elasticsearch8 web api admin preprints gv"
   ```
 
 - Shut down all containers

@@ -2,7 +2,8 @@ import logging
 from collections import Counter
 
 from osf.models import OSFUser
-from osf.metrics.reports import NewUserDomainReport
+from osf.metrics.daily_reports import DailyNewUserDomainReport
+from osf.metrics.utils import cycle_coverage_date
 from ._base import DailyReporter
 
 logger = logging.getLogger(__name__)
@@ -20,11 +21,9 @@ class NewUserDomainReporter(DailyReporter):
             email.split('@')[-1]
             for email in new_user_emails
         )
-        return [
-            NewUserDomainReport(
-                report_date=date,
+        for domain_name, count in domain_names.items():
+            yield DailyNewUserDomainReport(
+                cycle_coverage=cycle_coverage_date(date),
                 domain_name=domain_name,
                 new_user_count=count,
             )
-            for domain_name, count in domain_names.items()
-        ]

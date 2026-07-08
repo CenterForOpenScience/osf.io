@@ -18,6 +18,6 @@ class Command(BaseCommand):
         ]
 
         if waffle.switch_is_active(features.ELASTICSEARCH_METRICS):
-            CHECKS.append(['check_metrics'])
+            CHECKS.append(['djelme_backend_check'])
         for check in CHECKS:
             call_command(*check)

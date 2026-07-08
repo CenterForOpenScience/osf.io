@@ -1,5 +1,6 @@
 import logging
 
+import waffle
 from dirtyfields import DirtyFieldsMixin
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.postgres.fields import ArrayField
@@ -185,65 +186,66 @@ class Collection(DirtyFieldsMixin, GuidMixin, BaseModel, GuardianMixin):
         disease = disease or ''
         grade_levels = grade_levels or ''
 
-        if not self.collected_type_choices and collected_type:
-            raise ValidationError('May not specify "type" for this collection')
+        if not waffle.switch_is_active('collection_submission_with_cedar'):
+            if not self.collected_type_choices and collected_type:
+                raise ValidationError('May not specify "type" for this collection')
 
-        if not self.status_choices and status:
-            raise ValidationError('May not specify "status" for this collection')
+            if not self.status_choices and status:
+                raise ValidationError('May not specify "status" for this collection')
 
-        if not self.volume_choices and volume:
-            raise ValidationError('May not specify "volume" for this collection')
+            if not self.volume_choices and volume:
+                raise ValidationError('May not specify "volume" for this collection')
 
-        if not self.issue_choices and issue:
-            raise ValidationError('May not specify "issue" for this collection')
+            if not self.issue_choices and issue:
+                raise ValidationError('May not specify "issue" for this collection')
 
-        if not self.program_area_choices and program_area:
-            raise ValidationError('May not specify "program_area" for this collection')
+            if not self.program_area_choices and program_area:
+                raise ValidationError('May not specify "program_area" for this collection')
 
-        if self.collected_type_choices and collected_type not in self.collected_type_choices:
-            raise ValidationError(f'"{collected_type}" is not an acceptable "type" for this collection')
+            if self.collected_type_choices and collected_type not in self.collected_type_choices:
+                raise ValidationError(f'"{collected_type}" is not an acceptable "type" for this collection')
 
-        if self.status_choices and status not in self.status_choices:
-            raise ValidationError(f'"{status}" is not an acceptable "status" for this collection')
+            if self.status_choices and status not in self.status_choices:
+                raise ValidationError(f'"{status}" is not an acceptable "status" for this collection')
 
-        if self.volume_choices and volume not in self.volume_choices:
-            raise ValidationError(f'"{volume}" is not an acceptable "volume" for this collection')
+            if self.volume_choices and volume not in self.volume_choices:
+                raise ValidationError(f'"{volume}" is not an acceptable "volume" for this collection')
 
-        if self.issue_choices and issue not in self.issue_choices:
-            raise ValidationError(f'"{issue}" is not an acceptable "issue" for this collection')
+            if self.issue_choices and issue not in self.issue_choices:
+                raise ValidationError(f'"{issue}" is not an acceptable "issue" for this collection')
 
-        if self.program_area_choices and program_area not in self.program_area_choices:
-            raise ValidationError(f'"{program_area}" is not an acceptable "program_area" for this collection')
+            if self.program_area_choices and program_area not in self.program_area_choices:
+                raise ValidationError(f'"{program_area}" is not an acceptable "program_area" for this collection')
 
-        if school_type:
-            if not self.school_type_choices:
-                raise ValidationError('May not specify "school_type" for this collection')
-            elif school_type not in self.school_type_choices:
-                raise ValidationError(f'"{school_type}" is not an acceptable "school_type" for this collection')
+            if school_type:
+                if not self.school_type_choices:
+                    raise ValidationError('May not specify "school_type" for this collection')
+                elif school_type not in self.school_type_choices:
+                    raise ValidationError(f'"{school_type}" is not an acceptable "school_type" for this collection')
 
-        if study_design:
-            if not self.study_design_choices:
-                raise ValidationError('May not specify "school_type" for this collection')
-            elif study_design not in self.study_design_choices:
-                raise ValidationError(f'"{study_design}" is not an acceptable "study_design" for this collection')
+            if study_design:
+                if not self.study_design_choices:
+                    raise ValidationError('May not specify "school_type" for this collection')
+                elif study_design not in self.study_design_choices:
+                    raise ValidationError(f'"{study_design}" is not an acceptable "study_design" for this collection')
 
-        if disease:
-            if not self.disease_choices:
-                raise ValidationError('May not specify "disease" for this collection')
-            elif disease not in self.disease_choices:
-                raise ValidationError(f'"{disease}" is not an acceptable "disease" for this collection')
+            if disease:
+                if not self.disease_choices:
+                    raise ValidationError('May not specify "disease" for this collection')
+                elif disease not in self.disease_choices:
+                    raise ValidationError(f'"{disease}" is not an acceptable "disease" for this collection')
 
-        if data_type:
-            if not self.data_type_choices:
-                raise ValidationError('May not specify "data_type" for this collection')
-            elif data_type not in self.data_type_choices:
-                raise ValidationError(f'"{data_type}" is not an acceptable "data_type" for this collection')
+            if data_type:
+                if not self.data_type_choices:
+                    raise ValidationError('May not specify "data_type" for this collection')
+                elif data_type not in self.data_type_choices:
+                    raise ValidationError(f'"{data_type}" is not an acceptable "data_type" for this collection')
 
-        if grade_levels:
-            if not self.grade_levels_choices:
-                raise ValidationError('May not specify "grade_levels" for this collection')
-            elif grade_levels not in self.grade_levels_choices:
-                raise ValidationError(f'"{grade_levels}" is not an acceptable "grade_levels" for this collection')
+            if grade_levels:
+                if not self.grade_levels_choices:
+                    raise ValidationError('May not specify "grade_levels" for this collection')
+                elif grade_levels not in self.grade_levels_choices:
+                    raise ValidationError(f'"{grade_levels}" is not an acceptable "grade_levels" for this collection')
 
         if not any([isinstance(obj, t.model_class()) for t in self.collected_types.all()]):
             # Not all objects have a content_type_pk, have to look the other way.
@@ -266,16 +268,17 @@ class Collection(DirtyFieldsMixin, GuidMixin, BaseModel, GuardianMixin):
             return collection_submission
         else:
             collection_submission = self.collectionsubmission_set.create(guid=obj.guids.first(), creator=collector)
-            collection_submission.collected_type = collected_type
-            collection_submission.status = status
-            collection_submission.volume = volume
-            collection_submission.issue = issue
-            collection_submission.program_area = program_area
-            collection_submission.school_type = school_type
-            collection_submission.study_design = study_design
-            collection_submission.data_type = data_type
-            collection_submission.disease = disease
-            collection_submission.grade_levels = grade_levels
+            if not waffle.switch_is_active('collection_submission_with_cedar'):
+                collection_submission.collected_type = collected_type
+                collection_submission.status = status
+                collection_submission.volume = volume
+                collection_submission.issue = issue
+                collection_submission.program_area = program_area
+                collection_submission.school_type = school_type
+                collection_submission.study_design = study_design
+                collection_submission.data_type = data_type
+                collection_submission.disease = disease
+                collection_submission.grade_levels = grade_levels
             collection_submission.save()
 
             return collection_submission

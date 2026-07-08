@@ -7,6 +7,7 @@ from admin.base.utils import (
     get_defaultlicense_choices,
     validate_slug,
     get_brand_choices,
+    get_cedar_template_choices,
 )
 
 
@@ -41,10 +42,12 @@ class RegistrationProviderForm(forms.ModelForm):
         nodelicense_choices = get_nodelicense_choices()
         defaultlicense_choices = get_defaultlicense_choices()
         brand_choices = get_brand_choices()
+        cedar_template_choices = get_cedar_template_choices()
         super().__init__(*args, **kwargs)
         self.fields['licenses_acceptable'].choices = nodelicense_choices
         self.fields['default_license'].choices = defaultlicense_choices
         self.fields['brand'].choices = brand_choices
+        self.fields['required_metadata_template'].choices = cedar_template_choices
         if kwargs.get('initial', None) and kwargs.get('initial').get('_id', None):
             provider = RegistrationProvider.load(kwargs.get('initial').get('_id'))
             self.fields['default_schema'].choices = provider.schemas.filter(visible=True, active=True).values_list('id', 'name')

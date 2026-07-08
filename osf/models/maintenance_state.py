@@ -14,3 +14,16 @@ class MaintenanceState(models.Model):
     start = NonNaiveDateTimeField()
     end = NonNaiveDateTimeField()
     message = models.TextField(blank=True)
+
+
+class MaintenanceMode(models.Model):
+    maintenance_mode = models.BooleanField(default=False)
+
+    def save(self, *args, **kwargs):
+        self.pk = 1
+        super().save(*args, **kwargs)
+
+    @classmethod
+    def is_under_maintenance(cls):
+        obj, _ = cls.objects.get_or_create(pk=1)
+        return obj.maintenance_mode

@@ -18,15 +18,21 @@ from osf.models import (
     AbstractNode,
     RegistrationApproval,
     Embargo,
+    Sanction,
     SchemaResponse,
     DraftRegistration,
+
 )
 from admin.nodes.views import (
     NodeAddOsfStorageFileView,
     NodeConfirmSpamView,
     NodeDeleteView,
+    NodeMakePrivate,
+    NodeMakePublic,
     NodeRemoveContributorView,
     NodeRemoveOsfStorageFileView,
+    NodeUpdatePermissionsView,
+    RegistrationUpdateDateView,
     NodeView,
     NodeReindexShare,
     NodeReindexElastic,
@@ -39,7 +45,8 @@ from admin.nodes.views import (
     CheckArchiveStatusRegistrationsView,
     ForceArchiveRegistrationsView,
     ApprovalBacklogListView,
-    ConfirmApproveBacklogView
+    ConfirmApproveBacklogView,
+    EmbargoReportView,
 )
 from admin_tests.utilities import setup_log_view, setup_view, handle_post_view_request
 from api_tests.share._utils import mock_update_share
@@ -57,6 +64,7 @@ from osf_tests.factories import (
     RegistrationApprovalFactory,
     RegistrationProviderFactory,
     DraftRegistrationFactory,
+    EmbargoFactory,
     get_default_metaschema
 )
 from osf.utils.workflows import ApprovalStates, RegistrationModerationStates
@@ -64,7 +72,7 @@ from osf.utils import permissions
 from osf.exceptions import NodeStateError
 
 
-from website.settings import REGISTRATION_APPROVAL_TIME
+from website.settings import REGISTRATION_APPROVAL_TIME, EMBARGO_PENDING_TIME
 
 
 def patch_messages(request):
@@ -72,6 +80,14 @@ def patch_messages(request):
     setattr(request, 'session', 'session')
     messages = FallbackStorage(request)
     setattr(request, '_messages', messages)
+
+
+def assert_support_attributed_log(log, admin_user=None):
+    """Support admin actions attribute logs to the support label, not the staff user."""
+    assert log.user is None
+    assert log.foreign_user == NodeLog.SUPPORT_USER_LABEL
+    if admin_user is not None:
+        assert log.user_id is None
 
 
 class TestNodeView(AdminTestCase):
@@ -173,7 +189,9 @@ class TestNodeDeleteView(AdminTestCase):
     def setUp(self):
         super().setUp()
         self.node = ProjectFactory()
+        self.admin_user = AuthUserFactory()
         self.request = RequestFactory().post('/fake_path')
+        self.request.user = self.admin_user
         self.plain_view = NodeDeleteView
         self.view = setup_log_view(self.plain_view(), self.request, guid=self.node._id)
         self.url = reverse('nodes:remove', kwargs={'guid': self.node._id})
@@ -187,18 +205,33 @@ class TestNodeDeleteView(AdminTestCase):
         assert self.node.is_deleted
         assert AdminLogEntry.objects.count() == count + 1
         assert self.node.deleted == mock_now
+        log = self.node.logs.filter(
+            action=NodeLog.NODE_REMOVED,
+            foreign_user=NodeLog.SUPPORT_USER_LABEL,
+        ).latest('date')
+        assert_support_attributed_log(log, self.admin_user)
 
     def test_restore_node(self):
         self.view.post(self.request)
         self.node.refresh_from_db()
         assert self.node.is_deleted
         assert self.node.deleted is not None
+        remove_log = self.node.logs.filter(
+            action=NodeLog.NODE_REMOVED,
+            foreign_user=NodeLog.SUPPORT_USER_LABEL,
+        ).latest('date')
+        assert_support_attributed_log(remove_log, self.admin_user)
         count = AdminLogEntry.objects.count()
         self.view.post(self.request)
         self.node.reload()
         assert not self.node.is_deleted
         assert self.node.deleted is None
         assert AdminLogEntry.objects.count() == count + 1
+        restore_log = self.node.logs.filter(
+            action=NodeLog.NODE_CREATED,
+            foreign_user=NodeLog.SUPPORT_USER_LABEL,
+        ).latest('date')
+        assert_support_attributed_log(restore_log, self.admin_user)
 
     def test_no_user_permissions_raises_error(self):
         user = AuthUserFactory()
@@ -234,12 +267,14 @@ class TestRemoveContributor(AdminTestCase):
     def setUp(self):
         super().setUp()
         self.user = AuthUserFactory()
+        self.admin_user = AuthUserFactory()
         self.node = ProjectFactory(creator=self.user)
         self.user_2 = AuthUserFactory()
         self.node.add_contributor(self.user_2)
         self.node.save()
         self.view = NodeRemoveContributorView
         self.request = RequestFactory().post('/fake_path')
+        self.request.user = self.admin_user
         self.url = reverse('nodes:remove-user', kwargs={'guid': self.node._id, 'user_id': self.user.id})
 
     def test_remove_contributor(self):
@@ -269,10 +304,16 @@ class TestRemoveContributor(AdminTestCase):
         assert len(list(self.node.get_admin_contributors(self.node.contributors))) == 1
         assert AdminLogEntry.objects.count() == count
 
-    def test_no_log(self):
+    def test_log(self):
+        assert not self.node.logs.filter(action=NodeLog.CONTRIB_REMOVED).exists()
         view = setup_log_view(self.view(), self.request, guid=self.node._id, user_id=self.user_2.id)
         view.post(self.request)
-        assert self.node.logs.latest().action != NodeLog.CONTRIB_REMOVED
+        log = self.node.logs.filter(
+            action=NodeLog.CONTRIB_REMOVED,
+            foreign_user=NodeLog.SUPPORT_USER_LABEL,
+        ).latest('date')
+        assert_support_attributed_log(log, self.admin_user)
+        assert self.user_2._id in log.params['contributors']
 
     def test_no_user_permissions_raises_error(self):
         guid = self.node._id
@@ -938,7 +979,9 @@ class TestOsfStorageRegistrationFileAdd(AdminTestCase):
         self.registration_without_registered_from.registered_from = None
         self.registration_without_registered_from.save()
 
+        self.admin_user = AuthUserFactory()
         self.request = RequestFactory().get('/fake_path')
+        self.request.user = self.admin_user
         patch_messages(self.request)
 
     def test_no_guid_found(self):
@@ -987,6 +1030,11 @@ class TestOsfStorageRegistrationFileAdd(AdminTestCase):
         assert registration_osfstorage.get_root().children.get(
             name=registration_osfstorage.archive_folder_name
         ).children.filter(name=file.name).exists()
+        log = self.registration_registered_from.logs.filter(
+            action=NodeLog.FILE_ADDED,
+            foreign_user=NodeLog.SUPPORT_USER_LABEL,
+        ).latest('date')
+        assert_support_attributed_log(log, self.admin_user)
 
 
 class TestOsfStorageRegistrationFileRemove(AdminTestCase):
@@ -1012,7 +1060,9 @@ class TestOsfStorageRegistrationFileRemove(AdminTestCase):
         self.project = ProjectFactory()
         self.registration_registered_from = RegistrationFactory(project=self.project)
 
+        self.admin_user = AuthUserFactory()
         self.request = RequestFactory().get('/fake_path')
+        self.request.user = self.admin_user
         patch_messages(self.request)
 
     def test_no_guid_found(self):
@@ -1069,3 +1119,180 @@ class TestOsfStorageRegistrationFileRemove(AdminTestCase):
             name=registration_osfstorage.archive_folder_name
         ).children.exists()
         assert not self.registration_registered_from.files.exists()
+        remove_log = self.registration_registered_from.logs.filter(
+            action=NodeLog.FILE_REMOVED,
+            foreign_user=NodeLog.SUPPORT_USER_LABEL,
+        ).latest('date')
+        assert_support_attributed_log(remove_log, self.admin_user)
+
+
+class TestNodeMakePrivate(AdminTestCase):
+    def setUp(self):
+        super().setUp()
+        self.admin_user = AuthUserFactory()
+        self.node = ProjectFactory(is_public=True)
+        self.request = RequestFactory().post('/fake_path')
+        self.request.user = self.admin_user
+
+    def test_make_private(self):
+        view = setup_log_view(NodeMakePrivate(), self.request, guid=self.node._id)
+        view.post(self.request)
+        self.node.refresh_from_db()
+        assert self.node.is_public is False
+        log = self.node.logs.filter(
+            action=NodeLog.MADE_PRIVATE,
+            foreign_user=NodeLog.SUPPORT_USER_LABEL,
+        ).latest('date')
+        assert_support_attributed_log(log, self.admin_user)
+
+
+class TestNodeMakePublic(AdminTestCase):
+    def setUp(self):
+        super().setUp()
+        self.admin_user = AuthUserFactory()
+        self.node = ProjectFactory(is_public=False)
+        self.request = RequestFactory().post('/fake_path')
+        self.request.user = self.admin_user
+
+    def test_make_public(self):
+        view = setup_log_view(NodeMakePublic(), self.request, guid=self.node._id)
+        view.post(self.request)
+        self.node.refresh_from_db()
+        assert self.node.is_public is True
+        log = self.node.logs.filter(
+            action=NodeLog.MADE_PUBLIC,
+            foreign_user=NodeLog.SUPPORT_USER_LABEL,
+        ).latest('date')
+        assert_support_attributed_log(log, self.admin_user)
+
+
+class TestNodeUpdatePermissions(AdminTestCase):
+    def setUp(self):
+        super().setUp()
+        self.admin_user = AuthUserFactory()
+        self.node = ProjectFactory(creator=self.admin_user)
+        self.other_admin = AuthUserFactory()
+        self.node.add_contributor(self.other_admin, permissions=permissions.ADMIN)
+        self.node.save()
+        self.request = RequestFactory().post('/fake_path')
+        patch_messages(self.request)
+        self.request.user = self.admin_user
+
+    def test_update_permissions(self):
+        # Form must include at least one admin permission or the view rejects the POST.
+        self.request.POST = {
+            'updated-permissions': [
+                f'{self.admin_user._id}-{permissions.ADMIN}',
+                f'{self.other_admin._id}-{permissions.READ}',
+            ],
+        }
+        view = setup_log_view(NodeUpdatePermissionsView(), self.request, guid=self.node._id)
+        view.post(self.request)
+        log = self.node.logs.filter(
+            action=NodeLog.PERMISSIONS_UPDATED,
+            foreign_user=NodeLog.SUPPORT_USER_LABEL,
+        ).latest('date')
+        assert_support_attributed_log(log, self.admin_user)
+        assert log.params['contributors'] == {
+            self.admin_user._id: permissions.ADMIN,
+            self.other_admin._id: permissions.READ,
+        }
+
+    def test_add_contributor(self):
+        new_user = AuthUserFactory()
+        self.request.POST = {
+            'updated-permissions': [f'{self.admin_user._id}-{permissions.ADMIN}'],
+            'new-emails': [new_user.emails.first().address],
+            'new-permissions': [permissions.READ],
+        }
+        view = setup_log_view(NodeUpdatePermissionsView(), self.request, guid=self.node._id)
+        view.post(self.request)
+        log = self.node.logs.filter(
+            action=NodeLog.CONTRIB_ADDED,
+            foreign_user=NodeLog.SUPPORT_USER_LABEL,
+        ).latest('date')
+        assert_support_attributed_log(log, self.admin_user)
+        assert log.params['contributors'] == [new_user._id]
+
+
+class TestRegistrationUpdateDate(AdminTestCase):
+    def setUp(self):
+        super().setUp()
+        self.admin_user = AuthUserFactory()
+        self.registration = RegistrationFactory()
+        self.request = RequestFactory().post('/fake_path')
+        patch_messages(self.request)
+        self.request.user = self.admin_user
+
+    def test_update_registration_date(self):
+        new_date = (timezone.now() - datetime.timedelta(days=30)).replace(microsecond=0)
+        self.request.POST = {'registered_date': new_date.strftime('%Y-%m-%d %H:%M:%S')}
+        view = setup_log_view(RegistrationUpdateDateView(), self.request, guid=self.registration._id)
+        view.post(self.request)
+        self.registration.refresh_from_db()
+        assert self.registration.registered_date == new_date
+        log = self.registration.logs.filter(
+            action=NodeLog.REGISTRATION_DATE_UPDATED,
+            foreign_user=NodeLog.SUPPORT_USER_LABEL,
+        ).latest('date')
+        assert_support_attributed_log(log, self.admin_user)
+
+
+class TestEmbargoReportView(AdminTestCase):
+
+    def setUp(self):
+        super().setUp()
+        self.request = RequestFactory().get('/nodes/embargo_report/')
+        self.view = setup_log_view(EmbargoReportView(), self.request)
+
+    def test_pending_past_activation_window_in_report(self):
+        embargo = EmbargoFactory(approve=False)
+        embargo.initiation_date = timezone.now() - EMBARGO_PENDING_TIME - timezone.timedelta(days=1)
+        embargo.save()
+
+        context = self.view.get_context_data()
+        assert embargo in context['pending_page']
+
+    def test_recent_pending_embargo_excluded(self):
+        embargo = EmbargoFactory(approve=False)
+        embargo.initiation_date = timezone.now()
+        embargo.save()
+
+        context = self.view.get_context_data()
+        assert embargo not in context['pending_page']
+
+    def test_active_past_end_date_in_report(self):
+        embargo = EmbargoFactory(
+            approve=True,
+            end_date=timezone.now() - timezone.timedelta(days=1),
+        )
+        embargo.state = Sanction.APPROVED
+        embargo.save()
+
+        context = self.view.get_context_data()
+        assert embargo in context['overdue_page']
+
+    def test_active_upcoming_in_report(self):
+        embargo = EmbargoFactory(
+            approve=True,
+            end_date=timezone.now() + timezone.timedelta(days=30),
+        )
+        embargo.state = Sanction.APPROVED
+        embargo.save()
+
+        context = self.view.get_context_data()
+        assert embargo in context['upcoming_page']
+
+    def test_deleted_registration_embargo_excluded(self):
+        embargo = EmbargoFactory(
+            approve=True,
+            end_date=timezone.now() - timezone.timedelta(days=1),
+        )
+        embargo.state = Sanction.APPROVED
+        embargo.save()
+        registration = embargo.registrations.first()
+        registration.is_deleted = True
+        registration.save()
+
+        context = self.view.get_context_data()
+        assert embargo not in context['overdue_page']

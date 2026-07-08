@@ -8,7 +8,8 @@ from osf.models import (
     Subject
 )
 from admin.base.utils import (get_subject_rules, get_toplevel_subjects,
-    get_nodelicense_choices, get_defaultlicense_choices, validate_slug)
+    get_nodelicense_choices, get_defaultlicense_choices, validate_slug,
+    get_cedar_template_choices)
 
 
 class PreprintProviderForm(forms.ModelForm):
@@ -42,10 +43,12 @@ class PreprintProviderForm(forms.ModelForm):
         toplevel_choices = get_toplevel_subjects()
         nodelicense_choices = get_nodelicense_choices()
         defaultlicense_choices = get_defaultlicense_choices()
+        cedar_template_choices = get_cedar_template_choices()
         super().__init__(*args, **kwargs)
         self.fields['toplevel_subjects'].choices = toplevel_choices
         self.fields['licenses_acceptable'].choices = nodelicense_choices
         self.fields['default_license'].choices = defaultlicense_choices
+        self.fields['required_metadata_template'].choices = cedar_template_choices
 
     def clean_subjects_acceptable(self, *args, **kwargs):
         subject_ids = [_f for _f in self.data['subjects_chosen'].split(', ') if _f]

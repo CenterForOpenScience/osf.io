@@ -2,13 +2,9 @@ import logging
 
 from django.db.models import Q
 
-from osf.metrics.reports import (
-    NodeSummaryReport,
-    NodeRunningTotals,
-    RegistrationRunningTotals,
-)
+from osf.metrics.daily_reports import DailyNodeSummaryReport
+from osf.metrics.utils import cycle_coverage_date
 from ._base import DailyReporter
-
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
@@ -35,11 +31,10 @@ class NodeCountReporter(DailyReporter):
         embargo_v2_query = Q(root__embargo__end_date__date__gt=date)
 
         exclude_spam = ~Q(spam_status__in=[SpamStatus.SPAM, SpamStatus.FLAGGED])
-
-        report = NodeSummaryReport(
-            report_date=date,
+        yield DailyNodeSummaryReport(
+            cycle_coverage=cycle_coverage_date(date),
             # Nodes - the number of projects and components
-            nodes=NodeRunningTotals(
+            nodes=dict(
                 total=node_qs.count(),
                 total_excluding_spam=node_qs.filter(exclude_spam).count(),
                 public=node_qs.filter(public_query).count(),
@@ -50,7 +45,7 @@ class NodeCountReporter(DailyReporter):
                 private_daily=node_qs.filter(private_query & created_today_query).count(),
             ),
             # Projects - the number of top-level only projects
-            projects=NodeRunningTotals(
+            projects=dict(
                 total=node_qs.get_roots().count(),
                 total_excluding_spam=node_qs.get_roots().filter(exclude_spam).count(),
                 public=node_qs.filter(public_query).get_roots().count(),
@@ -61,7 +56,7 @@ class NodeCountReporter(DailyReporter):
                 private_daily=node_qs.filter(private_query & created_today_query).get_roots().count(),
             ),
             # Registered Nodes - the number of registered projects and components
-            registered_nodes=RegistrationRunningTotals(
+            registered_nodes=dict(
                 total=registration_qs.count(),
                 public=registration_qs.filter(public_query).count(),
                 embargoed=registration_qs.filter(private_query).count(),
@@ -75,7 +70,7 @@ class NodeCountReporter(DailyReporter):
 
             ),
             # Registered Projects - the number of registered top level projects
-            registered_projects=RegistrationRunningTotals(
+            registered_projects=dict(
                 total=registration_qs.get_roots().count(),
                 public=registration_qs.filter(public_query).get_roots().count(),
                 embargoed=registration_qs.filter(private_query).get_roots().count(),
@@ -88,5 +83,3 @@ class NodeCountReporter(DailyReporter):
                 withdrawn_daily=registration_qs.filter(retracted_query & retracted_today_query).get_roots().count(),
             ),
         )
-
-        return [report]

@@ -6,13 +6,13 @@ from django.db.models import Q, F, Sum
 from osf import models as osfdb
 from osf.models.spam import SpamStatus
 from addons.osfstorage.models import OsfStorageFile
-from osf.metrics.reports import InstitutionalUserReport
 from osf.metrics.utils import YearMonth
+from osf.metrics.monthly_reports import MonthlyInstitutionalUserReport
 from ._base import MonthlyReporter
 
 
 class InstitutionalUsersReporter(MonthlyReporter):
-    '''build an InstitutionalUserReport for each institution-user affiliation
+    '''build a MonthlyInstitutionalUserReport for each institution-user affiliation
 
     built for the institution dashboard at ://osf.example/institutions/<id>/dashboard/,
     which offers institutional admins insight into how people at their institution are
@@ -38,7 +38,7 @@ class InstitutionalUsersReporter(MonthlyReporter):
         _institution = osfdb.Institution.objects.get(pk=report_kwargs['institution_pk'])
         _user = osfdb.OSFUser.objects.get(pk=report_kwargs['user_pk'])
         _helper = _InstiUserReportHelper(_institution, _user, self.yearmonth)
-        return _helper.report
+        yield _helper.build_report()
 
 
 # helper
@@ -47,11 +47,11 @@ class _InstiUserReportHelper:
     institution: osfdb.Institution
     user: osfdb.OSFUser
     yearmonth: YearMonth
-    report: InstitutionalUserReport = dataclasses.field(init=False)
 
-    def __post_init__(self):
+    def build_report(self):
         _affiliation = self.user.get_institution_affiliation(self.institution._id)
-        self.report = InstitutionalUserReport(
+        return MonthlyInstitutionalUserReport(
+            report_yearmonth=self.yearmonth,
             institution_id=self.institution._id,
             user_id=self.user._id,
             user_name=self.user.fullname,
