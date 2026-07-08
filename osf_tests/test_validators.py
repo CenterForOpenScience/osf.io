@@ -160,9 +160,9 @@ def test_validate_expand_subject_hierarchy():
 )
 def test_has_domain_in_user_fields(user_data):
     user = mock_user(user_data)
-    result, message = has_domain_in_user_fields_for_names(user)
-    assert result is False
-    assert message == SpamStatus.UNKNOWN
+    has_domain, status = has_domain_in_user_fields_for_names(user)
+    assert has_domain is False
+    assert status == SpamStatus.UNKNOWN
 
 
 @pytest.mark.parametrize(
@@ -199,9 +199,9 @@ def test_has_domain_in_user_fields(user_data):
 )
 def test_has_domain_in_user_fields_fail(user_data):
     user = mock_user(user_data)
-    result, message = has_domain_in_user_fields_for_names(user)
-    assert result is True
-    assert message == SpamStatus.SPAM
+    has_domain, status = has_domain_in_user_fields_for_names(user)
+    assert has_domain is True
+    assert status == SpamStatus.SPAM
 
 @pytest.mark.parametrize(
     'user_data',
@@ -218,9 +218,9 @@ def test_has_domain_in_user_fields_fail(user_data):
 def test_has_notable_domain_in_user_fields(user_data):
     NotableDomain.objects.get_or_create(domain='osf.io', note=NotableDomain.Note.IGNORED)
     user = mock_user(user_data)
-    result, message = has_domain_in_user_fields_for_names(user)
-    assert result is False
-    assert message == SpamStatus.HAM
+    has_domain, status = has_domain_in_user_fields_for_names(user)
+    assert has_domain is False
+    assert status == SpamStatus.HAM
 
 @pytest.mark.parametrize(
     'user_data',
@@ -237,6 +237,6 @@ def test_has_notable_domain_in_user_fields(user_data):
 def test_has_no_notable_domain_in_user_fields(user_data):
     NotableDomain.objects.get_or_create(domain='google.com', note=NotableDomain.Note.IGNORED)
     user = mock_user(user_data)
-    result, message = has_domain_in_user_fields_for_names(user)
-    assert result is True
-    assert message == SpamStatus.SPAM
+    has_domain, status = has_domain_in_user_fields_for_names(user)
+    assert has_domain is True
+    assert status == SpamStatus.SPAM
