@@ -1067,7 +1067,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         dirty_fields = self.get_dirty_fields(check_relationship=True)
         ret = super().save(*args, **kwargs)  # must save BEFORE spam check, as user needs guid.
 
-        if  was_creating:
+        if was_creating:
             if self.is_hammy and has_domain:
                 self.flag_spam()
             if not self.is_hammy and has_domain:
