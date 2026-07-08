@@ -1556,7 +1556,7 @@ version = "3.16.1"
 description = "A platform independent file lock."
 optional = false
 python-versions = ">=3.8"
-groups = ["dev"]
+groups = ["main", "dev"]
 files = [
     {file = "filelock-3.16.1-py3-none-any.whl", hash = "sha256:2082e5703d51fbf98ea75855d9d5527e33d8ff23099bec374a134febee6946b0"},
     {file = "filelock-3.16.1.tar.gz", hash = "sha256:c249fbfcd5db47e5e2d6d62198e565475ee65e4831e2561c8e313fa7eb961435"},
@@ -2972,7 +2972,7 @@ version = "4.3.6"
 description = "A small Python package for determining appropriate platform-specific dirs, e.g. a `user data dir`."
 optional = false
 python-versions = ">=3.8"
-groups = ["dev"]
+groups = ["main", "dev"]
 files = [
     {file = "platformdirs-4.3.6-py3-none-any.whl", hash = "sha256:73e575e1408ab8103900836b97580d5307456908a03e92031bab39e4554cc3fb"},
     {file = "platformdirs-4.3.6.tar.gz", hash = "sha256:357fb2acbc885b0419afd3ce3ed34564c13c9b95c89360cd9563f73aa5e2b907"},
@@ -4450,6 +4450,36 @@ files = [
 ]
 
 [[package]]
+name = "uritools"
+version = "6.1.2"
+description = "URI parsing, classification and composition"
+optional = false
+python-versions = ">=3.10"
+groups = ["main"]
+files = [
+    {file = "uritools-6.1.2-py3-none-any.whl", hash = "sha256:5682f8c58e96e379224fd72aec227a45432740c1fa860a06b3024d47c2968601"},
+    {file = "uritools-6.1.2.tar.gz", hash = "sha256:fa60028843a8be651699a1ee2b399066eeaef349224b32a177efa4aeba463f00"},
+]
+
+[[package]]
+name = "urlextract"
+version = "1.9.0"
+description = "Collects and extracts URLs from given text."
+optional = false
+python-versions = "*"
+groups = ["main"]
+files = [
+    {file = "urlextract-1.9.0-py3-none-any.whl", hash = "sha256:f88963532488b1c7c405e21bd162ae97871754ea04b60e18d33ee075b19b82fd"},
+    {file = "urlextract-1.9.0.tar.gz", hash = "sha256:70508e02ba9df372e25cf0642db367cece273e8712cd0ce78178fc5dd7ea00db"},
+]
+
+[package.dependencies]
+filelock = "*"
+idna = "*"
+platformdirs = "*"
+uritools = "*"
+
+[[package]]
 name = "urllib3"
 version = "1.26.18"
 description = "HTTP library with thread-safe connection pooling, file post, and more."
@@ -4727,4 +4757,4 @@ testing = ["coverage (>=5.0.3)", "zope.event", "zope.testing"]
 [metadata]
 lock-version = "2.1"
 python-versions = "^3.12"
-content-hash = "9b2f29b9b4958b47e4c428f4225d04bbd12f239c02f9afc186989a49547b83ed"
+content-hash = "5599dfc677ced71d0e9097822fb1d1f6f0e22320eacca87299d1542b89e9f286"

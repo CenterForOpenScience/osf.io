@@ -2,7 +2,7 @@ import pytest
 from osf.exceptions import ValidationValueError
 
 from types import SimpleNamespace
-from osf.models import validators, OSFUser
+from osf.models import validators, OSFUser, NotableDomain, SpamStatus
 from osf.models.validators import has_domain_in_user_fields_for_names
 from osf_tests.factories import SubjectFactory
 
@@ -160,7 +160,9 @@ def test_validate_expand_subject_hierarchy():
 )
 def test_has_domain_in_user_fields(user_data):
     user = mock_user(user_data)
-    assert has_domain_in_user_fields_for_names(user) is False
+    result, message = has_domain_in_user_fields_for_names(user)
+    assert result is False
+    assert message == SpamStatus.UNKNOWN
 
 
 @pytest.mark.parametrize(
@@ -186,8 +188,55 @@ def test_has_domain_in_user_fields(user_data):
             'middle_names': 'www.google.com',
             'suffix': 'M.Sc.',
         },
+        {
+            'fullname': 'Judith Hateren',
+            'given_name': 'Judith',
+            'family_name': 'Hateren',
+            'middle_names': 'google.com',
+            'suffix': 'M.Sc.',
+        },
     ]
 )
 def test_has_domain_in_user_fields_fail(user_data):
     user = mock_user(user_data)
-    assert has_domain_in_user_fields_for_names(user) is True
+    result, message = has_domain_in_user_fields_for_names(user)
+    assert result is True
+    assert message == SpamStatus.SPAM
+
+@pytest.mark.parametrize(
+    'user_data',
+    [
+        {
+            'fullname': 'Judith Sarah',
+            'given_name': 'Judith',
+            'family_name': 'Preuss',
+            'middle_names': 'osf.io',
+            'suffix' : 'M.Sc.',
+        },
+    ]
+)
+def test_has_notable_domain_in_user_fields(user_data):
+    NotableDomain.objects.get_or_create(domain='osf.io', note=NotableDomain.Note.IGNORED)
+    user = mock_user(user_data)
+    result, message = has_domain_in_user_fields_for_names(user)
+    assert result is False
+    assert message == SpamStatus.HAM
+
+@pytest.mark.parametrize(
+    'user_data',
+    [
+        {
+            'fullname': 'Judith Sarah',
+            'given_name': 'Judith',
+            'family_name': 'Preuss',
+            'middle_names': 'osf.io',
+            'suffix' : 'M.Sc.',
+        },
+    ]
+)
+def test_has_no_notable_domain_in_user_fields(user_data):
+    NotableDomain.objects.get_or_create(domain='google.com', note=NotableDomain.Note.IGNORED)
+    user = mock_user(user_data)
+    result, message = has_domain_in_user_fields_for_names(user)
+    assert result is True
+    assert message == SpamStatus.SPAM

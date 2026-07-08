@@ -1,7 +1,6 @@
 import re
-from urllib.parse import urlsplit
 import waffle
-
+from django.db.models import Q
 from jsonschema import ValidationError as JsonSchemaValidationError, SchemaError, Draft7Validator, validate, validators
 from django.conf import settings
 from django.core.validators import URLValidator, validate_email as django_validate_email
@@ -12,9 +11,10 @@ from osf.models.notification_type import get_default_frequency_choices
 from osf.utils.registrations import FILE_VIEW_URL_REGEX
 from osf.utils.sanitize import strip_html
 from osf.exceptions import ValidationError, ValidationValueError, reraise_django_validation_errors, BlockedEmailError
-from osf.external.spam.tasks import DOMAIN_REGEX
+from osf.external.spam.tasks import DOMAIN_REGEX, NOTABLE_POST_NOMINALS
 
 from website.language import SWITCH_VALIDATOR_ERROR
+from urlextract import URLExtract
 
 
 def validate_history_item(items):
@@ -115,18 +115,32 @@ def validate_email(value):
 
 
 def has_domain_in_user_fields_for_names(user):
+    from osf.models import NotableDomain
+    from .spam import SpamStatus
+    notable_domain_list = set(
+        NotableDomain.objects.filter(
+            Q(note=NotableDomain.Note.ASSUME_HAM_UNTIL_REPORTED) |
+            Q(note=NotableDomain.Note.IGNORED)
+        )
+        .values_list('domain', flat=True)
+        .distinct()
+    )
     name_content = ' '.join(getattr(user, field) or '' for field in user.DOMAIN_VALIDATION_FIELDS).strip()
     for match in DOMAIN_REGEX.finditer(name_content):
         candidate = match.group(0).strip()
+        if candidate in notable_domain_list:
+            return False, SpamStatus.HAM
         if looks_like_url(candidate):
-            return True
-    return False
+            return True, SpamStatus.SPAM
+    return False, SpamStatus.UNKNOWN
 
 def looks_like_url(candidate):
-    if candidate.startswith('www.'):
-        candidate = f'https://{candidate}'
-    parsed = urlsplit(candidate)
-    return bool(parsed.scheme and parsed.netloc)
+    candidate = candidate.strip()
+    words = re.findall(r'[A-Za-z.]+', candidate.lower())
+    if any(word in NOTABLE_POST_NOMINALS for word in words):
+        return False
+    extractor = URLExtract()
+    return bool(extractor.find_urls(candidate))
 
 def validate_subject_hierarchy_length(parent):
     from osf.models import Subject

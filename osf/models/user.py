@@ -54,7 +54,7 @@ from .contributor import Contributor, RecentlyAddedContributor
 from .institution import Institution
 from .institution_affiliation import InstitutionAffiliation
 from .mixins import AddonModelMixin, ShareIndexMixin
-from .spam import SpamMixin
+from .spam import SpamMixin, SpamStatus
 from .session import UserSessionMap
 from .tag import Tag
 from .validators import validate_email, validate_social, validate_history_item, has_domain_in_user_fields_for_names
@@ -1056,8 +1056,10 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
 
         was_creating = self._state.adding
         has_domain = False
+        should_mark_ham = False
         if not self.is_spammy:
-            has_domain = has_domain_in_user_fields_for_names(self)
+            has_domain, status = has_domain_in_user_fields_for_names(self)
+            should_mark_ham = True if status == SpamStatus.HAM else False
 
         if has_domain and was_creating:
             raise ValidationError('Invalid personal information.')
@@ -1068,11 +1070,14 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         dirty_fields = self.get_dirty_fields(check_relationship=True)
         ret = super().save(*args, **kwargs)  # must save BEFORE spam check, as user needs guid.
 
-        if has_domain and self.is_hammy:
-            self.flag_spam()
+        if has_domain:
+            if self.is_hammy:
+                self.flag_spam()
+            if not self.is_hammy:
+                self.confirm_spam()
 
-        if has_domain and not was_creating and not self.is_hammy:
-            self.confirm_spam()
+        if was_creating and should_mark_ham:
+            self.confirm_ham()
 
         if set(self.SPAM_USER_PROFILE_FIELDS.keys()).intersection(dirty_fields):
             request = get_current_request()
