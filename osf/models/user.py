@@ -1061,23 +1061,22 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
             has_domain, status = has_domain_in_user_fields_for_names(self)
             should_mark_ham = True if status == SpamStatus.HAM else False
 
-        if has_domain and was_creating:
-            raise ValidationError('Invalid personal information.')
-
         self.update_is_active()
         self.username = self.username.lower().strip() if self.username else None
 
         dirty_fields = self.get_dirty_fields(check_relationship=True)
         ret = super().save(*args, **kwargs)  # must save BEFORE spam check, as user needs guid.
 
-        if has_domain:
-            if self.is_hammy:
+        if  was_creating:
+            if self.is_hammy and has_domain:
                 self.flag_spam()
-            if not self.is_hammy:
+            if not self.is_hammy and has_domain:
                 self.confirm_spam()
+            if should_mark_ham:
+                self.confirm_ham()
 
-        if was_creating and should_mark_ham:
-            self.confirm_ham()
+        if has_domain and was_creating:
+            raise ValidationError('Invalid personal information.')
 
         if set(self.SPAM_USER_PROFILE_FIELDS.keys()).intersection(dirty_fields):
             request = get_current_request()

@@ -2081,62 +2081,34 @@ class TestUserValidation(OsfTestCase):
             self.user.save()
             self.user.refresh_from_db()
 
-            assert self.user.is_spammy is True
+            assert self.user.is_spammy is False
             self.user.unspam(save=True)
             setattr(self.user, field, 'not a url')
             self.user.save()
 
-    def test_validate_domain_fields_notable_domain_in_field(self):
+    def test_validate_domain_fields_unregistered_contributor(self):
+        user = OSFUser.create_unregistered(fullname='google.com')
+        with pytest.raises(ValidationError):
+            user.save()
+        assert user.is_spammy is True
+        assert user.is_hammy is False
+
+    def test_validate_domain_fields_notable_domain_in_field_unregistered_contributor(self):
         NotableDomain.objects.get_or_create(domain='google.com', note=NotableDomain.Note.IGNORED)
-        user = OSFUser.create_unregistered(
-            fullname='google.com',
-        )
+        user = OSFUser.create_unregistered(fullname='google.com')
         user.save()
         assert user.is_spammy is False
         assert user.is_hammy is True
 
-    def test_validate_domain_fields_notable_domain_in_field_for_existing_ham(self):
-        NotableDomain.objects.get_or_create(domain='google.com', note=NotableDomain.Note.IGNORED)
-        self.user.fullname = 'google.com'
-        self.user.confirm_ham(save=True)
-        self.user.save()
-        assert self.user.is_spammy is False
-        assert self.user.is_hammy is True
-
-        self.user.unspam(save=True)
-        self.user.fullname = 'not a url'
-        self.user.save()
-
-    def test_validate_domain_in_field_for_existing_not_ham(self):
-        self.user.fullname = 'google.com'
-        self.user.save()
-        assert self.user.is_spammy is True
-        assert self.user.is_hammy is False
-
-        self.user.unspam(save=True)
-        self.user.fullname = 'not a url'
-        self.user.save()
-
-    def test_validate_domain_fields_notable_domain_in_field_for_existing_not_ham(self):
-        NotableDomain.objects.get_or_create(domain='google.com', note=NotableDomain.Note.IGNORED)
-        self.user.fullname = 'google.com'
-        self.user.save()
-        assert self.user.is_spammy is False
-        assert self.user.is_hammy is False
-
-        self.user.unspam(save=True)
-        self.user.fullname = 'not a url'
-        self.user.save()
-
     def test_validate_domain_fields_for_real(self):
-        self.user.fullname = 'Sandhya N.Sathesh'
-        self.user.save()
-        assert self.user.is_spammy is False
-        assert self.user.is_hammy is False
+        user = OSFUser.create_unregistered(fullname='Sandhya N.Sathesh')
+        for field in user.DOMAIN_VALIDATION_FIELDS:
+            setattr(user, field, 'Sandhya N.Sathesh')
+            user.save()
+            user.refresh_from_db()
 
-        self.user.unspam(save=True)
-        self.user.fullname = 'not a url'
-        self.user.save()
+            assert user.is_spammy is False
+            assert user.is_hammy is False
 
 class TestUserGdprDelete:
 
