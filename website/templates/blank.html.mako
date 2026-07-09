@@ -32,19 +32,6 @@
                     <!-- Email content goes here -->
                 </tbody>
             </table>
-
-            <table width="600" cellpadding="25" cellspacing="0" align="center"
-                   style="margin:30px auto 0;background:#fff;box-shadow:0 0 2px #ccc;">
-                <tr>
-                    <td style="text-align:center;font-size:12px;">
-                        <%
-                            ns_url = notification_settings_url or (domain + 'settings/notifications/')
-                        %>
-                        To change how often you receive emails, visit your
-                        <a href="${ns_url}">user settings</a>.
-                    </td>
-                </tr>
-            </table>
         </td>
     </tr>
 
