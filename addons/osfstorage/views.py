@@ -118,7 +118,7 @@ def osfstorage_get_storage_quota_status(target, **kwargs):
 @must_be_signed
 @decorators.autoload_filenode(must_be='file')
 def osfstorage_get_revisions(file_node, payload, target, **kwargs):
-    from osf.models import PageCounter, FileVersion  # TODO Fix me onces django works
+    from osf.models import PageCounter, FileVersion  # TODO Fix me once django works
     is_anon = has_anonymous_link(target, Auth(private_key=request.args.get('view_only')))
 
     counter_prefix = f'download:{file_node.target._id}:{file_node._id}:'

@@ -150,7 +150,7 @@ class OutcomeArtifact(ObjectIDMixin, BaseModel):
             )
 
     def _update_identifier(self, new_pid_value, pid_type='doi', api_request=None):
-        '''Changes the linked Identifer to one matching the new pid_value and handles callbacks.
+        '''Changes the linked Identifier to one matching the new pid_value and handles callbacks.
 
         If `finalized` is True, will also log the change on the parent Outcome if invoked via API.
         Will attempt to delete the previous identifier to avoid orphaned entries.

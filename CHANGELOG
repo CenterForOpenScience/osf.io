@@ -108,7 +108,7 @@ We follow the CalVer (https://calver.org/) versioning scheme: YY.MINOR.MICRO.
 26.6.3 (2026-04-02)
 ===================
 
-- Readd reindex share button
+- Re-add reindex share button
 - Fix missing notification during email throttle check
 - Fix filter query in AbstractProviderSubscriptionList
 
@@ -151,7 +151,7 @@ We follow the CalVer (https://calver.org/) versioning scheme: YY.MINOR.MICRO.
 
 - Permanently update two notification types
 - Link digest to types and fix/log incorrect usage
-- Update notifiction dedupe command
+- Update notification dedupe command
 
 26.2.0
 ======
@@ -162,7 +162,7 @@ We follow the CalVer (https://calver.org/) versioning scheme: YY.MINOR.MICRO.
 ===================
 
 - Rework NR verification and de-duplication command
-- Fix the rest of regsitration links in moderator digest email
+- Fix the rest of registration links in moderator digest email
 - Mark fail-to-render notifications as fake sent
 
 26.1.5 (2026-01-12)
@@ -196,7 +196,7 @@ We follow the CalVer (https://calver.org/) versioning scheme: YY.MINOR.MICRO.
   * Fix adding moderator email in admin
   * Fix preprint/registration withdrawal request email in digest
   * Fix subjects for schema response update emails
-  * Update defauls for triggered emails
+  * Update defaults for triggered emails
 
 26.1.1 (2026-01-02)
 ===================
@@ -805,7 +805,7 @@ domains
 
 20.11.0 (2020-06-17)
 ====================
-- Add more tests for ending embargos
+- Add more tests for ending embargoes
 - Fix filenames containing &s preventing registrations from registering
 - Ensure API complains when trying to embargo using deprecated methods
 - Modify EGAP form and add new form

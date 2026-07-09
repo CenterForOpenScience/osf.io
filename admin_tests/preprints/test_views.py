@@ -292,7 +292,7 @@ class TestPreprintView:
         assert subject_osf in preprint.subjects.all()
 
     def test_change_preprint_provider_subjects_problem_subject(self, plain_view, preprint_user, provider_one, provider_osf, subject_osf):
-        """ Testing that subjects are changed when providers are changed and theres no related mapping between subjects, the old subject stays in place.
+        """ Testing that subjects are changed when providers are changed and there's no related mapping between subjects, the old subject stays in place.
         """
 
         preprint = PreprintFactory(subjects=[[subject_osf._id]], provider=provider_osf, creator=preprint_user)
@@ -313,7 +313,7 @@ class TestPreprintView:
         assert subject_osf in preprint.subjects.all()
 
     def test_change_preprint_provider_subjects_change_permissions(self, plain_view, preprint_user, provider_one, provider_osf, subject_osf):
-        """ Testing that subjects are changed when providers are changed and theres no related mapping between subjects, the old subject stays in place.
+        """ Testing that subjects are changed when providers are changed and there's no related mapping between subjects, the old subject stays in place.
         """
         auth_user = AuthUserFactory()
         change_permission = Permission.objects.get(codename='change_preprint')

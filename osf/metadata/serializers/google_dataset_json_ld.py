@@ -45,7 +45,7 @@ class GoogleDatasetJsonLdSerializer(_base.MetadataSerializer):
                 'name': 'Center For Open Science'
             },
             'creator': format_creators(self.basket),
-            'identifier': [identifer for identifer in self.basket[DCTERMS.identifier]],
+            'identifier': [identifier for identifier in self.basket[DCTERMS.identifier]],
             'license': format_license_list(self.basket),
         }
 

@@ -403,7 +403,7 @@ def _format_included_entities(included_entities_json):
     '''Processes all entries of a JSONAPI `include` element into JSONAPIResultEntries.
 
     Returns a dictionary of JSONAPIResultEntires keyed by type and id for easy lookup
-    and linking. Also links these entires in the case of nested Includes.
+    and linking. Also links these entries in the case of nested Includes.
     '''
     included_entities_by_type_and_id = {
         (entity['type'], entity['id']): JSONAPIResultEntry(entity)

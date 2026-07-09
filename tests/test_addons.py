@@ -1590,7 +1590,7 @@ class TestAddonFileViews(OsfTestCase):
         file_node.history.append({'modified': parse_date(
                 '2017-08-22T13:54:32.100900',
                 ignoretz=True,
-                default=timezone.now()  # Just incase nothing can be parsed
+                default=timezone.now()  # Just in case nothing can be parsed
             )})
         data = {
             'name': 'a name',
