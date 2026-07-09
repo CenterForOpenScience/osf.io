@@ -29,12 +29,7 @@ def get_filtered_batches(filters, batch_size=1000, campaign_id=None):
         .annotate(already_sent=Exists(already_sent_subquery))
         .filter(already_sent=False)
         .filter(**filters)
-        .annotate(
-            activity_total=Coalesce(
-                Subquery(counter_subquery),
-                0
-            )
-        )
+        .annotate(activity_total=Coalesce(Subquery(counter_subquery), 0))
         .order_by('-activity_total', '-date_registered', '-id')
     )
 
@@ -223,5 +218,4 @@ def send_campaign_batch(context, recipients_ids, notification_type_name='blank',
     NotificationCampaignRecipient.objects.bulk_update(recipient_records['to_update'], ['status', 'error_message'])
 
     NotificationCampaign.objects.filter(pk=campaign_id).update(sent_count=F('sent_count') + success_count, failed_count=F('failed_count') + failure_count)
-    logger.info('Batch finished')
-    # TODO logs
+    logger.info('Batch finished')  # TODO: add/update logs

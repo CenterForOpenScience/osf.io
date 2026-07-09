@@ -41,7 +41,7 @@
                 <tr>
                     <td>
                         <p style="text-align:center;font-size:12px;margin:0 0 6px;">
-                            Copyright &copy; 2025
+                            Copyright &copy; 2026
                             Center For Open Science, All rights reserved. |
                             <a href="https://github.com/CenterForOpenScience/centerforopenscience.org/blob/master/PRIVACY_POLICY.md">
                                 Privacy Policy
