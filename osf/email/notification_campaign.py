@@ -18,7 +18,7 @@ counter_subquery = (
 )
 
 
-def get_filtered_batches(filters, batch_size=100, campaign_id=None):
+def get_filtered_batches(filters, batch_size=1000, campaign_id=None):
     already_sent_subquery = NotificationCampaignRecipient.objects.filter(
         campaign_id=campaign_id,
         user_id=OuterRef('pk'),
@@ -37,7 +37,6 @@ def get_filtered_batches(filters, batch_size=100, campaign_id=None):
         )
         .order_by('-activity_total', '-date_registered', '-id')
     )
-    print(f"explain {qs.explain(analyze=True, buffers=True)}")
 
     last_total = None
     last_date = None

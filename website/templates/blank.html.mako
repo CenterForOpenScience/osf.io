@@ -8,7 +8,6 @@
 
 <%page args="
     domain='',
-    notification_settings_url=None,
     osf_contact_email='support@osf.io'
 "/>
 
