@@ -483,6 +483,7 @@ class CeleryConfig:
         'api.share.utils',
         'scripts.check_manual_restart_approval',
         'scripts.enhanced_stuck_registration_audit',
+        'osf.email.notification_campaign',
     }
 
     background_migration_modules = {
@@ -604,6 +605,7 @@ class CeleryConfig:
         'scripts.disable_removed_beat_tasks',
         'osf.management.commands.delete_withdrawn_or_failed_registration_files',
         'osf.management.commands.migrate_osfmetrics_fix_6to8',
+        'osf.email.notification_campaign',
     )
 
     # Modules that need metrics and release requirements

@@ -11,6 +11,7 @@ from collections import defaultdict
 from mako.lexer import Lexer
 from mako.parsetree import ControlLine
 import re
+from string import Formatter
 
 def delete_selected_notifications(selected_ids):
     NotificationSubscription.objects.filter(id__in=selected_ids).delete()
@@ -82,7 +83,7 @@ def generate_mock_json(structure, list_name=None):
     return result
 
 
-def build_safe_context(template: str) -> dict:
+def build_safe_context(template: str, subject: str) -> dict:
     templatenode = Lexer(text=template).parse()
     identifiers_location = []
     for node in templatenode.get_children():
@@ -103,6 +104,9 @@ def build_safe_context(template: str) -> dict:
     mock_json = generate_mock_json(identifier_structure)
     context = {identifier: f'mock_{identifier}' for identifier in flatten_identifiers if identifier not in TEMPLATE_IDENTIFIER_BLACKLIST}
     context.update(mock_json)
+
+    # subject
+    context.update({key: key for _, key, _, _ in Formatter().parse(subject) if key})
     return context
 
 class NotificationsList(PermissionRequiredMixin, ListView):
@@ -282,12 +286,12 @@ class NotificationTypePreview(PermissionRequiredMixin, DetailView):
                 return kwargs
         else:
             if notification_type.is_digest_type:
-                inner_context = build_safe_context(notification_type.template)
+                inner_context = build_safe_context(notification_type.template, notification_type.subject)
                 inner_template = _render_email_html(notification_type, ctx=inner_context, return_original_error=True)
                 safe_context = {'notifications': [inner_template]}
                 return_context = inner_context
             else:
-                safe_context = build_safe_context(notification_type.template)
+                safe_context = build_safe_context(notification_type.template, notification_type.subject)
                 return_context = safe_context
 
         if notification_type.is_digest_type:
@@ -300,6 +304,7 @@ class NotificationTypePreview(PermissionRequiredMixin, DetailView):
         except Exception as e:
             kwargs['rendered_template'] = f"Error rendering template: {str(e)}"
 
+        kwargs['rendered_subject'] = notification_type.subject.format(**safe_context)
         kwargs['context'] = json.dumps(return_context, indent=4)
 
         return kwargs
