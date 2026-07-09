@@ -58,6 +58,7 @@ from .spam import SpamMixin
 from .session import UserSessionMap
 from .tag import Tag
 from .validators import validate_email, validate_social, validate_history_item, has_domain_in_user_fields_for_names
+from .notification_campaign import NotificationCampaign, NotificationCampaignRecipient
 from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
 from osf.utils.fields import NonNaiveDateTimeField, LowercaseEmailField, ensure_str
 from osf.utils.names import impute_names
@@ -397,6 +398,11 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
     contacted_deactivation = models.BooleanField(default=False)
 
     notifications_configured = DateTimeAwareJSONField(default=dict, blank=True)
+
+    received_notification_campaigns = models.ManyToManyField(
+        NotificationCampaign,
+        through=NotificationCampaignRecipient,
+    )
 
     # The time at which the user agreed to our updated ToS and Privacy Policy (GDPR, 25 May 2018)
     accepted_terms_of_service = NonNaiveDateTimeField(null=True, blank=True)
