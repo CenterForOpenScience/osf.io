@@ -542,8 +542,9 @@ class TestArchiverTasks(ArchiverTestCase):
         )
         mock_log_exception.assert_called_once()
 
+    @mock.patch.object(archive_node, 'replace')
     @mock.patch('website.archiver.tasks.archive_addon.si')
-    def test_archive_node_pass(self, mock_archive_addon):
+    def test_archive_node_pass(self, mock_archive_addon, mock_replace):
         settings.MAX_ARCHIVE_SIZE = 1024 ** 3
         with mock.patch.object(BaseStorageAddon, '_get_file_tree') as mock_file_tree:
             mock_file_tree.return_value = FILE_TREE
@@ -561,9 +562,10 @@ class TestArchiverTasks(ArchiverTestCase):
         with pytest.raises(ArchiverSizeExceeded):  # Note: Requires task_eager_propagates = True in celery
             archive_node.apply(args=(results, self.archive_job._id))
 
+    @mock.patch.object(archive_node, 'replace')
     @mock.patch('website.archiver.tasks.archive_callback.si')
     @mock.patch('website.archiver.tasks.archive_addon.si')
-    def test_archive_node_does_not_archive_empty_addons(self, mock_archive_addon, mock_send):
+    def test_archive_node_does_not_archive_empty_addons(self, mock_archive_addon, mock_send, mock_replace):
         with mock.patch('osf.models.mixins.AddonModelMixin.get_addon') as mock_get_addon:
             mock_addon = MockAddon()
 
@@ -582,8 +584,9 @@ class TestArchiverTasks(ArchiverTestCase):
         assert mock_send.called
 
     @use_fake_addons
+    @mock.patch.object(archive_node, 'replace')
     @mock.patch('website.archiver.tasks.archive_addon.si')
-    def test_archive_node_no_archive_size_limit(self, mock_archive_addon):
+    def test_archive_node_no_archive_size_limit(self, mock_archive_addon, mock_replace):
         settings.MAX_ARCHIVE_SIZE = 100
         self.archive_job.initiator.add_system_tag(NO_ARCHIVE_LIMIT)
         self.archive_job.initiator.save()
@@ -617,6 +620,7 @@ class TestArchiverTasks(ArchiverTestCase):
 
         mock_archive_callback.assert_not_called()
 
+    @mock.patch.object(archive_node, 'replace')
     @mock.patch('website.archiver.tasks.archive_callback.si')
     @mock.patch('website.archiver.tasks.make_copy_request.s')
     @mock.patch('website.archiver.tasks.celery.chain')
@@ -629,6 +633,7 @@ class TestArchiverTasks(ArchiverTestCase):
         mock_chain,
         mock_make_copy_request_s,
         mock_archive_callback,
+        mock_replace,
     ):
         settings.MAX_ARCHIVE_SIZE = 1024 ** 3
         with mock.patch.object(BaseStorageAddon, '_get_file_tree') as mock_file_tree:
@@ -651,6 +656,9 @@ class TestArchiverTasks(ArchiverTestCase):
             mock_group.return_value,
             mock_archive_callback.return_value,
         ])
+        # The built chain must be handed to self.replace() so Celery actually
+        # executes it; a bare `return chain` would silently never run.
+        mock_replace.assert_called_once_with(mock_chain.return_value)
 
     @pytest.mark.usefixtures('mock_gravy_valet_get_verified_links')
     def test_archive_success(self):
