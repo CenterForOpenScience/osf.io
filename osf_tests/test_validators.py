@@ -168,7 +168,7 @@ def test_has_domain_in_user_fields(user_data):
             'fullname': 'Judith Sarah',
             'given_name': 'Judith',
             'family_name': 'Preuss',
-            'middle_names': 'https://www.google.com',
+            'middle_names': 'Visit https://www.google.com today',
             'suffix': 'M.Sc.',
         },
         {

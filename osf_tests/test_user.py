@@ -2090,19 +2090,19 @@ class TestUserValidation(OsfTestCase):
         project = ProjectFactory(creator=self.user)
         with pytest.raises(ValidationError):
             project.add_unregistered_contributor(
-                fullname='google.com',
-                email='spammy@example.com',
+                fullname='Visit google.com for fun spam action',
+                email='spammy@cos.io',
                 auth=Auth(self.user),
                 notification_type=False,
             )
-        assert not OSFUser.objects.filter(username='spammy@example.com').exists()
+        assert not OSFUser.objects.filter(username='spammy@cos.io').exists()
 
     def test_validate_domain_fields_notable_domain_unregistered_contributor(self):
         NotableDomain.objects.get_or_create(domain='google.com', note=NotableDomain.Note.IGNORED)
         project = ProjectFactory(creator=self.user)
         contributor = project.add_unregistered_contributor(
             fullname='google.com',
-            email='notspammy@example.com',
+            email='notspammy@cos.io',
             auth=Auth(self.user),
             notification_type=False,
         )
@@ -2112,7 +2112,7 @@ class TestUserValidation(OsfTestCase):
         project = ProjectFactory(creator=self.user)
         contributor = project.add_unregistered_contributor(
             fullname='Sandhya N.Sathesh',
-            email='sandhya@example.com',
+            email='sandhya@cos.io',
             auth=Auth(self.user),
             notification_type=False,
         )

@@ -1584,7 +1584,7 @@ class ContributorMixin(models.Model):
         # Create a new user record if you weren't passed an existing user
         contributor = existing_user if existing_user else OSFUser.create_unregistered(fullname=fullname, email=email)
 
-        if existing_user is None and has_domain_in_user_fields_for_names(contributor):
+        if has_domain_in_user_fields_for_names(contributor):
             raise ValidationError('Invalid personal information.')
 
         try:
