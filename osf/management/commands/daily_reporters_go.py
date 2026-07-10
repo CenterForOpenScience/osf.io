@@ -7,25 +7,24 @@ from django.utils import timezone
 
 from framework.celery_tasks import app as celery_app
 from osf.metrics.reporters import AllDailyReporters
-from website.app import init_app
 
 
 logger = logging.getLogger(__name__)
 
 
 @celery_app.task(name='management.commands.daily_reporters_go')
-def daily_reporters_go(report_date=None, reporter_filter=None, **kwargs):
-    init_app()  # OSF-specific setup
-
-    if report_date is None:  # default to yesterday
+def daily_reporters_go(report_date=None, reporter_key=None, **kwargs):
+    if not report_date:  # default to yesterday
         report_date = (timezone.now() - datetime.timedelta(days=1)).date()
-
-    for _reporter_key, _reporter_class in AllDailyReporters.__members__.items():
-        if reporter_filter and (reporter_filter.lower() not in _reporter_class.__name__.lower()):
-            continue
+    _reporter_keys = (
+        [reporter_key]
+        if reporter_key
+        else AllDailyReporters.__members__.keys()
+    )
+    for _reporter_key in _reporter_keys:
         daily_reporter_go.apply_async(kwargs={
             'reporter_key': _reporter_key,
-            'report_date': report_date.isoformat(),
+            'report_date': report_date if isinstance(report_date, str) else report_date.isoformat(),
         })
 
 
@@ -37,7 +36,7 @@ def daily_reporters_go(report_date=None, reporter_filter=None, **kwargs):
     bind=True,
 )
 def daily_reporter_go(task, reporter_key: str, report_date: str):
-    _reporter_class = AllDailyReporters[reporter_key].value
+    _reporter_class = AllDailyReporters[reporter_key.upper()].value
     _parsed_date = datetime.date.fromisoformat(report_date)
     _reporter_class().run_and_record_for_date(report_date=_parsed_date)
 
@@ -50,15 +49,16 @@ class Command(BaseCommand):
             help='run for a specific date (default: yesterday)',
         )
         parser.add_argument(
-            '--filter',
+            '-r', '--reporter',
             type=str,
-            help='filter by reporter name (by partial case-insensitive match)'
+            choices={_enum.name.lower() for _enum in AllDailyReporters},
+            default='',
+            help='name of the reporter to run (default all)',
         )
     def handle(self, *args, **options):
-        errors = daily_reporters_go(
-            report_date=options.get('date'),
-            reporter_filter=options.get('filter'),
+        _report_date = options.get('date')
+        daily_reporters_go.delay(
+            report_date=_report_date.isoformat() if _report_date else None,
+            reporter_key=options.get('reporter'),
         )
-        for error_key, error_val in errors.items():
-            self.stdout.write(self.style.ERROR(f'error running {error_key}: ') + error_val)
-        self.stdout.write(self.style.SUCCESS('done.'))
+        self.stdout.write(self.style.SUCCESS('daily reporters going...'))

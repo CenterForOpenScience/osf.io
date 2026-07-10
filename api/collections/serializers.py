@@ -1,8 +1,11 @@
+import waffle
+
 from django.db import IntegrityError
 from rest_framework import exceptions
 from rest_framework import serializers as ser
 
-from osf.models import AbstractNode, Node, Collection, Guid, Registration
+from osf import features
+from osf.models import AbstractNode, Node, Collection, Guid, Registration, CedarMetadataRecord
 from osf.exceptions import ValidationError, NodeStateError
 from api.base.serializers import LinksField, RelationshipField, LinkedNodesRelationshipSerializer, LinkedRegistrationsRelationshipSerializer, LinkedPreprintsRelationshipSerializer
 from api.base.serializers import JSONAPISerializer, IDField, TypeField, VersionedDateTimeField, EnumField
@@ -426,10 +429,27 @@ class CollectionSubmissionCreateSerializer(CollectionSubmissionSerializer):
             raise exceptions.ValidationError('"creator" must be specified.')
         if not (creator.has_perm('write_collection', collection) or (hasattr(guid.referent, 'has_permission') and guid.referent.has_permission(creator, WRITE))):
             raise exceptions.PermissionDenied('Must have write permission on either collection or collected object to collect.')
+        cedar_record = None
+        if waffle.switch_is_active(features.COLLECTION_SUBMISSION_WITH_CEDAR) and collection.provider_id:
+            try:
+                collection.provider.validate_required_metadata(guid.referent)
+            except ValidationError as e:
+                raise InvalidModelValueError(e.message)
+            if collection.provider.required_metadata_template_id:
+                cedar_record = CedarMetadataRecord.objects.filter(
+                    guid=guid,
+                    template_id=collection.provider.required_metadata_template_id,
+                ).first()
         try:
             obj = collection.collect_object(guid.referent, creator, **validated_data)
         except ValidationError as e:
+            if cedar_record:
+                cedar_record.delete()
             raise InvalidModelValueError(e.message)
+        except Exception:
+            if cedar_record:
+                cedar_record.delete()
+            raise
         if subjects:
             auth = get_user_auth(self.context['request'])
             try:
@@ -462,10 +482,27 @@ class LegacyCollectionSubmissionCreateSerializer(LegacyCollectionSubmissionSeria
             raise exceptions.ValidationError('"creator" must be specified.')
         if not (creator.has_perm('write_collection', collection) or (hasattr(guid.referent, 'has_permission') and guid.referent.has_permission(creator, WRITE))):
             raise exceptions.PermissionDenied('Must have write permission on either collection or collected object to collect.')
+        cedar_record = None
+        if waffle.switch_is_active(features.COLLECTION_SUBMISSION_WITH_CEDAR) and collection.provider_id:
+            try:
+                collection.provider.validate_required_metadata(guid.referent)
+            except ValidationError as e:
+                raise InvalidModelValueError(e.message)
+            if collection.provider.required_metadata_template_id:
+                cedar_record = CedarMetadataRecord.objects.filter(
+                    guid=guid,
+                    template_id=collection.provider.required_metadata_template_id,
+                ).first()
         try:
             obj = collection.collect_object(guid.referent, creator, **validated_data)
         except ValidationError as e:
+            if cedar_record:
+                cedar_record.delete()
             raise InvalidModelValueError(e.message)
+        except Exception:
+            if cedar_record:
+                cedar_record.delete()
+            raise
         if subjects:
             auth = get_user_auth(self.context['request'])
             try:

@@ -1,4 +1,4 @@
-from django.urls import re_path
+from django.urls import re_path, path
 
 from admin.management import views
 
@@ -22,6 +22,9 @@ urlpatterns = [
             name='sync_notification_templates'),
     re_path(r'^remove_orcid_from_user_social', views.RemoveOrcidFromUserSocial.as_view(),
             name='remove_orcid_from_user_social'),
+    path('migrate_osfmetrics_fix_6to8', views.MigrateOsfmetricsFix6to8.as_view(), name='migrate_osfmetrics_fix_6to8'),
+    re_path(r'^migrate_funder_names_to_ror', views.MigrateFunderNamesToRor.as_view(),
+            name='migrate_funder_names_to_ror'),
     re_path(r'^reject_pending_collection_submissions', views.RejectPendingCollectionSubmissions.as_view(),
             name='reject_pending_collection_submissions'),
 ]

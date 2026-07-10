@@ -1,15 +1,14 @@
-import re
-from datetime import timedelta
-
+import abc
 import waffle
-from django.utils import timezone
 
 from api.base.exceptions import InvalidQueryStringError
 from osf import features
-from website.settings import PREPRINT_METRICS_START_DATE
+from osf.metrics.events import OsfCountedUsageEvent
+from osf.metrics.monthly_reports import MonthlyPublicItemUsageReport
+from osf.models.base import osfid_iri
 
 
-class MetricsViewMixin:
+class UsageMetricsViewMixin(abc.ABC):
     """Mixin for views that expose metrics via django-elasticsearch-metrics.
     Enables metrics to be requested with a query parameter, like so: ::
 
@@ -18,110 +17,97 @@ class MetricsViewMixin:
     Any subclass of this mixin MUST do the following:
 
     * Use a serializer_class that subclasses MetricsSerializerMixin
-    * Define metric_map as a class variable. It should be dict mapping metric name
-    ("downloads") to a Metric class (PreprintDownload)
-    * For list views: implement `get_annotated_queryset_with_metrics`
-    * For detail views: implement `add_metric_to_object`
+    * Call add_metrics_to_object(obj) to get `views` and/or `downloads`
+      assigned on the obj (according to query params)
     """
-    # Adapted from FilterMixin.QUERY_PATTERN
-    METRICS_QUERY_PATTERN = re.compile(r'^metrics\[(?P<metric_name>((?:,*\s*\w+)*))\]$')
-    TIMEDELTA_MAP = {
-        'daily': timedelta(hours=24),
-        'weekly': timedelta(days=7),
-        'monthly': timedelta(days=30),
-        'yearly': timedelta(days=365),
+    METRICS_QUERY_MAP = {
+        'metrics[views]': OsfCountedUsageEvent.ActionLabel.VIEW,
+        'metrics[downloads]': OsfCountedUsageEvent.ActionLabel.DOWNLOAD,
+    }
+    METRICS_ATTR_MAP = {
+        OsfCountedUsageEvent.ActionLabel.VIEW: 'views',
+        OsfCountedUsageEvent.ActionLabel.DOWNLOAD: 'downloads',
+    }
+    TIMESPAN_MAP = {
+        'daily': 'now-1d/d',
+        'weekly': 'now-1w/d',
+        'monthly': 'now-1M/d',
     }
     VALID_METRIC_PERIODS = {
         'daily',
         'weekly',
         'monthly',
-        'yearly',
         'total',
     }
 
     @property
-    def metric_map(self):
-        raise NotImplementedError('MetricsViewMixin subclasses must define a metric_map class variable.')
-
-    def get_annotated_queryset_with_metrics(self, queryset, metric_class, metric_name, after):
-        """Return a queryset annotated with metrics. Use for list endpoints that expose metrics."""
-        raise NotImplementedError('MetricsViewMixin subclasses must define get_annotated_queryset_with_metrics().')
-
-    def add_metric_to_object(self, obj, metric_class, metric_name, after):
-        """Set an attribute for a metric on obj. Use for detail endpoints that expose metrics.
-        Return the modified object.
-        """
-        raise NotImplementedError('MetricsViewMixin subclasses must define add_metric_to_object().')
-
-    @property
-    def metrics_default_after(self):
-        """Value to be used as the `after` in metrics queries if not otherwise specified.
-        Datetime or None.
-        """
-        return None
-
-    @property
     def metrics_requested(self):
         return (
-            waffle.switch_is_active(features.ELASTICSEARCH_METRICS) and
-            bool(self.parse_metric_query_params(self.request.query_params))
+            waffle.switch_is_active(features.ELASTICSEARCH_METRICS)
+            and any(_param in self.METRICS_QUERY_MAP for _param in self.request.query_params)
         )
 
-    # Adapted from FilterMixin.parse_query_params
-    # TODO: Should we get rid of query_params argument and use self.request.query_params instead?
-    def parse_metric_query_params(self, query_params):
+    def get_item_iri(self, item):
+        return osfid_iri(item._id)
+
+    def parse_metric_query_params(self):
         """Parses query parameters to a dict usable for fetching metrics.
 
         :param dict query_params:
         :return dict of the format {
-            <metric_name>: {
-                'period': <[daily|weekly|monthly|yearly|total]>,
-            }
+            <usage_label>: <[daily|weekly|monthly|yearly|total]>,
         }
         """
         query = {}
-        for key, value in query_params.items():
-            match = self.METRICS_QUERY_PATTERN.match(key)
-            if match:
-                match_dict = match.groupdict()
-                metric_name = match_dict['metric_name']
-                query[metric_name] = value
+        for key, value in self.request.query_params.items():
+            _usage_label = self.METRICS_QUERY_MAP.get(key)
+            if _usage_label:
+                if value not in self.VALID_METRIC_PERIODS:
+                    raise InvalidQueryStringError(f"Invalid period for metric: '{value}'", parameter='metrics')
+                query[_usage_label] = value
         return query
 
-    def _add_metrics(self, queryset_or_obj, method):
-        """Parse the ?metric[METRIC]=PERIOD query param, validate it, and
-        run ``method`` for each requested object.
-
-        This is used to share code between add_metric_to_object and get_metrics_queryset.
-        """
-        metrics_requested = self.parse_metric_query_params(self.request.query_params)
-        if metrics_requested:
-            metric_map = self.metric_map
-            for metric, period in metrics_requested.items():
-                if metric not in metric_map:
-                    raise InvalidQueryStringError(f"Invalid metric in query string: '{metric}'", parameter='metrics')
-                if period not in self.VALID_METRIC_PERIODS:
-                    raise InvalidQueryStringError(f"Invalid period for metric: '{period}'", parameter='metrics')
-                metric_class = metric_map[metric]
-                if period == 'total':
-                    after = self.metrics_default_after
-                else:
-                    after = timezone.now() - self.TIMEDELTA_MAP[period]
-                queryset_or_obj = method(queryset_or_obj, metric_class, metric, after)
-        return queryset_or_obj
-
     def add_metrics_to_object(self, obj):
-        """Helper method used for detail views."""
-        return self._add_metrics(obj, method=self.add_metric_to_object)
+        """Helper method used for detail views.
+        """
+        for _action_label, _period in self.parse_metric_query_params().items():
+            _count = self._get_usage_count(self.get_item_iri(obj), _action_label, _period)
+            setattr(obj, self.METRICS_ATTR_MAP[_action_label], _count)
 
-    def get_metrics_queryset(self, queryset):
-        """Helper method used for list views."""
-        return self._add_metrics(queryset, method=self.get_annotated_queryset_with_metrics)
+    def _get_usage_count(self, item_iri, action_label, period):
+        _search = (
+            OsfCountedUsageEvent.search()
+            .filter('term', item_iri=item_iri)
+            .filter('term', action_labels=action_label.value)
+        )
+        _prior_count = 0
+        if _timespan := self.TIMESPAN_MAP.get(period):
+            _search = _search.filter('range', timestamp={'gte': _timespan})
+        else:  # cumulative total
+            _latest_usage_report = self._get_latest_usage_report(item_iri)
+            if _latest_usage_report:
+                _search = _search.filter(
+                    'range', timestamp={
+                        'gte': _latest_usage_report.report_yearmonth.month_end(),
+                    },
+                )
+                if action_label == OsfCountedUsageEvent.ActionLabel.VIEW:
+                    _prior_count = _latest_usage_report.cumulative_view_count
+                elif action_label == OsfCountedUsageEvent.ActionLabel.DOWNLOAD:
+                    _prior_count = _latest_usage_report.cumulative_download_count
+                else:
+                    raise ValueError(f'unsupported action label {action_label!r}')
+        return _prior_count + _search.count()
 
-    # Override get_default_queryset for convenience
-    def get_default_queryset(self):
-        queryset = super().get_default_queryset()
-        return self.get_metrics_queryset(queryset)
+    def _get_latest_usage_report(self, item_iri):
+        _search = (
+            MonthlyPublicItemUsageReport.search()
+            .filter('term', item_iri=item_iri)
+            .sort('-cycle_coverage')
+        )
+        _response = _search[0].execute()
+        return _response[0] if _response else None
+
 
 class MetricsSerializerMixin:
     @property
@@ -138,9 +124,3 @@ class MetricsSerializerMixin:
                 meta = meta or {'metrics': {}}
                 meta['metrics'][metric] = getattr(obj, metric)
         return meta
-
-
-class PreprintMetricsViewMixin(MetricsViewMixin):
-    @property
-    def metrics_default_after(self):
-        return PREPRINT_METRICS_START_DATE

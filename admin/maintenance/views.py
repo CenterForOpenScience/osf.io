@@ -1,7 +1,7 @@
 import pytz
 import datetime
 
-from osf.models import MaintenanceState
+from osf.models import MaintenanceState, MaintenanceMode
 import website.maintenance as maintenance
 from admin.maintenance.forms import MaintenanceForm
 
@@ -36,15 +36,17 @@ class MaintenanceDisplay(PermissionRequiredMixin, TemplateView):
         maintenance = MaintenanceState.objects.first()
         kwargs['form'] = MaintenanceForm()
         kwargs['current_alert'] = model_to_dict(maintenance) if maintenance else None
+        kwargs['maintenance_mode'] = MaintenanceMode.is_under_maintenance()
         return super().get_context_data(**kwargs)
 
     def post(self, request, *args, **kwargs):
         data = request.POST
-
-        start = convert_eastern_to_utc(data['start']).isoformat() if data.get('start') else None
-        end = convert_eastern_to_utc(data['end']).isoformat() if data.get('end') else None
-
-        maintenance.set_maintenance(data.get('message', ''), data['level'], start, end)
+        if maintenance_mode := data.get('maintenance_mode'):
+            MaintenanceMode(maintenance_mode=False if maintenance_mode == 'True' else True).save()
+        else:
+            start = convert_eastern_to_utc(data['start']).isoformat() if data.get('start') else None
+            end = convert_eastern_to_utc(data['end']).isoformat() if data.get('end') else None
+            maintenance.set_maintenance(data.get('message', ''), data['level'], start, end)
         return redirect('maintenance:display')
 
 

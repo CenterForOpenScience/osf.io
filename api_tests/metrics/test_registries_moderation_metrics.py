@@ -1,16 +1,12 @@
 import pytest
-from waffle.testutils import override_switch
 
-import time
-from osf import features
 from osf_tests.factories import RegistrationFactory, AuthUserFactory
 from osf.utils.workflows import RegistrationModerationStates, RegistrationModerationTriggers
-from osf.metrics import RegistriesModerationMetrics
+from osf.metrics.events import RegistriesModerationEvent
 from tests.utils import capture_notifications
 
-pytestmark = pytest.mark.django_db
 
-
+@pytest.mark.osfmetrics_elastic_backends
 @pytest.mark.django_db
 class TestRegistrationModerationMetrics:
 
@@ -18,12 +14,6 @@ class TestRegistrationModerationMetrics:
     def registration(self):
         return RegistrationFactory()
 
-    @pytest.fixture(autouse=True)
-    def enable_elasticsearch_metrics(self):
-        with override_switch(features.ELASTICSEARCH_METRICS, active=True):
-            yield
-
-    @pytest.mark.es_metrics
     def test_record_transitions(self, registration):
         with capture_notifications():
             registration._write_registration_action(
@@ -32,10 +22,10 @@ class TestRegistrationModerationMetrics:
                 registration.creator,
                 'Metrics is easy'
             )
-        time.sleep(1)
+        RegistriesModerationEvent.refresh()
 
-        assert RegistriesModerationMetrics.search().count() == 1
-        data = RegistriesModerationMetrics.search().execute()['hits']['hits'][0]['_source']
+        assert RegistriesModerationEvent.search().count() == 1
+        data = RegistriesModerationEvent.search().execute()['hits']['hits'][0]['_source']
 
         assert data['from_state'] == RegistrationModerationStates.INITIAL.db_name
         assert data['to_state'] == RegistrationModerationStates.PENDING.db_name
@@ -44,17 +34,13 @@ class TestRegistrationModerationMetrics:
         assert data['comment'] == 'Metrics is easy'
 
 
+@pytest.mark.osfmetrics_elastic_backends
 @pytest.mark.django_db
 class TestRegistrationModerationMetricsView:
 
     @pytest.fixture()
     def registration(self):
         return RegistrationFactory()
-
-    @pytest.fixture(autouse=True)
-    def enable_elasticsearch_metrics(self):
-        with override_switch(features.ELASTICSEARCH_METRICS, active=True):
-            yield
 
     @pytest.fixture
     def user(self):
@@ -72,7 +58,6 @@ class TestRegistrationModerationMetricsView:
     def base_url(self):
         return '/_/metrics/registries_moderation/transitions/'
 
-    @pytest.mark.es_metrics
     def test_registries_moderation_view(self, app, user, base_url, registration):
         with capture_notifications():
             registration._write_registration_action(
@@ -81,7 +66,7 @@ class TestRegistrationModerationMetricsView:
                 registration.creator,
                 'Metrics is easy'
             )
-        time.sleep(1)
+        RegistriesModerationEvent.refresh()
 
         res = app.get(base_url, auth=user.auth, expect_errors=True)
         data = res.json

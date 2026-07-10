@@ -30,8 +30,19 @@ class TestCedarMetadataTemplate:
         )
 
     @pytest.fixture()
-    def active_template_ids(self, active_template, active_template_alt):
-        return [active_template._id, active_template_alt._id]
+    def active_template_for_collections(self):
+        return CedarMetadataTemplate.objects.create(
+            schema_name=fake.bs(),
+            cedar_id=fake.md5(),
+            template_version=1,
+            template={},
+            active=True,
+            is_for_collections=True
+        )
+
+    @pytest.fixture()
+    def active_template_ids(self, active_template, active_template_alt, active_template_for_collections):
+        return [active_template._id, active_template_alt._id, active_template_for_collections._id]
 
     @pytest.fixture()
     def inactive_template(self):

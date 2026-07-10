@@ -306,6 +306,9 @@ class SubscriptionDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView):
                 raise PermissionDenied
 
             for instance in qs:
+                instance.legacy_id = self.kwargs['subscription_id']
+                instance.event_name = 'global_file_updated'
+
                 serializer = self.get_serializer(instance=instance, data=request.data, partial=True)
                 serializer.is_valid(raise_exception=True)
                 self.perform_update(serializer)
@@ -326,6 +329,9 @@ class SubscriptionDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView):
                 raise PermissionDenied
 
             for instance in qs:
+                instance.legacy_id = self.kwargs['subscription_id']
+                instance.event_name = 'global_reviews'
+
                 serializer = self.get_serializer(instance=instance, data=request.data, partial=True)
                 serializer.is_valid(raise_exception=True)
                 self.perform_update(serializer)
@@ -354,6 +360,9 @@ class SubscriptionDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView):
                 raise PermissionDenied
 
             for instance in qs:
+                instance.legacy_id = self.kwargs['subscription_id']
+                instance.event_name = 'file_updated'
+
                 serializer = self.get_serializer(instance=instance, data=request.data, partial=True)
                 serializer.is_valid(raise_exception=True)
                 self.perform_update(serializer)
@@ -361,6 +370,7 @@ class SubscriptionDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView):
 
         else:
             instance.event_name = instance.notification_type.name  # Set event_name for serializer to use
+            instance.legacy_id = instance.notification_type.name  # Set legacy_id for serializer to use
 
             partial = kwargs.pop('partial', False)
             serializer = self.get_serializer(instance, data=request.data, partial=partial)

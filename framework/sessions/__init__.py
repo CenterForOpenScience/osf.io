@@ -164,7 +164,7 @@ def create_session(response, data=None):
 def before_request():
     # TODO: Fix circular import
     from framework.auth.core import get_user
-    from framework.auth import cas, utils
+    from framework.auth import cas
     UserSessionMap = apps.get_model('osf.UserSessionMap')
 
     # Request Type 1: Service ticket validation during CAS login.
@@ -215,8 +215,15 @@ def before_request():
         try:
             user_session = flask_get_session_from_cookie(cookie)
         except InvalidCookieOrSessionError:
-            # If invalid session/cookie happens, perform a full logout to clear both CAS and OSF Sessions
-            response = redirect(utils.get_default_osf_logout_url())
+            # If invalid session/cookie happens, only remove the invalid cookie and redirect to the same request.
+            # This ensures users landing on the page/link they previously clicked.
+            # Case 1: If it's a public page, they land on the correct page.
+            # Case 2: If it's a private page and if they already have a CAS cookie, they will be automatically logged
+            #         back in and land on the correct page.
+            # Case 3: If it's a private page and if they don't have a CAS cookie, they will need to manually log in.
+            #         After successful login, they will land on the correct page.
+            redirect_url = request.url
+            response = redirect(redirect_url)
             response.delete_cookie(settings.COOKIE_NAME, domain=settings.OSF_COOKIE_DOMAIN)
             return response
         # Case 1: anonymous session that is used for first time external (e.g. ORCiD) login only

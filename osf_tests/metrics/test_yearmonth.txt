@@ -71,3 +71,27 @@ datetime.datetime(3333, 3, 1, 0, 0, tzinfo=datetime.timezone.utc)
 datetime.datetime(3333, 4, 1, 0, 0, tzinfo=datetime.timezone.utc)
 >>> YearMonth(1999, 12).month_end().isoformat()
 '2000-01-01T00:00:00+00:00'
+
+comparisons:
+>>> YearMonth(1000, 3) < YearMonth(1000, 5)
+True
+>>> YearMonth(1000, 3) > YearMonth(1000, 5)
+False
+>>> YearMonth(2000, 3) < YearMonth(1000, 5)
+False
+>>> YearMonth(2000, 3) > YearMonth(1000, 5)
+True
+>>> YearMonth(1000, 3) < YearMonth(1000, 3)
+False
+>>> YearMonth(1000, 3) > YearMonth(1000, 3)
+False
+>>> YearMonth(1000, 3) < YearMonth(1000, 5)
+True
+>>> YearMonth(1000, 3) <= YearMonth(1000, 5)
+True
+>>> YearMonth(1000, 3) >= YearMonth(1000, 5)
+False
+>>> YearMonth(1000, 3) <= YearMonth(1000, 3)
+True
+>>> YearMonth(1000, 3) >= YearMonth(1000, 3)
+True

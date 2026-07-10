@@ -289,6 +289,28 @@
               </div>
           {% endif %}
           {% endif %}
+          {% if perms.osf.view_notification or perms.osf.view_notificationtype or perms.osf.view_notificationsubscription %}
+              <li><a role="button" data-toggle="collapse" href="#collapseNotifications">
+                  <i class='fa fa-caret-down'></i> Notifications
+              </a></li>
+              <div class="collapse" id="collapseNotifications">
+                  <ul class="sidebar-menu sidebar-menu-inner">
+                      {% if perms.osf.view_notificationtype %}
+                        <li><a href="{% url 'notifications:types_list' %}"><i class='fa fa-link'></i> <span>Notification Types</span></a></li>
+                      {% endif %}
+                      {% if perms.osf.view_notification %}
+                        <li><a href="{% url 'notifications:list' %}"><i class='fa fa-link'></i> <span>Notifications</span></a></li>
+                      {% endif %}
+                      {% if perms.osf.view_notificationsubscription %}
+                        <li><a href="{% url 'notifications:subscriptions_list' %}"><i class='fa fa-link'></i> <span>Notification Subscriptions</span></a></li>
+                      {% endif %}
+                      {% if perms.osf.view_emailtask %}
+                        <li><a href="{% url 'notifications:email_tasks_list' %}"><i class='fa fa-link'></i> <span>Email Tasks</span></a></li>
+                      {% endif %}
+
+                  </ul>
+              </div>
+          {% endif %}
           {% if perms.osf.view_metrics %}
             <li><a href="{% url 'metrics:metrics' %}"><i class='fa fa-link'></i> <span>Metrics</span></a></li>
           {% endif %}

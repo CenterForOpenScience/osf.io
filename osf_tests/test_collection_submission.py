@@ -1,4 +1,8 @@
+from contextlib import suppress
+from unittest import mock
 import pytest
+from requests import Response
+from requests.exceptions import HTTPError
 
 from osf_tests.factories import (
     AuthUserFactory,
@@ -8,11 +12,14 @@ from transitions import MachineError
 
 from osf_tests.factories import NodeFactory, CollectionFactory, CollectionProviderFactory
 
-from osf.models import CollectionSubmission, NotificationTypeEnum
+from osf.models import CollectionSubmission, NotificationTypeEnum, CedarMetadataRecord, CedarMetadataTemplate
+from osf_tests.metadata._utils import assert_equivalent_turtle
 from osf.utils.workflows import CollectionSubmissionStates
 from framework.exceptions import PermissionsError
 from api_tests.utils import UserRoles
+from api.share.utils import cedar_record_to_turtle, _shtrove_cedar_record_identifier
 from django.utils import timezone
+from website import settings
 
 from tests.utils import capture_notifications
 
@@ -145,6 +152,38 @@ def configure_test_auth(node, user_role, provider=None):
         node.add_contributor(user, user_role.get_permissions_string())
 
     return user
+
+
+@pytest.fixture()
+def unmoderated_collection_submission_public(node, unmoderated_collection):
+    unmoderated_collection.is_public = True
+    unmoderated_collection.save()
+    collection_submission = CollectionSubmission(
+        guid=node.guids.first(),
+        collection=unmoderated_collection,
+        creator=node.creator,
+    )
+    with capture_notifications():
+        collection_submission.save()
+    assert not collection_submission.is_moderated
+    return collection_submission
+
+
+@pytest.fixture()
+def cedar_template_json():
+    return {'t_key_1': 't_value_1', 't_key_2': 't_value_2', 't_key_3': 't_value_3'}
+
+
+@pytest.fixture()
+def cedar_template(cedar_template_json):
+    return CedarMetadataTemplate.objects.create(
+        schema_name='cedar_test_schema_name',
+        cedar_id='cedar_test_id',
+        template_version=1,
+        template=cedar_template_json,
+        active=True,
+        should_index_for_search=True
+    )
 
 
 @pytest.mark.django_db
@@ -574,3 +613,368 @@ class TestHybridModeratedCollectionSubmission:
         with capture_notifications():
             hybrid_moderated_collection_submission.cancel(user=user, comment='Test Comment')
         assert hybrid_moderated_collection_submission.state == CollectionSubmissionStates.IN_PROGRESS
+
+
+@pytest.mark.django_db
+@pytest.mark.enable_enqueue_task
+@mock.patch.object(settings, 'SHARE_ENABLED', True)
+@mock.patch.object(settings, 'USE_CELERY', False)  # run tasks synchronously
+class TestCollectionSubmissionWithCedarRecord:
+
+    @mock.patch('api.share.utils.pls_send_trove_record')
+    @mock.patch('api.share.utils.share_update_cedar_metadata_record')
+    @mock.patch('api.share.utils.share_delete_cedar_metadata_record')
+    def test_unindexable_template_and_unpublished_record_calls_records_deletion(
+        self,
+        mock_delete,
+        mock_create,
+        mock_pls,
+        unmoderated_collection_submission_public,
+        cedar_template,
+        cedar_template_json
+    ):
+        cedar_template.should_index_for_search = False
+        cedar_template.save()
+        record = CedarMetadataRecord.objects.create(
+            guid=unmoderated_collection_submission_public.guid,
+            template=cedar_template,
+            metadata=cedar_template_json,
+            is_published=False,
+        )
+        obj = mock.Mock()
+        obj.status_code = 200
+        mock_pls.return_value = obj
+        unmoderated_collection_submission_public.save()
+
+        assert not mock_create.delay.called
+        assert mock_delete.delay.called
+        mock_delete.delay.assert_called_with(
+            record.guid._id,
+            record._id,
+            record.template.cedar_id
+        )
+
+    @mock.patch('api.share.utils.pls_send_trove_record')
+    @mock.patch('api.share.utils.share_update_cedar_metadata_record')
+    @mock.patch('api.share.utils.share_delete_cedar_metadata_record')
+    def test_indexable_template_and_unpublished_record_calls_records_deletion(
+        self,
+        mock_delete,
+        mock_create,
+        mock_pls,
+        unmoderated_collection_submission_public,
+        cedar_template,
+        cedar_template_json
+    ):
+        cedar_template.should_index_for_search = True
+        cedar_template.save()
+        record = CedarMetadataRecord.objects.create(
+            guid=unmoderated_collection_submission_public.guid,
+            template=cedar_template,
+            metadata=cedar_template_json,
+            is_published=False,
+        )
+        obj = mock.Mock()
+        obj.status_code = 200
+        mock_pls.return_value = obj
+        unmoderated_collection_submission_public.save()
+
+        assert not mock_create.delay.called
+        assert mock_delete.delay.called
+        mock_delete.delay.assert_called_with(
+            record.guid._id,
+            record._id,
+            record.template.cedar_id
+        )
+
+    @mock.patch('api.share.utils.pls_send_trove_record')
+    @mock.patch('api.share.utils.share_update_cedar_metadata_record')
+    @mock.patch('api.share.utils.share_delete_cedar_metadata_record')
+    def test_unindexable_template_and_published_record_calls_records_deletion(
+        self,
+        mock_delete,
+        mock_create,
+        mock_pls,
+        unmoderated_collection_submission_public,
+        cedar_template,
+        cedar_template_json
+    ):
+        cedar_template.should_index_for_search = False
+        cedar_template.save()
+        record = CedarMetadataRecord.objects.create(
+            guid=unmoderated_collection_submission_public.guid,
+            template=cedar_template,
+            metadata=cedar_template_json,
+            is_published=True,
+        )
+        obj = mock.Mock()
+        obj.status_code = 200
+        mock_pls.return_value = obj
+        unmoderated_collection_submission_public.save()
+
+        assert not mock_create.delay.called
+        assert mock_delete.delay.called
+        mock_delete.delay.assert_called_with(
+            record.guid._id,
+            record._id,
+            record.template.cedar_id
+        )
+
+    @mock.patch('api.share.utils.pls_send_trove_record')
+    @mock.patch('api.share.utils.share_update_cedar_metadata_record')
+    @mock.patch('api.share.utils.share_delete_cedar_metadata_record')
+    def test_indexable_template_and_published_record_call_shtrove(
+        self,
+        mock_delete,
+        mock_create,
+        mock_pls,
+        unmoderated_collection_submission_public,
+        cedar_template,
+        cedar_template_json
+    ):
+        cedar_template.should_index_for_search = True
+        cedar_template.save()
+        record = CedarMetadataRecord.objects.create(
+            guid=unmoderated_collection_submission_public.guid,
+            template=cedar_template,
+            metadata=cedar_template_json,
+            is_published=True,
+        )
+        obj = mock.Mock()
+        obj.status_code = 200
+        mock_pls.return_value = obj
+        unmoderated_collection_submission_public.save()
+
+        assert mock_create.delay.called
+        mock_create.delay.assert_called_with(unmoderated_collection_submission_public.guid._id, record.pk)
+        assert not mock_delete.delay.called
+
+    def test_share_update_cedar_metadata_record(self, unmoderated_collection_submission_public, cedar_template):
+        metadata = {
+            '@context': {
+                'pav': 'http://purl.org/pav/',
+                'url': 'http://schema.org/url',
+                'xsd': 'http://www.w3.org/2001/XMLSchema#',
+                'name': 'http://schema.org/name',
+                'oslc': 'http://open-services.net/ns/core#',
+                'rdfs': 'http://www.w3.org/2000/01/rdf-schema#',
+                'skos': 'http://www.w3.org/2004/02/skos/core#',
+                'author': 'http://schema.org/author',
+                'funder': 'https://schema.metadatacenter.org/properties/c35f0660-2072-46a3-8e0d-532e40d94919',
+                'schema': 'http://schema.org/',
+                'license': 'http://schema.org/license',
+                'citation': 'http://schema.org/citation',
+                'keywords': 'http://schema.org/keywords',
+                'identifier': 'http://schema.org/identifier',
+                'rdfs:label': {
+                    '@type': 'xsd:string'
+                },
+                'description': 'http://schema.org/description',
+                'schema:name': {
+                    '@type': 'xsd:string'
+                },
+                'pav:createdBy': {
+                    '@type': '@id'
+                },
+                'pav:createdOn': {
+                    '@type': 'xsd:dateTime'
+                },
+                'skos:notation': {
+                    '@type': 'xsd:string'
+                },
+                'oslc:modifiedBy': {
+                    '@type': '@id'
+                },
+                'pav:derivedFrom': {
+                    '@type': '@id'
+                },
+                'schema:isBasedOn': {
+                    '@type': '@id'
+                },
+                'variableMeasured': 'http://schema.org/variableMeasured',
+                'pav:lastUpdatedOn': {
+                    '@type': 'xsd:dateTime'
+                },
+                'schema:description': {
+                    '@type': 'xsd:string'
+                },
+                'About this template': 'https://repo.metadatacenter.org/template-fields/bc66544c-e100-439e-9e80-9b35537368e5'
+            },
+            'name': {
+                '@value': 'name'
+            },
+            'description': {
+                '@value': 'description'
+            },
+            'variableMeasured': [
+                {
+                    '@value': 'variable'
+                }
+            ],
+            'author': [
+                {
+                    '@value': None
+                }
+            ],
+            'citation': {
+                '@value': None
+            },
+            'license': {
+                '@value': None
+            },
+            'funder': [
+                {
+                    '@value': '1111111'
+                }
+            ],
+            'url': {},
+            'keywords': {
+                '@value': None
+            },
+            'identifier': {}
+        }
+        with mock.patch('api.share.utils.pls_send_trove_record'), \
+                mock.patch('api.share.utils.share_update_cedar_metadata_record'):
+            record = CedarMetadataRecord.objects.create(
+                guid=unmoderated_collection_submission_public.guid,
+                template=cedar_template,
+                metadata=metadata,
+                is_published=True,
+            )
+
+        result = cedar_record_to_turtle(record.guid.referent, record)
+        expected = (
+            f'@prefix ns1: <https://osf.io/vocab/2022/> .\n'
+            f'@prefix ns2: <http://schema.org/> .\n'
+            f'@prefix ns3: <https://schema.metadatacenter.org/properties/> .\n\n'
+            f'<http://localhost:5000/{unmoderated_collection_submission_public.guid._id}> ns1:hasCedarRecord [ ns2:description "description" ;\n'
+            f'            ns2:identifier [ ] ;\n'
+            f'            ns2:name "name" ;\n'
+            f'            ns2:url [ ] ;\n'
+            f'            ns2:variableMeasured "variable" ;\n'
+            f'            ns3:c35f0660-2072-46a3-8e0d-532e40d94919 "1111111" ] .\n\n'
+        )
+        assert_equivalent_turtle(result, expected, 'test_share_update_cedar_metadata_record')
+
+    @mock.patch('api.share.utils.pls_send_trove_record')
+    @mock.patch('api.share.utils.share_delete_cedar_metadata_record')
+    def test_cedar_record_identifier_on_create(self, mock_delete, mock_pls, unmoderated_collection_submission_public):
+        template = CedarMetadataTemplate.objects.create(schema_name='http://google.com', cedar_id='http26', template_version=1)
+        template.should_index_for_search = True
+        template.save()
+        with mock.patch('api.share.utils.share_update_cedar_metadata_record'):
+            to_create_record = CedarMetadataRecord.objects.create(
+                guid=unmoderated_collection_submission_public.guid,
+                template=template,
+                metadata=template.template,
+                is_published=True,
+            )
+
+        with mock.patch('api.share.utils.requests.post'):
+            with mock.patch('api.share.utils._shtrove_cedar_record_identifier') as mock_identifier:
+                unmoderated_collection_submission_public.save()
+                mock_identifier.assert_called_with(
+                    to_create_record.guid._id,
+                    to_create_record.template.cedar_id
+                )
+                assert (
+                    _shtrove_cedar_record_identifier(to_create_record.guid._id, to_create_record.template.cedar_id) ==
+                    f'{to_create_record.guid._id}/CedarMetadataRecord:http26'
+                )
+
+    @mock.patch('api.share.utils.pls_send_trove_record')
+    @mock.patch('api.share.utils.share_update_cedar_metadata_record')
+    def test_cedar_record_identifier_on_delete(self, mock_update, mock_pls, unmoderated_collection_submission_public):
+        template = CedarMetadataTemplate.objects.create(schema_name='http://google.com', cedar_id='http25', template_version=1)
+        with mock.patch('api.share.utils.share_delete_cedar_metadata_record'):
+            to_delete_record = CedarMetadataRecord.objects.create(
+                guid=unmoderated_collection_submission_public.guid,
+                template=template,
+                metadata=template.template,
+                is_published=False,
+            )
+
+        with mock.patch('api.share.utils.requests.delete'):
+            with mock.patch('api.share.utils._shtrove_cedar_record_identifier') as mock_identifier:
+                unmoderated_collection_submission_public.save()
+                mock_identifier.assert_called_with(to_delete_record.guid._id, to_delete_record.template.cedar_id)
+                assert (
+                    _shtrove_cedar_record_identifier(to_delete_record.guid._id, to_delete_record.template.cedar_id) ==
+                    f'{to_delete_record.guid._id}/CedarMetadataRecord:http25'
+                )
+
+    @mock.patch('api.share.utils.share_update_cedar_metadata_record')
+    @mock.patch('api.share.utils.share_delete_cedar_metadata_record')
+    def test_cedar_record_create_retry(
+        self,
+        mock_delete,
+        mock_create,
+        unmoderated_collection_submission_public,
+        cedar_template,
+        cedar_template_json
+    ):
+        cedar_template.should_index_for_search = True
+        cedar_template.save()
+        with mock.patch('api.share.utils.pls_send_trove_record') as mock_pls:
+            mock_pls.return_value = Response()
+            mock_pls.return_value.status_code = 400
+            with suppress(Exception):
+                CedarMetadataRecord.objects.create(
+                    guid=unmoderated_collection_submission_public.guid,
+                    template=cedar_template,
+                    metadata=cedar_template_json,
+                    is_published=True,
+                )
+
+            def mock_raise_for_status(*args, **kwargs):
+                raise HTTPError('Retry error')
+
+            mock_pls.return_value = Response()
+            mock_pls.return_value.status_code = 400
+            mock_pls.return_value.raise_for_status = mock_raise_for_status
+            try:
+                unmoderated_collection_submission_public.save()
+            except Exception as err:
+                assert str(err) == "Retry in 180s: HTTPError('Retry error')"
+                assert not mock_create.delay.called
+                assert not mock_delete.delay.called
+            else:
+                pytest.fail('Expected Retry(HTTPError) to be raised')
+
+    @mock.patch('api.share.utils.share_update_cedar_metadata_record')
+    @mock.patch('api.share.utils.share_delete_cedar_metadata_record')
+    def test_cedar_record_delete_retry(
+        self,
+        mock_delete,
+        mock_create,
+        unmoderated_collection_submission_public,
+        cedar_template,
+        cedar_template_json
+    ):
+        cedar_template.should_index_for_search = False
+        cedar_template.save()
+        with mock.patch('api.share.utils.pls_send_trove_record') as mock_pls:
+            mock_pls.return_value = Response()
+            mock_pls.return_value.status_code = 400
+            with suppress(Exception):
+                CedarMetadataRecord.objects.create(
+                    guid=unmoderated_collection_submission_public.guid,
+                    template=cedar_template,
+                    metadata=cedar_template_json,
+                    is_published=True,
+                )
+
+            def mock_raise_for_status(*args, **kwargs):
+                raise HTTPError('Retry error')
+
+            mock_pls.return_value = Response()
+            mock_pls.return_value.status_code = 400
+            mock_pls.return_value.raise_for_status = mock_raise_for_status
+            try:
+                unmoderated_collection_submission_public.save()
+            except Exception as err:
+                assert str(err) == "Retry in 180s: HTTPError('Retry error')"
+                assert not mock_create.delay.called
+                assert not mock_delete.delay.called
+            else:
+                pytest.fail('Expected Retry(HTTPError) to be raised')

@@ -9,7 +9,7 @@ class CedarMetadataTemplateSerializer(JSONAPISerializer):
     class Meta:
         type_ = 'cedar-metadata-templates'
 
-    filterable_fields = frozenset(['schema_name', 'cedar_id', 'active'])
+    filterable_fields = frozenset(['schema_name', 'cedar_id', 'active', 'is_for_collections'])
 
     id = ser.CharField(source='_id', read_only=True)
     schema_name = ser.CharField(read_only=True)
@@ -17,6 +17,7 @@ class CedarMetadataTemplateSerializer(JSONAPISerializer):
     template = ser.DictField(read_only=True)
     active = ser.BooleanField(read_only=True)
     template_version = ser.IntegerField(read_only=True)
+    is_for_collections = ser.BooleanField(read_only=True)
 
     links = LinksField({'self': 'get_absolute_url'})
 

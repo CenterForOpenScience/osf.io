@@ -11,10 +11,12 @@ import jwt
 from unittest import mock
 import pytest
 from django.utils import timezone
+from waffle.testutils import override_flag
 from framework.auth import cas, signing
 from framework.auth.core import Auth
 from framework.exceptions import HTTPError
 from framework.sessions import get_session
+from osf import features
 from tests.base import OsfTestCase
 from api_tests.utils import create_test_file
 from osf_tests.factories import (
@@ -1799,3 +1801,31 @@ class TestViewUtils(OsfTestCase):
         # connect/disconnect from them, think osfstorage, there's no node-cfg for that.
         default_addons = [addon['short_name'] for addon in addon_dicts if addon['default']]
         assert not any(f'/{addon}/' in asset_paths for addon in default_addons)
+
+
+class TestNodeChooseAddonsProjectReadOnly(OsfTestCase):
+
+    def setUp(self):
+        super().setUp()
+        self.user = AuthUserFactory()
+        self.auth_obj = Auth(user=self.user)
+        self.node = ProjectFactory(creator=self.user)
+        self.url = f'/api/v1/project/{self.node._id}/settings/addons/'
+
+    def test_post_blocked_when_project_read_only_active(self):
+        with override_flag(features.PROJECT_READ_ONLY, active=True):
+            res = self.app.post(
+                self.url,
+                json={'github': True},
+                auth=self.user.auth,
+            )
+        assert res.status_code == 405
+
+    def test_post_allowed_when_project_read_only_inactive(self):
+        with override_flag(features.PROJECT_READ_ONLY, active=False):
+            res = self.app.post(
+                self.url,
+                json={'github': True},
+                auth=self.user.auth,
+            )
+        assert res.status_code == 200

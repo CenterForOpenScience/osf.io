@@ -104,6 +104,7 @@ from api.nodes.permissions import (
     ProjectEditingNotAllowed,
     ProjectRelationshipsEditingNotAllowed,
     NodeContributorWriteNotAllowed,
+    NodeDraftRegistrationCreationNotAllowed,
 )
 from api.wikis.permissions import WikisEditingNotAllowed
 from osf.utils import permissions as osf_permissions
@@ -682,6 +683,7 @@ class NodeDraftRegistrationsList(JSONAPIBaseView, generics.ListCreateAPIView, No
     """
     permission_classes = (
         DraftRegistrationPermission,
+        NodeDraftRegistrationCreationNotAllowed,
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
         CanSubmitDraftRegistrationToProvider,

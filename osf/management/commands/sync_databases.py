@@ -20,7 +20,7 @@ class Command(BaseCommand):
             ['migrate'],
         ]
         if waffle.switch_is_active(features.ELASTICSEARCH_METRICS):
-            COMMANDS.append(['sync_metrics'])
+            COMMANDS.append(['djelme_backend_setup'])
 
         for check in COMMANDS:
             call_command(*check)

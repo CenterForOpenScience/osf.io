@@ -19,7 +19,7 @@ class TestConfirmExternalLogin:
         user = OSFUser.create_unconfirmed(
             username='freddie@mercury.com',
             password=None,
-            fullname='freddie@mercury.com',
+            fullname='Freddie Mercury',
             external_identity=external_identity,
             campaign=None,
         )

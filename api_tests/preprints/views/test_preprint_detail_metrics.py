@@ -17,17 +17,13 @@ class TestPreprintDetailWithMetrics:
         with override_switch(features.ELASTICSEARCH_METRICS, active=True):
             yield
 
-    @pytest.mark.parametrize(('metric_name', 'metric_class_name'),
-    [
-        ('downloads', 'PreprintDownload'),
-        ('views', 'PreprintView'),
-    ])
-    def test_preprint_detail_with_downloads(self, app, settings, metric_name, metric_class_name):
+    @pytest.mark.parametrize('metric_name', ['downloads', 'views'])
+    def test_preprint_detail_with_downloads(self, app, settings, metric_name):
         preprint = PreprintFactory()
         url = f'/{API_BASE}preprints/{preprint._id}/?metrics[{metric_name}]=total'
 
-        with mock.patch(f'api.preprints.views.{metric_class_name}.get_count_for_preprint') as mock_get_count_for_preprint:
-            mock_get_count_for_preprint.return_value = 42
+        with mock.patch('api.base.metrics.UsageMetricsViewMixin._get_usage_count') as mock_get_count:
+            mock_get_count.return_value = 42
             res = app.get(url)
 
         assert res.status_code == 200
