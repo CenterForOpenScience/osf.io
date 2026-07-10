@@ -7,6 +7,7 @@ from framework.celery_tasks import app as celery_app
 from celery import chord
 from django.utils import timezone
 from osf.models.notification_campaign import NotificationCampaign, NotificationCampaignRecipient, NotificationCampaignStatus, NotificationCampaignRecipientStatus
+from osf.email import send_email_with_send_grid
 
 logger = logging.getLogger(__name__)
 
@@ -180,39 +181,43 @@ def send_campaign_batch(context, recipients_ids, notification_type_name='blank',
     }
     success_count = 0
     failure_count = 0
+    if campaign.metadata.get('sendgrid_bulk', False):
+        recipient_emails = list(recipients_qs.values_list('username', flat=True))
+        send_email_with_send_grid(to_addr=recipient_emails, notification_type=notification_type, context=context)
+        success_count = len(recipient_emails)
+    else:
+        for recipient in recipients_qs:
+            recipient_record = existing.get(recipient.id)
 
-    for recipient in recipients_qs:
-        recipient_record = existing.get(recipient.id)
+            if recipient_record is None:
+                recipient_record = NotificationCampaignRecipient(
+                    campaign_id=campaign_id,
+                    user=recipient,
+                )
+                operation = 'to_create'
+            else:
+                operation = 'to_update'
 
-        if recipient_record is None:
-            recipient_record = NotificationCampaignRecipient(
-                campaign_id=campaign_id,
-                user=recipient,
-            )
-            operation = 'to_create'
-        else:
-            operation = 'to_update'
+            try:
+                notification_type.emit(
+                    user=recipient,
+                    event_context=context,
+                    save=False,  # Too many write operations
+                )
 
-        try:
-            notification_type.emit(
-                user=recipient,
-                event_context=context,
-                save=False,  # Too many write operations
-            )
+                recipient_record.status = NotificationCampaignRecipientStatus.SENT
+                recipient_record.error_message = None
+                recipient_records[operation].append(recipient_record)
+                success_count += 1
 
-            recipient_record.status = NotificationCampaignRecipientStatus.SENT
-            recipient_record.error_message = None
-            recipient_records[operation].append(recipient_record)
-            success_count += 1
+            except Exception as exc:
+                logger.error(exc)  # TODO update error
+                recipient_record.status = NotificationCampaignRecipientStatus.FAILED
+                recipient_record.error_message = str(exc)
+                recipient_records[operation].append(recipient_record)
 
-        except Exception as exc:
-            logger.error(exc)  # TODO update error
-            recipient_record.status = NotificationCampaignRecipientStatus.FAILED
-            recipient_record.error_message = str(exc)
-            recipient_records[operation].append(recipient_record)
-
-            failure_count += 1
-            pass
+                failure_count += 1
+                pass
 
     NotificationCampaignRecipient.objects.bulk_create(recipient_records['to_create'])
     NotificationCampaignRecipient.objects.bulk_update(recipient_records['to_update'], ['status', 'error_message'])
