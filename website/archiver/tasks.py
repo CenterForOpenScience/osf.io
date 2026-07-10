@@ -274,10 +274,17 @@ def make_copy_request(self, params, job_pk):
             timeout=settings.EXTERNAL_REQUEST_TIMEOUT,
         )
     except requests.RequestException as exc:
+        # A failed copy request marks the target as failed, which fails the whole
+        # archive and deletes the registration. Retry transient network errors first.
+        if self.request.retries < self.max_retries:
+            raise self.retry(exc=exc)
         job.update_target(addon_short_name, ARCHIVER_FAILURE, errors=[str(exc)])
         raise
 
     if res.status_code not in (http_status.HTTP_200_OK, http_status.HTTP_201_CREATED, http_status.HTTP_202_ACCEPTED):
+        # Retry server-side WaterButler errors before failing (and deleting) the archive.
+        if res.status_code >= 500 and self.request.retries < self.max_retries:
+            raise self.retry(exc=HTTPError(res.status_code))
         job.update_target(addon_short_name, ARCHIVER_FAILURE, errors=[res.text or f'WaterButler request failed with status {res.status_code}'])
         raise HTTPError(res.status_code)
 
@@ -394,17 +401,21 @@ def archive_node(self, stat_results, job_pk):
                     )
                 )
 
+        # NOTE: use self.replace() rather than `return celery.chain(...)`. A Celery
+        # task that merely *returns* a signature does NOT execute it, so the copy
+        # requests and archive_callback would never run -- the archive would stall
+        # and the registration would be torn down (deleted) after submission.
         if not addon_tasks:
-            return celery.chain([
+            return self.replace(celery.chain([
                 archive_callback.si(dst_id=dst._id)
-            ])
+            ]))
 
-        return celery.chain(
+        return self.replace(celery.chain(
             [
                 celery.group(addon_tasks),
                 archive_callback.si(dst_id=dst._id),
             ]
-        )
+        ))
 
 
 def archive(job_pk):
