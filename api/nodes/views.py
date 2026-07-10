@@ -103,6 +103,7 @@ from api.nodes.permissions import (
     ProjectCreationNotAllowed,
     ProjectEditingNotAllowed,
     ProjectRelationshipsEditingNotAllowed,
+    NodeIdentifierCreationNotAllowed,
     NodeContributorWriteNotAllowed,
     NodeDraftRegistrationCreationNotAllowed,
 )
@@ -2215,7 +2216,7 @@ class NodeIdentifierList(NodeMixin, IdentifierList):
     """See [documentation for this endpoint](https://developer.osf.io/#operation/nodes_identifiers_list).
     """
 
-    permission_classes = IdentifierList.permission_classes + (ProjectRelationshipsEditingNotAllowed,)
+    permission_classes = IdentifierList.permission_classes + (NodeIdentifierCreationNotAllowed,)
 
     serializer_class = NodeIdentifierSerializer
     node_lookup_url_kwarg = 'node_id'

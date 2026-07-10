@@ -402,6 +402,14 @@ class ProjectRelationshipsEditingNotAllowed(permissions.BasePermission):
         return True
 
 
+class NodeIdentifierCreationNotAllowed(permissions.BasePermission):
+
+    def has_object_permission(self, request, view, obj):
+        if request.method == 'POST' and not obj.is_registration and waffle.flag_is_active(request, features.PROJECT_READ_ONLY):
+            raise exceptions.MethodNotAllowed(request.method, detail='This action is no longer available. Contact support if you have any questions.')
+        return True
+
+
 class NodeContributorWriteNotAllowed(permissions.BasePermission):
 
     def has_permission(self, request, view):
