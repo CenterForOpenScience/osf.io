@@ -2087,31 +2087,36 @@ class TestUserValidation(OsfTestCase):
             self.user.save()
 
     def test_validate_domain_fields_unregistered_contributor(self):
-        user = OSFUser.create_unregistered(fullname='google.com')
+        project = ProjectFactory(creator=self.user)
         with pytest.raises(ValidationError):
-            user.save()
-        assert user.is_spammy is True
-
-    def test_validate_domain_fields_not_unregistered_contributor(self):
-        for field in self.user.DOMAIN_VALIDATION_FIELDS:
-            setattr(self.user, field, 'Brian')
-            self.user.save()
-            self.user.refresh_from_db()
-            assert self.user.is_spammy is False
+            project.add_unregistered_contributor(
+                fullname='google.com',
+                email='spammy@example.com',
+                auth=Auth(self.user),
+                notification_type=False,
+            )
+        assert not OSFUser.objects.filter(username='spammy@example.com').exists()
 
     def test_validate_domain_fields_notable_domain_unregistered_contributor(self):
         NotableDomain.objects.get_or_create(domain='google.com', note=NotableDomain.Note.IGNORED)
-        user = OSFUser.create_unregistered(fullname='google.com')
-        user.save()
-        assert user.is_spammy is False
+        project = ProjectFactory(creator=self.user)
+        contributor = project.add_unregistered_contributor(
+            fullname='google.com',
+            email='notspammy@example.com',
+            auth=Auth(self.user),
+            notification_type=False,
+        )
+        assert contributor.is_spammy is False
 
     def test_validate_domain_fields_no_domain(self):
-        user = OSFUser.create_unregistered(fullname='Sandhya N.Sathesh')
-        for field in user.DOMAIN_VALIDATION_FIELDS:
-            setattr(user, field, 'Sandhya N.Sathesh')
-            user.save()
-            user.refresh_from_db()
-            assert user.is_spammy is False
+        project = ProjectFactory(creator=self.user)
+        contributor = project.add_unregistered_contributor(
+            fullname='Sandhya N.Sathesh',
+            email='sandhya@example.com',
+            auth=Auth(self.user),
+            notification_type=False,
+        )
+        assert contributor.is_spammy is False
 
 class TestUserGdprDelete:
 
