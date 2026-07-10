@@ -2091,24 +2091,27 @@ class TestUserValidation(OsfTestCase):
         with pytest.raises(ValidationError):
             user.save()
         assert user.is_spammy is True
-        assert user.is_hammy is False
 
-    def test_validate_domain_fields_notable_domain_in_field_unregistered_contributor(self):
+    def test_validate_domain_fields_not_unregistered_contributor(self):
+        for field in self.user.DOMAIN_VALIDATION_FIELDS:
+            setattr(self.user, field, 'Brian')
+            self.user.save()
+            self.user.refresh_from_db()
+            assert self.user.is_spammy is False
+
+    def test_validate_domain_fields_notable_domain_unregistered_contributor(self):
         NotableDomain.objects.get_or_create(domain='google.com', note=NotableDomain.Note.IGNORED)
         user = OSFUser.create_unregistered(fullname='google.com')
         user.save()
         assert user.is_spammy is False
-        assert user.is_hammy is True
 
-    def test_validate_domain_fields_for_real(self):
+    def test_validate_domain_fields_no_domain(self):
         user = OSFUser.create_unregistered(fullname='Sandhya N.Sathesh')
         for field in user.DOMAIN_VALIDATION_FIELDS:
             setattr(user, field, 'Sandhya N.Sathesh')
             user.save()
             user.refresh_from_db()
-
             assert user.is_spammy is False
-            assert user.is_hammy is False
 
 class TestUserGdprDelete:
 

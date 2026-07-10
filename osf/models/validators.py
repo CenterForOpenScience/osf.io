@@ -116,7 +116,6 @@ def validate_email(value):
 
 def has_domain_in_user_fields_for_names(user):
     from osf.models import NotableDomain
-    from .spam import SpamStatus
     notable_domain_list = set(
         NotableDomain.objects.filter(
             Q(note=NotableDomain.Note.ASSUME_HAM_UNTIL_REPORTED) |
@@ -129,10 +128,10 @@ def has_domain_in_user_fields_for_names(user):
     for match in DOMAIN_REGEX.finditer(name_content):
         candidate = match.group(0).strip()
         if candidate in notable_domain_list:
-            return False, SpamStatus.HAM
+            return False
         if looks_like_url(candidate):
-            return True, SpamStatus.SPAM
-    return False, SpamStatus.UNKNOWN
+            return True
+    return False
 
 def looks_like_url(candidate):
     candidate = candidate.strip()

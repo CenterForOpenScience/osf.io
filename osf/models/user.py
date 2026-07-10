@@ -54,7 +54,7 @@ from .contributor import Contributor, RecentlyAddedContributor
 from .institution import Institution
 from .institution_affiliation import InstitutionAffiliation
 from .mixins import AddonModelMixin, ShareIndexMixin
-from .spam import SpamMixin, SpamStatus
+from .spam import SpamMixin
 from .session import UserSessionMap
 from .tag import Tag
 from .validators import validate_email, validate_social, validate_history_item, has_domain_in_user_fields_for_names
@@ -1056,10 +1056,8 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
 
         was_creating = self._state.adding
         has_domain = False
-        should_mark_ham = False
         if not self.is_spammy:
-            has_domain, status = has_domain_in_user_fields_for_names(self)
-            should_mark_ham = True if status == SpamStatus.HAM else False
+            has_domain = has_domain_in_user_fields_for_names(self)
 
         self.update_is_active()
         self.username = self.username.lower().strip() if self.username else None
@@ -1072,8 +1070,6 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
                 self.flag_spam()
             if not self.is_hammy and has_domain:
                 self.confirm_spam()
-            if should_mark_ham:
-                self.confirm_ham()
 
         if has_domain and was_creating:
             raise ValidationError('Invalid personal information.')
