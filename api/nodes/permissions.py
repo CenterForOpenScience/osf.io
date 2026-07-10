@@ -386,24 +386,15 @@ class ProjectEditingNotAllowed(permissions.BasePermission):
         return True
 
 
-class NodeIdentifierCreationNotAllowed(permissions.BasePermission):
+class NodeDraftRegistrationCreationNotAllowed(permissions.BasePermission):
 
-    def has_object_permission(self, request, view, obj):
-        if request.method == 'POST' and isinstance(obj, Node) and waffle.flag_is_active(request, features.PROJECT_READ_ONLY):
+    def has_permission(self, request, view):
+        if request.method == 'POST' and waffle.flag_is_active(request, features.PROJECT_READ_ONLY):
             raise exceptions.MethodNotAllowed(request.method, detail='This action is no longer available. Contact support if you have any questions.')
         return True
 
 
-class NodeAffiliationWriteNotAllowed(permissions.BasePermission):
-
-    def has_object_permission(self, request, view, obj):
-        assert isinstance(obj, dict)
-        if request.method not in permissions.SAFE_METHODS and isinstance(obj['self'], Node) and waffle.flag_is_active(request, features.PROJECT_READ_ONLY):
-            raise exceptions.MethodNotAllowed(request.method, detail='This action is no longer available. Contact support if you have any questions.')
-        return True
-
-
-class NodeLinkedWriteNotAllowed(permissions.BasePermission):
+class ProjectRelationshipsEditingNotAllowed(permissions.BasePermission):
 
     def has_permission(self, request, view):
         if request.method not in permissions.SAFE_METHODS and waffle.flag_is_active(request, features.PROJECT_READ_ONLY):
