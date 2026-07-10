@@ -1357,7 +1357,21 @@ class TestNodeLinksListProjectReadOnly:
         assert res.status_code == 405
         assert res.json['errors'][0]['detail'] == 'This action is no longer available. Contact support if you have any questions.'
 
-    def test_post_allowed_when_project_read_only_flag_inactive(self, app, user, url, payload, pointer_project):
+    def test_post_allowed_when_project_read_only_flag_inactive(self, app, user, url):
+        another_pointer_project = ProjectFactory(creator=user)
+        payload = {
+            'data': {
+                'type': 'node_links',
+                'relationships': {
+                    'nodes': {
+                        'data': {
+                            'id': another_pointer_project._id,
+                            'type': 'nodes',
+                        },
+                    },
+                },
+            },
+        }
         res = app.post_json_api(url, payload, auth=user.auth)
         assert res.status_code == 201
-        assert res.json['data']['embeds']['target_node']['data']['id'] == pointer_project._id
+        assert res.json['data']['embeds']['target_node']['data']['id'] == another_pointer_project._id
