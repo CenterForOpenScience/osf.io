@@ -2,7 +2,7 @@ import pytest
 from osf.exceptions import ValidationValueError
 
 from types import SimpleNamespace
-from osf.models import validators, OSFUser, NotableDomain, SpamStatus
+from osf.models import validators, OSFUser, NotableDomain
 from osf.models.validators import has_domain_in_user_fields_for_names
 from osf_tests.factories import SubjectFactory
 
