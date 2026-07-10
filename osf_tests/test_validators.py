@@ -1,20 +1,12 @@
 import pytest
 from osf.exceptions import ValidationValueError
 
-from types import SimpleNamespace
-from osf.models import validators, OSFUser, NotableDomain
+from osf.models import validators, NotableDomain
 from osf.models.validators import has_domain_in_user_fields_for_names
 from osf_tests.factories import SubjectFactory
 
 
 # Ported from tests/framework/test_mongo.py
-
-def mock_user(user_data):
-    user = SimpleNamespace()
-    user.DOMAIN_VALIDATION_FIELDS = OSFUser.DOMAIN_VALIDATION_FIELDS
-    for field in user.DOMAIN_VALIDATION_FIELDS:
-        setattr(user, field, user_data.get(field, ''))
-    return user
 
 def test_string_required_passes_with_string():
     assert validators.string_required('Hi!') is True
@@ -62,171 +54,44 @@ def test_validate_expand_subject_hierarchy():
         validators.expand_subject_hierarchy(subject_list)
 
 @pytest.mark.parametrize(
-    'user_data',
+    'fullname',
     [
-        {
-            'fullname': 'Judith Sarah Preuss, M.Sc.',
-            'given_name': 'Judith',
-            'family_name': 'Preuss',
-            'middle_names': 'Sarah',
-            'suffix': 'M.Sc.',
-        },
-        {
-            'fullname': 'J.H. van Hateren',
-            'given_name': 'J.H.',
-            'family_name': 'van Hateren',
-            'middle_names': '',
-        },
-        {
-            'fullname': 'Sami-Egil Ahonen',
-            'given_name': 'Sami-Egil',
-            'family_name': 'Ahonen',
-            'middle_names': '',
-        },
-        {
-            'fullname': 'Giovanni Luca Ciampaglia',
-            'given_name': 'Giovanni Luca',
-            'family_name': 'Ciampaglia',
-            'middle_names': '',
-        },
-        {
-            'fullname': 'Joseph P.R.O. Orgel',
-            'given_name': 'Joseph',
-            'family_name': 'Orgel',
-            'middle_names': 'P.R.O.',
-        },
-        {
-            'fullname': 'Andrew Daoust',
-            'given_name': 'Andrew',
-            'family_name': 'Daoust',
-            'middle_names': '',
-        },
-        {
-            'fullname': 'Aidan G.C. Wright',
-            'given_name': 'Aidan',
-            'family_name': 'Wright',
-            'middle_names': 'G.C.',
-        },
-        {
-            'fullname': 'Guillermo Perez Algorta',
-            'given_name': 'Guillermo',
-            'family_name': 'Perez Algorta',
-            'middle_names': '',
-        },
-        {
-            'fullname': 'Sarah Wojkowski, MSc.PT, PhD.',
-            'given_name': 'Sarah',
-            'family_name': 'Wojkowski',
-            'middle_names': 'MSc.PT',
-        },
-        {
-            'fullname': 'Brockmann, L.C. (Leon)',
-            'given_name': 'Leon',
-            'family_name': 'Brockmann',
-            'middle_names': 'L.C.',
-        },
-        {
-            'fullname': 'Gragnolati, G.M. (Gaia Mariavittoria)',
-            'given_name': 'Gaia',
-            'family_name': 'Gragnolati',
-            'middle_names': 'G.M.',
-        },
-        {
-            'fullname': 'F.H. Leeuwis',
-            'given_name': 'F.H.',
-            'family_name': 'Leeuwis',
-            'middle_names': '',
-        },
-        {
-            'fullname': 'Grauss, S.E. (Sophie)',
-            'given_name': 'Sophie',
-            'family_name': 'Grauss',
-            'middle_names': 'S.E.',
-        },
-        {
-            'fullname': 'Sandhya N.Sathesh',
-            'given_name': 'Sandhya',
-            'family_name': 'N.Sathesh',
-            'middle_names': '',
-        },
-        {
-            'fullname': 'John Doe',
-            'given_name': 'John',
-            'family_name': 'Doe',
-            'middle_names': '',
-        }
+        'Judith Sarah Preuss, M.Sc.',
+        'J.H. van Hateren',
+        'Sami-Egil Ahonen',
+        'Giovanni Luca Ciampaglia',
+        'Joseph P.R.O. Orgel',
+        'Andrew Daoust',
+        'Aidan G.C. Wright',
+        'Guillermo Perez Algorta',
+        'Sarah Wojkowski, MSc.PT, PhD.',
+        'Brockmann, L.C. (Leon)',
+        'Gragnolati, G.M. (Gaia Mariavittoria)',
+        'F.H. Leeuwis',
+        'Grauss, S.E. (Sophie)',
+        'Sandhya N.Sathesh',
+        'John Doe',
     ]
 )
-def test_has_domain_in_user_fields(user_data):
-    user = mock_user(user_data)
-    assert has_domain_in_user_fields_for_names(user) is False
+def test_has_domain_in_user_fields(fullname):
+    assert has_domain_in_user_fields_for_names(fullname) is False
 
 @pytest.mark.parametrize(
-    'user_data',
+    'fullname',
     [
-        {
-            'fullname': 'Judith Sarah',
-            'given_name': 'Judith',
-            'family_name': 'Preuss',
-            'middle_names': 'Visit https://www.google.com today',
-            'suffix': 'M.Sc.',
-        },
-        {
-            'fullname': 'J.H. van Hateren',
-            'given_name': 'J.H.',
-            'family_name': 'https://google.com',
-            'middle_names': '',
-        },
-        {
-            'fullname': 'Judith Sarah',
-            'given_name': 'Judith',
-            'family_name': 'Preuss',
-            'middle_names': 'www.google.com',
-            'suffix': 'M.Sc.',
-        },
-        {
-            'fullname': 'Judith Hateren',
-            'given_name': 'Judith',
-            'family_name': 'Hateren',
-            'middle_names': 'google.com',
-            'suffix': 'M.Sc.',
-        },
+        'Judith Sarah Visit https://www.google.com today',
+        'J.H. https://google.com',
+        'Judith Sarah www.google.com',
+        'Judith Hateren google.com',
     ]
 )
-def test_has_domain_in_user_fields_fail(user_data):
-    user = mock_user(user_data)
-    assert has_domain_in_user_fields_for_names(user) is True
+def test_has_domain_in_user_fields_fail(fullname):
+    assert has_domain_in_user_fields_for_names(fullname) is True
 
-@pytest.mark.parametrize(
-    'user_data',
-    [
-        {
-            'fullname': 'Judith Sarah',
-            'given_name': 'Judith',
-            'family_name': 'Preuss',
-            'middle_names': 'osf.io',
-            'suffix': 'M.Sc.',
-        },
-    ]
-)
-def test_has_notable_domain_in_user_fields(user_data):
+def test_has_notable_domain_in_user_fields():
     NotableDomain.objects.get_or_create(domain='osf.io', note=NotableDomain.Note.IGNORED)
-    user = mock_user(user_data)
-    assert has_domain_in_user_fields_for_names(user) is False
+    assert has_domain_in_user_fields_for_names('Judith Sarah osf.io') is False
 
-@pytest.mark.parametrize(
-    'user_data',
-    [
-        {
-            'fullname': 'Judith Sarah',
-            'given_name': 'Judith',
-            'family_name': 'Preuss',
-            'middle_names': 'osf.io',
-            'suffix': 'M.Sc.',
-        },
-    ]
-)
-def test_has_no_notable_domain_in_user_fields(user_data):
+def test_has_no_notable_domain_in_user_fields():
     NotableDomain.objects.get_or_create(domain='google.com', note=NotableDomain.Note.IGNORED)
-    user = mock_user(user_data)
-    assert has_domain_in_user_fields_for_names(user) is True
+    assert has_domain_in_user_fields_for_names('Judith Sarah osf.io') is True

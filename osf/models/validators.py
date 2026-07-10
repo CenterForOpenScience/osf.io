@@ -114,7 +114,7 @@ def validate_email(value):
         raise BlockedEmailError('Invalid Email')
 
 
-def has_domain_in_user_fields_for_names(user):
+def has_domain_in_user_fields_for_names(fullname):
     from osf.models import NotableDomain
     notable_domain_list = set(
         NotableDomain.objects.filter(
@@ -124,8 +124,7 @@ def has_domain_in_user_fields_for_names(user):
         .values_list('domain', flat=True)
         .distinct()
     )
-    name_content = ' '.join(getattr(user, field) or '' for field in user.DOMAIN_VALIDATION_FIELDS).strip()
-    for match in DOMAIN_REGEX.finditer(name_content):
+    for match in DOMAIN_REGEX.finditer(fullname):
         candidate = match.group(0).strip()
         if candidate in notable_domain_list:
             return False

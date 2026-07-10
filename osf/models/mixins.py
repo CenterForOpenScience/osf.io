@@ -1581,11 +1581,11 @@ class ContributorMixin(models.Model):
             except BlockedEmailError:
                 raise ValidationError('Unregistered contributor email address domain is blocked.')
 
+        if has_domain_in_user_fields_for_names(fullname):
+            raise ValidationError('Invalid personal information.')
+
         # Create a new user record if you weren't passed an existing user
         contributor = existing_user if existing_user else OSFUser.create_unregistered(fullname=fullname, email=email)
-
-        if has_domain_in_user_fields_for_names(contributor):
-            raise ValidationError('Invalid personal information.')
 
         try:
             contributor.add_unclaimed_record(
