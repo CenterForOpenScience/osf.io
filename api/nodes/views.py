@@ -102,9 +102,8 @@ from api.nodes.permissions import (
     ReadOnlyIfWithdrawn,
     ProjectCreationNotAllowed,
     ProjectEditingNotAllowed,
+    ProjectRelationshipsEditingNotAllowed,
     NodeIdentifierCreationNotAllowed,
-    NodeAffiliationWriteNotAllowed,
-    NodeLinkedWriteNotAllowed,
     NodeContributorWriteNotAllowed,
     NodeDraftRegistrationCreationNotAllowed,
 )
@@ -948,6 +947,7 @@ class NodeLinksList(BaseNodeLinksList, bulk_views.BulkDestroyJSONAPIView, bulk_v
         base_permissions.TokenHasScope,
         ExcludeWithdrawals,
         NodeLinksShowIfVersion,
+        ProjectRelationshipsEditingNotAllowed,
     )
 
     required_read_scopes = [CoreScopes.NODE_LINKS_READ]
@@ -1034,6 +1034,7 @@ class NodeLinksDetail(BaseNodeLinksDetail, generics.RetrieveDestroyAPIView, Node
         RegistrationAndPermissionCheckForPointers,
         ExcludeWithdrawals,
         NodeLinksShowIfVersion,
+        ProjectRelationshipsEditingNotAllowed,
     )
 
     required_read_scopes = [CoreScopes.NODE_LINKS_READ]
@@ -1758,7 +1759,7 @@ class NodeInstitutionsRelationship(JSONAPIBaseView, generics.RetrieveUpdateDestr
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
         WriteOrPublicForRelationshipInstitutions,
-        NodeAffiliationWriteNotAllowed,
+        ProjectRelationshipsEditingNotAllowed,
     )
     required_read_scopes = [CoreScopes.NODE_BASE_READ]
     required_write_scopes = [CoreScopes.NODE_BASE_WRITE]
@@ -1857,7 +1858,7 @@ class NodeSubjectsRelationship(SubjectRelationshipBaseView, NodeMixin):
         base_permissions.TokenHasScope,
         ContributorOrPublic,
         ExcludeWithdrawals,
-        ProjectEditingNotAllowed,
+        ProjectRelationshipsEditingNotAllowed,
     )
 
     required_read_scopes = [CoreScopes.NODE_BASE_READ]
@@ -1970,7 +1971,7 @@ class NodeLinkedNodesRelationship(LinkedNodesRelationship, NodeMixin):
     corresponding node_id in the request.
     """
 
-    permission_classes = LinkedNodesRelationship.permission_classes + (NodeLinkedWriteNotAllowed,)
+    permission_classes = LinkedNodesRelationship.permission_classes + (ProjectRelationshipsEditingNotAllowed,)
 
     view_category = 'nodes'
     view_name = 'node-pointer-relationship'
@@ -2061,7 +2062,7 @@ class NodeLinkedRegistrationsRelationship(LinkedRegistrationsRelationship, NodeM
     corresponding node_id in the request.
     """
 
-    permission_classes = LinkedRegistrationsRelationship.permission_classes + (NodeLinkedWriteNotAllowed,)
+    permission_classes = LinkedRegistrationsRelationship.permission_classes + (ProjectRelationshipsEditingNotAllowed,)
 
     view_category = 'nodes'
     view_name = 'node-registration-pointer-relationship'
