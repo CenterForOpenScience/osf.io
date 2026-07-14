@@ -71,6 +71,8 @@ def test_validate_expand_subject_hierarchy():
         'Grauss, S.E. (Sophie)',
         'Sandhya N.Sathesh',
         'John Doe',
+        'John Doe, B.Sc.',
+        'John Doe, D.Sc.',
     ]
 )
 def test_has_domain_in_user_fields(fullname):
@@ -95,3 +97,4 @@ def test_has_notable_domain_in_user_fields():
 def test_has_no_notable_domain_in_user_fields():
     NotableDomain.objects.get_or_create(domain='google.com', note=NotableDomain.Note.IGNORED)
     assert has_domain_in_user_fields_for_names('Judith Sarah osf.io') is True
+    assert has_domain_in_user_fields_for_names('Sarah google.com buy-pills.example.com') is True

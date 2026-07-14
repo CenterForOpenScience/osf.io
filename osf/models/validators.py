@@ -125,15 +125,15 @@ def has_domain_in_user_fields_for_names(fullname):
         .distinct()
     )
     for match in DOMAIN_REGEX.finditer(fullname):
-        candidate = match.group(0).strip()
-        if candidate in notable_domain_list:
-            return False
-        if looks_like_url(candidate):
+        domain = match.group('domain')
+        if domain in notable_domain_list:
+            continue
+        if looks_like_url(match):
             return True
     return False
 
 def looks_like_url(candidate):
-    candidate = candidate.strip()
+    candidate = candidate.group(0).strip()
     words = re.findall(r'[A-Za-z.]+', candidate.lower())
     if any(word in NOTABLE_POST_NOMINALS for word in words):
         return False
