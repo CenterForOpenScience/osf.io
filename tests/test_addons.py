@@ -1118,6 +1118,26 @@ class TestCheckAuth(OsfTestCase):
         assert not component.has_permission(self.user, WRITE)
         assert views._check_resource_permissions(component, Auth(user=self.user), 'copyfrom')
 
+    def test_upload_blocked_when_project_read_only_active(self):
+        with override_flag(features.PROJECT_READ_ONLY, active=True):
+            with self.assertRaises(HTTPError) as exc_info:
+                views._check_resource_permissions(self.node, Auth(user=self.user), 'upload')
+        assert exc_info.exception.code == 403
+
+    def test_create_folder_blocked_when_project_read_only_active(self):
+        with override_flag(features.PROJECT_READ_ONLY, active=True):
+            with self.assertRaises(HTTPError) as exc_info:
+                views._check_resource_permissions(self.node, Auth(user=self.user), 'create_folder')
+        assert exc_info.exception.code == 403
+
+    def test_download_allowed_when_project_read_only_active(self):
+        with override_flag(features.PROJECT_READ_ONLY, active=True):
+            assert views._check_resource_permissions(self.node, Auth(user=self.user), 'download')
+
+    def test_upload_allowed_when_project_read_only_inactive(self):
+        with override_flag(features.PROJECT_READ_ONLY, active=False):
+            assert views._check_resource_permissions(self.node, Auth(user=self.user), 'upload')
+
 
 class TestCheckOAuth(OsfTestCase):
 
