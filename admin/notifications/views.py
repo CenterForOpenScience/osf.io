@@ -1,17 +1,22 @@
-from django.urls import reverse_lazy
-from django.db.models import Q
-from osf.models import NotificationSubscription, NotificationType, Notification, EmailTask
-from django.views.generic import ListView, DetailView, UpdateView
-from django.contrib.auth.mixins import PermissionRequiredMixin
-from django.forms.models import model_to_dict
-from .forms import NotificationTypeForm
-from osf.email import _render_email_html
+import re
 import json
 from collections import defaultdict
+from django.urls import reverse_lazy
+from django.db.models import Q
+from django.db import models
+from django.shortcuts import get_object_or_404, redirect
+from django.views.generic import ListView, DetailView, UpdateView, CreateView, View
+from django.contrib import messages
+from django.contrib.auth.mixins import PermissionRequiredMixin
+from osf.models import NotificationSubscription, NotificationType, Notification, EmailTask, NotificationCampaign, OSFUser
+from django.forms.models import model_to_dict
+from .forms import NotificationTypeForm, NotificationCampaignCreateForm
 from mako.lexer import Lexer
 from mako.parsetree import ControlLine
-import re
 from string import Formatter
+from osf.email import _render_email_html
+from osf.email.notification_campaign import FILTER_PRESETS, filter_users
+
 
 def delete_selected_notifications(selected_ids):
     NotificationSubscription.objects.filter(id__in=selected_ids).delete()
@@ -332,3 +337,262 @@ class NotificationTypeChangeForm(PermissionRequiredMixin, UpdateView):
 
     def get_success_url(self, *args, **kwargs):
         return reverse_lazy('notifications:type_display', kwargs={'pk': self.kwargs.get('pk')})
+
+
+class NotificationCampaignsList(PermissionRequiredMixin, ListView):
+    paginate_by = 25
+    template_name = 'notifications/notification_campaigns_list.html'
+    ordering = 'name'
+    permission_required = 'osf.view_notificationcampaign'
+    raise_exception = True
+    model = NotificationCampaign
+
+    def get_queryset(self):
+        qs = NotificationCampaign.objects.all().order_by(self.ordering)
+        q = self.request.GET.get('q')
+        if q:
+            qs = qs.filter(
+                Q(name__icontains=q) |
+                Q(status__icontains=q) |
+                Q(notification_type__name__icontains=q)
+            )
+        return qs
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        q = self.request.GET.get('q', '')
+        context['q'] = q
+        # append search param to pagination links
+        if q:
+            context['extra_query_params'] = f"&q={q}"
+        else:
+            context['extra_query_params'] = ''
+
+        context['notification_campaigns'] = context['object_list']
+        context['page'] = context['page_obj']
+        return context
+
+
+class NotificationCampaignDetail(PermissionRequiredMixin, DetailView):
+    model = NotificationCampaign
+    template_name = 'notifications/notification_campaigns_detail.html'
+    permission_required = 'osf.change_notificationcampaign'
+    raise_exception = True
+
+    def get_object(self, queryset=None):
+        return NotificationCampaign.objects.get(id=self.kwargs.get('pk'))
+
+    def get_context_data(self, *args, **kwargs):
+        notification_campaign = self.get_object()
+        metadata = notification_campaign.metadata or {}
+
+        context = {
+            'notification_campaign': notification_campaign,
+            'display_fields': [
+                ('Name', notification_campaign.name),
+                ('Notification Type', notification_campaign.notification_type),
+                ('Created By', notification_campaign.created_by),
+                ('Status', notification_campaign.get_status_display()),
+                ('Recipients', notification_campaign.recipient_count),
+                ('Sent', notification_campaign.sent_count),
+                ('Failed', notification_campaign.failed_count),
+                ('Retries', notification_campaign.retries),
+                ('Created', notification_campaign.created_at),
+                ('Started', notification_campaign.started_at),
+                ('Completed', notification_campaign.completed_at),
+            ],
+            'sent_percent': notification_campaign.sent_count * 100 / notification_campaign.recipient_count,
+            'failed_percent': notification_campaign.failed_count * 100 / notification_campaign.recipient_count,
+            'template': notification_campaign.notification_type.template,
+            'metadata': metadata,
+            'filters_json': json.dumps(notification_campaign.metadata['filters']),
+            'sent_filters_json': json.dumps({
+                'manual': [
+                    {'field': 'notificationcampaignrecipient', 'value': notification_campaign.id, 'lookup': 'campaign'},
+                    {'field': 'notificationcampaignrecipient', 'value': 'sent', 'lookup': 'status'}
+                ]
+            }),
+            'failed_filters_json': json.dumps({
+                'manual': [
+                    {'field': 'notificationcampaignrecipient', 'value': notification_campaign.id, 'lookup': 'campaign'},
+                    {'field': 'notificationcampaignrecipient', 'value': 'failed', 'lookup': 'status'}
+                ]
+            }),
+            'other_metadata': {
+                k: v
+                for k, v in metadata.items()
+                if k not in {'filters', 'context', 'execution', 'template'}
+            },
+        }
+
+        return context
+
+
+LOOKUPS = {
+    models.CharField: {
+        'exact': 'Equals',
+        'iexact': 'Equals (case insensitive)',
+        'contains': 'Contains',
+        'icontains': 'Contains (case insensitive)',
+        'startswith': 'Starts with',
+        'istartswith': 'Starts with (case insensitive)',
+        'endswith': 'Ends with',
+        'iendswith': 'Ends with (case insensitive)',
+        'in': 'In',
+        'isnull': 'Is empty',
+    },
+    models.TextField: {
+        'exact': 'Equals',
+        'iexact': 'Equals (case insensitive)',
+        'contains': 'Contains',
+        'icontains': 'Contains (case insensitive)',
+        'startswith': 'Starts with',
+        'istartswith': 'Starts with (case insensitive)',
+        'endswith': 'Ends with',
+        'iendswith': 'Ends with (case insensitive)',
+        'isnull': 'Is empty',
+    },
+    models.IntegerField: {
+        'exact': 'Equals',
+        'gt': 'Greater than',
+        'gte': 'Greater than or equal to',
+        'lt': 'Less than',
+        'lte': 'Less than or equal to',
+        'in': 'In',
+        'isnull': 'Is empty',
+    },
+    models.DateField: {
+        'exact': 'On',
+        'gt': 'After',
+        'gte': 'On or after',
+        'lt': 'Before',
+        'lte': 'On or before',
+        'isnull': 'Is empty',
+    },
+    models.DateTimeField: {
+        'exact': 'On',
+        'gt': 'After',
+        'gte': 'On or after',
+        'lt': 'Before',
+        'lte': 'On or before',
+        'isnull': 'Is empty',
+    },
+    models.BooleanField: {
+        'exact': 'Is',
+    },
+}
+
+
+class NotificationCampaignCreateView(CreateView):
+    model = NotificationCampaign
+    form_class = NotificationCampaignCreateForm
+    template_name = 'notifications/notification_campaing_create.html'
+    allowed_filters = [
+        'is_active',
+        'is_staff',
+        'username',
+        'last_login',
+    ]
+
+    def form_valid(self, form):
+        form.instance.created_by = self.request.user
+
+        form.instance.metadata = {
+            'filters': form.cleaned_data['filters'],
+            'context': form.cleaned_data['context'],
+            'execution': {
+                'batch_size': form.cleaned_data['batch_size'],
+                'max_retries': form.cleaned_data['max_retries'],
+            },
+        }
+
+        response = super().form_valid(form)
+
+        messages.success(
+            self.request,
+            'Notification campaign created successfully.',
+        )
+
+        return response
+
+    def get_success_url(self):
+        return reverse_lazy(
+            'notifications:notification_campaigns_detail',
+            kwargs={'pk': self.object.pk},
+        )
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['notification_types'] = NotificationType.objects.order_by('name')
+
+        filter_fields = {}
+        for field in [f for f in OSFUser._meta.get_fields() if f.name in self.allowed_filters]:
+            if not field.concrete:
+                continue
+            if type(field) not in LOOKUPS.keys():
+                continue
+            filter_fields[field.name] = {
+                'label': field.verbose_name,
+                'type': field.get_internal_type().lower(),
+                'lookups': LOOKUPS.get(type(field), {})
+            }
+        context['filter_fields'] = filter_fields
+        context['filters'] = []
+        context['predefined_filters'] = FILTER_PRESETS.keys()
+        return context
+
+
+class NotificationCampaignsRecipientsPreview(PermissionRequiredMixin, ListView):
+    template_name = 'users/list.html'
+    permission_required = 'osf.view_osfuser'
+    raise_exception = True
+    paginate_by = 25
+
+    def get_queryset(self):
+        filters = {}
+        raw_filters = self.request.GET.get('filters', None)
+        if raw_filters:
+            json_filters = json.loads(raw_filters)
+            if predefined := json_filters.get('predefined'):
+                filters = FILTER_PRESETS.get(predefined, {})
+            else:
+                filters = {
+                    f'{item["field"]}__{item["lookup"]}': item['value']
+                    for item in json_filters.get('manual', [])
+                }
+
+        return filter_users(filters)
+
+    def get_context_data(self, **kwargs):
+        users = self.get_queryset()
+
+        page_size = self.get_paginate_by(users)
+        paginator, page, query_set, is_paginated = self.paginate_queryset(
+            users,
+            page_size,
+        )
+        # append search param to pagination links
+        kwargs.update({'extra_query_params': f'&filters={self.request.GET.get("filters")}'})
+        return super().get_context_data(
+            **kwargs,
+            page=page,
+            users=query_set,
+            paginator=paginator,
+            is_paginated=is_paginated,
+        )
+
+class StartNotificationCampaign(PermissionRequiredMixin, View):
+    permission_required = 'osf.change_notificationtype'
+
+    def post(self, request, *args, **kwargs):
+        notification_campaign = get_object_or_404(
+            NotificationCampaign,
+            pk=kwargs['pk'],
+        )
+
+        notification_campaign.start()
+
+        return redirect(
+            'notifications:notification_campaigns_detail',
+            pk=notification_campaign.pk,
+        )

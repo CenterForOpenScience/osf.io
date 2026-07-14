@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% load render_bundle from webpack_loader %}
+{% load static %}
+{% block title %}
+    <title>List of Notification Types</title>
+{% endblock title %}
+{% block content %}
+    <h2>List of Notification Campaigns</h2>
+    <div class="row">
+       <div class="col-md-12">
+           <div class="btn-group" role="group">
+               <a href="{% url 'notifications:notification_campaigns_create' %}"  class="btn btn-primary">Create Campaign</a>
+           </div>
+       </div>
+   </div>
+
+    {% include "util/pagination.html" with items=page status=status %}
+    <form method="get" style="margin-bottom: 15px;">
+        <input type="text" name="q" value="{{ q }}" placeholder="Search..." />
+        <button type="submit">Search</button>
+    </form>
+    <table class="table table-striped table-hover table-responsive">
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Notification Type</th>
+            <th>Status</th>
+            <th>Started at</th>
+            <th>Completed at</th>
+        </tr>
+    </thead>
+    <tbody>
+    {% for notification_capmaign in notification_campaigns %}
+    <tr>
+
+        <td><a href="{% url 'notifications:notification_campaigns_detail' notification_capmaign.id %}">{{ notification_capmaign.name }}</a></td>
+        <td>{{ notification_capmaign.notification_type.name }}</td>
+        <td>{{ notification_capmaign.status }}</td>
+        <td>{{ notification_capmaign.started_at }}</td>
+        <td>{{ notification_capmaign.completed_at }}</td>
+    </tr>
+    {% endfor %}
+    </tbody>
+    </table>
+
+{% endblock content %}

@@ -1,0 +1,427 @@
+{% extends "base.html" %}
+{% load static %}
+{% load render_bundle from webpack_loader %}
+
+{% block title %}
+    <title>Create Notification Campaign</title>
+{% endblock title %}
+
+{% block content %}
+<div class="container-fluid">
+
+    <div class="row">
+        <div class="col-md-12 text-center">
+            <h2>Create Notification Campaign</h2>
+        </div>
+    </div>
+
+    <form method="post">
+        {% csrf_token %}
+
+        <!-- General -->
+        <div class="row">
+            <div class="col-md-12">
+                <h4>General</h4>
+                <table class="table table-striped">
+                    <tr>
+                        <th style="width:250px;">Campaign Name</th>
+                        <td>
+                            <input
+                                class="form-control"
+                                type="text"
+                                name="name"
+                                required
+                            >
+                        </td>
+                    </tr>
+
+                    <tr>
+                        <th>Notification Type</th>
+                        <td>
+                            <select
+                                class="form-control"
+                                name="notification_type"
+                                required
+                            >
+                                {% for notification_type in form.fields.notification_type.queryset %}
+                                {% if notification_type.name == 'blank' %}
+                                    <option value="{{ notification_type.id }}" selected>
+                                        {{ notification_type.name }}
+                                    </option>
+                                {% else %}
+                                    <option value="{{ notification_type.id }}">
+                                        {{ notification_type.name }}
+                                    </option>
+                                {% endif %}
+                                {% endfor %}
+                            </select>
+                        </td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+
+        <!-- Recipient filters -->
+        <div class="row">
+            <div class="col-md-12">
+                <h4>Recipient Filters</h4>
+
+                <div class="form-group">
+                    <label for="filter-mode">Filter Type</label>
+
+                    <select
+                        id="filter-mode"
+                        name="filter_mode"
+                        class="form-control"
+                    >
+                        <option value="manual">Manual</option>
+                        <option value="predefined">Predefined</option>
+                    </select>
+                </div>
+
+                <div id="manual-filters">
+
+                    <div id="filter-builder"></div>
+
+                    <button
+                        type="button"
+                        id="add-filter"
+                        class="btn btn-default"
+                    >
+                        + Add Filter
+                    </button>
+
+                </div>
+
+                <div
+                    id="predefined-filter"
+                    style="display:none; margin-top:15px;"
+                >
+                    <select
+                        id="filter-row"
+                        name="filter_row"
+                        class="form-control"
+                    >
+                        {% for filter in predefined_filters %}
+                            <option value="{{ filter }}">
+                                {{ filter }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <input
+                    type="hidden"
+                    id="filters-input"
+                    name="filters"
+                >
+
+                {{ filter_fields|json_script:"filter-fields" }}
+                {{ filters|json_script:"initial-filters" }}
+
+            </div>
+        </div>
+        <!-- Context -->
+        <div class="row">
+            <div class="col-md-12">
+                <h4>Template Context (JSON)</h4>
+
+                <textarea
+                    id="context"
+                    name="context"
+                    class="form-control"
+                    rows="10"
+                    placeholder='{
+                        "project": "OSF",
+                        "deadline": "2026-08-01"
+                    }'
+                ></textarea>
+            </div>
+        </div>
+
+        <!-- Execution -->
+        <div class="row">
+            <div class="col-md-12">
+                <h4>Execution</h4>
+
+                <table class="table table-striped">
+                    <tr>
+                        <th style="width:250px;">Batch Size</th>
+                        <td>
+                            <input
+                                class="form-control"
+                                type="number"
+                                name="batch_size"
+                                value="1000"
+                                min="1"
+                            >
+                        </td>
+                    </tr>
+
+                    <tr>
+                        <th>Max Retries</th>
+                        <td>
+                            <input
+                                class="form-control"
+                                type="number"
+                                name="max_retries"
+                                value="3"
+                                min="0"
+                            >
+                        </td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+
+        <!-- Actions -->
+        <div class="row">
+            <div class="col-md-12 text-right">
+                <button
+                    class="btn btn-primary"
+                    type="submit"
+                >
+                    Create Campaign
+                </button>
+            </div>
+        </div>
+
+    </form>
+
+    <button
+        type="button"
+        id="preview-recipients"
+        class="btn btn-default"
+    >
+        Preview Recipients
+    </button>
+    <button
+        type="button"
+        id="render-preview"
+        class="btn btn-default"
+    >
+        Preview Template
+    </button>
+    <div
+        id="preview-container"
+        style="max-width: 60vw; overflow: auto; border: 1px solid #ccc; padding: 10px;">
+    </div>
+
+</div>
+{% endblock content %}
+
+{% block bottom_js %}
+<script>
+
+const filterMode = document.getElementById("filter-mode");
+const manualFilters = document.getElementById("manual-filters");
+const predefinedFilter = document.getElementById("predefined-filter");
+const container = document.getElementById("filter-builder");
+const form = document.querySelector("form");
+
+function updateMode() {
+    const manual = filterMode.value === "manual";
+
+    manualFilters.style.display = manual ? "" : "none";
+    predefinedFilter.style.display = manual ? "none" : "";
+}
+
+filterMode.addEventListener("change", updateMode);
+
+const filterConfig = JSON.parse(
+    document.getElementById("filter-fields").textContent
+);
+
+const initialState = JSON.parse(
+    document.getElementById("initial-filters").textContent
+);
+
+updateMode();
+
+if (initialState) {
+    filterMode.value = initialState.mode || "manual";
+    updateMode();
+
+    if (initialState.mode === "manual") {
+        (initialState.filters || []).forEach(addFilter);
+    } else if (initialState.mode === "predefined") {
+        document.getElementById("filter-row").value =
+            initialState.filter;
+    }
+}
+
+document
+    .getElementById("add-filter")
+    .addEventListener("click", () => addFilter());
+
+function addFilter(initial = null) {
+
+    const row = document.createElement("div");
+    row.className = "filter-row form-inline";
+    row.style.marginBottom = "10px";
+
+    const field = document.createElement("select");
+    field.className = "field form-control";
+
+    const operator = document.createElement("select");
+    operator.className = "operator form-control";
+
+    const value = document.createElement("input");
+    value.className = "value form-control";
+
+    const remove = document.createElement("button");
+    remove.type = "button";
+    remove.className = "btn btn-danger";
+    remove.textContent = "✕";
+    remove.onclick = () => row.remove();
+
+    Object.entries(filterConfig).forEach(([name, config]) => {
+        field.add(new Option(config.label, name));
+    });
+
+    field.onchange = () => updateOperatorAndValue(row, field, operator, value);
+
+    operator.onchange = () => {
+        updateValueName(field, operator, row.querySelector(".value"));
+    };
+
+    row.append(field, operator, value, remove);
+    container.appendChild(row);
+
+    if (initial) {
+        field.value = initial.field;
+    }
+
+    updateOperatorAndValue(row, field, operator, value);
+
+    if (initial) {
+        operator.value = initial.lookup;
+        updateValueName(field, operator, row.querySelector(".value"));
+        row.querySelector(".value").value = initial.value;
+    }
+}
+
+function updateValueName(field, operator, value) {
+    value.name = `${field.value}__${operator.value}`;
+}
+
+function updateOperatorAndValue(row, field, operator, value) {
+
+    const config = filterConfig[field.value];
+
+    operator.innerHTML = "";
+
+    Object.entries(config.lookups).forEach(([lookup, label]) => {
+        operator.add(new Option(label, lookup));
+    });
+
+    const existing = row.querySelector(".value");
+
+    let newValue;
+
+    switch (config.type) {
+
+        case "booleanfield":
+            newValue = document.createElement("select");
+            newValue.className = "value form-control";
+
+            newValue.add(new Option("True", "True"));
+            newValue.add(new Option("False", "False"));
+            break;
+
+        default:
+            newValue = document.createElement("input");
+            newValue.className = "value form-control";
+
+            switch (config.type) {
+                case "datetimefield":
+                    newValue.type = "datetime-local";
+                    break;
+
+                case "integerfield":
+                    newValue.type = "number";
+                    break;
+
+                default:
+                    newValue.type = "text";
+            }
+    }
+
+    if (existing) {
+        row.replaceChild(newValue, existing);
+    } else {
+        row.insertBefore(newValue, row.lastChild);
+    }
+
+    updateValueName(field, operator, newValue);
+}
+function buildFilters() {
+
+    if (filterMode.value === "predefined") {
+        return {
+            "predefined": document.getElementById("filter-row").value
+        };
+    }
+
+    const filters = [];
+
+    document.querySelectorAll(".filter-row").forEach(row => {
+        filters.push({
+            field: row.querySelector(".field").value,
+            lookup: row.querySelector(".operator").value,
+            value: row.querySelector(".value").value
+        });
+    });
+
+    return {"manual": filters}
+}
+
+function updateFiltersInput() {
+    document.getElementById("filters-input").value = JSON.stringify(
+        buildFilters()
+    );
+}
+
+form.addEventListener("submit", function () {
+    updateFiltersInput();
+});
+
+document.getElementById("preview-recipients").addEventListener("click", function () {
+    const filters = JSON.stringify(buildFilters());
+
+    const url = `/notifications/notification_campaigns_recipients_preview/?filters=${
+        encodeURIComponent(filters)
+    }`;
+
+    window.open(url, "_blank");
+});
+
+document.getElementById("render-preview").addEventListener("click", async () => {
+    const mockData = document.getElementById("context")?.value;
+
+    const params = new URLSearchParams('');
+    if (mockData) {
+        params.append('context', mockData);
+    }
+
+    fetch(`/notifications/types_preview/${form.elements["notification_type"].value}/?` + params.toString(), {
+        method: "GET",
+        headers: {
+            "X-Requested-With": "XMLHttpRequest"
+        }
+    })
+    .then(response => response.text())
+    .then(html => {
+        document.getElementById("preview-container").innerHTML = html;
+    })
+    .then(html => {
+        document.getElementById("context").value = document.getElementById("mock-data")?.value;
+        document.getElementById("mock-data")?.remove()
+    })
+    .catch(error => {
+        console.error("Preview render failed:", error);
+    });
+});
+
+</script>
+{% endblock %}

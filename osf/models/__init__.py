@@ -67,6 +67,7 @@ from .notifications import NotificationSubscriptionLegacy
 from .notification_subscription import NotificationSubscription
 from .notification_type import NotificationType, NotificationTypeEnum
 from .notification import Notification
+from .notification_campaign import NotificationCampaign, NotificationCampaignRecipient
 
 from .oauth import (
     ApiOAuth2Application,

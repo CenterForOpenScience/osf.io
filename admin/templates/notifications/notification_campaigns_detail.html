@@ -1,0 +1,270 @@
+{% extends "base.html" %}
+{% load static %}
+{% load render_bundle from webpack_loader %}
+
+{% block title %}
+    <title>{{ notification_campaign.name }}</title>
+{% endblock title %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-md-12 text-center">
+            <h2 id="campaign_name">{{ notification_campaign.name }}</h2>
+            <p class="text-muted">
+                Campaign #{{ notification_campaign.id }}
+            </p>
+        </div>
+    </div>
+    {% if notification_campaign.status == 'running' %}
+    <h4>Progress</h4>
+
+        <div class="progress">
+            <div class="progress-bar progress-bar-success"
+                style="width: {{ sent_percent }}%">
+                {{ notification_campaign.sent_count }}
+            </div>
+            <div class="progress-bar progress-bar-danger"
+                style="width: {{ failed_percent }}%">
+                {{ notification_campaign.failed_count }}
+            </div>
+        </div>
+        <p class="help-block">
+            {{ notification_campaign.sent_count|add:notification_campaign.failed_count }}/{{ notification_campaign.recipient_count }} processed
+        </p>
+    {% endif %}
+    <form
+        id="start-campaign-form"
+        method="post"
+        action="{% url 'notifications:notification_campaigns_start' notification_campaign.id %}"
+        style="display:inline;"
+    >
+        {% csrf_token %}
+        <button type="submit" class="btn btn-primary" {% if notification_campaign.status == "completed" %}disabled{% endif %}>
+            Start Campaign
+        </button>
+    </form>
+
+    <!-- General information -->
+    <div class="row">
+        <div class="col-md-12">
+            <h4>General</h4>
+            <table class="table table-striped table-bordered">
+                {% for field, value in display_fields %}
+                <tr>
+                    <th style="width: 250px">{{ field }}</th>
+                    <td>{{ value|safe }}</td>
+                    {% if field == 'Sent' and value != 0 %}
+                        <td>
+                            <a
+                                href="{% url 'notifications:notification_campaigns_recipients_preview' %}?filters={{ sent_filters_json|urlencode }}"
+                                class="btn btn-default"
+                                target="_blank">
+                                Preview Recipients
+                            </a>
+                        </td>
+                    {% elif field == 'Failed' and value != 0 %}
+                        <td>
+                            <a
+                                href="{% url 'notifications:notification_campaigns_recipients_preview' %}?filters={{ failed_filters_json|urlencode }}"
+                                class="btn btn-default"
+                                target="_blank">
+                                Preview Recipients
+                            </a>
+                        </td>
+                    {% else %}
+                        <td></td>
+
+                    {% endif %}
+                </tr>
+                {% endfor %}
+            </table>
+        </div>
+    </div>
+
+    <!-- Filters -->
+    {% if metadata.filters %}
+    <div class="row">
+        <div class="col-md-12">
+            <h4>Recipient Filters</h4>
+
+            {% if not "predefined" in metadata.filters  %}
+
+                <table class="table table-bordered table-striped">
+                    <thead>
+                        <tr>
+                            <th style="width:35%;">Field</th>
+                            <th style="width:25%;">Lookup</th>
+                            <th>Value</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for filter in metadata.filters.manual %}
+                        <tr>
+                            <td>{{ filter.field }}</td>
+                            <td>{{ filter.lookup }}</td>
+                            <td><code>{{ filter.value }}</code></td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="3" class="text-center">
+                                No filters configured.
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+
+            {% elif "predefined" in metadata.filters %}
+
+                <table class="table table-bordered">
+                    <tr>
+                        <th style="width:250px;">Predefined Filter</th>
+                        <td>{{ metadata.filters.predefined }}</td>
+                    </tr>
+                </table>
+
+            {% endif %}
+
+            <a
+                href="{% url 'notifications:notification_campaigns_recipients_preview' %}?filters={{ filters_json|urlencode }}"
+                class="btn btn-default"
+                target="_blank"
+            >
+                Preview Recipients
+            </a>
+
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Context -->
+    {% if metadata.context %}
+    <div class="row">
+        <div class="col-md-12">
+            <h4>Context</h4>
+            <table class="table table-bordered">
+                {% for key, value in metadata.context.items %}
+                <tr>
+                    <th style="width:250px">{{ key }}</th>
+                    <td><pre>{{ value }}</pre></td>
+                </tr>
+                {% endfor %}
+            </table>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Execution -->
+    {% if metadata.execution %}
+    <div class="row">
+        <div class="col-md-12">
+            <h4>Execution</h4>
+            <table class="table table-bordered">
+                {% for key, value in metadata.execution.items %}
+                <tr>
+                    <th style="width:250px">{{ key }}</th>
+                    <td>{{ value }}</td>
+                </tr>
+                {% endfor %}
+            </table>
+        </div>
+    </div>
+    {% endif %}
+
+    {% if template or metadata.template %}
+    <div class="row">
+        <div class="col-md-12">
+            <h4>Email Template</h4>
+
+            <ul class="nav nav-tabs" role="tablist">
+                {% if template %}
+                <li class="active">
+                    <a href="#rendered-template"
+                    data-toggle="tab"
+                    role="tab">
+                        Notification Type
+                    </a>
+                </li>
+                {% endif %}
+
+                {% if metadata.template %}
+                <li {% if not template %}class="active"{% endif %}>
+                    <a href="#original-template"
+                    data-toggle="tab"
+                    role="tab">
+                        Used for compaign
+                    </a>
+                </li>
+                {% endif %}
+            </ul>
+
+            <div class="tab-content" style="margin-top:15px;">
+
+                {% if template %}
+                <div
+                    id="rendered-template"
+                    class="tab-pane fade in active"
+                >
+                    <pre style="max-height:400px;overflow:auto">{{ template }}</pre>
+                </div>
+                {% endif %}
+
+                {% if metadata.template %}
+                <div
+                    id="original-template"
+                    class="tab-pane fade {% if not template %}in active{% endif %}"
+                >
+                    <pre style="max-height:400px;overflow:auto">{{ metadata.template }}</pre>
+                </div>
+                {% endif %}
+
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Any remaining metadata -->
+    {% if other_metadata %}
+    <div class="row">
+        <div class="col-md-12">
+            <h4>Additional Metadata</h4>
+            <table class="table table-bordered">
+                {% for key, value in other_metadata.items %}
+                <tr>
+                    <th style="width:250px">{{ key }}</th>
+                    <td><pre>{{ value }}</pre></td>
+                </tr>
+                {% endfor %}
+            </table>
+        </div>
+    </div>
+    {% endif %}
+
+</div>
+{% endblock content %}
+
+{% block bottom_js %}
+<script>
+
+document.getElementById("start-campaign-form").addEventListener("submit", function (e) {
+    e.preventDefault();
+
+    const campaignName = document
+        .getElementById("campaign_name")
+        .textContent
+        .trim();
+
+    const input = prompt(
+        `Type the campaign name to confirm:\n\n${campaignName}`
+    );
+
+    if (input === campaignName) {
+        this.submit();
+    } else if (input !== null) {
+        alert("Campaign name does not match.");
+    }
+});
+
+</script>
+{% endblock %}
