@@ -187,57 +187,7 @@ def osfstorage_get_metadata(file_node, **kwargs):
     return file_node.serialize(version=version, include_full=True)
 
 
-# TODO: Remove _osfstorage_minimal_metadata_sql if the Django ORM implementation
-# performs well in production benchmarks and zip/DAZ workloads.
-def _osfstorage_minimal_metadata_sql(file_node):
-    waterbutler_resource = osf_storage_settings.WATERBUTLER_RESOURCE
-    with connection.cursor() as cursor:
-        cursor.execute("""
-            SELECT json_agg(
-                json_build_object(
-                    'kind', CASE
-                        WHEN F.type = 'osf.osfstoragefile' THEN 'file'
-                        ELSE 'folder'
-                    END,
-                    'name', F.name,
-                    'path', CASE
-                        WHEN F.type = 'osf.osfstoragefile' THEN '/' || F._id
-                        ELSE '/' || F._id || '/'
-                    END,
-                    'storage', CASE
-                        WHEN F.type = 'osf.osfstoragefile' THEN
-                            json_build_object(
-                                'data', json_build_object(
-                                    'name', COALESCE(LATEST_VERSION.version_name, F.name),
-                                    'path', LATEST_VERSION.location ->> 'object'
-                                ),
-                                'settings', json_build_object(
-                                    %s, LATEST_VERSION.location ->> %s
-                                )
-                            )
-                        ELSE NULL
-                    END
-                )
-            )
-            FROM osf_basefilenode AS F
-            LEFT JOIN LATERAL (
-                SELECT
-                    osf_fileversion.location,
-                    osf_basefileversionsthrough.version_name
-                FROM osf_fileversion
-                JOIN osf_basefileversionsthrough
-                    ON osf_fileversion.id = osf_basefileversionsthrough.fileversion_id
-                WHERE osf_basefileversionsthrough.basefilenode_id = F.id
-                ORDER BY osf_fileversion.created DESC
-                LIMIT 1
-            ) LATEST_VERSION ON F.type = 'osf.osfstoragefile'
-            WHERE F.parent_id = %s
-            AND F.type IN ('osf.osfstoragefile', 'osf.osfstoragefolder')
-        """, [waterbutler_resource, waterbutler_resource, file_node.id])
-        return cursor.fetchone()[0] or []
-
-
-def _osfstorage_minimal_metadata_orm(file_node, *, limit=None, after=None):
+def _osfstorage_minimal_metadata(file_node, *, limit=None, after=None):
     waterbutler_resource = osf_storage_settings.WATERBUTLER_RESOURCE
     latest_version = BaseFileVersionsThrough.objects.filter(
         basefilenode_id=OuterRef('pk'),
@@ -283,6 +233,8 @@ def _osfstorage_minimal_metadata_orm(file_node, *, limit=None, after=None):
     if after is not None:
         qs = qs.filter(id__gt=after)
 
+    # Always return files/folders in the same order
+    # It helps make waterbutler file streaming more stable
     qs = qs.order_by('id')
 
     if limit is not None:
@@ -402,13 +354,11 @@ def _osfstorage_full_metadata(file_node, user_id):
 @decorators.autoload_filenode(must_be='folder')
 def osfstorage_get_children(file_node, **kwargs):
     if is_truthy(request.args.get('minimal')):
-        if is_truthy(request.args.get('orm')):
-            return _osfstorage_minimal_metadata_orm(
-                file_node,
-                limit=request.args.get('limit', type=int, default=None),
-                after=request.args.get('after', type=int, default=None),
-            )
-        return _osfstorage_minimal_metadata_sql(file_node)
+        return _osfstorage_minimal_metadata(
+            file_node,
+            limit=request.args.get('limit', type=int, default=None),
+            after=request.args.get('after', type=int, default=None),
+        )
     return _osfstorage_full_metadata(file_node, request.args.get('user_id'))
 
 
