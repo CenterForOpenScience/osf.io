@@ -22,11 +22,8 @@ def create_dashboard_group(apps, schema_editor):
     Group = apps.get_model('auth', 'Group')
     OSFUser = apps.get_model('osf', 'OSFUser')
     group, _ = Group.objects.get_or_create(name=DASHBOARD_GROUP_NAME)
-    for identifier in DASHBOARD_USERS:
-        user = (
-            OSFUser.objects.filter(username=identifier).first()
-            or OSFUser.objects.filter(guids___id=identifier).first()
-        )
+    for username in DASHBOARD_USERS:
+        user = OSFUser.objects.filter(username=username).first()
         if user:
             group.user_set.add(user)
 
