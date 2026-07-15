@@ -34,7 +34,7 @@ from .node_relation import NodeRelation
 from .nodelog import NodeLog
 from .subject import Subject
 from .spam import SpamMixin, SpamStatus
-from .validators import validate_title
+from .validators import validate_title, has_domain_in_user_fields_for_names
 from .tag import Tag
 from osf.utils import sanitize
 from .validators import validate_subject_hierarchy, validate_email, expand_subject_hierarchy
@@ -1580,6 +1580,9 @@ class ContributorMixin(models.Model):
                 validate_email(email)
             except BlockedEmailError:
                 raise ValidationError('Unregistered contributor email address domain is blocked.')
+
+        if has_domain_in_user_fields_for_names(fullname):
+            raise ValidationError('Invalid personal information.')
 
         # Create a new user record if you weren't passed an existing user
         contributor = existing_user if existing_user else OSFUser.create_unregistered(fullname=fullname, email=email)

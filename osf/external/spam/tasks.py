@@ -17,7 +17,7 @@ logging.basicConfig(level=logging.INFO)
 
 DOMAIN_REGEX = re.compile(r'\W*(?P<protocol>\w+://)?(?P<www>www\.)?(?P<domain>([\w-]+\.)+[a-zA-Z]+)(?P<path>[/\-\.\w]*)?\W*')
 REDIRECT_CODES = {301, 302, 303, 307, 308}
-
+NOTABLE_POST_NOMINALS = ['m.sc.', 'msc.', 'b.sc.', 'bsc.', 'd.sc.', 'dsc.', 'phd.', 'ph.d.', 'msc.pt', 'pt.', 'prof.', 'dr.', 'md.', 'jd.', 'esq.']
 
 @celery_app.task()
 def reclassify_domain_references(notable_domain_id, current_note, previous_note):

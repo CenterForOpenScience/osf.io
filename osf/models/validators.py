@@ -1,6 +1,6 @@
 import re
 import waffle
-
+from django.db.models import Q
 from jsonschema import ValidationError as JsonSchemaValidationError, SchemaError, Draft7Validator, validate, validators
 from django.conf import settings
 from django.core.validators import URLValidator, validate_email as django_validate_email
@@ -11,9 +11,10 @@ from osf.models.notification_type import get_default_frequency_choices
 from osf.utils.registrations import FILE_VIEW_URL_REGEX
 from osf.utils.sanitize import strip_html
 from osf.exceptions import ValidationError, ValidationValueError, reraise_django_validation_errors, BlockedEmailError
-from osf.external.spam.tasks import DOMAIN_REGEX
+from osf.external.spam.tasks import DOMAIN_REGEX, NOTABLE_POST_NOMINALS
 
 from website.language import SWITCH_VALIDATOR_ERROR
+from urlextract import URLExtract
 
 
 def validate_history_item(items):
@@ -113,10 +114,31 @@ def validate_email(value):
         raise BlockedEmailError('Invalid Email')
 
 
-def has_domain_in_user_fields_for_names(user):
-    name_content = ' '.join([getattr(user, field) or '' for field in user.DOMAIN_VALIDATION_FIELDS])
-    return True if DOMAIN_REGEX.search(name_content) else False
+def has_domain_in_user_fields_for_names(fullname):
+    from osf.models import NotableDomain
+    notable_domain_list = set(
+        NotableDomain.objects.filter(
+            Q(note=NotableDomain.Note.ASSUME_HAM_UNTIL_REPORTED) |
+            Q(note=NotableDomain.Note.IGNORED)
+        )
+        .values_list('domain', flat=True)
+        .distinct()
+    )
+    for match in DOMAIN_REGEX.finditer(fullname):
+        domain = match.group('domain')
+        if domain in notable_domain_list:
+            continue
+        if looks_like_url(match):
+            return True
+    return False
 
+def looks_like_url(candidate):
+    candidate = candidate.group(0).strip()
+    words = re.findall(r'[A-Za-z.]+', candidate.lower())
+    if any(word in NOTABLE_POST_NOMINALS for word in words):
+        return False
+    extractor = URLExtract()
+    return bool(extractor.find_urls(candidate))
 
 def validate_subject_hierarchy_length(parent):
     from osf.models import Subject
