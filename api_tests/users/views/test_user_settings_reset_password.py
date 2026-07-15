@@ -129,6 +129,28 @@ class TestResetPassword:
         res = app.post_json_api(url, payload, expect_errors=True, headers={'X-THROTTLE-TOKEN': 'test-token', 'X-CSRFToken': csrf_token})
         assert res.status_code == 400
 
+    def test_post_password_too_long(self, app, url, user_one, csrf_token):
+        app.set_cookie(CSRF_COOKIE_NAME, csrf_token)
+        encoded_email = urllib.parse.quote(user_one.email)
+        url = f'{url}?email={encoded_email}'
+        from tests.utils import capture_notifications
+
+        with capture_notifications():
+            res = app.get(url)
+        user_one.reload()
+        payload = {
+            'data': {
+                'attributes': {
+                    'uid': user_one._id,
+                    'token': user_one.verification_key_v2['token'],
+                    'password': 'a' * 256,
+                }
+            }
+        }
+
+        res = app.post_json_api(url, payload, expect_errors=True, headers={'X-THROTTLE-TOKEN': 'test-token', 'X-CSRFToken': csrf_token})
+        assert res.status_code == 400 and res.json['errors'][0]['detail'] == 'Ensure this field has no more than 256 characters.'
+
     def test_throttle(self, app, url, throttle_user, csrf_token):
         app.set_cookie(CSRF_COOKIE_NAME, csrf_token)
         encoded_email = urllib.parse.quote(throttle_user.email)
