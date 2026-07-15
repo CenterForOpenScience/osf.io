@@ -23,7 +23,7 @@
     node_absolute_url=None,
     notification_settings_url=None,
     osf_contact_email='support@osf.io',
-    year=2025
+    year=2026
 "/>
 
 <body leftmargin="0" marginwidth="0" topmargin="0" marginheight="0" offset="0"
@@ -115,7 +115,7 @@
                         <tr>
                             <td style="border-collapse: collapse;">
                                 <p class="text-smaller text-center" style="text-align: center;font-size: 12px;margin: 0 0 6px 0;">
-                                    Copyright &copy; 2025
+                                    Copyright &copy; 2026
                                     Center For Open Science, All rights reserved. |
                                     <a href="https://github.com/CenterForOpenScience/centerforopenscience.org/blob/master/PRIVACY_POLICY.md">Privacy Policy</a>
                                 </p>
