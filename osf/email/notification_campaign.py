@@ -1,7 +1,6 @@
 import logging
-from osf.models import NotificationType, NotificationTypeEnum, OSFUser, UserActivityCounter
-from django.db.models import Q
-from django.db.models import OuterRef, Subquery, Exists, F
+from osf.models import NotificationType, NotificationTypeEnum, OSFUser, UserActivityCounter, Email
+from django.db.models import OuterRef, Subquery, Exists, F, Q, Case, When, CharField
 from django.db.models.functions import Coalesce
 from framework.celery_tasks import app as celery_app
 from celery import chord
@@ -12,27 +11,45 @@ from osf.email import send_email_with_send_grid
 logger = logging.getLogger(__name__)
 
 
+first_email_subquery = (
+    Email.objects
+    .filter(user=OuterRef('pk'))
+    .values('address')[:1]
+)
+
+
 counter_subquery = (
     UserActivityCounter.objects
     .filter(_id=OuterRef('guids___id'))
     .values('total')[:1]
 )
 
+def filter_users(filters, campaign_id=None, restart_failed=False):
+    qs = OSFUser.objects.all()
+    if campaign_id:
+        if restart_failed:
+            already_sent_subquery = NotificationCampaignRecipient.objects.filter(
+                campaign_id=campaign_id,
+                user_id=OuterRef('pk'),
+                status__in=['sent', 'pending']
+            )
+        else:
+            already_sent_subquery = NotificationCampaignRecipient.objects.filter(
+                campaign_id=campaign_id,
+                user_id=OuterRef('pk'),
+            )
 
-def get_filtered_batches(filters, batch_size=1000, campaign_id=None):
-    already_sent_subquery = NotificationCampaignRecipient.objects.filter(
-        campaign_id=campaign_id,
-        user_id=OuterRef('pk'),
-    )
+        qs = OSFUser.objects.annotate(already_sent=Exists(already_sent_subquery)).filter(already_sent=False)
 
-    qs = (
-        OSFUser.objects
-        .annotate(already_sent=Exists(already_sent_subquery))
-        .filter(already_sent=False)
-        .filter(**filters)
-        .annotate(activity_total=Coalesce(Subquery(counter_subquery), 0))
-        .order_by('-activity_total', '-date_registered', '-id')
-    )
+    qs = qs.filter(**filters)
+
+    return qs
+
+
+def get_filtered_batches(filters, batch_size=1000, campaign_id=None, restart_failed=False):
+    qs = filter_users(filters, campaign_id, restart_failed=restart_failed)
+
+    qs = qs.annotate(activity_total=Coalesce(Subquery(counter_subquery), 0)).order_by('-activity_total', '-date_registered', '-id')
 
     last_total = None
     last_date = None
@@ -117,7 +134,7 @@ def process_campaign_retry(*args, **kwargs):
 
 
 @celery_app.task(name='email.start_notification_campaign')
-def start_notification_campaign(campaign_id):
+def start_notification_campaign(campaign_id, restart_failed=False):
     campaign = NotificationCampaign.objects.get(id=campaign_id)
     filters = campaign.metadata.get('filters', {})
     context = campaign.metadata.get('context', {})
@@ -128,11 +145,16 @@ def start_notification_campaign(campaign_id):
 
     if predefined_filter_name := filters.get('predefined'):
         filters = FILTER_PRESETS.get(predefined_filter_name, {})
+    else:
+        filters = {
+            f'{item["field"]}__{item["lookup"]}': item['value']
+            for item in filters.get('manual', [])
+        }
 
     tasks = []
     total_recipients = 0
     batch_size = campaign.metadata.get('execution', {}).get('batch_size', 1000)
-    for batch in get_filtered_batches(filters=filters, batch_size=batch_size):
+    for batch in get_filtered_batches(filters=filters, batch_size=batch_size, campaign_id=campaign_id, restart_failed=restart_failed):
         tasks.append(
             send_campaign_batch.s(
                 notification_type_name=notification_type_name,
@@ -142,9 +164,9 @@ def start_notification_campaign(campaign_id):
             )
         )
         total_recipients += len(batch)
-
-    campaign.recipient_count = total_recipients
-    campaign.save(update_fields=['recipient_count'])
+    if not restart_failed:
+        campaign.recipient_count = total_recipients
+        campaign.save(update_fields=['recipient_count'])
 
     chord(tasks)(
         process_campaign_retry.s(campaign_id=campaign_id)
@@ -182,7 +204,14 @@ def send_campaign_batch(context, recipients_ids, notification_type_name='blank',
     success_count = 0
     failure_count = 0
     if campaign.metadata.get('sendgrid_bulk', False):
-        recipient_emails = list(recipients_qs.values_list('username', flat=True))
+        recipients_qs_annotated = recipients_qs.annotate(
+            recipient_address=Case(
+                When(username__contains='@', then='username'),
+                default=Subquery(first_email_subquery),
+                output_field=CharField(),
+            )
+        )
+        recipient_emails = list(recipients_qs_annotated.values_list('recipient_address', flat=True))
         send_email_with_send_grid(to_addr=recipient_emails, notification_type=notification_type, context=context)
         success_count = len(recipient_emails)
     else:

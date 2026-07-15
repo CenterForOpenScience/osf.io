@@ -64,18 +64,18 @@ class NotificationCampaign(models.Model):
     failed_count = models.PositiveIntegerField(default=0)
     retries = models.PositiveIntegerField(default=0)
 
-    def start(self):
+    def start(self, restart_failed=False):
         from osf.email.notification_campaign import start_notification_campaign
         self.status = NotificationCampaignStatus.RUNNING
         self.started_at = timezone.now()
-
-        self.sent_count = 0
+        if not restart_failed:
+            self.recipient_count = 0
+            self.sent_count = 0
         self.failed_count = 0
-        self.recipient_count = 0
         self.retries = 0
         self.metadata.update({'template': self.notification_type.template})
         self.save()
-        start_notification_campaign.delay(campaign_id=self.id)
+        start_notification_campaign.delay(campaign_id=self.id, restart_failed=restart_failed)
 
 
 class NotificationCampaignRecipient(models.Model):
