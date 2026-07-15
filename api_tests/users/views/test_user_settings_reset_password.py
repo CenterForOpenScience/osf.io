@@ -149,7 +149,7 @@ class TestResetPassword:
         }
 
         res = app.post_json_api(url, payload, expect_errors=True, headers={'X-THROTTLE-TOKEN': 'test-token', 'X-CSRFToken': csrf_token})
-        assert res.status_code == 400 and res.json['errors'][0]['detail'] == 'Ensure this field has no more than 256 characters.'
+        assert res.status_code == 400 and res.json['errors'][0]['detail'] == 'Ensure this field has no more than 255 characters.'
 
     def test_throttle(self, app, url, throttle_user, csrf_token):
         app.set_cookie(CSRF_COOKIE_NAME, csrf_token)
