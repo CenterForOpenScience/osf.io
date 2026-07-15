@@ -63,6 +63,7 @@
                                 Preview Recipients
                             </a>
                         </td>
+                        <td></td>
                     {% elif field == 'Failed' and value != 0 %}
                         <td>
                             <a
@@ -72,7 +73,21 @@
                                 Preview Recipients
                             </a>
                         </td>
+                        <td>
+                            <form
+                                id="restart-campaign-form"
+                                method="post"
+                                action="{% url 'notifications:notification_campaigns_start' notification_campaign.id %}?restart_failed=true"
+                                style="display:inline;"
+                            >
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-primary">
+                                    Restart Campaign
+                                </button>
+                            </form>
+                        </td>
                     {% else %}
+                        <td></td>
                         <td></td>
 
                     {% endif %}
@@ -246,25 +261,40 @@
 
 {% block bottom_js %}
 <script>
+    function confirmCampaign(form, e) {
+        e.preventDefault();
 
-document.getElementById("start-campaign-form").addEventListener("submit", function (e) {
-    e.preventDefault();
+        const campaignName = document
+            .getElementById("campaign_name")
+            .textContent
+            .trim();
 
-    const campaignName = document
-        .getElementById("campaign_name")
-        .textContent
-        .trim();
+        const input = prompt(
+            `Type the campaign name to confirm:\n\n${campaignName}`
+        );
 
-    const input = prompt(
-        `Type the campaign name to confirm:\n\n${campaignName}`
-    );
-
-    if (input === campaignName) {
-        this.submit();
-    } else if (input !== null) {
-        alert("Campaign name does not match.");
+        if (input === campaignName) {
+            form.submit();
+        } else if (input !== null) {
+            alert("Campaign name does not match.");
+        }
     }
-});
+
+    const startForm = document.getElementById("start-campaign-form");
+
+    if (startForm) {
+        startForm.addEventListener("submit", function (e) {
+            confirmCampaign(this, e);
+        });
+    }
+
+    const restartForm = document.getElementById("restart-campaign-form");
+
+    if (restartForm) {
+        restartForm.addEventListener("submit", function (e) {
+            confirmCampaign(this, e);
+        });
+    }
 
 </script>
 {% endblock %}

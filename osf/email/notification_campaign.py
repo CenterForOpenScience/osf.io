@@ -24,13 +24,20 @@ counter_subquery = (
     .values('total')[:1]
 )
 
-def filter_users(filters, campaign_id=None):
+def filter_users(filters, campaign_id=None, restart_failed=False):
     qs = OSFUser.objects.all()
     if campaign_id:
-        already_sent_subquery = NotificationCampaignRecipient.objects.filter(
-            campaign_id=campaign_id,
-            user_id=OuterRef('pk'),
-        )
+        if restart_failed:
+            already_sent_subquery = NotificationCampaignRecipient.objects.filter(
+                campaign_id=campaign_id,
+                user_id=OuterRef('pk'),
+                status__in=['sent', 'pending']
+            )
+        else:
+            already_sent_subquery = NotificationCampaignRecipient.objects.filter(
+                campaign_id=campaign_id,
+                user_id=OuterRef('pk'),
+            )
 
         qs = OSFUser.objects.annotate(already_sent=Exists(already_sent_subquery)).filter(already_sent=False)
 
@@ -39,8 +46,8 @@ def filter_users(filters, campaign_id=None):
     return qs
 
 
-def get_filtered_batches(filters, batch_size=1000, campaign_id=None):
-    qs = filter_users(filters, campaign_id)
+def get_filtered_batches(filters, batch_size=1000, campaign_id=None, restart_failed=False):
+    qs = filter_users(filters, campaign_id, restart_failed=restart_failed)
 
     qs = qs.annotate(activity_total=Coalesce(Subquery(counter_subquery), 0)).order_by('-activity_total', '-date_registered', '-id')
 
@@ -127,7 +134,7 @@ def process_campaign_retry(*args, **kwargs):
 
 
 @celery_app.task(name='email.start_notification_campaign')
-def start_notification_campaign(campaign_id):
+def start_notification_campaign(campaign_id, restart_failed=False):
     campaign = NotificationCampaign.objects.get(id=campaign_id)
     filters = campaign.metadata.get('filters', {})
     context = campaign.metadata.get('context', {})
@@ -147,7 +154,7 @@ def start_notification_campaign(campaign_id):
     tasks = []
     total_recipients = 0
     batch_size = campaign.metadata.get('execution', {}).get('batch_size', 1000)
-    for batch in get_filtered_batches(filters=filters, batch_size=batch_size):
+    for batch in get_filtered_batches(filters=filters, batch_size=batch_size, campaign_id=campaign_id, restart_failed=restart_failed):
         tasks.append(
             send_campaign_batch.s(
                 notification_type_name=notification_type_name,

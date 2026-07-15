@@ -9,6 +9,7 @@ from django.views.generic import ListView, DetailView, UpdateView, CreateView, V
 from django.contrib import messages
 from django.contrib.auth.mixins import PermissionRequiredMixin
 from osf.models import NotificationSubscription, NotificationType, Notification, EmailTask, NotificationCampaign, OSFUser
+from osf.models.notification_campaign import NotificationCampaignStatus
 from django.forms.models import model_to_dict
 from .forms import NotificationTypeForm, NotificationCampaignCreateForm
 from mako.lexer import Lexer
@@ -401,8 +402,6 @@ class NotificationCampaignDetail(PermissionRequiredMixin, DetailView):
                 ('Started', notification_campaign.started_at),
                 ('Completed', notification_campaign.completed_at),
             ],
-            'sent_percent': notification_campaign.sent_count * 100 / notification_campaign.recipient_count,
-            'failed_percent': notification_campaign.failed_count * 100 / notification_campaign.recipient_count,
             'template': notification_campaign.notification_type.template,
             'metadata': metadata,
             'filters_json': json.dumps(notification_campaign.metadata['filters']),
@@ -424,6 +423,12 @@ class NotificationCampaignDetail(PermissionRequiredMixin, DetailView):
                 if k not in {'filters', 'context', 'execution', 'template'}
             },
         }
+
+        if notification_campaign.status == NotificationCampaignStatus.RUNNING:
+            context.update({
+                'sent_percent': notification_campaign.sent_count * 100 / notification_campaign.recipient_count if notification_campaign.recipient_count else 0,
+                'failed_percent': notification_campaign.failed_count * 100 / notification_campaign.recipient_count if notification_campaign.recipient_count else 0,
+            })
 
         return context
 
@@ -590,7 +595,9 @@ class StartNotificationCampaign(PermissionRequiredMixin, View):
             pk=kwargs['pk'],
         )
 
-        notification_campaign.start()
+        restart_failed = request.GET.get('restart_failed') == 'true'
+
+        notification_campaign.start(restart_failed=restart_failed)
 
         return redirect(
             'notifications:notification_campaigns_detail',
