@@ -164,9 +164,9 @@ def start_notification_campaign(campaign_id, restart_failed=False):
             )
         )
         total_recipients += len(batch)
-
-    campaign.recipient_count = total_recipients
-    campaign.save(update_fields=['recipient_count'])
+    if not restart_failed:
+        campaign.recipient_count = total_recipients
+        campaign.save(update_fields=['recipient_count'])
 
     chord(tasks)(
         process_campaign_retry.s(campaign_id=campaign_id)
