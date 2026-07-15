@@ -12,6 +12,7 @@ from .email_task import EmailTask
 from .admin_log_entry import AdminLogEntry
 from .admin_profile import AdminProfile
 from .analytics import UserActivityCounter, PageCounter
+from .download_event import DownloadEvent
 from .archive import ArchiveJob, ArchiveTarget
 from .banner import ScheduledBanner
 from .base import (
