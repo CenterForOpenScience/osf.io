@@ -561,10 +561,11 @@ class NotificationCampaignsRecipientsPreview(PermissionRequiredMixin, ListView):
             if predefined := json_filters.get('predefined'):
                 filters = FILTER_PRESETS.get(predefined, {})
             else:
-                filters = {
-                    f'{item["field"]}__{item["lookup"]}': item['value']
-                    for item in json_filters.get('manual', [])
-                }
+                for item in json_filters.get('manual', []):
+                    if item['lookup'] != 'in':
+                        filters[f'{item["field"]}__{item["lookup"]}'] = item['value']
+                    else:
+                        filters[f'{item["field"]}__{item["lookup"]}'] = [value.strip() for value in item['value'].split(',')]
 
         return filter_users(filters)
 
