@@ -48,11 +48,11 @@ class Migration(migrations.Migration):
                 ('created', models.DateTimeField(auto_now_add=True, db_index=True)),
                 ('resource_guid', models.CharField(blank=True, db_index=True, default='', max_length=255)),
                 ('path', models.TextField(blank=True, default='')),
-                ('download_type', models.CharField(choices=[('file', 'Single file'), ('folder_zip', 'Folder zip'), ('project', 'Whole-project zip')], db_index=True, max_length=16)),
+                ('download_type', models.CharField(choices=[('file', 'Single file'), ('folder_zip', 'Folder zip'), ('project', 'Whole-project zip')], max_length=16)),
                 ('zip_completed', models.BooleanField(blank=True, null=True)),
                 ('size_bytes', models.BigIntegerField(blank=True, null=True)),
-                ('storage_region', models.CharField(blank=True, db_index=True, default='', max_length=64)),
-                ('user_region', models.CharField(blank=True, db_index=True, default='', max_length=64)),
+                ('storage_region', models.CharField(blank=True, default='', max_length=64)),
+                ('user_region', models.CharField(blank=True, default='', max_length=64)),
                 ('ip', models.GenericIPAddressField(blank=True, null=True)),
                 ('source_area', models.CharField(blank=True, default='', max_length=128)),
                 ('user', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='download_events', to='osf.osfuser')),
@@ -65,6 +65,10 @@ class Migration(migrations.Migration):
         migrations.AddIndex(
             model_name='downloadevent',
             index=models.Index(fields=['created', 'storage_region'], name='download_event_crt_regn'),
+        ),
+        migrations.AddIndex(
+            model_name='downloadevent',
+            index=models.Index(fields=['created', 'user_region'], name='download_event_crt_user'),
         ),
         migrations.RunPython(create_dashboard_group, remove_dashboard_group),
     ]

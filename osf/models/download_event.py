@@ -24,15 +24,15 @@ class DownloadEvent(models.Model):
     # what was downloaded
     resource_guid = models.CharField(max_length=255, blank=True, default='', db_index=True)
     path = models.TextField(blank=True, default='')
-    download_type = models.CharField(max_length=16, choices=DOWNLOAD_TYPES, db_index=True)
+    download_type = models.CharField(max_length=16, choices=DOWNLOAD_TYPES)
     # null for single files (only zips stream through WB, which reports completion)
     zip_completed = models.BooleanField(null=True, blank=True)
     size_bytes = models.BigIntegerField(null=True, blank=True)
 
     # storage_region = where the bytes were served from (capacity);
     # user_region = roughly where the user is. Kept separate on purpose.
-    storage_region = models.CharField(max_length=64, blank=True, default='', db_index=True)
-    user_region = models.CharField(max_length=64, blank=True, default='', db_index=True)
+    storage_region = models.CharField(max_length=64, blank=True, default='')
+    user_region = models.CharField(max_length=64, blank=True, default='')
     ip = models.GenericIPAddressField(null=True, blank=True)
     source_area = models.CharField(max_length=128, blank=True, default='')
 
@@ -51,6 +51,7 @@ class DownloadEvent(models.Model):
         indexes = [
             models.Index(fields=['created', 'download_type'], name='download_event_crt_type'),
             models.Index(fields=['created', 'storage_region'], name='download_event_crt_regn'),
+            models.Index(fields=['created', 'user_region'], name='download_event_crt_user'),
         ]
 
     def __repr__(self):
