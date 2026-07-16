@@ -178,7 +178,6 @@ class Registration(AbstractNode):
         return Registration.objects.filter(
             (models.Q(ia_url__isnull=True) | models.Q(ia_url='')),
             is_public=True,
-            identifiers__category='doi'
         ).exclude(
             moderation_state='withdrawn',
         )
@@ -1455,6 +1454,9 @@ class DraftRegistration(ObjectIDMixin, RegistrationResponseMixin, DirtyFieldsMix
 
         if not self.title:
             raise NodeStateError('Draft Registration must have title to be registered')
+
+        if not self.subjects.exists():
+            raise NodeStateError('Registration must have at least one subject to be registered')
 
         # Create the registration
         registration = node.register_node(

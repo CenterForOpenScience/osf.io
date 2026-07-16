@@ -3,7 +3,6 @@ import codecs
 import time
 import collections
 from jsonschema import validate, ValidationError, Draft7Validator
-from django.core.exceptions import ImproperlyConfigured
 from rest_framework.parsers import JSONParser
 from rest_framework.exceptions import ParseError, NotAuthenticated
 
@@ -307,52 +306,3 @@ class HMACSignedParser(JSONParser):
             raise JSONAPIException(detail='Signature has expired')
 
         return payload
-
-class SearchParser(JSONAPIParser):
-
-    def parse(self, stream, media_type=None, parser_context=None):
-        try:
-            view = parser_context['view']
-        except KeyError:
-            raise ImproperlyConfigured('SearchParser requires "view" context.')
-        data = super().parse(stream, media_type=media_type, parser_context=parser_context)
-        if not data:
-            raise JSONAPIException(detail='Invalid Payload')
-
-        res = {
-            'query': {
-                'bool': {},
-            },
-        }
-
-        sort = parser_context['request'].query_params.get('sort')
-        if sort:
-            res['sort'] = [{
-                sort.lstrip('-'): {
-                    'order': 'desc' if sort.startswith('-') else 'asc',
-                },
-            }]
-
-        try:
-            q = data.pop('q')
-        except KeyError:
-            pass
-        else:
-            res['query']['bool'].update({
-                'must': {
-                    'query_string': {
-                        'query': q,
-                        'fields': view.search_fields,
-                    },
-                },
-            })
-
-        if any(data.values()):
-            res['query']['bool'].update({'filter': []})
-            for key, val in data.items():
-                if val is not None:
-                    if isinstance(val, list):
-                        res['query']['bool']['filter'].append({'terms': {key: val}})
-                    else:
-                        res['query']['bool']['filter'].append({'term': {key: val}})
-        return res

@@ -4,13 +4,11 @@ from rest_framework import status as http_status
 from urllib.parse import urlparse, parse_qs, urlunparse, urlencode
 
 from django.apps import apps
-from django.utils import timezone
 from django.conf import settings as django_conf_settings
 import itsdangerous
 from flask import request, g
 from furl import furl
 
-from framework.celery_tasks.handlers import enqueue_task
 from framework.flask import redirect
 from osf.utils.fields import ensure_str
 from osf.exceptions import InvalidCookieOrSessionError
@@ -213,7 +211,7 @@ def before_request():
     cookie = request.cookies.get(settings.COOKIE_NAME)
     if cookie:
         try:
-            user_session = flask_get_session_from_cookie(cookie)
+            flask_get_session_from_cookie(cookie)
         except InvalidCookieOrSessionError:
             # If invalid session/cookie happens, only remove the invalid cookie and redirect to the same request.
             # This ensures users landing on the page/link they previously clicked.
@@ -226,17 +224,6 @@ def before_request():
             response = redirect(redirect_url)
             response.delete_cookie(settings.COOKIE_NAME, domain=settings.OSF_COOKIE_DOMAIN)
             return response
-        # Case 1: anonymous session that is used for first time external (e.g. ORCiD) login only
-        if user_session.get('auth_user_external_first_login', False) is True:
-            return
-        # Case 2: session without authenticated user
-        user_id = user_session.get('auth_user_id', None)
-        if not user_id:
-            return
-        # Case 3: authenticated session with user
-        # Update date last login when making non-api requests
-        from framework.auth.tasks import update_user_from_activity
-        enqueue_task(update_user_from_activity.s(user_id, timezone.now().timestamp(), cas_login=False))
 
 
 def after_request(response):
