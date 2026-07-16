@@ -57,6 +57,7 @@ def test_validate_expand_subject_hierarchy():
     'fullname',
     [
         'Judith Sarah Preuss, M.Sc.',
+        'Judith Sarah Preuss, M.Sc',
         'J.H. van Hateren',
         'Sami-Egil Ahonen',
         'Giovanni Luca Ciampaglia',
