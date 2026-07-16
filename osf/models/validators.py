@@ -1,6 +1,7 @@
 import re
 import waffle
 from django.db.models import Q
+from django.db.models.functions import Lower
 from jsonschema import ValidationError as JsonSchemaValidationError, SchemaError, Draft7Validator, validate, validators
 from django.conf import settings
 from django.core.validators import URLValidator, validate_email as django_validate_email
@@ -121,12 +122,13 @@ def has_domain_in_user_fields_for_names(fullname):
             Q(note=NotableDomain.Note.ASSUME_HAM_UNTIL_REPORTED) |
             Q(note=NotableDomain.Note.IGNORED)
         )
-        .values_list('domain', flat=True)
+        .annotate(domain_lower=Lower('domain'))
+        .values_list('domain_lower', flat=True)
         .distinct()
     )
     for match in DOMAIN_REGEX.finditer(fullname):
         domain = match.group('domain')
-        if domain in notable_domain_list:
+        if domain.lower() in notable_domain_list:
             continue
         if looks_like_url(match):
             return True
