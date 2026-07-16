@@ -16,11 +16,11 @@ from django.utils import timezone
 from framework.auth import Auth
 from framework.celery_tasks.handlers import celery_teardown_request
 from osf.email import _render_email_html
-from osf_tests.factories import DraftRegistrationFactory
+from osf_tests.factories import DraftRegistrationFactory, SubjectFactory
 from osf.models import Sanction, NotificationType, Notification
 from tests.base import get_default_metaschema
 from website.archiver import ARCHIVER_SUCCESS
-from website.archiver import listeners as archiver_listeners
+from website.archiver.tasks import archive_callback
 from website import settings as website_settings
 from osf import features
 
@@ -136,6 +136,7 @@ def mock_archive(project, schema=None, auth=None, draft_registration=None, paren
     draft_registration = draft_registration or DraftRegistrationFactory(
         branched_from=project, registration_schema=schema
     )
+    draft_registration.subjects.add(SubjectFactory())
 
     with mock.patch('framework.celery_tasks.handlers.enqueue_task'):
         registration = draft_registration.register(auth=auth, save=True)
@@ -155,7 +156,7 @@ def mock_archive(project, schema=None, auth=None, draft_registration=None, paren
         # Ensure patches actually apply:
         with mock.patch.object(root_job, 'archive_tree_finished', mock.Mock(return_value=True)), \
              mock.patch('website.archiver.tasks.archive_success.delay', mock.Mock()):
-            archiver_listeners.archive_callback(registration)
+            archive_callback(registration._id)
 
     if autoapprove:
         sanction = registration.root.sanction

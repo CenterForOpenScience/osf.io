@@ -70,7 +70,6 @@ urlpatterns = [
                 re_path(r'^requests/', include(('api.requests.urls', 'requests'), namespace='requests')),
                 re_path(r'^resources/', include('api.resources.urls', namespace='resources')),
                 re_path(r'^scopes/', include('api.scopes.urls', namespace='scopes')),
-                re_path(r'^search/', include('api.search.urls', namespace='search')),
                 re_path(r'^sparse/', include('api.sparse.urls', namespace='sparse')),
                 re_path(r'^subjects/', include('api.subjects.urls', namespace='subjects')),
                 re_path(r'^subscriptions/', include('api.subscriptions.urls', namespace='subscriptions')),

@@ -22,6 +22,19 @@ class TestDraftRegistrationRelationshipSubjects(SubjectsRelationshipMixin):
     def url(self, resource):
         return f'/{API_BASE}draft_registrations/{resource._id}/relationships/subjects/'
 
+    def test_update_subjects_empty_payload(self, app, user_admin_contrib, resource, url, subject):
+        # override test as draft registration must have at least one subject to be registered
+        resource.subjects.add(subject)
+
+        payload = {
+            'data': []
+        }
+
+        res = app.patch_json_api(url, payload, auth=user_admin_contrib.auth, expect_errors=True)
+        assert res.status_code == 400
+        assert res.json['errors'][0]['detail'] == 'Registration must have at least one subject to be registered'
+        assert resource.subjects.count() == 1
+
     # Overwrites SubjectsRelationshipMixin
     def test_update_subjects_relationship_permissions(self, app, user_write_contrib,
             user_read_contrib, user_non_contrib, resource, url, payload):

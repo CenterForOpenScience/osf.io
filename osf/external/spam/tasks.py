@@ -17,13 +17,14 @@ logging.basicConfig(level=logging.INFO)
 
 DOMAIN_REGEX = re.compile(r'\W*(?P<protocol>\w+://)?(?P<www>www\.)?(?P<domain>([\w-]+\.)+[a-zA-Z]+)(?P<path>[/\-\.\w]*)?\W*')
 REDIRECT_CODES = {301, 302, 303, 307, 308}
-
+NOTABLE_POST_NOMINALS = ['m.sc', 'm.sc.', 'msc.', 'b.sc.', 'bsc.', 'd.sc.', 'dsc.', 'phd.', 'ph.d.', 'msc.pt', 'pt.', 'prof.', 'dr.', 'md.', 'jd.', 'esq.']
 
 @celery_app.task()
 def reclassify_domain_references(notable_domain_id, current_note, previous_note):
     from osf.models.notable_domain import DomainReference, NotableDomain
     domain = NotableDomain.load(notable_domain_id)
     references = DomainReference.objects.filter(domain=domain)
+    referrers = []
     with transaction.atomic():
         for item in references:
             item.is_triaged = current_note != NotableDomain.Note.UNKNOWN
@@ -37,7 +38,11 @@ def reclassify_domain_references(notable_domain_id, current_note, previous_note)
                 if not item.referrer.spam_data.get('domains') and not item.referrer.spam_data.get('who_flagged'):
                     item.referrer.unspam(save=False)
             item.save()
-            item.referrer.save()
+            referrers.append(item.referrer)
+    # Reindexing triggers SHARE/search HTTP calls; run it after the transaction
+    # commits so those requests never hold row locks.
+    for referrer in referrers:
+        referrer.save()
 
 
 def _check_resource_for_domains(resource, content):

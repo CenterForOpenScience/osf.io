@@ -21,6 +21,7 @@ from framework.analytics import increment_user_activity_counters
 from framework.exceptions import PermissionsError
 from osf.exceptions import (
     InvalidTriggerError,
+    NodeStateError,
     ValidationValueError,
     UserStateError,
     UserNotAffiliatedError,
@@ -33,7 +34,7 @@ from .node_relation import NodeRelation
 from .nodelog import NodeLog
 from .subject import Subject
 from .spam import SpamMixin, SpamStatus
-from .validators import validate_title
+from .validators import validate_title, has_domain_in_user_fields_for_names
 from .tag import Tag
 from osf.utils import sanitize
 from .validators import validate_subject_hierarchy, validate_email, expand_subject_hierarchy
@@ -1184,6 +1185,10 @@ class TaxonomizableMixin(models.Model):
 
         :return: None
         """
+        from osf.models import Registration, DraftRegistration
+        if isinstance(self, (Registration, DraftRegistration)) and not new_subjects:
+            raise NodeStateError('Registration must have at least one subject to be registered')
+
         if auth:
             self.check_subject_perms(auth, **kwargs)
         self.assert_subject_format(new_subjects, expect_list=True, error_msg='Expecting list of lists.')
@@ -1217,6 +1222,10 @@ class TaxonomizableMixin(models.Model):
 
         :return: None
         """
+        from osf.models import Registration, DraftRegistration
+        if isinstance(self, (Registration, DraftRegistration)) and not subjects_list:
+            raise NodeStateError('Registration must have at least one subject to be registered')
+
         self.check_subject_perms(auth, **kwargs)
         self.assert_subject_format(subjects_list, expect_list=True, error_msg='Expecting a list of subjects.')
         if subjects_list:
@@ -1571,6 +1580,9 @@ class ContributorMixin(models.Model):
                 validate_email(email)
             except BlockedEmailError:
                 raise ValidationError('Unregistered contributor email address domain is blocked.')
+
+        if has_domain_in_user_fields_for_names(fullname):
+            raise ValidationError('Invalid personal information.')
 
         # Create a new user record if you weren't passed an existing user
         contributor = existing_user if existing_user else OSFUser.create_unregistered(fullname=fullname, email=email)

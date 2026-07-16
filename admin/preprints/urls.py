@@ -9,6 +9,7 @@ urlpatterns = [
     re_path(r'^known_spam$', views.PreprintKnownSpamList.as_view(), name='known-spam'),
     re_path(r'^known_ham$', views.PreprintKnownHamList.as_view(), name='known-ham'),
     re_path(r'^withdrawal_requests$', views.PreprintWithdrawalRequestList.as_view(), name='withdrawal-requests'),
+    re_path(r'^recover/$', views.RecoverDeletedPreprintView.as_view(), name='recover'),
     re_path(r'^(?P<guid>\w+)/$', views.PreprintView.as_view(), name='preprint'),
     re_path(r'^(?P<guid>\w+)/change_provider/$', views.PreprintProviderChangeView.as_view(), name='preprint-provider'),
     re_path(r'^(?P<guid>\w+)/machine_state/$', views.PreprintMachineStateView.as_view(), name='preprint-machine-state'),
