@@ -40,7 +40,7 @@
         style="display:inline;"
     >
         {% csrf_token %}
-        <button type="submit" class="btn btn-primary" {% if notification_campaign.status == "completed" %}disabled{% endif %}>
+        <button type="submit" class="btn btn-primary" {% if notification_campaign.status != "created" %}disabled{% endif %}>
             Start Campaign
         </button>
     </form>
@@ -74,6 +74,7 @@
                             </a>
                         </td>
                         <td>
+
                             <form
                                 id="restart-campaign-form"
                                 method="post"
@@ -81,7 +82,7 @@
                                 style="display:inline;"
                             >
                                 {% csrf_token %}
-                                <button type="submit" class="btn btn-primary">
+                                <button type="submit" class="btn btn-primary" {% if notification_campaign.status != "partially_completed" %}disabled{% endif %}>
                                     Restart Campaign
                                 </button>
                             </form>

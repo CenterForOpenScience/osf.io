@@ -146,11 +146,13 @@ def start_notification_campaign(campaign_id, restart_failed=False):
     if predefined_filter_name := filters.get('predefined'):
         filters = FILTER_PRESETS.get(predefined_filter_name, {})
     else:
-        filters = {
-            f'{item["field"]}__{item["lookup"]}': item['value']
-            for item in filters.get('manual', [])
-        }
-
+        manual_filters = {}
+        for item in filters.get('manual', []):
+            if item['lookup'] != 'in':
+                manual_filters[f'{item["field"]}__{item["lookup"]}'] = item['value']
+            else:
+                manual_filters[f'{item["field"]}__{item["lookup"]}'] = [value.strip() for value in item['value'].split(',')]
+        filters = manual_filters
     tasks = []
     total_recipients = 0
     batch_size = campaign.metadata.get('execution', {}).get('batch_size', 1000)
