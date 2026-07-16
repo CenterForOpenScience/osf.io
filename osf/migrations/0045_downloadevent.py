@@ -11,6 +11,7 @@ DASHBOARD_USERS = [
     'ykopka@exoft.net',
     'bgeiger@cos.io',
     'osmand@cos.io',
+    'ramya@cos.io',
 ]
 
 
@@ -47,7 +48,6 @@ class Migration(migrations.Migration):
                 ('created', models.DateTimeField(auto_now_add=True, db_index=True)),
                 ('resource_guid', models.CharField(blank=True, db_index=True, default='', max_length=255)),
                 ('path', models.TextField(blank=True, default='')),
-                ('name', models.CharField(blank=True, default='', max_length=255)),
                 ('download_type', models.CharField(choices=[('file', 'Single file'), ('folder_zip', 'Folder zip'), ('project', 'Whole-project zip')], db_index=True, max_length=16)),
                 ('zip_completed', models.BooleanField(blank=True, null=True)),
                 ('size_bytes', models.BigIntegerField(blank=True, null=True)),

@@ -24,7 +24,6 @@ class DownloadEvent(models.Model):
     # what was downloaded
     resource_guid = models.CharField(max_length=255, blank=True, default='', db_index=True)
     path = models.TextField(blank=True, default='')
-    name = models.CharField(max_length=255, blank=True, default='')
     download_type = models.CharField(max_length=16, choices=DOWNLOAD_TYPES, db_index=True)
     # null for single files (only zips stream through WB, which reports completion)
     zip_completed = models.BooleanField(null=True, blank=True)
