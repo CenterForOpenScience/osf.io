@@ -6,7 +6,7 @@ We follow the CalVer (https://calver.org/) versioning scheme: YY.MINOR.MICRO.
 ====================
 
 - Bug-fixes & improvements
-- ES2 code cleanup 
+- ES2 code cleanup
 
 26.14.0 (2026-07-06)
 ====================
@@ -20,7 +20,6 @@ We follow the CalVer (https://calver.org/) versioning scheme: YY.MINOR.MICRO.
 - add migrate_osfmetrics_fix_6to8 command to correct monthly usage reports
 - temporarily re-add elasticsearch6 and some es6-based osf-metrics models
 
-
 26.12.0 (2026-06-23)
 ====================
 
@@ -31,7 +30,6 @@ We follow the CalVer (https://calver.org/) versioning scheme: YY.MINOR.MICRO.
 
 - Stop using elasticsearch6
 - Change all osfmetrics-consuming code to use es8 from data migration in 26.10.0
-
 
 26.10.7 (2026-06-10)
 ====================

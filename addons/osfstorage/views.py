@@ -2,18 +2,22 @@ from rest_framework import status as http_status
 import logging
 
 from django.core.exceptions import ValidationError
+from django.contrib.contenttypes.models import ContentType
 from django.db import IntegrityError
 from django.db import connection
 from django.db import transaction
-
+from django.db.models import Case, CharField, F, JSONField, OuterRef, Subquery, Value, When
+from django.db.models.fields.json import KeyTextTransform
+from django.db.models.functions import Coalesce, Concat, JSONObject
 from flask import request
 
 from framework.auth import Auth
 from framework.exceptions import HTTPError
 from framework.auth.decorators import must_be_signed, must_be_logged_in
 
+from api.base.utils import is_truthy
 from osf.exceptions import InvalidTagError, TagNotFoundError
-from osf.models import FileVersion, Node, OSFUser
+from osf.models import BaseFileVersionsThrough, FileVersion, Node, OSFUser
 from osf.utils.permissions import WRITE
 from osf.utils.requests import check_select_for_update
 from website.project.decorators import (
@@ -25,7 +29,7 @@ from website.files import exceptions
 from website.settings import StorageLimits
 from addons.osfstorage import utils
 from addons.osfstorage import decorators
-from addons.osfstorage.models import OsfStorageFolder
+from addons.osfstorage.models import OsfStorageFileNode, OsfStorageFolder
 from addons.osfstorage import settings as osf_storage_settings
 
 
@@ -183,12 +187,64 @@ def osfstorage_get_metadata(file_node, **kwargs):
     return file_node.serialize(version=version, include_full=True)
 
 
-@must_be_signed
-@decorators.autoload_filenode(must_be='folder')
-def osfstorage_get_children(file_node, **kwargs):
-    from django.contrib.contenttypes.models import ContentType
+def _osfstorage_minimal_metadata(file_node, *, limit=None, after=None):
+    waterbutler_resource = osf_storage_settings.WATERBUTLER_RESOURCE
+    latest_version = BaseFileVersionsThrough.objects.filter(
+        basefilenode_id=OuterRef('pk'),
+    ).order_by('-fileversion__created')
+
+    file_storage = Subquery(
+        latest_version.annotate(
+            _storage=JSONObject(
+                data=JSONObject(
+                    name=Coalesce(F('version_name'), OuterRef('name')),
+                    path=KeyTextTransform('object', 'fileversion__location'),
+                ),
+                settings=JSONObject(**{
+                    waterbutler_resource: KeyTextTransform(
+                        waterbutler_resource, 'fileversion__location',
+                    ),
+                }),
+            ),
+        ).values('_storage')[:1],
+    )
+
+    qs = OsfStorageFileNode.objects.filter(
+        parent_id=file_node.id,
+        type__in=('osf.osfstoragefile', 'osf.osfstoragefolder'),
+    ).annotate(
+        kind=Case(
+            When(type='osf.osfstoragefile', then=Value('file')),
+            default=Value('folder'),
+            output_field=CharField(),
+        ),
+        path=Case(
+            When(type='osf.osfstoragefile', then=Concat(Value('/'), F('_id'))),
+            default=Concat(Value('/'), F('_id'), Value('/')),
+            output_field=CharField(),
+        ),
+        storage=Case(
+            When(type='osf.osfstoragefile', then=file_storage),
+            default=Value(None, output_field=JSONField()),
+            output_field=JSONField(),
+        ),
+    ).values('id', 'name', 'kind', 'path', 'storage')
+
+    if after is not None:
+        qs = qs.filter(id__gt=after)
+
+    # Always return files/folders in the same order
+    # It helps make waterbutler file streaming more stable
+    qs = qs.order_by('id')
+
+    if limit is not None:
+        qs = qs[:limit]
+
+    return list(qs)
+
+
+def _osfstorage_full_metadata(file_node, user_id):
     from osf.models.preprint import Preprint
-    user_id = request.args.get('user_id')
     user_content_type_id = ContentType.objects.get_for_model(OSFUser).id
     user_pk = OSFUser.objects.filter(guids___id=user_id, guids___id__isnull=False).values_list('pk', flat=True).first()
     guid_id = file_node.target.get_guid().id if isinstance(file_node.target, Preprint) else file_node.target.guids.first().id,
@@ -292,6 +348,18 @@ def osfstorage_get_children(file_node, **kwargs):
             file_node.id
         ])
         return cursor.fetchone()[0] or []
+
+
+@must_be_signed
+@decorators.autoload_filenode(must_be='folder')
+def osfstorage_get_children(file_node, **kwargs):
+    if is_truthy(request.args.get('minimal')):
+        return _osfstorage_minimal_metadata(
+            file_node,
+            limit=request.args.get('limit', type=int, default=None),
+            after=request.args.get('after', type=int, default=None),
+        )
+    return _osfstorage_full_metadata(file_node, request.args.get('user_id'))
 
 
 @must_be_signed
