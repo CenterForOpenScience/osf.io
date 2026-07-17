@@ -111,8 +111,9 @@ def process_campaign_retry(*args, **kwargs):
         return
 
     if campaign.retries < max_retries:
-        logger.info(f'Retrying {failed_recipients_count} failed recipients for campaign {campaign_id}')
-        sentry.log_message(f'Retrying {failed_recipients_count} failed recipients for campaign {campaign_id}')
+        message = f'[Notification Campaign] Retrying {failed_recipients_count} failed recipients for campaign {campaign_id}'
+        logger.info(message)
+        sentry.log_message(message)
         filters = {'id__in': failed_recipients.values_list('user_id', flat=True)}
         tasks = []
         for batch in get_filtered_batches(filters=filters, batch_size=batch_size, campaign_id=campaign_id):
@@ -200,8 +201,9 @@ def send_campaign_batch(context, recipients_ids, notification_type_name='blank',
     execution_time_window = campaign.metadata.get('execution', {}).get('time_window', 8)
     if campaign.started_at < timezone.now() - timedelta(hours=execution_time_window):
         if not campaign.developer_reminder_sent:
-            logger.warning(f"Campaign {campaign_id} exceeded its execution time window ({execution_time_window}h).")
-            sentry.log_message(f"Campaign {campaign_id} exceeded its execution time window ({execution_time_window}h).")
+            message = f'[Notification Campaign] Campaign {campaign_id} exceeded its execution time window ({execution_time_window}h).'
+            logger.warning(message)
+            sentry.log_message(message)
             campaign.developer_reminder_sent = True
             campaign.save()
 
