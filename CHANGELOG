@@ -6,7 +6,7 @@ We follow the CalVer (https://calver.org/) versioning scheme: YY.MINOR.MICRO.
 ====================
 
 - Bug-fixes & improvements
-- ES2 code cleanup 
+- ES2 code cleanup
 
 26.14.0 (2026-07-06)
 ====================
