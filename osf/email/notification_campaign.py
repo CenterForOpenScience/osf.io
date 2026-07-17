@@ -1,6 +1,9 @@
 import logging
+from enum import IntEnum
+
 from osf.models import NotificationType, NotificationTypeEnum, OSFUser, UserActivityCounter, Email
-from django.db.models import OuterRef, Subquery, Exists, F, Q, Case, When, CharField
+from osf.models.spam import SpamStatus
+from django.db.models import OuterRef, Subquery, Exists, F, Q, Case, When, CharField, IntegerField, Value
 from django.db.models.functions import Coalesce
 from framework.celery_tasks import app as celery_app
 from celery import chord
@@ -11,6 +14,17 @@ from osf.email import send_email_with_send_grid
 from framework import sentry
 
 logger = logging.getLogger(__name__)
+
+ACTIVITY_ACTIVE_THRESHOLD = 5000
+ACTIVITY_SPAM_THRESHOLD = 100000
+
+
+class ActivityPriority(IntEnum):
+    """Numeric priorities for ordering recipients (higher = send first)."""
+    SPAM_NON_ACTIVE = 0
+    NON_ACTIVE = 1
+    SPAM_ACTIVE = 2
+    ACTIVE = 3
 
 
 first_email_subquery = (
@@ -51,8 +65,23 @@ def filter_users(filters, campaign_id=None, restart_failed=False):
 def get_filtered_batches(filters, batch_size=1000, campaign_id=None, restart_failed=False):
     qs = filter_users(filters, campaign_id, restart_failed=restart_failed)
 
-    qs = qs.annotate(activity_total=Coalesce(Subquery(counter_subquery), 0)).order_by('-activity_total', '-date_registered', '-id')
+    is_spam = Q(spam_status=SpamStatus.SPAM)
+    qs = (
+        qs
+        .annotate(
+            activity_total=Coalesce(Subquery(counter_subquery), 0),
+        ).annotate(
+            activity_priority=Case(
+                When(~is_spam & Q(activity_total__gte=ACTIVITY_ACTIVE_THRESHOLD), then=Value(ActivityPriority.ACTIVE)),
+                When(is_spam & Q(activity_total__gte=ACTIVITY_SPAM_THRESHOLD), then=Value(ActivityPriority.SPAM_ACTIVE)),
+                When(~is_spam, then=Value(ActivityPriority.NON_ACTIVE)),
+                default=Value(ActivityPriority.SPAM_NON_ACTIVE),
+                output_field=IntegerField(),
+            ),
+        ).order_by('-activity_priority', '-activity_total', '-date_registered', '-id')
+    )
 
+    last_priority = None
     last_total = None
     last_date = None
     last_id = None
@@ -60,30 +89,22 @@ def get_filtered_batches(filters, batch_size=1000, campaign_id=None, restart_fai
     while True:
         batch_qs = qs
 
-        if last_total is not None:
+        if last_priority is not None:
             batch_qs = batch_qs.filter(
-                Q(activity_total__lt=last_total) |
-                Q(activity_total=last_total, date_registered__lt=last_date) |
-                Q(activity_total=last_total, date_registered=last_date, id__lt=last_id)
+                Q(activity_priority__lt=last_priority) |
+                Q(activity_priority=last_priority, activity_total__lt=last_total) |
+                Q(activity_priority=last_priority, activity_total=last_total, date_registered__lt=last_date) |
+                Q(activity_priority=last_priority, activity_total=last_total, date_registered=last_date, id__lt=last_id)
             )
 
         batch = batch_qs[:batch_size]
-
-        if not batch:
-            break
-
-        rows = list(batch.values_list('id', 'activity_total', 'date_registered'))
+        rows = list(batch.values_list('id', 'activity_priority', 'activity_total', 'date_registered'))
 
         if not rows:
             break
 
         batch_ids = [r[0] for r in rows]
-
-        last_id, last_total, last_date = (
-            rows[-1][0],
-            rows[-1][1],
-            rows[-1][2],
-        )
+        last_id, last_priority, last_total, last_date = rows[-1]
 
         yield batch_ids
 
