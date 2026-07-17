@@ -5,8 +5,10 @@ from django.db.models.functions import Coalesce
 from framework.celery_tasks import app as celery_app
 from celery import chord
 from django.utils import timezone
+from datetime import timedelta
 from osf.models.notification_campaign import NotificationCampaign, NotificationCampaignRecipient, NotificationCampaignStatus, NotificationCampaignRecipientStatus
 from osf.email import send_email_with_send_grid
+from framework import sentry
 
 logger = logging.getLogger(__name__)
 
@@ -109,7 +111,9 @@ def process_campaign_retry(*args, **kwargs):
         return
 
     if campaign.retries < max_retries:
-        logger.info(f'Retrying {failed_recipients_count} failed recipients for campaign {campaign_id}')
+        message = f'[Notification Campaign] Retrying {failed_recipients_count} failed recipients for campaign {campaign_id}'
+        logger.info(message)
+        sentry.log_message(message)
         filters = {'id__in': failed_recipients.values_list('user_id', flat=True)}
         tasks = []
         for batch in get_filtered_batches(filters=filters, batch_size=batch_size, campaign_id=campaign_id):
@@ -189,7 +193,19 @@ def send_campaign_batch(context, recipients_ids, notification_type_name='blank',
         ).first()  # TODO cache
 
         if notification_type is None:
+            if campaign.status != NotificationCampaignStatus.FAILED:
+                campaign.status = NotificationCampaignStatus.FAILED
+                campaign.save()
             return
+
+    execution_time_window = campaign.metadata.get('execution', {}).get('time_window', 8)
+    if campaign.started_at < timezone.now() - timedelta(hours=execution_time_window):
+        if not campaign.developer_reminder_sent:
+            message = f'[Notification Campaign] Campaign {campaign_id} exceeded its execution time window ({execution_time_window}h).'
+            logger.warning(message)
+            sentry.log_message(message)
+            campaign.developer_reminder_sent = True
+            campaign.save()
 
     recipients_qs = OSFUser.objects.filter(id__in=recipients_ids)
     recipient_records = {
@@ -243,6 +259,8 @@ def send_campaign_batch(context, recipients_ids, notification_type_name='blank',
 
             except Exception as exc:
                 logger.error(exc)  # TODO update error
+                sentry.log_exception(exc)  # TODO update error
+
                 recipient_record.status = NotificationCampaignRecipientStatus.FAILED
                 recipient_record.error_message = str(exc)
                 recipient_records[operation].append(recipient_record)

@@ -15,6 +15,8 @@ class NotificationCampaignRecipientStatus(models.TextChoices):
     PENDING = 'pending', 'Pending'
     SENT = 'sent', 'Sent'
     FAILED = 'failed', 'Failed'
+    SKIPPED = 'skipped', 'Skipped'
+    POSTPONED = 'postponed', 'Postponed'
 
 
 class NotificationCampaign(models.Model):
@@ -63,6 +65,8 @@ class NotificationCampaign(models.Model):
     sent_count = models.PositiveIntegerField(default=0)
     failed_count = models.PositiveIntegerField(default=0)
     retries = models.PositiveIntegerField(default=0)
+
+    developer_reminder_sent = models.BooleanField(default=False)
 
     def start(self, restart_failed=False):
         from osf.email.notification_campaign import start_notification_campaign
