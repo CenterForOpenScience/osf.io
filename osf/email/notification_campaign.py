@@ -5,6 +5,7 @@ from django.db.models.functions import Coalesce
 from framework.celery_tasks import app as celery_app
 from celery import chord
 from django.utils import timezone
+from datetime import timedelta
 from osf.models.notification_campaign import NotificationCampaign, NotificationCampaignRecipient, NotificationCampaignStatus, NotificationCampaignRecipientStatus
 from osf.email import send_email_with_send_grid
 
@@ -189,7 +190,17 @@ def send_campaign_batch(context, recipients_ids, notification_type_name='blank',
         ).first()  # TODO cache
 
         if notification_type is None:
+            if campaign.status != NotificationCampaignStatus.FAILED:
+                campaign.status = NotificationCampaignStatus.FAILED
+                campaign.save()
             return
+
+    execution_time_window = campaign.metadata.get('execution', {}).get('time_window', 8)
+    if campaign.started_at < timezone.now() - timedelta(hours=execution_time_window):
+        if not campaign.developer_reminder_sent:
+            logger.warning(f"Campaign {campaign_id} exceeded its execution time window ({execution_time_window}h).")
+            campaign.developer_reminder_sent = True
+            campaign.save()
 
     recipients_qs = OSFUser.objects.filter(id__in=recipients_ids)
     recipient_records = {
