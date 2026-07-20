@@ -13,9 +13,22 @@ from django.contrib.admin import SimpleListFilter
 import waffle
 
 from osf.external.spam.tasks import reclassify_domain_references
-from osf.models import OSFUser, Node, NotableDomain, NodeLicense, NotificationType, NotificationSubscription, EmailTask, Notification
+from osf.models import (
+    OSFUser,
+    Node,
+    NotableDomain,
+    NodeLicense,
+    NotificationType,
+    NotificationSubscription,
+    EmailTask,
+    Notification,
+    DownloadEvent
+)
 from osf.models.notification_type import get_default_frequency_choices
 from osf.models.notable_domain import DomainReference
+
+
+DASHBOARD_GROUP_NAME = 'download_telemetry'
 
 
 def list_displayable_fields(cls):
@@ -385,6 +398,15 @@ class NotificationAdmin(admin.ModelAdmin):
         except Exception:
             return '(username)'
     user.short_description = 'User'
+
+
+@admin.register(DownloadEvent)
+class DownloadEventsView(admin.ModelAdmin):
+    list_display = [x.name for x in DownloadEvent._meta.fields]
+
+    def has_module_permission(self, request, obj=None):
+        return request.user.groups.filter(name=DASHBOARD_GROUP_NAME).exists()
+
 
 admin.site.register(OSFUser, OSFUserAdmin)
 admin.site.register(Node, NodeAdmin)
