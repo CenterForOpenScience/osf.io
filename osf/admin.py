@@ -1,3 +1,5 @@
+from datetime import timedelta
+
 from django.contrib import admin, messages
 from django.urls import re_path, reverse, path
 from django.template.response import TemplateResponse
@@ -5,12 +7,15 @@ from django_extensions.admin import ForeignKeyAutocompleteAdmin
 from django.contrib.auth.models import Group
 from django.db.models import Q, Count
 from django.http import HttpResponseRedirect, HttpResponse, JsonResponse
+from django.utils import timezone
 from django.utils.html import format_html
 from django.shortcuts import get_object_or_404
 from django import forms
 from django.contrib.postgres.forms import SimpleArrayField
 from django.contrib.admin import SimpleListFilter
 import waffle
+
+from rangefilter.filters import DateTimeRangeFilterBuilder
 
 from osf.external.spam.tasks import reclassify_domain_references
 from osf.models import (
@@ -402,7 +407,56 @@ class NotificationAdmin(admin.ModelAdmin):
 
 @admin.register(DownloadEvent)
 class DownloadEventsView(admin.ModelAdmin):
-    list_display = [x.name for x in DownloadEvent._meta.fields]
+    list_display = (
+        'resource_guid',
+        'user',
+        'download_type',
+        'zip_completed',
+        'path',
+        'size_bytes',
+        'user_region',
+        'storage_region',
+        'ip',
+        'source_area',
+        'created'
+    )
+    list_filter = (
+        (
+            'created',
+            DateTimeRangeFilterBuilder(
+                title='date and time (UTC)',
+            ),
+        ),
+        'download_type',
+        'zip_completed',
+    )
+    ordering = ('-created',)
+    search_fields = (
+        'user__username',
+        'user__fullname',
+        'user__guids___id',
+        'resource_guid',
+        'ip',
+        'path',
+        'user_region',
+        'storage_region',
+        'source_area'
+    )
+    search_help_text = 'Search by username, full name, user or node guid, ip, path, user or storage region, source area.'
+
+    def changelist_view(self, request, extra_context=None):
+        for query_string in request.GET:
+            # when at least one of the "created" filters is set, don't override the filter values
+            if query_string.startswith('created__range'):
+                return super().changelist_view(request, extra_context=extra_context)
+
+        # by default, when the page is initially loaded or "created" filter is reset
+        # show only events within the last hour
+        request.GET._mutable = True
+        last_hour_datetime = timezone.now() - timedelta(hours=1)
+        request.GET['created__range__gte_0'] = last_hour_datetime.date().strftime('%Y-%m-%d')
+        request.GET['created__range__gte_1'] = last_hour_datetime.time().strftime('%H:%M:%S')
+        return super().changelist_view(request, extra_context=extra_context)
 
     def has_module_permission(self, request, obj=None):
         return request.user.groups.filter(name=DASHBOARD_GROUP_NAME).exists()
