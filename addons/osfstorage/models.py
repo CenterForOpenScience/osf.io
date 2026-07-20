@@ -14,6 +14,7 @@ from osf.models.mixins import Loggable
 from osf.models import AbstractNode
 from osf.models.files import File, FileVersion, Folder, TrashedFileNode, BaseFileNode, BaseFileNodeManager
 from osf.utils import permissions
+from osf.utils.requests import check_select_for_update
 from website.files import exceptions
 from website.files import utils as files_utils
 from website.util import api_url_for
@@ -327,6 +328,12 @@ class OsfStorageFile(OsfStorageFileNode, File):
             most_recent_fileversion.save()
 
     def create_version(self, creator, location, metadata=None):
+        if check_select_for_update():
+            # Lock the file row for the duration of the request's transaction to avoid
+            # concurrent/retried requests for the same file to read the same version
+            # count and insert duplicate identifiers
+            self.__class__.objects.select_for_update().get(pk=self.pk)
+
         latest_version = self.get_version()
         version = FileVersion(identifier=self.versions.count() + 1, creator=creator, location=location)
 
@@ -354,12 +361,13 @@ class OsfStorageFile(OsfStorageFileNode, File):
                 return self.versions.first()
             return None
 
-        try:
-            return self.versions.get(identifier=version)
-        except FileVersion.DoesNotExist:
-            if required:
-                raise exceptions.VersionNotFoundError(version)
-            return None
+        # .filter().first() better than .get(): some files have more
+        # than one FileVersion sharing the same identifier, which would
+        # otherwise raise MultipleObjectsReturned here instead of retrieving a version
+        result = self.versions.filter(identifier=version).order_by('created').first()
+        if result is None and required:
+            raise exceptions.VersionNotFoundError(version)
+        return result
 
     def add_tag_log(self, action, tag, auth):
         if isinstance(self.target, Loggable):
