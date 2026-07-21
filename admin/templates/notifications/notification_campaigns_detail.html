@@ -57,7 +57,7 @@
                     {% if field == 'Sent' and value != 0 %}
                         <td>
                             <a
-                                href="{% url 'notifications:notification_campaigns_recipients_preview' %}?filters={{ sent_filters_json|urlencode }}"
+                                href="{% url 'notifications:notification_campaigns_recipients_list' %}?notification_status=sent&campaign_id={{ notification_campaign.id }}"
                                 class="btn btn-default"
                                 target="_blank">
                                 Preview Recipients
@@ -67,7 +67,7 @@
                     {% elif field == 'Failed' and value != 0 %}
                         <td>
                             <a
-                                href="{% url 'notifications:notification_campaigns_recipients_preview' %}?filters={{ failed_filters_json|urlencode }}"
+                                href="{% url 'notifications:notification_campaigns_recipients_list' %}?notification_status=failed&campaign_id={{ notification_campaign.id }}"
                                 class="btn btn-default"
                                 target="_blank">
                                 Preview Recipients
