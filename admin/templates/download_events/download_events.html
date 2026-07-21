@@ -96,6 +96,8 @@
                 </div>
             </div>
 
+            <br>
+
             <div class="dashboard-grid charts-grid">
                 <div class="dashboard-card chart-card">
                     <div class="card-label">GB by storage region</div>
@@ -200,6 +202,7 @@
     {% endif %}
     <br><br>
     {{ block.super }}
+
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
 const chartColors = {
@@ -233,9 +236,9 @@ const commonOptions = {
     }
 };
 const timeLabels = [
-{% for label in download_events_dashboard.time_series.labels %}
-    "{{ label }}",
-{% endfor %}
+    {% for label in download_events_dashboard.time_series.labels %}
+        "{{ label }}",
+    {% endfor %}
 ];
 
 const fileSeries = [
@@ -245,39 +248,39 @@ const fileSeries = [
 ];
 
 const zipSeries = [
-{% for value in download_events_dashboard.time_series.zip %}
-    {{ value }},
-{% endfor %}
+    {% for value in download_events_dashboard.time_series.zip %}
+        {{ value }},
+    {% endfor %}
 ];
 
 const storageLabels = [
-{% for region in download_events_dashboard.storage_regions %}
-    "{{ region.name|escapejs }}",
-{% endfor %}
+    {% for region in download_events_dashboard.storage_regions %}
+        "{{ region.name|escapejs }}",
+    {% endfor %}
 ];
 
 const storageGB = [
-{% for region in download_events_dashboard.storage_regions %}
-    {{ region.gb }},
-{% endfor %}
+    {% for region in download_events_dashboard.storage_regions %}
+        {{ region.gb }},
+    {% endfor %}
 ];
 
 const userRegionLabels = [
-{% for region in download_events_dashboard.user_regions %}
-    "{{ region.name|escapejs }}",
-{% endfor %}
+    {% for region in download_events_dashboard.user_regions %}
+        "{{ region.name|escapejs }}",
+    {% endfor %}
 ];
 
 const userDownloads = [
-{% for region in download_events_dashboard.user_regions %}
-    {{ region.downloads }},
-{% endfor %}
+    {% for region in download_events_dashboard.user_regions %}
+        {{ region.downloads }},
+    {% endfor %}
 ];
 
 const userGB = [
-{% for region in download_events_dashboard.user_regions %}
-    {{ region.gb }},
-{% endfor %}
+    {% for region in download_events_dashboard.user_regions %}
+        {{ region.gb }},
+    {% endfor %}
 ];
 
 new Chart(
@@ -357,7 +360,6 @@ new Chart(
     document.getElementById("storageRegionChart"),
     {
         type: "bar",
-
         data: {
             labels: storageLabels,
             datasets: [{
@@ -366,21 +368,16 @@ new Chart(
                 backgroundColor: chartColors.blue
             }]
         },
-
         options: {
             ...commonOptions,
-
             indexAxis: "y",
-
             plugins: {
                 ...commonOptions.plugins,
                 legend: {
                     display: false
                 }
             },
-
             scales: {
-
                 x: {
                     beginAtZero: true,
                     title: {
@@ -391,17 +388,18 @@ new Chart(
                         color: chartColors.grid
                     }
                 },
-
                 y: {
                     grid: {
                         display: false
                     }
                 }
-
-            }
-
+            },
+            interaction: {
+                mode: "nearest",
+                axis: "y",
+                intersect: true
+            },
         }
-
     }
 );
 
@@ -409,35 +407,24 @@ new Chart(
     document.getElementById("userRegionChart"),
     {
         type: "bar",
-
         data: {
-
             labels: userRegionLabels,
-
             datasets: [
-
                 {
                     label: "Downloads",
                     data: userDownloads,
                     backgroundColor: chartColors.blue
                 },
-
                 {
                     label: "GB",
                     data: userGB,
                     backgroundColor: chartColors.red
                 }
-
             ]
-
         },
-
         options: {
-
             ...commonOptions,
-
             indexAxis: "y",
-
             scales: {
 
                 x: {
@@ -453,10 +440,13 @@ new Chart(
                     }
                 }
 
-            }
-
+            },
+            interaction: {
+                mode: "nearest",
+                axis: "y",
+                intersect: true
+            },
         }
-
     }
 );
 
@@ -464,35 +454,23 @@ new Chart(
     document.getElementById("downloadsSplitChart"),
     {
         type: "doughnut",
-
         data: {
-
             labels: ["File", "Zip"],
-
             datasets: [{
-
                 data: [
                     {{ download_events_dashboard.split.file.count }},
                     {{ download_events_dashboard.split.zip.count }}
                 ],
-
                 backgroundColor: [
                     chartColors.blue,
                     chartColors.red
                 ]
-
             }]
-
         },
-
         options: {
-
             ...commonOptions,
-
             cutout: "60%"
-
         }
-
     }
 );
 
@@ -500,37 +478,25 @@ new Chart(
     document.getElementById("gbSplitChart"),
     {
         type: "doughnut",
-
         data: {
-
             labels: ["File", "Zip"],
-
             datasets: [{
-
                 data: [
                     {{ download_events_dashboard.split.file.gb }},
                     {{ download_events_dashboard.split.zip.gb }}
                 ],
-
                 backgroundColor: [
                     chartColors.blue,
                     chartColors.red
                 ]
-
             }]
-
         },
-
         options: {
-
             ...commonOptions,
-
             cutout: "60%"
-
         }
 
     }
 );
-
 </script>
 {% endblock %}

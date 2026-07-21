@@ -7,7 +7,6 @@ from django.template.response import TemplateResponse
 from django_extensions.admin import ForeignKeyAutocompleteAdmin
 from django.contrib.auth.models import Group
 from django.db.models import Q, Count, Sum
-from django.db.models.functions import Coalesce
 from django.http import HttpResponseRedirect, HttpResponse, JsonResponse
 from django.utils import timezone
 from django.utils.html import format_html
@@ -447,9 +446,9 @@ class DownloadEventsView(admin.ModelAdmin):
     )
     search_help_text = 'Search by username, full name, user or node guid, ip, path, user or storage region, source area.'
 
-    @admin.display(ordering='size_bytes')
+    @admin.display(description='Size (GB)', ordering='size_bytes')
     def size(self, obj):
-        return f'{self._to_gb(obj.size_bytes)} GB'
+        return f'{self._to_gb(obj.size_bytes)}'
 
     def changelist_view(self, request, extra_context=None):
         for query_string in request.GET:
@@ -616,7 +615,7 @@ class DownloadEventsView(admin.ModelAdmin):
 
     def _build_region_breakdown(self, queryset, field_name):
         breakdown = defaultdict(lambda: {'downloads': 0, 'gb': 0.0})
-        for region, download_type, size_bytes in queryset.values_list(field_name, 'download_type', 'size_bytes'):
+        for region, size_bytes in queryset.values_list(field_name, 'size_bytes'):
             region_name = (region or 'Unknown').strip() or 'Unknown'
             breakdown[region_name]['downloads'] += 1
             breakdown[region_name]['gb'] += (size_bytes or 0) / (1024**3)
@@ -637,10 +636,10 @@ class DownloadEventsView(admin.ModelAdmin):
 
     def _build_top_resource_breakdown(self, queryset):
         rows = queryset.exclude(resource_guid='').values('resource_guid').annotate(
-            gb_bytes=Coalesce(Sum('size_bytes'), 0),
+            gb_bytes=Sum('size_bytes'),
             downloads=Count('id'),
         ).order_by('-gb_bytes', '-downloads')[:10]
-        val = [
+        return [
             {
                 'name': row['resource_guid'],
                 'downloads': row['downloads'],
@@ -648,14 +647,13 @@ class DownloadEventsView(admin.ModelAdmin):
             }
             for row in rows
         ]
-        return val
 
     def _build_top_user_breakdown(self, queryset):
         rows = queryset.exclude(user__isnull=True).values('user__username', 'user__fullname').annotate(
-            gb_bytes=Coalesce(Sum('size_bytes'), 0),
+            gb_bytes=Sum('size_bytes'),
             downloads=Count('id'),
         ).order_by('-gb_bytes', '-downloads')[:10]
-        val = [
+        return [
             {
                 'name': row['user__fullname'] or row['user__username'] or 'Unknown user',
                 'downloads': row['downloads'],
@@ -663,7 +661,6 @@ class DownloadEventsView(admin.ModelAdmin):
             }
             for row in rows
         ]
-        return val
 
 
 admin.site.register(OSFUser, OSFUserAdmin)
