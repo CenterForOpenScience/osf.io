@@ -2,13 +2,13 @@ import re
 import json
 from collections import defaultdict
 from django.urls import reverse_lazy
-from django.db.models import Q
+from django.db.models import Q, F
 from django.db import models
 from django.shortcuts import get_object_or_404, redirect
 from django.views.generic import ListView, DetailView, UpdateView, CreateView, View
 from django.contrib import messages
 from django.contrib.auth.mixins import PermissionRequiredMixin
-from osf.models import NotificationSubscription, NotificationType, Notification, EmailTask, NotificationCampaign, OSFUser
+from osf.models import NotificationSubscription, NotificationType, Notification, EmailTask, NotificationCampaign, OSFUser, NotificationCampaignRecipient
 from osf.models.notification_campaign import NotificationCampaignStatus
 from django.forms.models import model_to_dict
 from .forms import NotificationTypeForm, NotificationCampaignCreateForm
@@ -548,7 +548,7 @@ class NotificationCampaignCreateView(CreateView):
 
 
 class NotificationCampaignsRecipientsPreview(PermissionRequiredMixin, ListView):
-    template_name = 'users/list.html'
+    template_name = 'notifications/notification_campaing_recipients_preview.html'
     permission_required = 'osf.view_osfuser'
     raise_exception = True
     paginate_by = 25
@@ -567,7 +567,10 @@ class NotificationCampaignsRecipientsPreview(PermissionRequiredMixin, ListView):
                     else:
                         filters[f'{item["field"]}__{item["lookup"]}'] = [value.strip() for value in item['value'].split(',')]
 
-        return filter_users(filters)
+        qs = filter_users(filters)
+        return qs.annotate(
+            guid=F('guids___id')
+        )
 
     def get_context_data(self, **kwargs):
         users = self.get_queryset()
@@ -583,6 +586,45 @@ class NotificationCampaignsRecipientsPreview(PermissionRequiredMixin, ListView):
             **kwargs,
             page=page,
             users=query_set,
+            paginator=paginator,
+            is_paginated=is_paginated,
+        )
+
+class NotificationCampaignsRecipientsView(PermissionRequiredMixin, ListView):
+    template_name = 'notifications/notification_campaing_recipients_list.html'
+    permission_required = 'osf.view_osfuser'
+    raise_exception = True
+    paginate_by = 25
+
+    def get_queryset(self):
+        status = self.request.GET.get('notification_status', None)
+        campaign_id = self.request.GET.get('campaign_id', None)
+        if not campaign_id:
+            return NotificationCampaignRecipient.objects.none()
+        query = {'campaign_id': campaign_id}
+        if status:
+            query['status'] = status
+
+        qs = NotificationCampaignRecipient.objects.filter(**query)
+
+        return qs.annotate(
+            guid=F('user__guids___id')
+        )
+
+    def get_context_data(self, **kwargs):
+        users = self.get_queryset()
+
+        page_size = self.get_paginate_by(users)
+        paginator, page, query_set, is_paginated = self.paginate_queryset(
+            users,
+            page_size,
+        )
+        # append search param to pagination links
+        kwargs.update({'extra_query_params': f'&notification_status={self.request.GET.get("notification_status")}&campaign_id={self.request.GET.get('campaign_id')}'})
+        return super().get_context_data(
+            **kwargs,
+            page=page,
+            query_set=query_set,
             paginator=paginator,
             is_paginated=is_paginated,
         )

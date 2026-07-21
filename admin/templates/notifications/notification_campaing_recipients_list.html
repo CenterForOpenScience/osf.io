@@ -1,0 +1,52 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}
+<title>User Search Results</title>
+{% endblock title %}
+{% block content %}
+  {% load node_extras %}
+    {% include "util/pagination.html" with items=page status=status %}
+    {% if perms.osf.mark_spam %}
+        <form action="{% url 'users:flagged-spam' %}" method="post">
+            {% csrf_token %}
+    {% endif %}
+    <table class="table table-striped table-hover table-responsive">
+        <thead>
+            <tr>
+                <th>GUID</th>
+                <th>Username</th>
+                <th>Status</th>
+                <th>Error</th>
+                <th>Updated at</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for record in query_set %}
+                <tr>
+                    <td>
+                        <a href="{{ record.user | reverse_user }}" class="btn btn-primary">
+                            {{ record.guid }}
+                        </a>
+                    </td>
+                    <td>
+                        {{record.user.username}}
+                    </td>
+                    <td>
+                        {{ record.status }}
+                    </td>
+                    <td>
+                        {{ record.error_message }}
+                    </td>
+                    <td>
+                        {{ record.updated_at }}
+                    </td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    </form>
+
+    {% if not query_set|length %}
+     <h3>No results found</h3>
+    {% endif %}
+{% endblock content %}
