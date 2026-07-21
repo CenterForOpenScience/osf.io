@@ -47,55 +47,17 @@
                 font-size: 16px;
                 color: #aaa;
             }
-            .chart-card svg {
+            .chart-container {
+                position: relative;
                 width: 100%;
-                height: 220px;
+                height: 320px;
             }
-            .axis-line {
-                stroke: #999;
-                stroke-width: 1;
+
+            .chart-card canvas {
+                width: 100% !important;
+                height: 100% !important;
             }
-            .series-file {
-                fill: rgba(80, 120, 200, 0.45);
-            }
-            .series-zip {
-                fill: rgba(200, 80, 80, 0.45);
-            }
-            .legend {
-                display: flex;
-                gap: 16px;
-                font-size: 12px;
-                color: #666;
-                margin-top: 8px;
-            }
-            .legend-swatch {
-                display: inline-block;
-                width: 10px;
-                height: 10px;
-                border-radius: 2px;
-                margin-right: 6px;
-            }
-            .legend-swatch.file { background: rgba(80, 120, 200, 0.45); }
-            .legend-swatch.zip { background: rgba(200, 80, 80, 0.45); }
-            .bar-chart { display: flex; flex-direction: column; gap: 10px; }
-            .bar-row { display: grid; grid-template-columns: 90px 1fr 90px; align-items: center; gap: 8px; }
-            .bar-track { height: 8px; background: #e5e5e5; border-radius: 4px; overflow: hidden; }
-            .bar-fill { height: 100%; background: #4b7db9; border-radius: 4px; }
-            .bar-fill.gb { background: #c96b6b; }
-            .bar-fill.downloads { background: #4b7db9; }
-            .bar-fill.zip { background: #c96b6b; }
-            .bar-value { font-size: 12px; color: #aaa; }
-            .bar-label { color: #aaa; font-size: 12px; }
-            .split-bar-container { display: flex; flex-direction: column; gap: 16px; }
-            .split-bar-item { display: flex; flex-direction: column; gap: 8px; }
-            .split-bar-label { font-size: 12px; color: #aaa; }
-            .split-bar { display: flex; height: 60px; border-radius: 4px; overflow: hidden; position: relative; }
-            .split-bar-segment { display: flex; align-items: center; justify-content: center; position: relative; }
-            .split-bar-segment.file { background: #4b7db9; }
-            .split-bar-segment.zip { background: #c96b6b; }
-            .split-bar-text { font-size: 13px; font-weight: 600; color: #fff; text-align: center; line-height: 1.2; z-index: 1; text-shadow: 0 1px 3px rgba(0,0,0,0.3); }
-            .split-bar-text .count { font-size: 14px; }
-            .split-bar-text .gb { font-size: 12px; opacity: 0.9; }
+
             table { width: 100%; border-collapse: collapse; }
             th { font-size: 12px; color: #777; }
             td { padding: 8px 10px; border-bottom: 1px solid #505050; color: #aaa; }
@@ -128,95 +90,60 @@
 
             <div class="dashboard-card chart-card">
                 <div class="card-label">GB over time</div>
-                <svg viewBox="0 0 1440 220" class="chart-svg" role="img" aria-label="GB over time chart">
-                    <line x1="0" y1="220" x2="1440" y2="220" class="axis-line"></line>
-                    <line x1="0" y1="0" x2="0" y2="220" class="axis-line"></line>
-                    <polygon points="{{ download_events_dashboard.time_series.file_area_points }}" class="series-file"></polygon>
-                    <polygon points="{{ download_events_dashboard.time_series.zip_area_points }}" class="series-zip"></polygon>
-                </svg>
-                <div class="legend">
-                    <span><i class="legend-swatch file"></i> File</span>
-                    <span><i class="legend-swatch zip"></i> Zip</span>
+
+                <div class="chart-container">
+                    <canvas id="gbOverTimeChart"></canvas>
                 </div>
             </div>
 
             <div class="dashboard-grid charts-grid">
                 <div class="dashboard-card chart-card">
                     <div class="card-label">GB by storage region</div>
-                    <div class="bar-chart">
-                        {% for region in download_events_dashboard.storage_regions %}
-                            <div class="bar-row">
-                                <div class="bar-label">{{ region.name }}</div>
-                                <div class="bar-track">
-                                    <div class="bar-fill" style="width: {{ region.gb_percent|floatformat:0 }}%"></div>
-                                </div>
-                                <div class="bar-value">{{ region.gb|floatformat:2 }} GB</div>
-                            </div>
-                        {% empty %}
-                            <div class="empty-state">No storage-region data in the current range.</div>
-                        {% endfor %}
+
+                    <div class="chart-container">
+                        <canvas id="storageRegionChart"></canvas>
                     </div>
                 </div>
 
                 <div class="dashboard-card chart-card">
                     <div class="card-label">Downloads / GB by user region</div>
-                    <div class="bar-chart">
-                        {% for region in download_events_dashboard.user_regions %}
-                            <div class="bar-row grouped-row">
-                                <div class="bar-label">{{ region.name }}</div>
-                                <div class="bar-track double-track">
-                                    <div class="bar-fill downloads" style="width: {{ region.download_percent|floatformat:0 }}%"></div>
-                                    <div class="bar-fill gb" style="width: {{ region.gb_percent|floatformat:0 }}%"></div>
-                                </div>
-                                <div class="bar-value">{{ region.downloads }} / {{ region.gb|floatformat:2 }} GB</div>
-                            </div>
-                        {% empty %}
-                            <div class="empty-state">No user-region data in the current range.</div>
-                        {% endfor %}
+
+                    <div class="chart-container">
+                        <canvas id="userRegionChart"></canvas>
                     </div>
                 </div>
 
                 <div class="dashboard-card chart-card">
-                    <div class="card-label">File vs zip</div>
-                    <div class="split-bar-container">
-                        <div class="split-bar-item">
-                            <div class="split-bar-label">Downloads</div>
-                            <div class="split-bar">
-                                <div class="split-bar-segment file" style="width: {{ download_events_dashboard.split.file.count_percent|floatformat:0 }}%">
-                                    {% if download_events_dashboard.split.file.count_percent > 5 %}
-                                    <div class="split-bar-text">
-                                        <div class="count">{{ download_events_dashboard.split.file.count }}</div>
-                                    </div>
-                                    {% endif %}
-                                </div>
-                                <div class="split-bar-segment zip" style="width: {{ download_events_dashboard.split.zip.count_percent|floatformat:0 }}%">
-                                    {% if download_events_dashboard.split.zip.count_percent > 5 %}
-                                    <div class="split-bar-text">
-                                        <div class="count">{{ download_events_dashboard.split.zip.count }}</div>
-                                    </div>
-                                    {% endif %}
-                                </div>
+                    <div class="card-label">File vs Zip</div>
+
+                    <div
+                        style="
+                            display:grid;
+                            grid-template-columns:repeat(auto-fit,minmax(260px,1fr));
+                            gap:24px;
+                            align-items:center;
+                        "
+                    >
+                        <div>
+                            <h4 style="margin:0 0 12px;color:#aaa;text-align:center;">
+                                Downloads
+                            </h4>
+
+                            <div class="chart-container" style="height:260px;">
+                                <canvas id="downloadsSplitChart"></canvas>
                             </div>
                         </div>
-                        <div class="split-bar-item">
-                            <div class="split-bar-label">Total GB</div>
-                            <div class="split-bar">
-                                <div class="split-bar-segment file" style="width: {{ download_events_dashboard.split.file.gb_percent|floatformat:0 }}%">
-                                    {% if download_events_dashboard.split.file.gb_percent > 5 %}
-                                    <div class="split-bar-text">
-                                        <div class="gb">{{ download_events_dashboard.split.file.gb|floatformat:1 }} GB</div>
-                                    </div>
-                                    {% endif %}
-                                </div>
-                                <div class="split-bar-segment zip" style="width: {{ download_events_dashboard.split.zip.gb_percent|floatformat:0 }}%">
-                                    {% if download_events_dashboard.split.zip.gb_percent > 5 %}
-                                    <div class="split-bar-text">
-                                        <div class="gb">{{ download_events_dashboard.split.zip.gb|floatformat:1 }} GB</div>
-                                    </div>
-                                    {% endif %}
-                                </div>
+
+                        <div>
+                            <h4 style="margin:0 0 12px;color:#aaa;text-align:center;">
+                                GB
+                            </h4>
+
+                            <div class="chart-container" style="height:260px;">
+                                <canvas id="gbSplitChart"></canvas>
                             </div>
                         </div>
+
                     </div>
                 </div>
             </div>
@@ -273,4 +200,337 @@
     {% endif %}
     <br><br>
     {{ block.super }}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+const chartColors = {
+    text: "#bdbdbd",
+    grid: "rgba(255,255,255,.08)",
+    border: "#555",
+    blue: "#4b7db9",
+    red: "#c96b6b",
+    green: "#5ca86a",
+    yellow: "#d5a84d",
+};
+
+Chart.defaults.color = chartColors.text;
+Chart.defaults.borderColor = chartColors.grid;
+Chart.defaults.font.family =
+    "'Segoe UI', Roboto, Helvetica, Arial, sans-serif";
+
+const commonOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+        legend: {
+            labels: {
+                color: chartColors.text
+            }
+        },
+        tooltip: {
+            mode: "index",
+            intersect: false
+        }
+    }
+};
+const timeLabels = [
+{% for label in download_events_dashboard.time_series.labels %}
+    "{{ label }}",
+{% endfor %}
+];
+
+const fileSeries = [
+{% for value in download_events_dashboard.time_series.file %}
+    {{ value }},
+{% endfor %}
+];
+
+const zipSeries = [
+{% for value in download_events_dashboard.time_series.zip %}
+    {{ value }},
+{% endfor %}
+];
+
+const storageLabels = [
+{% for region in download_events_dashboard.storage_regions %}
+    "{{ region.name|escapejs }}",
+{% endfor %}
+];
+
+const storageGB = [
+{% for region in download_events_dashboard.storage_regions %}
+    {{ region.gb }},
+{% endfor %}
+];
+
+const userRegionLabels = [
+{% for region in download_events_dashboard.user_regions %}
+    "{{ region.name|escapejs }}",
+{% endfor %}
+];
+
+const userDownloads = [
+{% for region in download_events_dashboard.user_regions %}
+    {{ region.downloads }},
+{% endfor %}
+];
+
+const userGB = [
+{% for region in download_events_dashboard.user_regions %}
+    {{ region.gb }},
+{% endfor %}
+];
+
+new Chart(
+    document.getElementById("gbOverTimeChart"),
+    {
+        type: "line",
+
+        data: {
+
+            labels: timeLabels,
+
+            datasets: [
+
+                {
+                    label: "File",
+                    data: fileSeries,
+                    borderColor: chartColors.blue,
+                    backgroundColor: "rgba(75,125,185,.18)",
+                    fill: true,
+                    tension: .35,
+                    pointRadius: 2
+                },
+
+                {
+                    label: "Zip",
+                    data: zipSeries,
+                    borderColor: chartColors.red,
+                    backgroundColor: "rgba(201,107,107,.18)",
+                    fill: true,
+                    tension: .35,
+                    pointRadius: 2
+                }
+
+            ]
+
+        },
+
+        options: {
+
+            ...commonOptions,
+
+            interaction: {
+                mode: "index",
+                intersect: false
+            },
+
+            scales: {
+
+                x: {
+                    ticks: {
+                        color: chartColors.text
+                    },
+                    grid: {
+                        color: chartColors.grid
+                    }
+                },
+
+                y: {
+                    beginAtZero: true,
+                    title: {
+                        display: true,
+                        text: "GB"
+                    },
+                    grid: {
+                        color: chartColors.grid
+                    }
+                }
+
+            }
+
+        }
+
+    }
+);
+
+new Chart(
+    document.getElementById("storageRegionChart"),
+    {
+        type: "bar",
+
+        data: {
+            labels: storageLabels,
+            datasets: [{
+                label: "GB",
+                data: storageGB,
+                backgroundColor: chartColors.blue
+            }]
+        },
+
+        options: {
+            ...commonOptions,
+
+            indexAxis: "y",
+
+            plugins: {
+                ...commonOptions.plugins,
+                legend: {
+                    display: false
+                }
+            },
+
+            scales: {
+
+                x: {
+                    beginAtZero: true,
+                    title: {
+                        display: true,
+                        text: "GB"
+                    },
+                    grid: {
+                        color: chartColors.grid
+                    }
+                },
+
+                y: {
+                    grid: {
+                        display: false
+                    }
+                }
+
+            }
+
+        }
+
+    }
+);
+
+new Chart(
+    document.getElementById("userRegionChart"),
+    {
+        type: "bar",
+
+        data: {
+
+            labels: userRegionLabels,
+
+            datasets: [
+
+                {
+                    label: "Downloads",
+                    data: userDownloads,
+                    backgroundColor: chartColors.blue
+                },
+
+                {
+                    label: "GB",
+                    data: userGB,
+                    backgroundColor: chartColors.red
+                }
+
+            ]
+
+        },
+
+        options: {
+
+            ...commonOptions,
+
+            indexAxis: "y",
+
+            scales: {
+
+                x: {
+                    beginAtZero: true,
+                    grid: {
+                        color: chartColors.grid
+                    }
+                },
+
+                y: {
+                    grid: {
+                        display: false
+                    }
+                }
+
+            }
+
+        }
+
+    }
+);
+
+new Chart(
+    document.getElementById("downloadsSplitChart"),
+    {
+        type: "doughnut",
+
+        data: {
+
+            labels: ["File", "Zip"],
+
+            datasets: [{
+
+                data: [
+                    {{ download_events_dashboard.split.file.count }},
+                    {{ download_events_dashboard.split.zip.count }}
+                ],
+
+                backgroundColor: [
+                    chartColors.blue,
+                    chartColors.red
+                ]
+
+            }]
+
+        },
+
+        options: {
+
+            ...commonOptions,
+
+            cutout: "60%"
+
+        }
+
+    }
+);
+
+new Chart(
+    document.getElementById("gbSplitChart"),
+    {
+        type: "doughnut",
+
+        data: {
+
+            labels: ["File", "Zip"],
+
+            datasets: [{
+
+                data: [
+                    {{ download_events_dashboard.split.file.gb }},
+                    {{ download_events_dashboard.split.zip.gb }}
+                ],
+
+                backgroundColor: [
+                    chartColors.blue,
+                    chartColors.red
+                ]
+
+            }]
+
+        },
+
+        options: {
+
+            ...commonOptions,
+
+            cutout: "60%"
+
+        }
+
+    }
+);
+
+</script>
 {% endblock %}

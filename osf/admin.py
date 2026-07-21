@@ -489,6 +489,24 @@ class DownloadEventsView(admin.ModelAdmin):
         total_downloads = queryset.count()
         total_file_gb = self._to_gb(self._sum_bytes(file_queryset))
         total_zip_gb = self._to_gb(self._sum_bytes(zip_queryset))
+        time_series = self._build_time_series(queryset)
+        storage_regions = self._build_region_breakdown(queryset, 'storage_region')
+        user_regions = self._build_region_breakdown(queryset, 'user_region')
+
+        split = {
+            'file': {
+                'count': total_file_downloads,
+                'gb': total_file_gb,
+                'count_percent': round(total_file_downloads * 100 / total_downloads, 2) if total_downloads else 0.0,
+                'gb_percent': round(total_file_gb * 100 / max(self._to_gb(total_bytes), 1), 2) if total_bytes else 0.0,
+            },
+            'zip': {
+                'count': total_zip_downloads,
+                'gb': total_zip_gb,
+                'count_percent': round(total_zip_downloads * 100 / total_downloads, 2) if total_downloads else 0.0,
+                'gb_percent': round(total_zip_gb * 100 / max(self._to_gb(total_bytes), 1), 2) if total_bytes else 0.0,
+            },
+        }
 
         return {
             'summary': {
@@ -496,23 +514,10 @@ class DownloadEventsView(admin.ModelAdmin):
                 'total_gb': self._to_gb(total_bytes),
                 'unique_users': queryset.exclude(user_id__isnull=True).values('user_id').distinct().count(),
             },
-            'split': {
-                'file': {
-                    'count': total_file_downloads,
-                    'gb': total_file_gb,
-                    'count_percent': round(total_file_downloads * 100 / total_downloads, 2) if total_downloads else 0.0,
-                    'gb_percent': round(total_file_gb * 100 / max(self._to_gb(total_bytes), 1), 2) if total_bytes else 0.0,
-                },
-                'zip': {
-                    'count': total_zip_downloads,
-                    'gb': total_zip_gb,
-                    'count_percent': round(total_zip_downloads * 100 / total_downloads, 2) if total_downloads else 0.0,
-                    'gb_percent': round(total_zip_gb * 100 / max(self._to_gb(total_bytes), 1), 2) if total_bytes else 0.0,
-                },
-            },
-            'time_series': self._build_time_series(queryset),
-            'storage_regions': self._build_region_breakdown(queryset, 'storage_region'),
-            'user_regions': self._build_region_breakdown(queryset, 'user_region'),
+            'split': split,
+            'time_series': time_series,
+            'storage_regions': storage_regions,
+            'user_regions': user_regions,
             'top_projects': self._build_top_resource_breakdown(queryset),
             'top_users': self._build_top_user_breakdown(queryset),
         }
@@ -524,8 +529,6 @@ class DownloadEventsView(admin.ModelAdmin):
                 'labels': [],
                 'file': [],
                 'zip': [],
-                'file_area_points': '',
-                'zip_area_points': '',
             }
 
         start = min(created for created, _, _ in events)
@@ -556,51 +559,17 @@ class DownloadEventsView(admin.ModelAdmin):
                 'labels': [],
                 'file': [],
                 'zip': [],
-                'file_area_points': '',
-                'zip_area_points': '',
             }
 
         labels = [self._format_bucket_label(entry['start'], bucket_size) for entry in buckets]
         file_values = [round(entry['file'], 2) for entry in buckets]
         zip_values = [round(entry['zip'], 2) for entry in buckets]
-        file_area_points, zip_area_points = self._build_stacked_area_points(file_values, zip_values)
 
         return {
             'labels': labels,
             'file': file_values,
             'zip': zip_values,
-            'file_area_points': file_area_points,
-            'zip_area_points': zip_area_points,
         }
-
-    def _build_stacked_area_points(self, file_values, zip_values):
-        if not file_values and not zip_values:
-            return '', ''
-
-        width = 720
-        height = 220
-        total_values = [file + zip for file, zip in zip(file_values, zip_values)]
-        max_total = max(total_values) if total_values else 0
-        if max_total <= 0:
-            return '', ''
-
-        file_points = []
-        zip_points = []
-        count = len(file_values)
-        for index, (file_value, zip_value) in enumerate(zip(file_values, zip_values)):
-            x = width * index / max(count - 1, 1)
-            file_y = height - (file_value / max_total * height)
-            zip_y = height - ((file_value + zip_value) / max_total * height)
-            file_points.append((x, file_y))
-            zip_points.append((x, zip_y))
-
-        def build_polygon(points):
-            polyline = ' '.join(f'{x},{y}' for x, y in points)
-            if len(points) == 1:
-                return polyline
-            return f'{polyline} {width},{height} 0,{height}'
-
-        return build_polygon(file_points), build_polygon(zip_points)
 
     def _get_bucket_size(self, start, end):
         delta = end - start
