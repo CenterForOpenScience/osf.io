@@ -152,7 +152,7 @@
                                 class="form-control"
                                 type="number"
                                 name="batch_size"
-                                value="1000"
+                                value="{{ form.batch_size.initial }}"
                                 min="1"
                             >
                         </td>
@@ -165,9 +165,25 @@
                                 class="form-control"
                                 type="number"
                                 name="max_retries"
-                                value="3"
+                                value="{{ form.max_retries.initial }}"
                                 min="0"
                             >
+                        </td>
+                    </tr>
+
+                    <tr>
+                        <th>Activity Threshold</th>
+                        <td>
+                            <input
+                                class="form-control"
+                                type="number"
+                                name="activity_threshold"
+                                value="{{ form.activity_threshold.initial }}"
+                                min="0"
+                            >
+                            <p class="help-block">
+                                Non-spam users at or above this activity total are sent first
+                            </p>
                         </td>
                     </tr>
                 </table>

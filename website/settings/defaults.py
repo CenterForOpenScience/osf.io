@@ -191,6 +191,11 @@ NO_LOGIN_OSF4M_WAIT_TIME = timedelta(weeks=52)  # 1 year for "We miss you at OSF
 NOTIFICATIONS_CLEANUP_AGE = timedelta(weeks=12)  # 3 months to clean up old notifications and email tasks
 NOTIFICATIONS_CLEANUP_BATCH_SIZE = 10000  # Batch size for notifications and email tasks cleanup
 
+# Notification campaign execution defaults (overridable per campaign in admin metadata)
+DEFAULT_CAMPAIGN_ACTIVITY_THRESHOLD = 3  # Users at/above this activity total are scheduled in the high-activity phase
+DEFAULT_CAMPAIGN_BATCH_SIZE = 1000
+DEFAULT_CAMPAIGN_MAX_RETRIES = 3
+
 # Configuration for "We miss you at OSF" email (`NotificationTypeEnum.USER_NO_LOGIN`)
 # Note: 1) we can gradually increase `MAX_DAILY_NO_LOGIN_EMAILS` to 10000, 100000, etc. or set it to `None` after we
 # have verified that users are not spammed by this email after NR release. 2) If we want to clean up database for those

@@ -508,6 +508,7 @@ class NotificationCampaignCreateView(CreateView):
             'execution': {
                 'batch_size': form.cleaned_data['batch_size'],
                 'max_retries': form.cleaned_data['max_retries'],
+                'activity_threshold': form.cleaned_data['activity_threshold'],
             },
         }
 
