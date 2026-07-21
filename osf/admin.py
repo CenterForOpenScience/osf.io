@@ -476,7 +476,7 @@ class DownloadEventsView(admin.ModelAdmin):
         return queryset.aggregate(total_bytes=Sum('size_bytes'))['total_bytes'] or 0
 
     def _to_gb(self, total_bytes):
-        return round(total_bytes / (1024**3), 2) if total_bytes else 0.0
+        return round(total_bytes / (1024**3), 2)
 
     def get_dashboard_data(self, queryset):
         file_queryset = queryset.filter(download_type=DownloadEvent.FILE)
@@ -496,14 +496,14 @@ class DownloadEventsView(admin.ModelAdmin):
             'file': {
                 'count': total_file_downloads,
                 'gb': total_file_gb,
-                'count_percent': round(total_file_downloads * 100 / total_downloads, 2) if total_downloads else 0.0,
-                'gb_percent': round(total_file_gb * 100 / max(self._to_gb(total_bytes), 1), 2) if total_bytes else 0.0,
+                'count_percent': round(total_file_downloads * 100 / total_downloads, 2),
+                'gb_percent': round(total_file_gb * 100 / max(self._to_gb(total_bytes), 1), 2),
             },
             'zip': {
                 'count': total_zip_downloads,
                 'gb': total_zip_gb,
-                'count_percent': round(total_zip_downloads * 100 / total_downloads, 2) if total_downloads else 0.0,
-                'gb_percent': round(total_zip_gb * 100 / max(self._to_gb(total_bytes), 1), 2) if total_bytes else 0.0,
+                'count_percent': round(total_zip_downloads * 100 / total_downloads, 2),
+                'gb_percent': round(total_zip_gb * 100 / max(self._to_gb(total_bytes), 1), 2),
             },
         }
 
@@ -547,7 +547,7 @@ class DownloadEventsView(admin.ModelAdmin):
             bucket = self._find_bucket(buckets, created)
             if bucket is None:
                 continue
-            value = (size_bytes or 0) / (1024**3)
+            value = size_bytes / (1024**3)
             if download_type == DownloadEvent.FILE:
                 bucket['file'] += value
             else:
@@ -618,9 +618,9 @@ class DownloadEventsView(admin.ModelAdmin):
         for region, size_bytes in queryset.values_list(field_name, 'size_bytes'):
             region_name = (region or 'Unknown').strip() or 'Unknown'
             breakdown[region_name]['downloads'] += 1
-            breakdown[region_name]['gb'] += (size_bytes or 0) / (1024**3)
+            breakdown[region_name]['gb'] += size_bytes / (1024**3)
 
-        ordered = sorted(breakdown.items(), key=lambda item: item[1]['gb'], reverse=True)[:8]
+        ordered = sorted(breakdown.items(), key=lambda item: item[1]['gb'], reverse=True)[:10]
         max_gb = max((data['gb'] for _, data in ordered), default=0)
         max_downloads = max((data['downloads'] for _, data in ordered), default=0)
         return [
@@ -628,8 +628,8 @@ class DownloadEventsView(admin.ModelAdmin):
                 'name': name,
                 'downloads': data['downloads'],
                 'gb': round(data['gb'], 2),
-                'gb_percent': round(data['gb'] * 100 / max_gb, 2) if max_gb else 0.0,
-                'download_percent': round(data['downloads'] * 100 / max_downloads, 2) if max_downloads else 0.0,
+                'gb_percent': round(data['gb'] * 100 / max_gb, 2),
+                'download_percent': round(data['downloads'] * 100 / max_downloads, 2),
             }
             for name, data in ordered
         ]
@@ -643,7 +643,7 @@ class DownloadEventsView(admin.ModelAdmin):
             {
                 'name': row['resource_guid'],
                 'downloads': row['downloads'],
-                'gb': self._to_gb(row['gb_bytes'] or 0),
+                'gb': self._to_gb(row['gb_bytes']),
             }
             for row in rows
         ]
@@ -657,7 +657,7 @@ class DownloadEventsView(admin.ModelAdmin):
             {
                 'name': row['user__fullname'] or row['user__username'] or 'Unknown user',
                 'downloads': row['downloads'],
-                'gb': self._to_gb(row['gb_bytes'] or 0),
+                'gb': self._to_gb(row['gb_bytes']),
             }
             for row in rows
         ]
