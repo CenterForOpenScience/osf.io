@@ -1,3 +1,4 @@
+from collections import defaultdict
 from datetime import timedelta
 
 from django.contrib import admin, messages
@@ -5,7 +6,7 @@ from django.urls import re_path, reverse, path
 from django.template.response import TemplateResponse
 from django_extensions.admin import ForeignKeyAutocompleteAdmin
 from django.contrib.auth.models import Group
-from django.db.models import Q, Count
+from django.db.models import Q, Count, Sum
 from django.http import HttpResponseRedirect, HttpResponse, JsonResponse
 from django.utils import timezone
 from django.utils.html import format_html
@@ -407,13 +408,14 @@ class NotificationAdmin(admin.ModelAdmin):
 
 @admin.register(DownloadEvent)
 class DownloadEventsView(admin.ModelAdmin):
+    change_list_template = 'download_events/download_events.html'
     list_display = (
         'resource_guid',
         'user',
         'download_type',
         'zip_completed',
         'path',
-        'size_bytes',
+        'size',
         'user_region',
         'storage_region',
         'ip',
@@ -444,22 +446,252 @@ class DownloadEventsView(admin.ModelAdmin):
     )
     search_help_text = 'Search by username, full name, user or node guid, ip, path, user or storage region, source area.'
 
+    @admin.display(ordering='size_bytes')
+    def size(self, obj):
+        return f'{self._to_gb(obj.size_bytes)} GB'
+
     def changelist_view(self, request, extra_context=None):
         for query_string in request.GET:
             # when at least one of the "created" filters is set, don't override the filter values
             if query_string.startswith('created__range'):
-                return super().changelist_view(request, extra_context=extra_context)
+                break
+        else:
+            # by default, when the page is initially loaded or "created" filter is reset
+            # show only events within the last hour
+            request.GET._mutable = True
+            last_hour_datetime = timezone.now() - timedelta(hours=1)
+            request.GET['created__range__gte_0'] = last_hour_datetime.date().strftime('%Y-%m-%d')
+            request.GET['created__range__gte_1'] = last_hour_datetime.time().strftime('%H:%M:%S')
 
-        # by default, when the page is initially loaded or "created" filter is reset
-        # show only events within the last hour
-        request.GET._mutable = True
-        last_hour_datetime = timezone.now() - timedelta(hours=1)
-        request.GET['created__range__gte_0'] = last_hour_datetime.date().strftime('%Y-%m-%d')
-        request.GET['created__range__gte_1'] = last_hour_datetime.time().strftime('%H:%M:%S')
+        if extra_context is None:
+            extra_context = {}
+        changelist = self.get_changelist_instance(request)
+        extra_context['download_events_dashboard'] = self.get_dashboard_data(changelist.get_queryset(request))
         return super().changelist_view(request, extra_context=extra_context)
 
     def has_module_permission(self, request, obj=None):
         return request.user.groups.filter(name=DASHBOARD_GROUP_NAME).exists()
+
+    def _sum_bytes(self, queryset):
+        return queryset.aggregate(total_bytes=Sum('size_bytes'))['total_bytes'] or 0
+
+    def _to_gb(self, total_bytes):
+        return round(total_bytes / (1024**3), 2) if total_bytes else 0.0
+
+    def get_dashboard_data(self, queryset):
+        file_queryset = queryset.filter(download_type=DownloadEvent.FILE)
+        zip_queryset = queryset.exclude(download_type=DownloadEvent.FILE)
+        total_file_downloads = file_queryset.count()
+        total_zip_downloads = zip_queryset.count()
+        total_bytes = self._sum_bytes(queryset)
+
+        total_downloads = queryset.count()
+        total_file_gb = self._to_gb(self._sum_bytes(file_queryset))
+        total_zip_gb = self._to_gb(self._sum_bytes(zip_queryset))
+
+        return {
+            'summary': {
+                'total_downloads': total_downloads,
+                'total_gb': self._to_gb(total_bytes),
+                'unique_users': queryset.exclude(user_id__isnull=True).values('user_id').distinct().count(),
+            },
+            'split': {
+                'file': {
+                    'count': total_file_downloads,
+                    'gb': total_file_gb,
+                    'count_percent': round(total_file_downloads * 100 / total_downloads, 2) if total_downloads else 0.0,
+                    'gb_percent': round(total_file_gb * 100 / max(self._to_gb(total_bytes), 1), 2) if total_bytes else 0.0,
+                },
+                'zip': {
+                    'count': total_zip_downloads,
+                    'gb': total_zip_gb,
+                    'count_percent': round(total_zip_downloads * 100 / total_downloads, 2) if total_downloads else 0.0,
+                    'gb_percent': round(total_zip_gb * 100 / max(self._to_gb(total_bytes), 1), 2) if total_bytes else 0.0,
+                },
+            },
+            'time_series': self._build_time_series(queryset),
+            'storage_regions': self._build_region_breakdown(queryset, 'storage_region'),
+            'user_regions': self._build_region_breakdown(queryset, 'user_region'),
+            'top_projects': self._build_top_resource_breakdown(queryset),
+            'top_users': self._build_top_user_breakdown(queryset),
+        }
+
+    def _build_time_series(self, queryset):
+        events = list(queryset.order_by('created').values_list('created', 'download_type', 'size_bytes'))
+        if not events:
+            return {
+                'labels': [],
+                'file': [],
+                'zip': [],
+                'file_area_points': '',
+                'zip_area_points': '',
+            }
+
+        start = min(created for created, _, _ in events)
+        end = max(created for created, _, _ in events)
+        bucket_size = self._get_bucket_size(start, end)
+        step = self._get_bucket_step(bucket_size)
+        bucket_start = self._floor_to_bucket(start, bucket_size)
+        bucket_end = self._floor_to_bucket(end, bucket_size)
+
+        buckets = []
+        current = bucket_start
+        while current <= bucket_end:
+            buckets.append({'start': current, 'file': 0.0, 'zip': 0.0})
+            current += step
+
+        for created, download_type, size_bytes in events:
+            bucket = self._find_bucket(buckets, created)
+            if bucket is None:
+                continue
+            value = (size_bytes or 0) / (1024**3)
+            if download_type == DownloadEvent.FILE:
+                bucket['file'] += value
+            else:
+                bucket['zip'] += value
+
+        if not buckets:
+            return {
+                'labels': [],
+                'file': [],
+                'zip': [],
+                'file_area_points': '',
+                'zip_area_points': '',
+            }
+
+        labels = [self._format_bucket_label(entry['start'], bucket_size) for entry in buckets]
+        file_values = [round(entry['file'], 2) for entry in buckets]
+        zip_values = [round(entry['zip'], 2) for entry in buckets]
+        file_area_points, zip_area_points = self._build_stacked_area_points(file_values, zip_values)
+
+        return {
+            'labels': labels,
+            'file': file_values,
+            'zip': zip_values,
+            'file_area_points': file_area_points,
+            'zip_area_points': zip_area_points,
+        }
+
+    def _build_stacked_area_points(self, file_values, zip_values):
+        if not file_values and not zip_values:
+            return '', ''
+
+        width = 720
+        height = 220
+        total_values = [file + zip for file, zip in zip(file_values, zip_values)]
+        max_total = max(total_values) if total_values else 0
+        if max_total <= 0:
+            return '', ''
+
+        file_points = []
+        zip_points = []
+        count = len(file_values)
+        for index, (file_value, zip_value) in enumerate(zip(file_values, zip_values)):
+            x = width * index / max(count - 1, 1)
+            file_y = height - (file_value / max_total * height)
+            zip_y = height - ((file_value + zip_value) / max_total * height)
+            file_points.append((x, file_y))
+            zip_points.append((x, zip_y))
+
+        def build_polygon(points):
+            polyline = ' '.join(f'{x},{y}' for x, y in points)
+            if len(points) == 1:
+                return polyline
+            return f'{polyline} {width},{height} 0,{height}'
+
+        return build_polygon(file_points), build_polygon(zip_points)
+
+    def _get_bucket_size(self, start, end):
+        delta = end - start
+        if delta <= timedelta(hours=2):
+            return '15m'
+        if delta <= timedelta(hours=24):
+            return '1h'
+        if delta <= timedelta(days=14):
+            return '1d'
+        return '1w'
+
+    def _get_bucket_step(self, bucket_size):
+        if bucket_size == '15m':
+            return timedelta(minutes=15)
+        if bucket_size == '1h':
+            return timedelta(hours=1)
+        if bucket_size == '1d':
+            return timedelta(days=1)
+        return timedelta(days=7)
+
+    def _floor_to_bucket(self, value, bucket_size):
+        if bucket_size == '15m':
+            return value.replace(minute=(value.minute // 15) * 15, second=0, microsecond=0)
+        if bucket_size == '1h':
+            return value.replace(minute=0, second=0, microsecond=0)
+        if bucket_size == '1d':
+            return value.replace(hour=0, minute=0, second=0, microsecond=0)
+        return value - timedelta(days=value.weekday())
+
+    def _find_bucket(self, buckets, created):
+        for bucket in buckets:
+            if bucket['start'] <= created < bucket['start'] + self._get_bucket_step(self._get_bucket_size(buckets[0]['start'], buckets[-1]['start'])):
+                return bucket
+        return buckets[-1] if buckets else None
+
+    def _format_bucket_label(self, value, bucket_size):
+        if bucket_size == '15m':
+            return value.strftime('%H:%M')
+        if bucket_size == '1h':
+            return value.strftime('%Y-%m-%d %H:%M')
+        if bucket_size == '1d':
+            return value.strftime('%Y-%m-%d')
+        return value.strftime('%Y-%m-%d')
+
+    def _build_region_breakdown(self, queryset, field_name):
+        breakdown = defaultdict(lambda: {'downloads': 0, 'gb': 0.0})
+        for region, download_type, size_bytes in queryset.values_list(field_name, 'download_type', 'size_bytes'):
+            region_name = (region or 'Unknown').strip() or 'Unknown'
+            breakdown[region_name]['downloads'] += 1
+            breakdown[region_name]['gb'] += (size_bytes or 0) / (1024**3)
+
+        ordered = sorted(breakdown.items(), key=lambda item: item[1]['gb'], reverse=True)[:8]
+        max_gb = max((data['gb'] for _, data in ordered), default=0)
+        max_downloads = max((data['downloads'] for _, data in ordered), default=0)
+        return [
+            {
+                'name': name,
+                'downloads': data['downloads'],
+                'gb': round(data['gb'], 2),
+                'gb_percent': round(data['gb'] * 100 / max_gb, 2) if max_gb else 0.0,
+                'download_percent': round(data['downloads'] * 100 / max_downloads, 2) if max_downloads else 0.0,
+            }
+            for name, data in ordered
+        ]
+
+    def _build_top_resource_breakdown(self, queryset):
+        rows = queryset.exclude(resource_guid='').values('resource_guid').annotate(
+            downloads=Count('id'),
+            gb_bytes=Sum('size_bytes'),
+        ).order_by('-gb_bytes', '-downloads')[:10]
+        return [
+            {
+                'name': row['resource_guid'],
+                'downloads': row['downloads'],
+                'gb': self._to_gb(row['gb_bytes'] or 0),
+            }
+            for row in rows
+        ]
+
+    def _build_top_user_breakdown(self, queryset):
+        rows = queryset.exclude(user__isnull=True).values('user__username', 'user__fullname').annotate(
+            downloads=Count('id'),
+            gb_bytes=Sum('size_bytes'),
+        ).order_by('-gb_bytes', '-downloads')[:10]
+        return [
+            {
+                'name': row['user__fullname'] or row['user__username'] or 'Unknown user',
+                'downloads': row['downloads'],
+                'gb': self._to_gb(row['gb_bytes'] or 0),
+            }
+            for row in rows
+        ]
 
 
 admin.site.register(OSFUser, OSFUserAdmin)

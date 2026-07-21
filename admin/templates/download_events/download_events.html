@@ -1,0 +1,276 @@
+{% extends "admin/change_list.html" %}
+
+{% block content %}
+    {% if download_events_dashboard %}
+        <style>
+            .download-events-dashboard {
+                margin: 20px 0 30px;
+                padding: 20px;
+                border-radius: 8px;
+                background: #2e2e2e;
+            }
+            .dashboard-header h2 {
+                margin: 0 0 4px;
+                font-size: 18px;
+                color: #9c9c9c;
+            }
+            .dashboard-header p {
+                margin: 0 0 18px;
+                color: #9c9c9c;
+            }
+            .dashboard-grid {
+                display: grid;
+                gap: 16px;
+                grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+                margin-bottom: 16px;
+            }
+            .dashboard-card {
+                border: 1px solid #505050;
+                border-radius: 6px;
+                padding: 16px;
+                background: #2e2e2e;
+            }
+            .card-label {
+                font-size: 12px;
+                font-weight: 600;
+                text-transform: uppercase;
+                letter-spacing: 0.04em;
+                color: #777;
+                margin-bottom: 8px;
+            }
+            .card-value {
+                font-size: 28px;
+                font-weight: 600;
+                color: #9c9c9c;
+            }
+            .compact-value {
+                font-size: 16px;
+                color: #aaa;
+            }
+            .chart-card svg {
+                width: 100%;
+                height: 220px;
+            }
+            .axis-line {
+                stroke: #999;
+                stroke-width: 1;
+            }
+            .series-file {
+                fill: rgba(80, 120, 200, 0.45);
+            }
+            .series-zip {
+                fill: rgba(200, 80, 80, 0.45);
+            }
+            .legend {
+                display: flex;
+                gap: 16px;
+                font-size: 12px;
+                color: #666;
+                margin-top: 8px;
+            }
+            .legend-swatch {
+                display: inline-block;
+                width: 10px;
+                height: 10px;
+                border-radius: 2px;
+                margin-right: 6px;
+            }
+            .legend-swatch.file { background: rgba(80, 120, 200, 0.45); }
+            .legend-swatch.zip { background: rgba(200, 80, 80, 0.45); }
+            .bar-chart { display: flex; flex-direction: column; gap: 10px; }
+            .bar-row { display: grid; grid-template-columns: 90px 1fr 90px; align-items: center; gap: 8px; }
+            .bar-track { height: 8px; background: #e5e5e5; border-radius: 4px; overflow: hidden; }
+            .bar-fill { height: 100%; background: #4b7db9; border-radius: 4px; }
+            .bar-fill.gb { background: #c96b6b; }
+            .bar-fill.downloads { background: #4b7db9; }
+            .bar-fill.zip { background: #c96b6b; }
+            .bar-value { font-size: 12px; color: #aaa; }
+            .bar-label { color: #aaa; font-size: 12px; }
+            .split-bar-container { display: flex; flex-direction: column; gap: 16px; }
+            .split-bar-item { display: flex; flex-direction: column; gap: 8px; }
+            .split-bar-label { font-size: 12px; color: #aaa; }
+            .split-bar { display: flex; height: 60px; border-radius: 4px; overflow: hidden; position: relative; }
+            .split-bar-segment { display: flex; align-items: center; justify-content: center; position: relative; }
+            .split-bar-segment.file { background: #4b7db9; }
+            .split-bar-segment.zip { background: #c96b6b; }
+            .split-bar-text { font-size: 13px; font-weight: 600; color: #fff; text-align: center; line-height: 1.2; z-index: 1; text-shadow: 0 1px 3px rgba(0,0,0,0.3); }
+            .split-bar-text .count { font-size: 14px; }
+            .split-bar-text .gb { font-size: 12px; opacity: 0.9; }
+            table { width: 100%; border-collapse: collapse; }
+            th { font-size: 12px; color: #777; }
+            td { padding: 8px 10px; border-bottom: 1px solid #505050; color: #aaa; }
+            .empty-state { color: #777; font-size: 13px; }
+        </style>
+        <div class="download-events-dashboard">
+            <div class="dashboard-header">
+                <h2>Download telemetry dashboard</h2>
+                <p>Summaries and charts are scoped to the same filters and search terms as the table below.</p>
+            </div>
+
+            <div class="dashboard-grid">
+                <div class="dashboard-card summary-card">
+                    <div class="card-label">Total downloads</div>
+                    <div class="card-value">{{ download_events_dashboard.summary.total_downloads }}</div>
+                </div>
+                <div class="dashboard-card summary-card">
+                    <div class="card-label">Total GB</div>
+                    <div class="card-value">{{ download_events_dashboard.summary.total_gb|floatformat:2 }}</div>
+                </div>
+                <div class="dashboard-card summary-card">
+                    <div class="card-label">Unique users</div>
+                    <div class="card-value">{{ download_events_dashboard.summary.unique_users }}</div>
+                </div>
+                <div class="dashboard-card summary-card">
+                    <div class="card-label">File vs zip (including whole-project zip) (GB)</div>
+                    <div class="card-value compact-value">{{ download_events_dashboard.split.file.gb|floatformat:2 }} / {{ download_events_dashboard.split.zip.gb|floatformat:2 }}</div>
+                </div>
+            </div>
+
+            <div class="dashboard-card chart-card">
+                <div class="card-label">GB over time</div>
+                <svg viewBox="0 0 1440 220" class="chart-svg" role="img" aria-label="GB over time chart">
+                    <line x1="0" y1="220" x2="1440" y2="220" class="axis-line"></line>
+                    <line x1="0" y1="0" x2="0" y2="220" class="axis-line"></line>
+                    <polygon points="{{ download_events_dashboard.time_series.file_area_points }}" class="series-file"></polygon>
+                    <polygon points="{{ download_events_dashboard.time_series.zip_area_points }}" class="series-zip"></polygon>
+                </svg>
+                <div class="legend">
+                    <span><i class="legend-swatch file"></i> File</span>
+                    <span><i class="legend-swatch zip"></i> Zip</span>
+                </div>
+            </div>
+
+            <div class="dashboard-grid charts-grid">
+                <div class="dashboard-card chart-card">
+                    <div class="card-label">GB by storage region</div>
+                    <div class="bar-chart">
+                        {% for region in download_events_dashboard.storage_regions %}
+                            <div class="bar-row">
+                                <div class="bar-label">{{ region.name }}</div>
+                                <div class="bar-track">
+                                    <div class="bar-fill" style="width: {{ region.gb_percent|floatformat:0 }}%"></div>
+                                </div>
+                                <div class="bar-value">{{ region.gb|floatformat:2 }} GB</div>
+                            </div>
+                        {% empty %}
+                            <div class="empty-state">No storage-region data in the current range.</div>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <div class="dashboard-card chart-card">
+                    <div class="card-label">Downloads / GB by user region</div>
+                    <div class="bar-chart">
+                        {% for region in download_events_dashboard.user_regions %}
+                            <div class="bar-row grouped-row">
+                                <div class="bar-label">{{ region.name }}</div>
+                                <div class="bar-track double-track">
+                                    <div class="bar-fill downloads" style="width: {{ region.download_percent|floatformat:0 }}%"></div>
+                                    <div class="bar-fill gb" style="width: {{ region.gb_percent|floatformat:0 }}%"></div>
+                                </div>
+                                <div class="bar-value">{{ region.downloads }} / {{ region.gb|floatformat:2 }} GB</div>
+                            </div>
+                        {% empty %}
+                            <div class="empty-state">No user-region data in the current range.</div>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <div class="dashboard-card chart-card">
+                    <div class="card-label">File vs zip</div>
+                    <div class="split-bar-container">
+                        <div class="split-bar-item">
+                            <div class="split-bar-label">Downloads</div>
+                            <div class="split-bar">
+                                <div class="split-bar-segment file" style="width: {{ download_events_dashboard.split.file.count_percent|floatformat:0 }}%">
+                                    {% if download_events_dashboard.split.file.count_percent > 5 %}
+                                    <div class="split-bar-text">
+                                        <div class="count">{{ download_events_dashboard.split.file.count }}</div>
+                                    </div>
+                                    {% endif %}
+                                </div>
+                                <div class="split-bar-segment zip" style="width: {{ download_events_dashboard.split.zip.count_percent|floatformat:0 }}%">
+                                    {% if download_events_dashboard.split.zip.count_percent > 5 %}
+                                    <div class="split-bar-text">
+                                        <div class="count">{{ download_events_dashboard.split.zip.count }}</div>
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        <div class="split-bar-item">
+                            <div class="split-bar-label">Total GB</div>
+                            <div class="split-bar">
+                                <div class="split-bar-segment file" style="width: {{ download_events_dashboard.split.file.gb_percent|floatformat:0 }}%">
+                                    {% if download_events_dashboard.split.file.gb_percent > 5 %}
+                                    <div class="split-bar-text">
+                                        <div class="gb">{{ download_events_dashboard.split.file.gb|floatformat:1 }} GB</div>
+                                    </div>
+                                    {% endif %}
+                                </div>
+                                <div class="split-bar-segment zip" style="width: {{ download_events_dashboard.split.zip.gb_percent|floatformat:0 }}%">
+                                    {% if download_events_dashboard.split.zip.gb_percent > 5 %}
+                                    <div class="split-bar-text">
+                                        <div class="gb">{{ download_events_dashboard.split.zip.gb|floatformat:1 }} GB</div>
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="dashboard-grid tables-grid">
+                <div class="dashboard-card table-card">
+                    <div class="card-label">Top projects by volume</div>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Project</th>
+                                <th>GB</th>
+                                <th>Downloads</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for project in download_events_dashboard.top_projects %}
+                                <tr>
+                                    <td>{{ project.name }}</td>
+                                    <td>{{ project.gb|floatformat:2 }}</td>
+                                    <td>{{ project.downloads }}</td>
+                                </tr>
+                            {% empty %}
+                                <tr><td colspan="3">No project-level activity in the current range.</td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                <div class="dashboard-card table-card">
+                    <div class="card-label">Top users by volume</div>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>User</th>
+                                <th>GB</th>
+                                <th>Downloads</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for user in download_events_dashboard.top_users %}
+                                <tr>
+                                    <td>{{ user.name }}</td>
+                                    <td>{{ user.gb|floatformat:2 }}</td>
+                                    <td>{{ user.downloads }}</td>
+                                </tr>
+                            {% empty %}
+                                <tr><td colspan="3">No user activity in the current range.</td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    {% endif %}
+    <br><br>
+    {{ block.super }}
+{% endblock %}
