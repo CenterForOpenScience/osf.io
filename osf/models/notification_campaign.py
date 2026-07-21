@@ -57,6 +57,7 @@ class NotificationCampaign(models.Model):
     #   "execution": {
     #     "batch_size": <int>,
     #     "max_retries": <int>,
+    #     "activity_threshold": <int>,
     #   },
     #   "template": <str>,
     # }

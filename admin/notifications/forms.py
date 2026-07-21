@@ -1,5 +1,6 @@
 from django import forms
 from osf.models import NotificationType, NotificationCampaign
+from website import settings
 import json
 
 
@@ -24,12 +25,18 @@ class NotificationCampaignCreateForm(forms.ModelForm):
 
     batch_size = forms.IntegerField(
         min_value=1,
-        initial=1000,
+        initial=settings.DEFAULT_CAMPAIGN_BATCH_SIZE,
     )
 
     max_retries = forms.IntegerField(
         min_value=0,
-        initial=3,
+        initial=settings.DEFAULT_CAMPAIGN_MAX_RETRIES,
+    )
+
+    activity_threshold = forms.IntegerField(
+        min_value=0,
+        initial=settings.DEFAULT_CAMPAIGN_ACTIVITY_THRESHOLD,
+        help_text='Non-spam users at or above this activity total are sent in the high-activity phase.',
     )
 
     class Meta:

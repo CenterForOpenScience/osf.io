@@ -1,14 +1,17 @@
 import logging
+
 from osf.models import NotificationType, NotificationTypeEnum, OSFUser, UserActivityCounter, Email
+from osf.models.spam import SpamStatus
 from django.db.models import OuterRef, Subquery, Exists, F, Q, Case, When, CharField
 from django.db.models.functions import Coalesce
 from framework.celery_tasks import app as celery_app
-from celery import chord
+from celery import chord, group, chain
 from django.utils import timezone
 from datetime import timedelta
 from osf.models.notification_campaign import NotificationCampaign, NotificationCampaignRecipient, NotificationCampaignStatus, NotificationCampaignRecipientStatus
 from osf.email import send_email_with_send_grid
 from framework import sentry
+from website import settings
 
 logger = logging.getLogger(__name__)
 
@@ -48,10 +51,27 @@ def filter_users(filters, campaign_id=None, restart_failed=False):
     return qs
 
 
-def get_filtered_batches(filters, batch_size=1000, campaign_id=None, restart_failed=False):
+def get_filtered_batches(
+    filters,
+    batch_size=settings.DEFAULT_CAMPAIGN_BATCH_SIZE,
+    campaign_id=None,
+    restart_failed=False,
+    min_activity=None,
+    max_activity=None,
+    exclude_spam=False,
+):
     qs = filter_users(filters, campaign_id, restart_failed=restart_failed)
+    if exclude_spam:
+        qs = qs.exclude(spam_status=SpamStatus.SPAM)
 
-    qs = qs.annotate(activity_total=Coalesce(Subquery(counter_subquery), 0)).order_by('-activity_total', '-date_registered', '-id')
+    qs = qs.annotate(activity_total=Coalesce(Subquery(counter_subquery), 0))
+
+    if min_activity is not None:
+        qs = qs.filter(activity_total__gte=min_activity)
+    if max_activity is not None:
+        qs = qs.filter(activity_total__lt=max_activity)
+
+    qs = qs.order_by('-activity_total', '-date_registered', '-id')
 
     last_total = None
     last_date = None
@@ -68,24 +88,48 @@ def get_filtered_batches(filters, batch_size=1000, campaign_id=None, restart_fai
             )
 
         batch = batch_qs[:batch_size]
-
-        if not batch:
-            break
-
         rows = list(batch.values_list('id', 'activity_total', 'date_registered'))
 
         if not rows:
             break
 
         batch_ids = [r[0] for r in rows]
-
-        last_id, last_total, last_date = (
-            rows[-1][0],
-            rows[-1][1],
-            rows[-1][2],
-        )
+        last_id, last_total, last_date = rows[-1]
 
         yield batch_ids
+
+
+def build_campaign_group(
+    filters,
+    batch_size=settings.DEFAULT_CAMPAIGN_BATCH_SIZE,
+    campaign_id=None,
+    restart_failed=False,
+    min_activity=None,
+    max_activity=None,
+    exclude_spam=True,
+    **send_kwargs,
+):
+    tasks = []
+    total_recipients = 0
+    for batch in get_filtered_batches(
+        filters,
+        batch_size=batch_size,
+        campaign_id=campaign_id,
+        restart_failed=restart_failed,
+        min_activity=min_activity,
+        max_activity=max_activity,
+        exclude_spam=exclude_spam,
+    ):
+        tasks.append(
+            send_campaign_batch.si(
+                recipients_ids=batch,
+                campaign_id=campaign_id,
+                **send_kwargs,
+            )
+        )
+        total_recipients += len(batch)
+
+    return group(tasks), total_recipients
 
 
 FILTER_PRESETS = {
@@ -96,12 +140,11 @@ FILTER_PRESETS = {
 
 @celery_app.task(name='email.process_campaign_retry')
 def process_campaign_retry(*args, **kwargs):
-
     campaign_id = kwargs.get('campaign_id')
     campaign = NotificationCampaign.objects.get(id=campaign_id)
     failed_recipients = NotificationCampaignRecipient.objects.filter(campaign=campaign, status=NotificationCampaignRecipientStatus.FAILED)
-    max_retries = campaign.metadata.get('execution', {}).get('max_retries', 3)
-    batch_size = campaign.metadata.get('execution', {}).get('batch_size', 1000)
+    max_retries = campaign.metadata.get('execution', {}).get('max_retries', settings.DEFAULT_CAMPAIGN_MAX_RETRIES)
+    batch_size = campaign.metadata.get('execution', {}).get('batch_size', settings.DEFAULT_CAMPAIGN_BATCH_SIZE)
     failed_recipients_count = failed_recipients.count()
     if not failed_recipients_count:
         campaign.status = NotificationCampaignStatus.COMPLETED
@@ -157,26 +200,50 @@ def start_notification_campaign(campaign_id, restart_failed=False):
             else:
                 manual_filters[f'{item["field"]}__{item["lookup"]}'] = [value.strip() for value in item['value'].split(',')]
         filters = manual_filters
-    tasks = []
-    total_recipients = 0
-    batch_size = campaign.metadata.get('execution', {}).get('batch_size', 1000)
-    for batch in get_filtered_batches(filters=filters, batch_size=batch_size, campaign_id=campaign_id, restart_failed=restart_failed):
-        tasks.append(
-            send_campaign_batch.s(
-                notification_type_name=notification_type_name,
-                recipients_ids=batch,
-                context=context,
-                campaign_id=campaign_id,
-            )
-        )
-        total_recipients += len(batch)
+
+    execution = campaign.metadata.get('execution', {})
+    batch_size = execution.get('batch_size', settings.DEFAULT_CAMPAIGN_BATCH_SIZE)
+    activity_threshold = execution.get('activity_threshold', settings.DEFAULT_CAMPAIGN_ACTIVITY_THRESHOLD)
+    batch_task_kwargs = dict(
+        batch_size=batch_size,
+        campaign_id=campaign_id,
+        restart_failed=restart_failed,
+        notification_type_name=notification_type_name,
+        context=context,
+    )
+
+    # Phase 1: non-spam users at/above activity threshold
+    high_activity_tasks, high_activity_count = build_campaign_group(
+        filters=filters,
+        **batch_task_kwargs,
+        min_activity=activity_threshold,
+    )
+
+    # Phase 2: non-spam users below threshold (includes zero activity)
+    low_activity_tasks, low_activity_count = build_campaign_group(
+        filters=filters,
+        **batch_task_kwargs,
+        max_activity=activity_threshold,
+    )
+
+    # Phase 3: confirmed spam (scheduled only after non-spam phases finish)
+    spam_users_tasks, spam_users_count = build_campaign_group(
+        filters={**filters, 'spam_status': SpamStatus.SPAM},
+        **batch_task_kwargs,
+        exclude_spam=False,
+    )
+
+    total_recipients = high_activity_count + low_activity_count + spam_users_count
     if not restart_failed:
         campaign.recipient_count = total_recipients
         campaign.save(update_fields=['recipient_count'])
 
-    chord(tasks)(
-        process_campaign_retry.s(campaign_id=campaign_id)
-    )
+    chain(
+        high_activity_tasks,
+        low_activity_tasks,
+        spam_users_tasks,
+        process_campaign_retry.si(campaign_id=campaign_id)
+    ).apply_async()
 
 
 @celery_app.task(name='email.send_campaign_batch', ignore_result=False)
