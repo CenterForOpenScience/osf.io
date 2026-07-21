@@ -7,6 +7,7 @@ from django.template.response import TemplateResponse
 from django_extensions.admin import ForeignKeyAutocompleteAdmin
 from django.contrib.auth.models import Group
 from django.db.models import Q, Count, Sum
+from django.db.models.functions import Coalesce
 from django.http import HttpResponseRedirect, HttpResponse, JsonResponse
 from django.utils import timezone
 from django.utils.html import format_html
@@ -667,10 +668,10 @@ class DownloadEventsView(admin.ModelAdmin):
 
     def _build_top_resource_breakdown(self, queryset):
         rows = queryset.exclude(resource_guid='').values('resource_guid').annotate(
+            gb_bytes=Coalesce(Sum('size_bytes'), 0),
             downloads=Count('id'),
-            gb_bytes=Sum('size_bytes'),
         ).order_by('-gb_bytes', '-downloads')[:10]
-        return [
+        val = [
             {
                 'name': row['resource_guid'],
                 'downloads': row['downloads'],
@@ -678,13 +679,14 @@ class DownloadEventsView(admin.ModelAdmin):
             }
             for row in rows
         ]
+        return val
 
     def _build_top_user_breakdown(self, queryset):
         rows = queryset.exclude(user__isnull=True).values('user__username', 'user__fullname').annotate(
+            gb_bytes=Coalesce(Sum('size_bytes'), 0),
             downloads=Count('id'),
-            gb_bytes=Sum('size_bytes'),
         ).order_by('-gb_bytes', '-downloads')[:10]
-        return [
+        val = [
             {
                 'name': row['user__fullname'] or row['user__username'] or 'Unknown user',
                 'downloads': row['downloads'],
@@ -692,6 +694,7 @@ class DownloadEventsView(admin.ModelAdmin):
             }
             for row in rows
         ]
+        return val
 
 
 admin.site.register(OSFUser, OSFUserAdmin)
