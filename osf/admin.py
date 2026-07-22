@@ -30,6 +30,7 @@ from osf.models import (
     Notification,
     DownloadEvent
 )
+from osf.models import AbstractNode
 from osf.models.notification_type import get_default_frequency_choices
 from osf.models.notable_domain import DomainReference
 
@@ -639,14 +640,18 @@ class DownloadEventsView(admin.ModelAdmin):
             gb_bytes=Sum('size_bytes'),
             downloads=Count('id'),
         ).order_by('-gb_bytes', '-downloads')[:10]
-        return [
-            {
-                'name': row['resource_guid'],
+        projects = AbstractNode.objects.filter(guids___id__in=rows.values_list('resource_guid'))
+        results = []
+        for row in rows:
+            resource_guid = row['resource_guid']
+            project = projects.filter(guids___id=resource_guid).first()
+            title = f'{project.title} ({resource_guid})' if project else resource_guid
+            results.append({
+                'name': title,
                 'downloads': row['downloads'],
                 'gb': self._to_gb(row['gb_bytes']),
-            }
-            for row in rows
-        ]
+            })
+        return results
 
     def _build_top_user_breakdown(self, queryset):
         rows = queryset.exclude(user__isnull=True).values('user__username', 'user__fullname').annotate(
