@@ -1,5 +1,6 @@
 from django.db import models
 from django.utils import timezone
+import uuid
 
 
 class NotificationCampaignStatus(models.TextChoices):
@@ -22,6 +23,9 @@ class NotificationCampaignRecipientStatus(models.TextChoices):
 class NotificationCampaign(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    run_id = models.UUIDField(
+        unique=True
+    )
 
     name = models.CharField(max_length=255)
 
@@ -73,6 +77,7 @@ class NotificationCampaign(models.Model):
         from osf.email.notification_campaign import start_notification_campaign
         self.status = NotificationCampaignStatus.RUNNING
         self.started_at = timezone.now()
+        self.run_id = uuid.uuid4()
         if not restart_failed:
             self.recipient_count = 0
             self.sent_count = 0
@@ -102,5 +107,32 @@ class NotificationCampaignRecipient(models.Model):
     )
     error_message = models.TextField(null=True, blank=True)
 
+    activity_score = models.IntegerField(default=0)
+
     class Meta:
         unique_together = ('campaign', 'user')
+        ordering = [
+            '-activity_score',
+            'user__date_registered',
+            'user_id',
+        ]
+
+        indexes = [
+            models.Index(
+                fields=[
+                    'campaign',
+                    '-activity_score',
+                    'user',
+                ],
+                name='campaign_order_idx',
+            ),
+            models.Index(
+                fields=[
+                    'campaign',
+                    'status',
+                    '-activity_score',
+                    'user',
+                ],
+                name='campaign_status_order_idx',
+            ),
+        ]
