@@ -596,6 +596,7 @@ class CeleryConfig:
         'osf.management.commands.sync_doi_metadata',
         'api.providers.tasks',
         'api.users.tasks',
+        'osf.utils.download_telemetry',
         'osf.management.commands.daily_reporters_go',
         'osf.management.commands.monthly_reporters_go',
         'osf.external.spam.tasks',
