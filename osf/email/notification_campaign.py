@@ -257,7 +257,7 @@ def send_campaign_batch(context, recipients_ids, notification_type_name='blank',
             campaign.developer_reminder_sent = True
             campaign.save()
 
-    recipients_qs = NotificationCampaignRecipient.objects.filter(id__in=recipients_ids)
+    recipients_qs = NotificationCampaignRecipient.objects.filter(id__in=recipients_ids).select_related('user')
     recipient_records = []
     success_count = 0
     failure_count = 0
@@ -265,15 +265,15 @@ def send_campaign_batch(context, recipients_ids, notification_type_name='blank',
         recipients_qs_annotated = recipients_qs.annotate(
             recipient_address=Case(
                 When(user__username__contains='@', then='user_id'),
-                default=Subquery(first_email_subquery),  # TBD
+                default=Subquery(first_email_subquery),
                 output_field=CharField(),
             )
         )
         valid_emails_qs = recipients_qs_annotated.exclude(recipient_address__isnull=True)
         invalid_emails_qs = recipients_qs_annotated.filter(recipient_address__isnull=True)
-        recipient_emails = list(recipients_qs_annotated.values_list('recipient_address', flat=True))
+        recipient_emails = list(valid_emails_qs.values_list('recipient_address', flat=True))
         send_email_with_send_grid(to_addr=recipient_emails, notification_type=notification_type, context=context)
-        success_count = len(valid_emails_qs)
+        success_count = len(recipient_emails)
         invalid_emails_qs.update(status=NotificationCampaignRecipientStatus.SKIPPED, error_message='Invalid email address')
 
     else:
