@@ -11,6 +11,10 @@ logger = logging.getLogger(__name__)
 # about where they actually are.
 UNSET_USER_TIMEZONE = 'Etc/UTC'
 
+# Identifiers worth having in the log line to track a failure back to one download.
+# Deliberately excludes the IP.
+LOGGED_CONTEXT_KEYS = ('download_type', 'resource_guid', 'file_id', 'user_guid')
+
 
 def never_breaks_downloads(fn):
     """Swallow and log anything this raises.
@@ -22,8 +26,20 @@ def never_breaks_downloads(fn):
     def wrapped(*args, **kwargs):
         try:
             return fn(*args, **kwargs)
-        except Exception:
-            logger.exception('Failed to record a download event')
+        except Exception as exc:
+            # exc_info carries the traceback; the rest names the failure and which
+            # download it was, so a report is actionable without reproducing it.
+            logger.exception(
+                'Failed to record a download event in %s: %s: %s [%s]',
+                fn.__name__,
+                type(exc).__name__,
+                exc,
+                ', '.join(
+                    f'{key}={kwargs[key]!r}'
+                    for key in LOGGED_CONTEXT_KEYS
+                    if kwargs.get(key)
+                ) or 'no context',
+            )
     return wrapped
 
 

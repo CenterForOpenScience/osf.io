@@ -1,3 +1,4 @@
+import logging
 import time
 
 import pytest
@@ -208,3 +209,30 @@ class TestRecordDownloadNeverRaises:
         record_download(download_type=DownloadEvent.FILE, resource_guid='abcde')
 
         assert not DownloadEvent.objects.exists()
+
+    def test_failure_is_logged_with_the_cause_and_the_download(self, monkeypatch, caplog):
+        """A report has to be actionable without reproducing it."""
+        def explode(*args, **kwargs):
+            raise ValueError('boom')
+
+        monkeypatch.setattr('osf.utils.download_telemetry.enqueue_postcommit_task', explode)
+
+        with caplog.at_level(logging.ERROR, logger='osf.utils.download_telemetry'):
+            record_download(
+                download_type=DownloadEvent.FILE,
+                resource_guid='abcde',
+                user_guid='zyxwv',
+                ip='198.51.100.7',
+            )
+
+        record = caplog.records[0]
+        message = record.getMessage()
+        assert 'ValueError' in message
+        assert 'boom' in message
+        assert 'record_download' in message
+        assert "resource_guid='abcde'" in message
+        assert "user_guid='zyxwv'" in message
+        # the IP is not debugging information
+        assert '198.51.100.7' not in message
+        # the traceback is still attached
+        assert record.exc_info is not None
