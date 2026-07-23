@@ -258,6 +258,7 @@ class InstitutionUserMetricsSerializer(JSONAPISerializer):
     month_last_login = YearmonthField(read_only=True)
     month_last_active = YearmonthField(read_only=True)
     account_creation_date = YearmonthField(read_only=True)
+    link = ser.CharField(read_only=True, source='absolute_url')
 
     public_projects = ser.IntegerField(read_only=True, source='public_project_count')
     private_projects = ser.IntegerField(read_only=True, source='private_project_count')
