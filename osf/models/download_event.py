@@ -27,7 +27,7 @@ class DownloadEvent(models.Model):
     download_type = models.CharField(max_length=16, choices=DOWNLOAD_TYPES)
     # null for single files (only zips stream through WB, which reports completion)
     zip_completed = models.BooleanField(null=True, blank=True)
-    size_bytes = models.BigIntegerField(default=0)
+    size_bytes = models.BigIntegerField(null=True, blank=True)
 
     # storage_region = where the bytes were served from (capacity);
     # user_region = roughly where the user is. Kept separate on purpose.

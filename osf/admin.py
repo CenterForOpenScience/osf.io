@@ -6,7 +6,8 @@ from django.urls import re_path, reverse, path
 from django.template.response import TemplateResponse
 from django_extensions.admin import ForeignKeyAutocompleteAdmin
 from django.contrib.auth.models import Group
-from django.db.models import Q, Count, Sum
+from django.db.models import Q, Count, Sum, F, Min, Max
+from django.db.models.functions import Trunc
 from django.http import HttpResponseRedirect, HttpResponse, JsonResponse
 from django.utils import timezone
 from django.utils.html import format_html
@@ -447,8 +448,14 @@ class DownloadEventsView(admin.ModelAdmin):
     )
     search_help_text = 'Search by username, full name, user or node guid, ip, path, user or storage region, source area.'
 
-    @admin.display(description='Size (GB)', ordering='size_bytes')
+    @admin.display(description='Size (GB)', ordering=F('size_bytes').desc(nulls_last=True))
     def size(self, obj):
+        """`size_bytes` is null when we could not determine it — that is not zero.
+
+        Sorting puts those last rather than letting Postgres float them to the top.
+        """
+        if obj.size_bytes is None:
+            return '—'
         return f'{self._to_gb(obj.size_bytes)}'
 
     def changelist_view(self, request, extra_context=None):
@@ -470,14 +477,52 @@ class DownloadEventsView(admin.ModelAdmin):
         extra_context['download_events_dashboard'] = self.get_dashboard_data(changelist.get_queryset(request))
         return super().changelist_view(request, extra_context=extra_context)
 
+    def _in_dashboard_group(self, request):
+        """Membership in the allow-list group is the only key to this page.
+
+        Deliberately not falling back to ``super()``/``has_perm``: ``ModelBackend``
+        answers True to every permission check for a superuser, so anything that
+        consults it would let every superuser in — the opposite of what this
+        dashboard is for.
+        """
+        user = getattr(request, 'user', None)
+        if user is None or not user.is_authenticated:
+            return False
+        return user.groups.filter(name=DASHBOARD_GROUP_NAME).exists()
+
     def has_module_permission(self, request, obj=None):
-        return request.user.groups.filter(name=DASHBOARD_GROUP_NAME).exists()
+        """Keeps the model off the admin index for everyone else."""
+        return self._in_dashboard_group(request)
+
+    def has_view_permission(self, request, obj=None):
+        """What ``changelist_view`` actually enforces — the real gate.
+
+        ``has_module_permission`` alone only hides the link; the page itself stays
+        reachable by URL without this.
+        """
+        return self._in_dashboard_group(request)
+
+    # Append-only telemetry: nothing is editable through the admin, by anyone.
+    def has_add_permission(self, request):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False
 
     def _sum_bytes(self, queryset):
         return queryset.aggregate(total_bytes=Sum('size_bytes'))['total_bytes'] or 0
 
     def _to_gb(self, total_bytes):
-        return round(total_bytes / (1024**3), 2)
+        return round((total_bytes or 0) / (1024**3), 2)
+
+    def _percent(self, part, whole):
+        """Empty ranges are normal — the default window is the last hour."""
+        if not whole:
+            return 0.0
+        return round(part * 100 / whole, 2)
 
     def get_dashboard_data(self, queryset):
         file_queryset = queryset.filter(download_type=DownloadEvent.FILE)
@@ -493,25 +538,26 @@ class DownloadEventsView(admin.ModelAdmin):
         storage_regions = self._build_region_breakdown(queryset, 'storage_region')
         user_regions = self._build_region_breakdown(queryset, 'user_region')
 
+        total_gb = self._to_gb(total_bytes)
         split = {
             'file': {
                 'count': total_file_downloads,
                 'gb': total_file_gb,
-                'count_percent': round(total_file_downloads * 100 / total_downloads, 2),
-                'gb_percent': round(total_file_gb * 100 / max(self._to_gb(total_bytes), 1), 2),
+                'count_percent': self._percent(total_file_downloads, total_downloads),
+                'gb_percent': self._percent(total_file_gb, total_gb),
             },
             'zip': {
                 'count': total_zip_downloads,
                 'gb': total_zip_gb,
-                'count_percent': round(total_zip_downloads * 100 / total_downloads, 2),
-                'gb_percent': round(total_zip_gb * 100 / max(self._to_gb(total_bytes), 1), 2),
+                'count_percent': self._percent(total_zip_downloads, total_downloads),
+                'gb_percent': self._percent(total_zip_gb, total_gb),
             },
         }
 
         return {
             'summary': {
                 'total_downloads': total_downloads,
-                'total_gb': self._to_gb(total_bytes),
+                'total_gb': total_gb,
                 'unique_users': queryset.exclude(user_id__isnull=True).values('user_id').distinct().count(),
             },
             'split': split,
@@ -522,54 +568,57 @@ class DownloadEventsView(admin.ModelAdmin):
             'top_users': self._build_top_user_breakdown(queryset),
         }
 
-    def _build_time_series(self, queryset):
-        events = list(queryset.order_by('created').values_list('created', 'download_type', 'size_bytes'))
-        if not events:
-            return {
-                'labels': [],
-                'file': [],
-                'zip': [],
-            }
+    EMPTY_TIME_SERIES = {'labels': [], 'file': [], 'zip': []}
 
-        start = min(created for created, _, _ in events)
-        end = max(created for created, _, _ in events)
+    def _build_time_series(self, queryset):
+        """Bucketed GB over time, aggregated in the database.
+
+        The range can cover millions of rows once the announcement lands, so the
+        bucketing is a GROUP BY rather than a pass over every event in Python.
+        """
+        bounds = queryset.aggregate(start=Min('created'), end=Max('created'))
+        start, end = bounds['start'], bounds['end']
+        if start is None:
+            return dict(self.EMPTY_TIME_SERIES)
+
         bucket_size = self._get_bucket_size(start, end)
         step = self._get_bucket_step(bucket_size)
-        bucket_start = self._floor_to_bucket(start, bucket_size)
-        bucket_end = self._floor_to_bucket(end, bucket_size)
 
+        rows = queryset.annotate(
+            bucket=Trunc('created', self._get_trunc_kind(bucket_size))
+        ).values('bucket', 'download_type').annotate(
+            total_bytes=Sum('size_bytes'),
+        )
+
+        totals = defaultdict(lambda: {'file': 0.0, 'zip': 0.0})
+        for row in rows:
+            key = self._floor_to_bucket(row['bucket'], bucket_size)
+            side = 'file' if row['download_type'] == DownloadEvent.FILE else 'zip'
+            totals[key][side] += (row['total_bytes'] or 0) / (1024**3)
+
+        # walk the whole span so gaps render as zero rather than closing up
         buckets = []
-        current = bucket_start
-        while current <= bucket_end:
-            buckets.append({'start': current, 'file': 0.0, 'zip': 0.0})
+        current = self._floor_to_bucket(start, bucket_size)
+        last = self._floor_to_bucket(end, bucket_size)
+        while current <= last:
+            buckets.append(current)
             current += step
 
-        for created, download_type, size_bytes in events:
-            bucket = self._find_bucket(buckets, created)
-            if bucket is None:
-                continue
-            value = size_bytes / (1024**3)
-            if download_type == DownloadEvent.FILE:
-                bucket['file'] += value
-            else:
-                bucket['zip'] += value
-
-        if not buckets:
-            return {
-                'labels': [],
-                'file': [],
-                'zip': [],
-            }
-
-        labels = [self._format_bucket_label(entry['start'], bucket_size) for entry in buckets]
-        file_values = [round(entry['file'], 2) for entry in buckets]
-        zip_values = [round(entry['zip'], 2) for entry in buckets]
-
         return {
-            'labels': labels,
-            'file': file_values,
-            'zip': zip_values,
+            'labels': [self._format_bucket_label(bucket, bucket_size) for bucket in buckets],
+            'file': [round(totals[bucket]['file'], 2) for bucket in buckets],
+            'zip': [round(totals[bucket]['zip'], 2) for bucket in buckets],
         }
+
+    def _get_trunc_kind(self, bucket_size):
+        """15-minute buckets have no Trunc equivalent, so truncate to the hour and
+        let `_floor_to_bucket` split it down."""
+        return {
+            '15m': 'minute',
+            '1h': 'hour',
+            '1d': 'day',
+            '1w': 'week',
+        }[bucket_size]
 
     def _get_bucket_size(self, start, end):
         delta = end - start
@@ -591,19 +640,20 @@ class DownloadEventsView(admin.ModelAdmin):
         return timedelta(days=7)
 
     def _floor_to_bucket(self, value, bucket_size):
+        """Snap to the start of the containing bucket.
+
+        The result is used as a dict key, so it has to land on exactly the same
+        instant whether it came from an event or from walking the axis — every
+        branch zeroes everything below its own resolution.
+        """
         if bucket_size == '15m':
             return value.replace(minute=(value.minute // 15) * 15, second=0, microsecond=0)
         if bucket_size == '1h':
             return value.replace(minute=0, second=0, microsecond=0)
+        midnight = value.replace(hour=0, minute=0, second=0, microsecond=0)
         if bucket_size == '1d':
-            return value.replace(hour=0, minute=0, second=0, microsecond=0)
-        return value - timedelta(days=value.weekday())
-
-    def _find_bucket(self, buckets, created):
-        for bucket in buckets:
-            if bucket['start'] <= created < bucket['start'] + self._get_bucket_step(self._get_bucket_size(buckets[0]['start'], buckets[-1]['start'])):
-                return bucket
-        return buckets[-1] if buckets else None
+            return midnight
+        return midnight - timedelta(days=value.weekday())
 
     def _format_bucket_label(self, value, bucket_size):
         if bucket_size == '15m':
@@ -615,11 +665,18 @@ class DownloadEventsView(admin.ModelAdmin):
         return value.strftime('%Y-%m-%d')
 
     def _build_region_breakdown(self, queryset, field_name):
+        """Grouped in the database — the range can cover millions of rows."""
+        rows = queryset.values(field_name).annotate(
+            downloads=Count('id'),
+            total_bytes=Sum('size_bytes'),
+        )
+
         breakdown = defaultdict(lambda: {'downloads': 0, 'gb': 0.0})
-        for region, size_bytes in queryset.values_list(field_name, 'size_bytes'):
-            region_name = (region or 'Unknown').strip() or 'Unknown'
-            breakdown[region_name]['downloads'] += 1
-            breakdown[region_name]['gb'] += size_bytes / (1024**3)
+        for row in rows:
+            # blank and null both mean "we could not tell", so they fold together
+            region_name = (row[field_name] or 'Unknown').strip() or 'Unknown'
+            breakdown[region_name]['downloads'] += row['downloads']
+            breakdown[region_name]['gb'] += (row['total_bytes'] or 0) / (1024**3)
 
         ordered = sorted(breakdown.items(), key=lambda item: item[1]['gb'], reverse=True)[:10]
         max_gb = max((data['gb'] for _, data in ordered), default=0)
@@ -629,8 +686,8 @@ class DownloadEventsView(admin.ModelAdmin):
                 'name': name,
                 'downloads': data['downloads'],
                 'gb': round(data['gb'], 2),
-                'gb_percent': round(data['gb'] * 100 / max_gb, 2),
-                'download_percent': round(data['downloads'] * 100 / max_downloads, 2),
+                'gb_percent': self._percent(data['gb'], max_gb),
+                'download_percent': self._percent(data['downloads'], max_downloads),
             }
             for name, data in ordered
         ]
@@ -639,25 +696,34 @@ class DownloadEventsView(admin.ModelAdmin):
         rows = queryset.exclude(resource_guid='').values('resource_guid').annotate(
             gb_bytes=Sum('size_bytes'),
             downloads=Count('id'),
-        ).order_by('-gb_bytes', '-downloads')[:10]
-        projects = AbstractNode.objects.filter(guids___id__in=rows.values_list('resource_guid'))
-        results = []
-        for row in rows:
-            resource_guid = row['resource_guid']
-            project = projects.filter(guids___id=resource_guid).first()
-            title = f'{project.title} ({resource_guid})' if project else resource_guid
-            results.append({
-                'name': title,
+        ).order_by(F('gb_bytes').desc(nulls_last=True), '-downloads')[:10]
+        rows = list(rows)
+
+        # one query for all ten, rather than one per row
+        guids = [row['resource_guid'] for row in rows]
+        titles = dict(
+            AbstractNode.objects.filter(guids___id__in=guids).values_list('guids___id', 'title')
+        )
+        return [
+            {
+                # a deleted project keeps its title, but fall back to the bare guid so
+                # the row still says something if it ever fails to resolve
+                'name': (
+                    f'{titles[row["resource_guid"]]} ({row["resource_guid"]})'
+                    if row['resource_guid'] in titles
+                    else row['resource_guid']
+                ),
                 'downloads': row['downloads'],
                 'gb': self._to_gb(row['gb_bytes']),
-            })
-        return results
+            }
+            for row in rows
+        ]
 
     def _build_top_user_breakdown(self, queryset):
         rows = queryset.exclude(user__isnull=True).values('user__username', 'user__fullname').annotate(
             gb_bytes=Sum('size_bytes'),
             downloads=Count('id'),
-        ).order_by('-gb_bytes', '-downloads')[:10]
+        ).order_by(F('gb_bytes').desc(nulls_last=True), '-downloads')[:10]
         return [
             {
                 'name': row['user__fullname'] or row['user__username'] or 'Unknown user',

@@ -1,8 +1,8 @@
 import django.db.models.deletion
 from django.db import migrations, models
 
-from osf.admin import DASHBOARD_GROUP_NAME
 
+DASHBOARD_GROUP_NAME = 'download_telemetry'
 
 DASHBOARD_USERS = [
     'sheredko.andriy@gmail.com',
