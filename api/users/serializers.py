@@ -455,7 +455,7 @@ class UserChangePasswordSerializer(BaseAPISerializer):
 class UserResetPasswordSerializer(BaseAPISerializer):
     uid = ser.CharField(write_only=True, required=True)
     token = ser.CharField(write_only=True, required=True)
-    password = ser.CharField(write_only=True, required=True)
+    password = ser.CharField(write_only=True, required=True, max_length=255)
 
     class Meta:
         type_ = 'user_reset_password'
