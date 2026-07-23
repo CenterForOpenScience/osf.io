@@ -23,9 +23,7 @@ class NotificationCampaignRecipientStatus(models.TextChoices):
 class NotificationCampaign(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    run_id = models.UUIDField(
-        unique=True
-    )
+    run_id = models.UUIDField(null=True, blank=True, unique=True)
 
     name = models.CharField(max_length=255)
 
