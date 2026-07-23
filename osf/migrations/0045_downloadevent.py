@@ -12,6 +12,7 @@ DASHBOARD_USERS = [
     'bgeiger@cos.io',
     'osmand@cos.io',
     'ramya@cos.io',
+    'eric@cos.io',
 ]
 
 
