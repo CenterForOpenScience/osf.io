@@ -272,8 +272,17 @@ def send_campaign_batch(context, recipients_ids, notification_type_name='blank',
         valid_emails_qs = recipients_qs_annotated.exclude(recipient_address__isnull=True)
         invalid_emails_qs = recipients_qs_annotated.filter(recipient_address__isnull=True)
         recipient_emails = list(valid_emails_qs.values_list('recipient_address', flat=True))
-        send_email_with_send_grid(to_addr=recipient_emails, notification_type=notification_type, context=context)
         success_count = len(recipient_emails)
+        try:
+            send_email_with_send_grid(to_addr=recipient_emails, notification_type=notification_type, context=context)
+        except Exception as exc:
+            logger.error(exc)  # TODO update error
+            sentry.log_exception(exc)  # TODO update error
+
+            valid_emails_qs.update(status=NotificationCampaignRecipientStatus.FAILED, error_message=str(exc))
+            failure_count += success_count
+            success_count = 0
+            pass
         invalid_emails_qs.update(status=NotificationCampaignRecipientStatus.SKIPPED, error_message='Invalid email address')
 
     else:
