@@ -1,0 +1,502 @@
+{% extends "admin/change_list.html" %}
+
+{% block content %}
+    {% if download_events_dashboard %}
+        <style>
+            .download-events-dashboard {
+                margin: 20px 0 30px;
+                padding: 20px;
+                border-radius: 8px;
+                background: #2e2e2e;
+            }
+            .dashboard-header h2 {
+                margin: 0 0 4px;
+                font-size: 18px;
+                color: #9c9c9c;
+            }
+            .dashboard-header p {
+                margin: 0 0 18px;
+                color: #9c9c9c;
+            }
+            .dashboard-grid {
+                display: grid;
+                gap: 16px;
+                grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+                margin-bottom: 16px;
+            }
+            .dashboard-card {
+                border: 1px solid #505050;
+                border-radius: 6px;
+                padding: 16px;
+                background: #2e2e2e;
+            }
+            .card-label {
+                font-size: 12px;
+                font-weight: 600;
+                text-transform: uppercase;
+                letter-spacing: 0.04em;
+                color: #777;
+                margin-bottom: 8px;
+            }
+            .card-value {
+                font-size: 28px;
+                font-weight: 600;
+                color: #9c9c9c;
+            }
+            .compact-value {
+                font-size: 16px;
+                color: #aaa;
+            }
+            .chart-container {
+                position: relative;
+                width: 100%;
+                height: 320px;
+            }
+
+            .chart-card canvas {
+                width: 100% !important;
+                height: 100% !important;
+            }
+
+            table { width: 100%; border-collapse: collapse; }
+            th { font-size: 12px; color: #777; }
+            td { padding: 8px 10px; border-bottom: 1px solid #505050; color: #aaa; }
+            .empty-state { color: #777; font-size: 13px; }
+        </style>
+        <div class="download-events-dashboard">
+            <div class="dashboard-header">
+                <h2>Download telemetry dashboard</h2>
+                <p>Summaries and charts are scoped to the same filters and search terms as the table below.</p>
+            </div>
+
+            <div class="dashboard-grid">
+                <div class="dashboard-card summary-card">
+                    <div class="card-label">Total downloads</div>
+                    <div class="card-value">{{ download_events_dashboard.summary.total_downloads }}</div>
+                </div>
+                <div class="dashboard-card summary-card">
+                    <div class="card-label">Total GB</div>
+                    <div class="card-value">{{ download_events_dashboard.summary.total_gb|floatformat:2 }}</div>
+                </div>
+                <div class="dashboard-card summary-card">
+                    <div class="card-label">Unique users</div>
+                    <div class="card-value">{{ download_events_dashboard.summary.unique_users }}</div>
+                </div>
+                <div class="dashboard-card summary-card">
+                    <div class="card-label">File vs zip (including whole-project zip) (GB)</div>
+                    <div class="card-value compact-value">{{ download_events_dashboard.split.file.gb|floatformat:2 }} / {{ download_events_dashboard.split.zip.gb|floatformat:2 }}</div>
+                </div>
+            </div>
+
+            <div class="dashboard-card chart-card">
+                <div class="card-label">GB over time</div>
+
+                <div class="chart-container">
+                    <canvas id="gbOverTimeChart"></canvas>
+                </div>
+            </div>
+
+            <br>
+
+            <div class="dashboard-grid charts-grid">
+                <div class="dashboard-card chart-card">
+                    <div class="card-label">GB by storage region</div>
+
+                    <div class="chart-container">
+                        <canvas id="storageRegionChart"></canvas>
+                    </div>
+                </div>
+
+                <div class="dashboard-card chart-card">
+                    <div class="card-label">Downloads / GB by user region</div>
+
+                    <div class="chart-container">
+                        <canvas id="userRegionChart"></canvas>
+                    </div>
+                </div>
+
+                <div class="dashboard-card chart-card">
+                    <div class="card-label">File vs Zip</div>
+
+                    <div
+                        style="
+                            display:grid;
+                            grid-template-columns:repeat(auto-fit,minmax(260px,1fr));
+                            gap:24px;
+                            align-items:center;
+                        "
+                    >
+                        <div>
+                            <h4 style="margin:0 0 12px;color:#aaa;text-align:center;">
+                                Downloads
+                            </h4>
+
+                            <div class="chart-container" style="height:260px;">
+                                <canvas id="downloadsSplitChart"></canvas>
+                            </div>
+                        </div>
+
+                        <div>
+                            <h4 style="margin:0 0 12px;color:#aaa;text-align:center;">
+                                GB
+                            </h4>
+
+                            <div class="chart-container" style="height:260px;">
+                                <canvas id="gbSplitChart"></canvas>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+
+            <div class="dashboard-grid tables-grid">
+                <div class="dashboard-card table-card">
+                    <div class="card-label">Top projects by volume</div>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Project</th>
+                                <th>GB</th>
+                                <th>Downloads</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for project in download_events_dashboard.top_projects %}
+                                <tr>
+                                    <td>{{ project.name }}</td>
+                                    <td>{{ project.gb|floatformat:2 }}</td>
+                                    <td>{{ project.downloads }}</td>
+                                </tr>
+                            {% empty %}
+                                <tr><td colspan="3">No project-level activity in the current range.</td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                <div class="dashboard-card table-card">
+                    <div class="card-label">Top users by volume</div>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>User</th>
+                                <th>GB</th>
+                                <th>Downloads</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for user in download_events_dashboard.top_users %}
+                                <tr>
+                                    <td>{{ user.name }}</td>
+                                    <td>{{ user.gb|floatformat:2 }}</td>
+                                    <td>{{ user.downloads }}</td>
+                                </tr>
+                            {% empty %}
+                                <tr><td colspan="3">No user activity in the current range.</td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    {% endif %}
+    <br><br>
+    {{ block.super }}
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+const chartColors = {
+    text: "#bdbdbd",
+    grid: "rgba(255,255,255,.08)",
+    border: "#555",
+    blue: "#4b7db9",
+    red: "#c96b6b",
+    green: "#5ca86a",
+    yellow: "#d5a84d",
+};
+
+Chart.defaults.color = chartColors.text;
+Chart.defaults.borderColor = chartColors.grid;
+Chart.defaults.font.family =
+    "'Segoe UI', Roboto, Helvetica, Arial, sans-serif";
+
+const commonOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+        legend: {
+            labels: {
+                color: chartColors.text
+            }
+        },
+        tooltip: {
+            mode: "index",
+            intersect: false
+        }
+    }
+};
+const timeLabels = [
+    {% for label in download_events_dashboard.time_series.labels %}
+        "{{ label }}",
+    {% endfor %}
+];
+
+const fileSeries = [
+{% for value in download_events_dashboard.time_series.file %}
+    {{ value }},
+{% endfor %}
+];
+
+const zipSeries = [
+    {% for value in download_events_dashboard.time_series.zip %}
+        {{ value }},
+    {% endfor %}
+];
+
+const storageLabels = [
+    {% for region in download_events_dashboard.storage_regions %}
+        "{{ region.name|escapejs }}",
+    {% endfor %}
+];
+
+const storageGB = [
+    {% for region in download_events_dashboard.storage_regions %}
+        {{ region.gb }},
+    {% endfor %}
+];
+
+const userRegionLabels = [
+    {% for region in download_events_dashboard.user_regions %}
+        "{{ region.name|escapejs }}",
+    {% endfor %}
+];
+
+const userDownloads = [
+    {% for region in download_events_dashboard.user_regions %}
+        {{ region.downloads }},
+    {% endfor %}
+];
+
+const userGB = [
+    {% for region in download_events_dashboard.user_regions %}
+        {{ region.gb }},
+    {% endfor %}
+];
+
+new Chart(
+    document.getElementById("gbOverTimeChart"),
+    {
+        type: "line",
+
+        data: {
+
+            labels: timeLabels,
+
+            datasets: [
+
+                {
+                    label: "File",
+                    data: fileSeries,
+                    borderColor: chartColors.blue,
+                    backgroundColor: "rgba(75,125,185,.18)",
+                    fill: true,
+                    tension: .35,
+                    pointRadius: 2
+                },
+
+                {
+                    label: "Zip",
+                    data: zipSeries,
+                    borderColor: chartColors.red,
+                    backgroundColor: "rgba(201,107,107,.18)",
+                    fill: true,
+                    tension: .35,
+                    pointRadius: 2
+                }
+
+            ]
+
+        },
+
+        options: {
+
+            ...commonOptions,
+
+            interaction: {
+                mode: "index",
+                intersect: false
+            },
+
+            scales: {
+
+                x: {
+                    ticks: {
+                        color: chartColors.text
+                    },
+                    grid: {
+                        color: chartColors.grid
+                    }
+                },
+
+                y: {
+                    beginAtZero: true,
+                    title: {
+                        display: true,
+                        text: "GB"
+                    },
+                    grid: {
+                        color: chartColors.grid
+                    }
+                }
+
+            }
+
+        }
+
+    }
+);
+
+new Chart(
+    document.getElementById("storageRegionChart"),
+    {
+        type: "bar",
+        data: {
+            labels: storageLabels,
+            datasets: [{
+                label: "GB",
+                data: storageGB,
+                backgroundColor: chartColors.blue
+            }]
+        },
+        options: {
+            ...commonOptions,
+            indexAxis: "y",
+            plugins: {
+                ...commonOptions.plugins,
+                legend: {
+                    display: false
+                }
+            },
+            scales: {
+                x: {
+                    beginAtZero: true,
+                    title: {
+                        display: true,
+                        text: "GB"
+                    },
+                    grid: {
+                        color: chartColors.grid
+                    }
+                },
+                y: {
+                    grid: {
+                        display: false
+                    }
+                }
+            },
+            interaction: {
+                mode: "nearest",
+                axis: "y",
+                intersect: true
+            },
+        }
+    }
+);
+
+new Chart(
+    document.getElementById("userRegionChart"),
+    {
+        type: "bar",
+        data: {
+            labels: userRegionLabels,
+            datasets: [
+                {
+                    label: "Downloads",
+                    data: userDownloads,
+                    backgroundColor: chartColors.blue
+                },
+                {
+                    label: "GB",
+                    data: userGB,
+                    backgroundColor: chartColors.red
+                }
+            ]
+        },
+        options: {
+            ...commonOptions,
+            indexAxis: "y",
+            scales: {
+
+                x: {
+                    beginAtZero: true,
+                    grid: {
+                        color: chartColors.grid
+                    }
+                },
+
+                y: {
+                    grid: {
+                        display: false
+                    }
+                }
+
+            },
+            interaction: {
+                mode: "nearest",
+                axis: "y",
+                intersect: true
+            },
+        }
+    }
+);
+
+new Chart(
+    document.getElementById("downloadsSplitChart"),
+    {
+        type: "doughnut",
+        data: {
+            labels: ["File", "Zip"],
+            datasets: [{
+                data: [
+                    {{ download_events_dashboard.split.file.count }},
+                    {{ download_events_dashboard.split.zip.count }}
+                ],
+                backgroundColor: [
+                    chartColors.blue,
+                    chartColors.red
+                ]
+            }]
+        },
+        options: {
+            ...commonOptions,
+            cutout: "60%"
+        }
+    }
+);
+
+new Chart(
+    document.getElementById("gbSplitChart"),
+    {
+        type: "doughnut",
+        data: {
+            labels: ["File", "Zip"],
+            datasets: [{
+                data: [
+                    {{ download_events_dashboard.split.file.gb }},
+                    {{ download_events_dashboard.split.zip.gb }}
+                ],
+                backgroundColor: [
+                    chartColors.blue,
+                    chartColors.red
+                ]
+            }]
+        },
+        options: {
+            ...commonOptions,
+            cutout: "60%"
+        }
+
+    }
+);
+</script>
+{% endblock %}

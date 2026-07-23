@@ -987,6 +987,18 @@ argon2 = ["argon2-cffi (>=19.1.0)"]
 bcrypt = ["bcrypt"]
 
 [[package]]
+name = "django-admin-rangefilter"
+version = "0.13.5"
+description = "django-admin-rangefilter app, add the filter by a custom date range on the admin UI."
+optional = false
+python-versions = "!=3.0.*,!=3.1.*,!=3.2.*,!=3.3.*,!=3.4.*,>=2.7"
+groups = ["main"]
+files = [
+    {file = "django_admin_rangefilter-0.13.5-py2.py3-none-any.whl", hash = "sha256:7fdcd1ee9007e2b76a5bd35bc017e785bdc7b17a24b8a36aef4ce80741356c47"},
+    {file = "django_admin_rangefilter-0.13.5.tar.gz", hash = "sha256:3134e9e877f59ccad5949cd25cd2db9bf20d170fd8070be584875fdca96d3a14"},
+]
+
+[[package]]
 name = "django-bulk-update"
 version = "2.2.0"
 description = "Bulk update using one query over Django ORM."
@@ -4727,4 +4739,4 @@ testing = ["coverage (>=5.0.3)", "zope.event", "zope.testing"]
 [metadata]
 lock-version = "2.1"
 python-versions = "^3.12"
-content-hash = "9b2f29b9b4958b47e4c428f4225d04bbd12f239c02f9afc186989a49547b83ed"
+content-hash = "2048525ad7e1c434ddc9cf9ef602189c32a2b502924b2a0714b56e0a4cdc6af9"

@@ -1,10 +1,15 @@
+from collections import defaultdict
+from datetime import timedelta
+
 from django.contrib import admin, messages
 from django.urls import re_path, reverse, path
 from django.template.response import TemplateResponse
 from django_extensions.admin import ForeignKeyAutocompleteAdmin
 from django.contrib.auth.models import Group
-from django.db.models import Q, Count
+from django.db.models import Q, Count, Sum, F, Min, Max
+from django.db.models.functions import Trunc
 from django.http import HttpResponseRedirect, HttpResponse, JsonResponse
+from django.utils import timezone
 from django.utils.html import format_html
 from django.shortcuts import get_object_or_404
 from django import forms
@@ -12,10 +17,26 @@ from django.contrib.postgres.forms import SimpleArrayField
 from django.contrib.admin import SimpleListFilter
 import waffle
 
+from rangefilter.filters import DateTimeRangeFilterBuilder
+
 from osf.external.spam.tasks import reclassify_domain_references
-from osf.models import OSFUser, Node, NotableDomain, NodeLicense, NotificationType, NotificationSubscription, EmailTask, Notification
+from osf.models import (
+    OSFUser,
+    Node,
+    NotableDomain,
+    NodeLicense,
+    NotificationType,
+    NotificationSubscription,
+    EmailTask,
+    Notification,
+    DownloadEvent
+)
+from osf.models import AbstractNode
 from osf.models.notification_type import get_default_frequency_choices
 from osf.models.notable_domain import DomainReference
+
+
+DASHBOARD_GROUP_NAME = 'download_telemetry'
 
 
 def list_displayable_fields(cls):
@@ -385,6 +406,333 @@ class NotificationAdmin(admin.ModelAdmin):
         except Exception:
             return '(username)'
     user.short_description = 'User'
+
+
+@admin.register(DownloadEvent)
+class DownloadEventsView(admin.ModelAdmin):
+    change_list_template = 'download_events/download_events.html'
+    list_display = (
+        'resource_guid',
+        'user',
+        'download_type',
+        'zip_completed',
+        'path',
+        'size',
+        'user_region',
+        'storage_region',
+        'ip',
+        'source_area',
+        'created'
+    )
+    list_filter = (
+        (
+            'created',
+            DateTimeRangeFilterBuilder(
+                title='date and time (UTC)',
+            ),
+        ),
+        'download_type',
+        'zip_completed',
+    )
+    ordering = ('-created',)
+    search_fields = (
+        'user__username',
+        'user__fullname',
+        'user__guids___id',
+        'resource_guid',
+        'ip',
+        'path',
+        'user_region',
+        'storage_region',
+        'source_area'
+    )
+    search_help_text = 'Search by username, full name, user or node guid, ip, path, user or storage region, source area.'
+
+    @admin.display(description='Size (GB)', ordering=F('size_bytes').desc(nulls_last=True))
+    def size(self, obj):
+        """`size_bytes` is null when we could not determine it — that is not zero.
+
+        Sorting puts those last rather than letting Postgres float them to the top.
+        """
+        if obj.size_bytes is None:
+            return '—'
+        return f'{self._to_gb(obj.size_bytes)}'
+
+    def changelist_view(self, request, extra_context=None):
+        for query_string in request.GET:
+            # when at least one of the "created" filters is set, don't override the filter values
+            if query_string.startswith('created__range'):
+                break
+        else:
+            # by default, when the page is initially loaded or "created" filter is reset
+            # show only events within the last hour
+            request.GET._mutable = True
+            last_hour_datetime = timezone.now() - timedelta(hours=1)
+            request.GET['created__range__gte_0'] = last_hour_datetime.date().strftime('%Y-%m-%d')
+            request.GET['created__range__gte_1'] = last_hour_datetime.time().strftime('%H:%M:%S')
+
+        if extra_context is None:
+            extra_context = {}
+        changelist = self.get_changelist_instance(request)
+        extra_context['download_events_dashboard'] = self.get_dashboard_data(changelist.get_queryset(request))
+        return super().changelist_view(request, extra_context=extra_context)
+
+    def _in_dashboard_group(self, request):
+        """Membership in the allow-list group is the only key to this page.
+
+        Deliberately not falling back to ``super()``/``has_perm``: ``ModelBackend``
+        answers True to every permission check for a superuser, so anything that
+        consults it would let every superuser in — the opposite of what this
+        dashboard is for.
+        """
+        user = getattr(request, 'user', None)
+        if user is None or not user.is_authenticated:
+            return False
+        return user.groups.filter(name=DASHBOARD_GROUP_NAME).exists()
+
+    def has_module_permission(self, request, obj=None):
+        """Keeps the model off the admin index for everyone else."""
+        return self._in_dashboard_group(request)
+
+    def has_view_permission(self, request, obj=None):
+        """What ``changelist_view`` actually enforces — the real gate.
+
+        ``has_module_permission`` alone only hides the link; the page itself stays
+        reachable by URL without this.
+        """
+        return self._in_dashboard_group(request)
+
+    # Append-only telemetry: nothing is editable through the admin, by anyone.
+    def has_add_permission(self, request):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+
+    def _sum_bytes(self, queryset):
+        return queryset.aggregate(total_bytes=Sum('size_bytes'))['total_bytes'] or 0
+
+    def _to_gb(self, total_bytes):
+        return round((total_bytes or 0) / (1024**3), 2)
+
+    def _percent(self, part, whole):
+        """Empty ranges are normal — the default window is the last hour."""
+        if not whole:
+            return 0.0
+        return round(part * 100 / whole, 2)
+
+    def get_dashboard_data(self, queryset):
+        file_queryset = queryset.filter(download_type=DownloadEvent.FILE)
+        zip_queryset = queryset.exclude(download_type=DownloadEvent.FILE)
+        total_file_downloads = file_queryset.count()
+        total_zip_downloads = zip_queryset.count()
+        total_bytes = self._sum_bytes(queryset)
+
+        total_downloads = queryset.count()
+        total_file_gb = self._to_gb(self._sum_bytes(file_queryset))
+        total_zip_gb = self._to_gb(self._sum_bytes(zip_queryset))
+        time_series = self._build_time_series(queryset)
+        storage_regions = self._build_region_breakdown(queryset, 'storage_region')
+        user_regions = self._build_region_breakdown(queryset, 'user_region')
+
+        total_gb = self._to_gb(total_bytes)
+        split = {
+            'file': {
+                'count': total_file_downloads,
+                'gb': total_file_gb,
+                'count_percent': self._percent(total_file_downloads, total_downloads),
+                'gb_percent': self._percent(total_file_gb, total_gb),
+            },
+            'zip': {
+                'count': total_zip_downloads,
+                'gb': total_zip_gb,
+                'count_percent': self._percent(total_zip_downloads, total_downloads),
+                'gb_percent': self._percent(total_zip_gb, total_gb),
+            },
+        }
+
+        return {
+            'summary': {
+                'total_downloads': total_downloads,
+                'total_gb': total_gb,
+                'unique_users': queryset.exclude(user_id__isnull=True).values('user_id').distinct().count(),
+            },
+            'split': split,
+            'time_series': time_series,
+            'storage_regions': storage_regions,
+            'user_regions': user_regions,
+            'top_projects': self._build_top_resource_breakdown(queryset),
+            'top_users': self._build_top_user_breakdown(queryset),
+        }
+
+    EMPTY_TIME_SERIES = {'labels': [], 'file': [], 'zip': []}
+
+    def _build_time_series(self, queryset):
+        """Bucketed GB over time, aggregated in the database.
+
+        The range can cover millions of rows once the announcement lands, so the
+        bucketing is a GROUP BY rather than a pass over every event in Python.
+        """
+        bounds = queryset.aggregate(start=Min('created'), end=Max('created'))
+        start, end = bounds['start'], bounds['end']
+        if start is None:
+            return dict(self.EMPTY_TIME_SERIES)
+
+        bucket_size = self._get_bucket_size(start, end)
+        step = self._get_bucket_step(bucket_size)
+
+        rows = queryset.annotate(
+            bucket=Trunc('created', self._get_trunc_kind(bucket_size))
+        ).values('bucket', 'download_type').annotate(
+            total_bytes=Sum('size_bytes'),
+        )
+
+        totals = defaultdict(lambda: {'file': 0.0, 'zip': 0.0})
+        for row in rows:
+            key = self._floor_to_bucket(row['bucket'], bucket_size)
+            side = 'file' if row['download_type'] == DownloadEvent.FILE else 'zip'
+            totals[key][side] += (row['total_bytes'] or 0) / (1024**3)
+
+        # walk the whole span so gaps render as zero rather than closing up
+        buckets = []
+        current = self._floor_to_bucket(start, bucket_size)
+        last = self._floor_to_bucket(end, bucket_size)
+        while current <= last:
+            buckets.append(current)
+            current += step
+
+        return {
+            'labels': [self._format_bucket_label(bucket, bucket_size) for bucket in buckets],
+            'file': [round(totals[bucket]['file'], 2) for bucket in buckets],
+            'zip': [round(totals[bucket]['zip'], 2) for bucket in buckets],
+        }
+
+    def _get_trunc_kind(self, bucket_size):
+        """15-minute buckets have no Trunc equivalent, so truncate to the hour and
+        let `_floor_to_bucket` split it down."""
+        return {
+            '15m': 'minute',
+            '1h': 'hour',
+            '1d': 'day',
+            '1w': 'week',
+        }[bucket_size]
+
+    def _get_bucket_size(self, start, end):
+        delta = end - start
+        if delta <= timedelta(hours=2):
+            return '15m'
+        if delta <= timedelta(hours=24):
+            return '1h'
+        if delta <= timedelta(days=14):
+            return '1d'
+        return '1w'
+
+    def _get_bucket_step(self, bucket_size):
+        if bucket_size == '15m':
+            return timedelta(minutes=15)
+        if bucket_size == '1h':
+            return timedelta(hours=1)
+        if bucket_size == '1d':
+            return timedelta(days=1)
+        return timedelta(days=7)
+
+    def _floor_to_bucket(self, value, bucket_size):
+        """Snap to the start of the containing bucket.
+
+        The result is used as a dict key, so it has to land on exactly the same
+        instant whether it came from an event or from walking the axis — every
+        branch zeroes everything below its own resolution.
+        """
+        if bucket_size == '15m':
+            return value.replace(minute=(value.minute // 15) * 15, second=0, microsecond=0)
+        if bucket_size == '1h':
+            return value.replace(minute=0, second=0, microsecond=0)
+        midnight = value.replace(hour=0, minute=0, second=0, microsecond=0)
+        if bucket_size == '1d':
+            return midnight
+        return midnight - timedelta(days=value.weekday())
+
+    def _format_bucket_label(self, value, bucket_size):
+        if bucket_size == '15m':
+            return value.strftime('%H:%M')
+        if bucket_size == '1h':
+            return value.strftime('%Y-%m-%d %H:%M')
+        if bucket_size == '1d':
+            return value.strftime('%Y-%m-%d')
+        return value.strftime('%Y-%m-%d')
+
+    def _build_region_breakdown(self, queryset, field_name):
+        """Grouped in the database — the range can cover millions of rows."""
+        rows = queryset.values(field_name).annotate(
+            downloads=Count('id'),
+            total_bytes=Sum('size_bytes'),
+        )
+
+        breakdown = defaultdict(lambda: {'downloads': 0, 'gb': 0.0})
+        for row in rows:
+            # blank and null both mean "we could not tell", so they fold together
+            region_name = (row[field_name] or 'Unknown').strip() or 'Unknown'
+            breakdown[region_name]['downloads'] += row['downloads']
+            breakdown[region_name]['gb'] += (row['total_bytes'] or 0) / (1024**3)
+
+        ordered = sorted(breakdown.items(), key=lambda item: item[1]['gb'], reverse=True)[:10]
+        max_gb = max((data['gb'] for _, data in ordered), default=0)
+        max_downloads = max((data['downloads'] for _, data in ordered), default=0)
+        return [
+            {
+                'name': name,
+                'downloads': data['downloads'],
+                'gb': round(data['gb'], 2),
+                'gb_percent': self._percent(data['gb'], max_gb),
+                'download_percent': self._percent(data['downloads'], max_downloads),
+            }
+            for name, data in ordered
+        ]
+
+    def _build_top_resource_breakdown(self, queryset):
+        rows = queryset.exclude(resource_guid='').values('resource_guid').annotate(
+            gb_bytes=Sum('size_bytes'),
+            downloads=Count('id'),
+        ).order_by(F('gb_bytes').desc(nulls_last=True), '-downloads')[:10]
+        rows = list(rows)
+
+        # one query for all ten, rather than one per row
+        guids = [row['resource_guid'] for row in rows]
+        titles = dict(
+            AbstractNode.objects.filter(guids___id__in=guids).values_list('guids___id', 'title')
+        )
+        return [
+            {
+                # a deleted project keeps its title, but fall back to the bare guid so
+                # the row still says something if it ever fails to resolve
+                'name': (
+                    f'{titles[row["resource_guid"]]} ({row["resource_guid"]})'
+                    if row['resource_guid'] in titles
+                    else row['resource_guid']
+                ),
+                'downloads': row['downloads'],
+                'gb': self._to_gb(row['gb_bytes']),
+            }
+            for row in rows
+        ]
+
+    def _build_top_user_breakdown(self, queryset):
+        rows = queryset.exclude(user__isnull=True).values('user__username', 'user__fullname').annotate(
+            gb_bytes=Sum('size_bytes'),
+            downloads=Count('id'),
+        ).order_by(F('gb_bytes').desc(nulls_last=True), '-downloads')[:10]
+        return [
+            {
+                'name': row['user__fullname'] or row['user__username'] or 'Unknown user',
+                'downloads': row['downloads'],
+                'gb': self._to_gb(row['gb_bytes']),
+            }
+            for row in rows
+        ]
+
 
 admin.site.register(OSFUser, OSFUserAdmin)
 admin.site.register(Node, NodeAdmin)

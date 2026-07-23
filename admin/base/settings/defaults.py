@@ -85,6 +85,7 @@ INSTALLED_APPS = (
     'guardian',
     'waffle',
     'elasticsearch_metrics.apps.ElasticsearchMetricsConfig',
+    'rangefilter',
 
     # OSF
     'osf',
