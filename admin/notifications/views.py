@@ -16,7 +16,7 @@ from mako.lexer import Lexer
 from mako.parsetree import ControlLine
 from string import Formatter
 from osf.email import _render_email_html
-from osf.email.notification_campaign import FILTER_PRESETS, filter_users
+from osf.email.notification_campaign import FILTER_PRESETS
 
 
 def delete_selected_notifications(selected_ids):
@@ -568,7 +568,7 @@ class NotificationCampaignsRecipientsPreview(PermissionRequiredMixin, ListView):
                     else:
                         filters[f'{item["field"]}__{item["lookup"]}'] = [value.strip() for value in item['value'].split(',')]
 
-        qs = filter_users(filters)
+        qs = OSFUser.objects.filter(**filters)
         return qs.annotate(
             guid=F('guids___id')
         )
