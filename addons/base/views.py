@@ -52,9 +52,11 @@ from osf.models import (
     DraftRegistration,
     Guid,
     FileVersionUserMetadata,
-    FileVersion, NotificationTypeEnum
+    FileVersion, NotificationTypeEnum,
+    DownloadEvent,
 )
 from osf.utils import permissions
+from osf.utils.download_telemetry import never_breaks_downloads, record_download
 from osf.external.gravy_valet import request_helpers
 from website.profile.utils import get_profile_image_url
 from website.project import decorators
@@ -178,6 +180,71 @@ def _download_is_from_mfr(waterbutler_data):
         # for renderers that send XHRs from the
         # rendered content, e.g. PDFs
         is_render_uri
+    )
+
+
+def _download_request_is_from_mfr(query_params):
+    """Same question as :func:`_download_is_from_mfr`, asked of a browser request.
+
+    Here the render mode is a query param on the request itself rather than something
+    WaterButler reported to us.
+    """
+    return bool(
+        request.headers.get('X-Cos-Mfr-Render-Request', None) or
+        query_params.get('mode') == 'render'
+    )
+
+
+@never_breaks_downloads
+def _record_file_download(target, file_node, query_params, auth, version=None):
+    """Record a single-file download from the redirect view.
+
+    Only identifiers are handed over — the size, region and materialized path are looked
+    up in the celery task so the download itself doesn't pay for them.
+    """
+    if _download_request_is_from_mfr(query_params):
+        return
+
+    record_download(
+        download_type=DownloadEvent.FILE,
+        resource_guid=getattr(target, '_id', '') or '',
+        file_id=getattr(file_node, '_id', None),
+        version_identifier=getattr(version, 'identifier', None),
+        user_guid=getattr(getattr(auth, 'user', None), '_id', None),
+        ip=request.remote_addr,
+        source_area=query_params.get('source', ''),
+        tz=query_params.get('tz', ''),
+    )
+
+
+@never_breaks_downloads
+def _record_zip_download(payload):
+    """Record a folder or project zip from the WaterButler callback.
+
+    Zips are requested straight from WaterButler, so this callback is the only point at
+    which we hear about them.  The user's IP and the ``source``/``tz`` link tags are
+    forwarded to us in ``action_meta``.
+    """
+    metadata = payload.get('metadata') or {}
+    action_meta = payload.get('action_meta') or {}
+
+    if action_meta.get('is_mfr_render'):
+        return
+
+    materialized = metadata.get('materialized') or metadata.get('path') or ''
+    # The provider root is the whole project; anything below it is one folder.
+    is_whole_project = not materialized.strip('/')
+
+    record_download(
+        download_type=DownloadEvent.PROJECT if is_whole_project else DownloadEvent.FOLDER_ZIP,
+        resource_guid=metadata.get('nid') or '',
+        path=materialized,
+        size_bytes=action_meta.get('bytes_downloaded'),
+        zip_completed=action_meta.get('completed'),
+        user_guid=(payload.get('auth') or {}).get('id'),
+        ip=action_meta.get('ip'),
+        source_area=action_meta.get('source', ''),
+        tz=action_meta.get('tz', ''),
     )
 
 
@@ -483,11 +550,11 @@ def create_waterbutler_log(payload, **kwargs):
     with transaction.atomic():
         try:
             auth = payload['auth']
-            # Don't log download actions
+            # Downloads produce no NodeLog, but zips are recorded for telemetry here —
+            # they never pass through the redirect view where single files are caught.
             if payload['action'] in DOWNLOAD_ACTIONS:
-                guid_id = payload['metadata'].get('nid')
-
-                node, _ = Guid.load_referent(guid_id)
+                if payload['action'] == 'download_zip':
+                    _record_zip_download(payload)
                 return {'status': 'success'}
 
             user = OSFUser.load(auth['id'])
@@ -983,6 +1050,7 @@ def addon_view_or_download_file(auth, path, provider, **kwargs):
         }))
 
     if action == 'download':
+        _record_file_download(target, file_node, extras, auth, version=version)
         format = extras.get('format')
         _, extension = os.path.splitext(file_node.name)
         # avoid rendering files with the same format type.
@@ -1044,6 +1112,8 @@ def persistent_file_download(auth, **kwargs):
         return auth_redirect
 
     query_params = request.args.to_dict()
+
+    _record_file_download(file.target, file, query_params, auth)
 
     return make_response(
         '', http_status.HTTP_302_FOUND, {
