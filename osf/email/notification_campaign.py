@@ -70,6 +70,7 @@ def get_campaign_recipient_batches(
     else:
         qs = qs.filter(status=NotificationCampaignRecipientStatus.PENDING)
 
+    # Minimum and maximum activity are mutually exclusive and use the same threshold.
     if min_activity is not None:
         qs = qs.filter(activity_score__gte=min_activity)
 
@@ -276,8 +277,9 @@ def send_campaign_batch(context, recipients_ids, notification_type_name='blank',
         try:
             send_email_with_send_grid(to_addr=recipient_emails, notification_type=notification_type, context=context)
         except Exception as exc:
-            logger.error(exc)  # TODO update error
-            sentry.log_exception(exc)  # TODO update error
+            message = f'[Notification Campaign] Campaign {campaign_id} sendgrid bulk request failed. {str(exc)}'
+            logger.error(message)
+            sentry.log_exception(message)
 
             valid_emails_qs.update(status=NotificationCampaignRecipientStatus.FAILED, error_message=str(exc))
             failure_count += success_count
@@ -300,8 +302,9 @@ def send_campaign_batch(context, recipients_ids, notification_type_name='blank',
                 success_count += 1
 
             except Exception as exc:
-                logger.error(exc)  # TODO update error
-                sentry.log_exception(exc)  # TODO update error
+                message = f'[Notification Campaign] Campaign {campaign_id} sendgrid request failed for user {recipient.user.username}. {str(exc)}'
+                logger.error(message)
+                sentry.log_exception(message)
 
                 recipient.status = NotificationCampaignRecipientStatus.FAILED
                 recipient.error_message = str(exc)
