@@ -140,6 +140,7 @@
                     {% include "nodes/registration_approval.html" with registration_approval=node.registration_approval %}
                     {% include "nodes/actions.html" with actions=node.actions.all|order_by:"created" %}
                     {% include "nodes/storage_usage.html" with node=node %}
+                    {% include "nodes/file_list.html" with node_files=node_files %}
 
                     <tr>
                         <td colspan="2">
