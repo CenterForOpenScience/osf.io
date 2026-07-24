@@ -124,7 +124,7 @@ class TestCreateCampaignRecipients:
         scores = _recipient_scores(campaign.id)
         assert scores == sorted(scores, reverse=True)
         user_ids = _recipient_user_ids(campaign.id)
-        assert user_ids == [mid.id, newer.id, older.id]
+        assert user_ids == [newer.id, mid.id, older.id]
 
 
 class TestGetCampaignRecipientBatches:

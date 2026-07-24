@@ -111,7 +111,7 @@ class NotificationCampaignRecipient(models.Model):
         unique_together = ('campaign', 'user')
         ordering = [
             '-activity_score',
-            'user__date_registered',
+            '-user__date_registered',
             'user_id',
         ]
 
