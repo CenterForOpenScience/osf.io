@@ -9,7 +9,7 @@ from django.views.generic import ListView, DetailView, UpdateView, CreateView, V
 from django.contrib import messages
 from django.contrib.auth.mixins import PermissionRequiredMixin
 from osf.models import NotificationSubscription, NotificationType, Notification, EmailTask, NotificationCampaign, OSFUser, NotificationCampaignRecipient
-from osf.models.notification_campaign import NotificationCampaignStatus
+from osf.models.notification_campaign import NotificationCampaignStatus, NotificationCampaignRecipientStatus
 from django.forms.models import model_to_dict
 from .forms import NotificationTypeForm, NotificationCampaignCreateForm
 from mako.lexer import Lexer
@@ -614,10 +614,10 @@ class NotificationCampaignsRecipientsView(PermissionRequiredMixin, ListView):
         if not campaign_id:
             return NotificationCampaignRecipient.objects.none()
         query = {'campaign_id': campaign_id}
-        if status == 'sent':
-            query['status'] = status
-        elif status == 'failed':
-            query['status__in'] = ['failed', 'skipped']
+        if status == NotificationCampaignRecipientStatus.SENT:
+            query['status'] = NotificationCampaignRecipientStatus.SENT
+        elif status == NotificationCampaignRecipientStatus.FAILED:
+            query['status__in'] = [NotificationCampaignRecipientStatus.FAILED, NotificationCampaignRecipientStatus.SKIPPED]
 
         qs = NotificationCampaignRecipient.objects.filter(**query)
 
