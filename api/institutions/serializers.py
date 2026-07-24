@@ -282,7 +282,7 @@ class InstitutionUserMetricsSerializer(JSONAPISerializer):
     contacts = ser.SerializerMethodField()
 
     def get_link(self, obj):
-        return urljoin(settings.DOMAIN, f'/{obj.user_id}/')
+        return urljoin(settings.DOMAIN, f'{obj.user_id}/')
 
     def get_contacts(self, obj):
         user = OSFUser.load(obj._d_['user_id'])
