@@ -6,7 +6,6 @@ from dateutil.parser import parse as parse_date
 from django.apps import apps
 from django.db import models, IntegrityError
 from django.db.models import Manager
-from django.core.exceptions import ObjectDoesNotExist
 from django.utils import timezone
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.contenttypes.fields import GenericForeignKey
@@ -289,12 +288,13 @@ class BaseFileNode(TypedModel, CommentableMixin, OptionalGuidMixin, Taggable, Ob
         :returns: FileVersion or None
         :raises: VersionNotFoundError if required is True
         """
-        try:
-            return self.versions.get(identifier=revision)
-        except ObjectDoesNotExist:
-            if required:
-                raise VersionNotFoundError(revision)
-            return None
+        # .filter().first() better than .get(): some files have more
+        # than one FileVersion sharing the same identifier, which would otherwise raise
+        # MultipleObjectsReturned here instead of retrieving a version
+        version = self.versions.filter(identifier=revision).order_by('created').first()
+        if version is None and required:
+            raise VersionNotFoundError(revision)
+        return version
 
     def generate_waterbutler_url(self, **kwargs):
         base_url = None
