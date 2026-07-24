@@ -40,6 +40,7 @@ class NotificationCampaignCreateForm(forms.ModelForm):
     )
 
     sendgrid_bulk = forms.BooleanField(
+        required=False,
         initial=False,
     )
 
