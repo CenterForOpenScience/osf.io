@@ -30,7 +30,64 @@
                     </tr>
                     <tr>
                         <td>Version</td>
-                        <td>{{ version }}</td>
+                        <td>
+                            {% if versions %}
+                                <form method="get" action="{% url 'files:file' guid=guid %}" class="form-inline">
+                                    <select name="version" class="form-control input-sm" onchange="this.form.submit()">
+                                        {% for file_version in versions %}
+                                            <option value="{{ file_version.version_id }}" {% if selected_version.version_id == file_version.version_id %}selected{% endif %}>
+                                                {{ file_version.version_id }} &mdash; {{ file_version.created | date:'SHORT_DATETIME_FORMAT' }}
+                                            </option>
+                                        {% endfor %}
+                                    </select>
+                                </form>
+                                {% if selected_version %}
+                                    <p class="text-muted" style="margin-top: 5px;">
+                                        {{ version }} &middot; uploaded {{ selected_version.created | date:'SHORT_DATETIME_FORMAT' }}
+                                        by {{ selected_version.creator }} &middot; {{ selected_version.size }} bytes
+                                    </p>
+                                {% endif %}
+                                {% if perms.osf.delete_fileversion and not is_trashed %}
+                                    {% if versions|length > 1 and selected_version %}
+                                        <a data-toggle="modal" data-target="#deleteVersionModal" class="btn btn-danger btn-xs">
+                                            Delete Version
+                                        </a>
+                                        <div class="modal" id="deleteVersionModal">
+                                            <div class="modal-dialog">
+                                                <div class="modal-content">
+                                                    <form method="post"
+                                                          action="{% url 'files:file-version-delete' guid=guid version_id=selected_version.version_id %}">
+                                                        <div class="modal-header">
+                                                            <button type="button" class="close" data-dismiss="modal">x</button>
+                                                            <h3>Are you sure you want to delete this version?</h3>
+                                                        </div>
+                                                        <div class="modal-body">
+                                                            This will permanently remove version
+                                                            <b>{{ selected_version.version_id }}</b> and its stored content.
+                                                            This action is not reversible.
+                                                            {% csrf_token %}
+                                                        </div>
+                                                        <div class="modal-footer">
+                                                            <input class="btn btn-danger" type="submit" value="Delete Version" />
+                                                            <button type="button" class="btn btn-default" data-dismiss="modal">
+                                                                Cancel
+                                                            </button>
+                                                        </div>
+                                                    </form>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    {% else %}
+                                        <button type="button" class="btn btn-danger btn-xs" disabled
+                                                title="Deleting the only version will delete the entire file. Use the Delete File button instead.">
+                                            Delete Version
+                                        </button>
+                                    {% endif %}
+                                {% endif %}
+                            {% else %}
+                                {{ version }}
+                            {% endif %}
+                        </td>
                     </tr>
                     {% if node_id %}
                     <tr>
@@ -67,6 +124,37 @@
                     </tr>
                 </tbody>
             </table>
+
+            {% if perms.osf.delete_basefilenode and not is_trashed %}
+                <a data-toggle="modal" data-target="#deleteFileModal" class="btn btn-danger">
+                    Delete File
+                </a>
+                <div class="modal" id="deleteFileModal">
+                    <div class="modal-dialog">
+                        <div class="modal-content">
+                            <form method="post" action="{% url 'files:file-delete' guid=guid %}">
+                                <div class="modal-header">
+                                    <button type="button" class="close" data-dismiss="modal">x</button>
+                                    <h3>Are you sure you want to delete this file?</h3>
+                                </div>
+                                <div class="modal-body">
+                                    This will delete <b>{{ object.name }}</b> and, if it is a folder, all of its
+                                    contents. This action is not reversible through this page.
+                                    {% csrf_token %}
+                                </div>
+                                <div class="modal-footer">
+                                    <input class="btn btn-danger" type="submit" value="Delete File" />
+                                    <button type="button" class="btn btn-default" data-dismiss="modal">
+                                        Cancel
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            {% elif is_trashed %}
+                <p><i>This file has already been deleted.</i></p>
+            {% endif %}
         </div>
     </div>
 {% endblock content %}

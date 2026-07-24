@@ -76,6 +76,8 @@ def get_admin_write_permissions():
         'delete_brand',
         'change_node',
         'delete_node',
+        'delete_basefilenode',
+        'delete_fileversion',
         'change_user',
         'change_conference',
         'mark_spam',
