@@ -1,15 +1,76 @@
+import importlib
 import logging
 import time
 
 import pytest
+from django.apps import apps as django_apps
+from django.contrib.auth.models import Group
 
 from addons.osfstorage.settings import DEFAULT_REGION_NAME
 from api_tests.utils import create_test_file
 from framework.auth import signing
-from osf.models import DownloadEvent
+from osf.models import DownloadEvent, OSFUser
 from osf.utils.download_telemetry import derive_user_region, record_download
 from osf_tests.factories import AuthUserFactory, ProjectFactory
 from tests.base import OsfTestCase
+
+download_event_migration = importlib.import_module('osf.migrations.0045_downloadevent')
+
+
+@pytest.mark.django_db
+class TestDownloadEventModel:
+    """The table and indexes the dashboard's time-range group-bys rely on."""
+
+    def test_expected_fields(self):
+        field_names = {field.name for field in DownloadEvent._meta.get_fields()}
+
+        assert field_names >= {
+            'created',
+            'resource_guid',
+            'path',
+            'download_type',
+            'zip_completed',
+            'size_bytes',
+            'storage_region',
+            'user_region',
+            'ip',
+            'source_area',
+            'user',
+        }
+
+    def test_expected_indexes(self):
+        index_names = {index.name for index in DownloadEvent._meta.indexes}
+
+        assert index_names == {
+            'download_event_crt_type',
+            'download_event_crt_regn',
+            'download_event_crt_user',
+        }
+
+    def test_deleting_the_user_keeps_the_row_and_nulls_the_user(self):
+        user = AuthUserFactory()
+        download_event = DownloadEvent.objects.create(download_type=DownloadEvent.FILE, user=user)
+        OSFUser.objects.filter(id=user.id).delete()
+        download_event.refresh_from_db()
+
+        assert download_event.user_id is None
+
+
+@pytest.mark.django_db
+class TestDownloadEventDashboardGroupMigration:
+
+    def test_create_dashboard_group_adds_dashboard_users(self):
+        seed_user = AuthUserFactory(username=download_event_migration.DASHBOARD_USERS[0])
+        download_event_migration.create_dashboard_group(django_apps, None)
+        group = Group.objects.get(name=download_event_migration.DASHBOARD_GROUP_NAME)
+
+        assert seed_user in group.user_set.all()
+
+    def test_create_dashboard_group_skips_not_dashboard_users(self):
+        download_event_migration.create_dashboard_group(django_apps, None)
+        group = Group.objects.get(name=download_event_migration.DASHBOARD_GROUP_NAME)
+
+        assert group.user_set.count() == 0
 
 
 class TestZipDownloadTelemetry(OsfTestCase):
@@ -93,6 +154,38 @@ class TestZipDownloadTelemetry(OsfTestCase):
         self.app.put(self.url, json=self.build_payload(source='f' * 500))
 
         assert len(DownloadEvent.objects.get().source_area) == 128
+
+    def test_payload_missing_the_new_waterbutler_fields_records(self):
+        """Guards the rollout window: osf.io must keep reading zip callbacks from a
+        WaterButler build that predates bytes_downloaded/completed/ip in action_meta."""
+        options = {
+            'auth': {'id': self.user._id},
+            'action': 'download_zip',
+            'provider': 'osfstorage',
+            'time': time.time() + 1000,
+            'metadata': {
+                'nid': self.node._id,
+                'materialized': '/',
+                'path': '/',
+                'kind': 'folder',
+                'provider': 'osfstorage',
+            },
+            'action_meta': {},
+        }
+        message, signature = signing.default_signer.sign_payload(options)
+        res = self.app.put(self.url, json={'payload': message, 'signature': signature})
+
+        assert res.status_code == 200
+        event = DownloadEvent.objects.get()
+        assert event.size_bytes is None
+        assert event.zip_completed is None
+        assert event.ip is None
+
+    def test_storage_region_comes_from_the_projects_node(self):
+        self.app.put(self.url, json=self.build_payload())
+        event = DownloadEvent.objects.get()
+
+        assert event.storage_region == self.node.osfstorage_region.name
 
     def test_callback_still_succeeds_when_recording_fails(self, ):
         with pytest.MonkeyPatch.context() as patch:
