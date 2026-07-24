@@ -66,7 +66,7 @@ def get_campaign_recipient_batches(
     )
 
     if restart_failed:
-        qs = qs.filter(status__in=[NotificationCampaignRecipientStatus.FAILED, NotificationCampaignRecipientStatus.SKIPPED])
+        qs = qs.filter(status=NotificationCampaignRecipientStatus.FAILED)
     else:
         qs = qs.filter(status=NotificationCampaignRecipientStatus.PENDING)
 
