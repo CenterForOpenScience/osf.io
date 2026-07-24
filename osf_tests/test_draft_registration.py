@@ -60,11 +60,25 @@ class TestDraftRegistrations:
         assert draft.registration_metadata == data
 
     @mock.patch('website.settings.ENABLE_ARCHIVER', False)
+    def test_no_subjects_register(self):
+        user = factories.UserFactory()
+        auth = Auth(user)
+        project = factories.ProjectFactory(creator=user)
+        draft = factories.DraftRegistrationFactory(branched_from=project)
+        try:
+            draft.register(auth)
+        except NodeStateError as e:
+            assert str(e) == 'Registration must have at least one subject to be registered'
+        else:
+            assert False, 'Expected NodeStateError must be raised'
+
+    @mock.patch('website.settings.ENABLE_ARCHIVER', False)
     def test_register(self):
         user = factories.UserFactory()
         auth = Auth(user)
         project = factories.ProjectFactory(creator=user)
         draft = factories.DraftRegistrationFactory(branched_from=project)
+        draft.subjects.add(factories.SubjectFactory())
         assert not draft.registered_node
         draft.register(auth)
         assert draft.registered_node

@@ -27,11 +27,11 @@ from website.archiver import (
 )
 from website.archiver import utils
 from website.archiver.utils import normalize_unicode_filenames
+from website.archiver import utils as archiver_utils
 from website.archiver import signals as archiver_signals
 
 from scripts.check_manual_restart_approval import delayed_manual_restart_approval
 
-from website.project import signals as project_signals
 from website import settings
 from website.app import init_addons
 
@@ -250,22 +250,42 @@ def stat_addon(self, addon_short_name, job_pk):
     default_retry_delay=60,
 )
 @logged('make_copy_request')
-def make_copy_request(self, job_pk, url, data):
+def make_copy_request(self, params, job_pk):
     """Make the copy request to the WaterButler API and handle
     successful and failed responses
 
+    :param params: dict returned by archive_addon containing addon_short_name, url, and data
     :param job_pk: primary key of ArchiveJob
-    :param url: URL to send request to
-    :param data: <dict> of setting to send in POST to WaterButler API
     :return: None
     """
     create_app_context()
     job = self.load_archive_job(job_pk)
     src, dst, user = job.info()
+    addon_short_name = params['addon_short_name']
+    url = params['url']
+    data = params['data']
     logger.info(f"Sending copy request for addon: {data['provider']} on node: {dst._id}")
     cookie = furl(url).query.params.get('cookie')
-    res = requests.post(url, data=json.dumps(data), cookies={settings.COOKIE_NAME: cookie})
+    try:
+        res = requests.post(
+            url,
+            data=json.dumps(data),
+            cookies={settings.COOKIE_NAME: cookie},
+            timeout=settings.EXTERNAL_REQUEST_TIMEOUT,
+        )
+    except requests.RequestException as exc:
+        # A failed copy request marks the target as failed, which fails the whole
+        # archive and deletes the registration. Retry transient network errors first.
+        if self.request.retries < self.max_retries:
+            raise self.retry(exc=exc)
+        job.update_target(addon_short_name, ARCHIVER_FAILURE, errors=[str(exc)])
+        raise
+
     if res.status_code not in (http_status.HTTP_200_OK, http_status.HTTP_201_CREATED, http_status.HTTP_202_ACCEPTED):
+        # Retry server-side WaterButler errors before failing (and deleting) the archive.
+        if res.status_code >= 500 and self.request.retries < self.max_retries:
+            raise self.retry(exc=HTTPError(res.status_code))
+        job.update_target(addon_short_name, ARCHIVER_FAILURE, errors=[res.text or f'WaterButler request failed with status {res.status_code}'])
         raise HTTPError(res.status_code)
 
 def make_waterbutler_payload(dst_id, rename):
@@ -320,7 +340,11 @@ def archive_addon(self, addon_short_name, job_pk):
     rename = f'{folder_name_nfd}{rename_suffix}'
     url = waterbutler_api_url_for(src._id, addon_short_name, _internal=True, base_url=src.osfstorage_region.waterbutler_url, **params)
     data = make_waterbutler_payload(dst._id, rename)
-    make_copy_request.delay(job_pk=job_pk, url=url, data=data)
+    return {
+        'addon_short_name': addon_short_name,
+        'url': url,
+        'data': data,
+    }
 
 @celery_app.task(
     bind=True,
@@ -357,15 +381,41 @@ def archive_node(self, stat_results, job_pk):
         if not stat_result.targets:
             job.status = ARCHIVER_SUCCESS
             job.save()
+
+        addon_tasks = []
         for result in stat_result.targets:
             if not result['num_files']:
                 job.update_target(result['target_name'], ARCHIVER_SUCCESS)
             else:
-                archive_addon.delay(
-                    addon_short_name=result['target_name'],
-                    job_pk=job_pk
+                addon_tasks.append(
+                    celery.chain(
+                        [
+                            archive_addon.si(
+                                addon_short_name=result['target_name'],
+                                job_pk=job_pk,
+                            ),
+                            make_copy_request.s(
+                                job_pk=job_pk,
+                            ),
+                        ]
+                    )
                 )
-        project_signals.archive_callback.send(dst)
+
+        # NOTE: use self.replace() rather than `return celery.chain(...)`. A Celery
+        # task that merely *returns* a signature does NOT execute it, so the copy
+        # requests and archive_callback would never run -- the archive would stall
+        # and the registration would be torn down (deleted) after submission.
+        if not addon_tasks:
+            return self.replace(celery.chain([
+                archive_callback.si(dst_id=dst._id)
+            ]))
+
+        return self.replace(celery.chain(
+            [
+                celery.group(addon_tasks),
+                archive_callback.si(dst_id=dst._id),
+            ]
+        ))
 
 
 def archive(job_pk):
@@ -474,3 +524,30 @@ def force_archive(self, registration_id, permissible_addons, allow_unconfigured=
         sentry.log_message(f'Archive task failed for {registration_id}: {exc}')
         sentry.log_exception(exc)
         return f'{exc.__class__.__name__}: {str(exc)}'
+
+
+@celery_app.task
+@logged('archive_callback')
+def archive_callback(dst_id):
+    """Blinker task for updates to the archive task. When the tree of ArchiveJob
+    instances is complete, proceed to send success or failure mails
+
+    :param dst: registration Node
+    """
+    dst = Registration.load(dst_id)
+    root = dst.root
+    root_job = root.archive_job
+    if not root_job.archive_tree_finished():
+        return
+    if root_job.sent:
+        return
+    if root_job.success:
+        archive_success.delay(dst_pk=root._id, job_pk=root_job._id)
+    else:
+        archiver_utils.handle_archive_fail(
+            ARCHIVER_UNCAUGHT_ERROR,
+            root.registered_from,
+            root,
+            root.registered_user,
+            dst.archive_job.target_info(),
+        )

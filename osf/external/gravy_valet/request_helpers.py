@@ -283,7 +283,7 @@ def _make_gv_request(
     )
     assert not (request_method == 'GET' and json_data is not None)
     try:
-        response = requests.request(url=endpoint_url, headers=auth_headers, params=params, method=request_method, json=json_data)
+        response = requests.request(url=endpoint_url, headers=auth_headers, params=params, method=request_method, json=json_data, timeout=settings.EXTERNAL_REQUEST_TIMEOUT)
     except RequestException as e:
         logger.error(f"Cannot reach GravyValet: {e}")
         return None

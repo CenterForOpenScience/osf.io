@@ -10,7 +10,8 @@ from google.cloud.storage import Client, Bucket, Blob
 import blinker
 from website.signals import ALL_SIGNALS
 from website.archiver import ARCHIVER_SUCCESS
-from website.archiver import listeners as archiver_listeners
+from website.archiver.tasks import archive_callback
+
 
 from osf.models import (
     Sanction,
@@ -154,7 +155,7 @@ def mock_archive(project, schema=None, auth=None, data=None, parent=None,
         sanction = registration.sanction
         mock.patch.object(root_job, 'archive_tree_finished', mock.Mock(return_value=True)),
         mock.patch('website.archiver.tasks.archive_success.delay', mock.Mock())
-        archiver_listeners.archive_callback(registration)
+        archive_callback(registration._id)
 
     if autoapprove:
         sanction = registration.sanction

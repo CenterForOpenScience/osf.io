@@ -9,7 +9,6 @@ from osf.utils.permissions import READ, WRITE
 from framework.auth.oauth_scopes import CoreScopes
 
 from api.base.settings.defaults import API_BASE
-from api.search.permissions import IsAuthenticatedOrReadOnlyForSearch
 from api.crossref.views import ParseCrossRefConfirmation
 from api.metrics.views import (
     RawMetricsView,
@@ -102,7 +101,7 @@ class TestApiBaseViews(ApiTestCase):
     def test_view_classes_have_minimal_set_of_permissions_classes(self):
         base_permissions = [
             TokenHasScope,
-            (IsAuthenticated, IsAuthenticatedOrReadOnly, IsAuthenticatedOrReadOnlyForSearch)
+            (IsAuthenticated, IsAuthenticatedOrReadOnly)
         ]
         for view in VIEW_CLASSES:
             if view in self.EXCLUDED_VIEWS:

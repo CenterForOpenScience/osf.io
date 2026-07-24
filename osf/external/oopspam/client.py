@@ -34,7 +34,8 @@ class OOPSpamClient:
                 'content-type': 'application/json',
                 'x-rapidapi-key': self.apikey,
                 'x-rapidapi-host': 'oopspam.p.rapidapi.com'
-            }
+            },
+            timeout=settings.EXTERNAL_REQUEST_TIMEOUT
         )
 
         if response.status_code != requests.codes.ok:

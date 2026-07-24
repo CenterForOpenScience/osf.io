@@ -1,7 +1,35 @@
 from unittest import mock
 import pytest
-from osf_tests.factories import RegistrationFactory, AuthUserFactory, EmbargoFactory, NodeFactory
-from osf.external.internet_archive.tasks import _archive_to_ia, _update_ia_metadata
+from osf_tests.factories import RegistrationFactory, AuthUserFactory, EmbargoFactory, NodeFactory, RegistrationProviderFactory
+from osf.external.internet_archive.tasks import _archive_to_ia, _update_ia_metadata, _create_ia_provider_subcollection
+from osf.models import Registration
+
+
+@pytest.mark.django_db
+class TestFindIABacklog:
+
+    def test_includes_public_registration_without_doi(self):
+        reg = RegistrationFactory(is_public=True)
+        assert not reg.identifiers.filter(category='doi').exists()
+        assert reg in Registration.find_ia_backlog()
+
+    def test_includes_public_registration_with_doi(self):
+        reg = RegistrationFactory(is_public=True, has_doi=True)
+        assert reg in Registration.find_ia_backlog()
+
+    def test_excludes_withdrawn(self):
+        reg = RegistrationFactory(is_public=True)
+        Registration.objects.filter(pk=reg.pk).update(moderation_state='withdrawn')
+        assert reg not in Registration.find_ia_backlog()
+
+    def test_excludes_private(self):
+        reg = RegistrationFactory()
+        assert reg not in Registration.find_ia_backlog()
+
+    def test_excludes_already_archived(self):
+        reg = RegistrationFactory(is_public=True)
+        Registration.objects.filter(pk=reg.pk).update(ia_url='https://archive.org/details/test')
+        assert reg not in Registration.find_ia_backlog()
 
 
 @pytest.mark.django_db
@@ -79,3 +107,11 @@ class TestPigeon:
             mock.call(_archive_to_ia, (schema_response.parent._id,), {}, celery=True),
             mock.call(_archive_to_ia, (registration_with_child.nodes[0]._id,), {}, celery=True)
         ], any_order=True)
+
+    @pytest.mark.enable_enqueue_task
+    @pytest.mark.enable_implicit_clean
+    def test_new_provider_creates_ia_subcollection(self, mock_pigeon, mock_celery):
+        provider = RegistrationProviderFactory()
+        mock_celery.assert_any_call(
+            _create_ia_provider_subcollection, (provider._id,), {}, celery=True
+        )
