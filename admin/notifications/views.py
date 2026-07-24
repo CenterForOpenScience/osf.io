@@ -17,6 +17,7 @@ from mako.parsetree import ControlLine
 from string import Formatter
 from osf.email import _render_email_html
 from osf.email.notification_campaign import FILTER_PRESETS
+from website import settings
 
 
 def delete_selected_notifications(selected_ids):
@@ -510,7 +511,16 @@ class NotificationCampaignCreateView(CreateView):
                 'max_retries': form.cleaned_data['max_retries'],
                 'activity_threshold': form.cleaned_data['activity_threshold'],
             },
+            'sendgrid_bulk': form.cleaned_data.get('sendgrid_bulk', False),
         }
+        try:
+            _render_email_html(form.instance.notification_type, form.cleaned_data['context'])
+        except Exception as e:
+            form.add_error(
+                'context',
+                f"Failed to render template: {e}",
+            )
+            return self.form_invalid(form)
 
         response = super().form_valid(form)
 
@@ -545,6 +555,7 @@ class NotificationCampaignCreateView(CreateView):
         context['filter_fields'] = filter_fields
         context['filters'] = []
         context['predefined_filters'] = FILTER_PRESETS.keys()
+        context['default_context'] = json.dumps({'domain': settings.DOMAIN, 'osf_contact_email': settings.OSF_CONTACT_EMAIL}, indent=4)
         return context
 
 
@@ -603,8 +614,10 @@ class NotificationCampaignsRecipientsView(PermissionRequiredMixin, ListView):
         if not campaign_id:
             return NotificationCampaignRecipient.objects.none()
         query = {'campaign_id': campaign_id}
-        if status:
+        if status == 'sent':
             query['status'] = status
+        elif status == 'failed':
+            query['status__in'] = ['failed', 'skipped']
 
         qs = NotificationCampaignRecipient.objects.filter(**query)
 
@@ -638,6 +651,13 @@ class StartNotificationCampaign(PermissionRequiredMixin, View):
             NotificationCampaign,
             pk=kwargs['pk'],
         )
+
+        if NotificationCampaign.objects.filter(status=NotificationCampaignStatus.RUNNING).exists():
+            messages.error(request, 'Another campaign already running')
+            return redirect(
+                'notifications:notification_campaigns_detail',
+                pk=notification_campaign.pk,
+            )
 
         restart_failed = request.GET.get('restart_failed') == 'true'
 
