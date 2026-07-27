@@ -1,7 +1,9 @@
 import re
 import json
 from collections import defaultdict
+from datetime import timedelta
 from django.urls import reverse_lazy
+from django.utils import timezone
 from django.db.models import Q, F
 from django.db import models
 from django.shortcuts import get_object_or_404, redirect
@@ -402,6 +404,7 @@ class NotificationCampaignDetail(PermissionRequiredMixin, DetailView):
                 ('Created', notification_campaign.created_at),
                 ('Started', notification_campaign.started_at),
                 ('Completed', notification_campaign.completed_at),
+                ('Updated at', notification_campaign.updated_at),
             ],
             'template': notification_campaign.notification_type.template,
             'metadata': metadata,
@@ -423,13 +426,10 @@ class NotificationCampaignDetail(PermissionRequiredMixin, DetailView):
                 for k, v in metadata.items()
                 if k not in {'filters', 'context', 'execution', 'template'}
             },
+            'allow_restart_stuck': True if timezone.now() - notification_campaign.updated_at > timedelta(minutes=15) else False,
+            'sent_percent': notification_campaign.sent_count * 100 / notification_campaign.recipient_count if notification_campaign.recipient_count else 0,
+            'failed_percent': notification_campaign.failed_count * 100 / notification_campaign.recipient_count if notification_campaign.recipient_count else 0,
         }
-
-        if notification_campaign.status == NotificationCampaignStatus.RUNNING:
-            context.update({
-                'sent_percent': notification_campaign.sent_count * 100 / notification_campaign.recipient_count if notification_campaign.recipient_count else 0,
-                'failed_percent': notification_campaign.failed_count * 100 / notification_campaign.recipient_count if notification_campaign.recipient_count else 0,
-            })
 
         return context
 
@@ -652,7 +652,7 @@ class StartNotificationCampaign(PermissionRequiredMixin, View):
             pk=kwargs['pk'],
         )
 
-        if NotificationCampaign.objects.filter(status=NotificationCampaignStatus.RUNNING).exists():
+        if NotificationCampaign.objects.filter(status=NotificationCampaignStatus.RUNNING).exclude(id=notification_campaign.id).exists():
             messages.error(request, 'Another campaign already running')
             return redirect(
                 'notifications:notification_campaigns_detail',
@@ -660,8 +660,9 @@ class StartNotificationCampaign(PermissionRequiredMixin, View):
             )
 
         restart_failed = request.GET.get('restart_failed') == 'true'
+        restart_stuck = request.GET.get('restart_stuck') == 'true'
 
-        notification_campaign.start(restart_failed=restart_failed)
+        notification_campaign.start(restart_failed=restart_failed, restart_stuck=restart_stuck)
 
         return redirect(
             'notifications:notification_campaigns_detail',

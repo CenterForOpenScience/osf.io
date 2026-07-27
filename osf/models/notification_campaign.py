@@ -71,12 +71,12 @@ class NotificationCampaign(models.Model):
 
     developer_reminder_sent = models.BooleanField(default=False)
 
-    def start(self, restart_failed=False):
+    def start(self, restart_failed=False, restart_stuck=False):
         from osf.email.notification_campaign import start_notification_campaign
         self.status = NotificationCampaignStatus.RUNNING
         self.started_at = timezone.now()
         self.run_id = uuid.uuid4()
-        if not restart_failed:
+        if not restart_failed and not restart_stuck:
             self.recipient_count = 0
             self.sent_count = 0
         self.failed_count = 0

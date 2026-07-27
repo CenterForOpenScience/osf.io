@@ -44,12 +44,17 @@ def create_campaign_recipients(filters, campaign_id):
 
     for rows in batched(qs.iterator(chunk_size=BULK_CREATE_SIZE), BULK_CREATE_SIZE):
         NotificationCampaignRecipient.objects.bulk_create(
-            NotificationCampaignRecipient(
-                campaign_id=campaign_id,
-                user_id=user_id,
-                activity_score=activity_score,
-            )
-            for user_id, activity_score in rows
+            [
+                NotificationCampaignRecipient(
+                    campaign_id=campaign_id,
+                    user_id=user_id,
+                    activity_score=activity_score,
+                )
+                for user_id, activity_score in rows
+            ],
+            update_conflicts=True,
+            update_fields=['activity_score'],
+            unique_fields=['campaign', 'user']
         )
 
 

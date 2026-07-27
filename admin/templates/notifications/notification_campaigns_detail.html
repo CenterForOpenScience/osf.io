@@ -26,7 +26,7 @@
             </p>
         </div>
     </div>
-    {% if notification_campaign.status == 'running' %}
+    {% if notification_campaign.status != 'created' %}
     <h4>Progress</h4>
 
         <div class="progress">
@@ -52,6 +52,18 @@
         {% csrf_token %}
         <button type="submit" class="btn btn-primary" {% if notification_campaign.status != "created" %}disabled{% endif %}>
             Start Campaign
+        </button>
+    </form>
+    <form
+        id="restart-stuck-campaign-form"
+        method="post"
+        action="{% url 'notifications:notification_campaigns_start' notification_campaign.id %}?restart_stuck=true"
+        style="display:inline;"
+    >
+        {% csrf_token %}
+        <button type="submit" class="btn btn-primary" {% if not allow_restart_stuck or notification_campaign.status != "running" %}disabled{% endif %}
+        title="Restart the campaign after 15 minutes of inactivity.">
+            Restart stuck Campaign
         </button>
     </form>
 
@@ -313,6 +325,14 @@
 
     if (restartForm) {
         restartForm.addEventListener("submit", function (e) {
+            confirmCampaign(this, e);
+        });
+    }
+
+    const restartstuckForm = document.getElementById("restart-stuck-campaign-form");
+
+    if (restartstuckForm) {
+        restartstuckForm.addEventListener("submit", function (e) {
             confirmCampaign(this, e);
         });
     }
