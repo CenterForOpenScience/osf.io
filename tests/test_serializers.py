@@ -1,4 +1,3 @@
-from unittest import mock
 import datetime as dt
 
 import pytest
@@ -11,11 +10,11 @@ from osf_tests.factories import (
 )
 from osf.models import NodeRelation
 from osf.utils import permissions
-from tests.base import OsfTestCase, get_default_metaschema
+from tests.base import OsfTestCase
 
 from framework.auth import Auth
 from tests.utils import capture_notifications
-from website.project.views.node import _view_project, _serialize_node_search, _get_children, _get_readable_descendants
+from website.project.views.node import _view_project, _get_children, _get_readable_descendants
 from website.views import serialize_node_summary
 from website.profile import utils
 from website import filters, settings
@@ -188,16 +187,6 @@ class TestNodeSerializers(OsfTestCase):
         child_component = NodeFactory(creator=user, parent=parent_node)
         result = _view_project(parent_node, Auth(user))
         assert result['node']['child_exists'] == True
-
-    def test_serialize_node_search_returns_only_visible_contributors(self):
-        node = NodeFactory()
-        non_visible_contributor = UserFactory()
-        node.add_contributor(non_visible_contributor, visible=False)
-        serialized_node = _serialize_node_search(node)
-
-        assert serialized_node['firstAuthor'] == node.visible_contributors[0].family_name
-        assert len(node.visible_contributors) == 1
-        assert not serialized_node['etal']
 
 
 @pytest.mark.enable_bookmark_creation

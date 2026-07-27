@@ -5,7 +5,8 @@ from api.base.settings.defaults import API_BASE
 from osf_tests.factories import (
     DraftRegistrationFactory,
     AuthUserFactory,
-    ProjectFactory
+    ProjectFactory,
+    SubjectFactory
 )
 
 
@@ -23,6 +24,7 @@ class TestDraftNodeDetail:
     def test_detail_response(self, app, user, user_two):
         draft_reg = DraftRegistrationFactory(initiator=user)
         draft_reg.add_contributor(user_two)
+        draft_reg.subjects.add(SubjectFactory())
         draft_reg.save()
 
         draft_node = draft_reg.branched_from

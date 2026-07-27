@@ -60,7 +60,7 @@ def update_ia_subcollection(provider, version_id, dry_run):
 def populate_internet_archives_collections(version_id, dry_run=False):
     for provider in RegistrationProvider.objects.all():
         resp = create_ia_subcollection(provider, version_id, dry_run)
-        if resp.status_code == 409:
+        if resp and resp.status_code == 409:
             update_ia_subcollection(provider, version_id, dry_run)
 
 
