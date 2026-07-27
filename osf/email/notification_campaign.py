@@ -2,7 +2,7 @@ import logging
 
 from osf.models import NotificationType, NotificationTypeEnum, OSFUser, UserActivityCounter, Email
 from osf.models.spam import SpamStatus
-from django.db.models import OuterRef, Subquery, F, Case, When, CharField
+from django.db.models import OuterRef, Subquery, F, Case, When, CharField, Count, Q
 from django.db.models.functions import Coalesce
 from framework.celery_tasks import app as celery_app
 from celery import group, chain
@@ -131,38 +131,58 @@ def process_campaign_retry(*args, **kwargs):
     max_retries = campaign.metadata.get('execution', {}).get('max_retries', settings.DEFAULT_CAMPAIGN_MAX_RETRIES)
     batch_size = campaign.metadata.get('execution', {}).get('batch_size', settings.DEFAULT_CAMPAIGN_BATCH_SIZE)
     failed_recipients_count = failed_recipients.count()
-    if not failed_recipients_count:
-        campaign.status = NotificationCampaignStatus.COMPLETED
-        campaign.completed_at = timezone.now()
-        campaign.failed_count = 0
-        campaign.save(update_fields=['status', 'completed_at', 'failed_count'])
-        return
+    if failed_recipients_count:
+        if campaign.retries < max_retries:
+            message = (
+                f"[Notification Campaign] Retrying "
+                f"{failed_recipients_count} failed recipients for campaign {campaign_id}"
+            )
+            logger.info(message)
+            sentry.log_message(message)
+            campaign.retries += 1
+            campaign.save(update_fields=['retries'])
+            retry_group = build_campaign_group(
+                batch_size=batch_size,
+                campaign_id=campaign_id,
+                restart_failed=True,
+                notification_type_name=campaign.notification_type.name,
+                context=campaign.metadata.get('context', {}),
+                run_id=campaign.run_id,
+            )
+            chain(
+                retry_group,
+                process_campaign_retry.si(campaign_id=campaign_id),
+            ).apply_async()
+            return
 
-    if campaign.retries < max_retries:
-        message = f'[Notification Campaign] Retrying {failed_recipients_count} failed recipients for campaign {campaign_id}'
-        logger.info(message)
-        sentry.log_message(message)
-
-        tasks = build_campaign_group(
-            batch_size=batch_size,
-            campaign_id=campaign_id,
-            restart_failed=True,
-            notification_type_name=campaign.notification_type.name,
-            context=campaign.metadata.get('context', {}),
-            run_id=campaign.run_id
-        )
-
-        chain(
-            tasks,
-            process_campaign_retry.si(campaign_id=campaign_id)
-        ).apply_async()
-        campaign.retries += 1
-        campaign.save(update_fields=['retries'])
-    else:
-        campaign.failed_count = failed_recipients_count
         campaign.status = NotificationCampaignStatus.PARTIALLY_COMPLETED
-        campaign.completed_at = timezone.now()
-        campaign.save(update_fields=['status', 'completed_at', 'failed_count'])
+    else:
+        campaign.status = NotificationCampaignStatus.COMPLETED
+
+    stats = NotificationCampaignRecipient.objects.filter(
+        campaign_id=campaign_id
+    ).aggregate(
+        recipient_count=Count('id'),
+        sent_count=Count(
+            'id',
+            filter=Q(status=NotificationCampaignRecipientStatus.SENT),
+        ),
+        failed_count=Count(
+            'id',
+            filter=Q(
+                status__in=[
+                    NotificationCampaignRecipientStatus.FAILED,
+                    NotificationCampaignRecipientStatus.SKIPPED,
+                ]
+            ),
+        ),
+    )
+
+    campaign.recipient_count = stats['recipient_count']
+    campaign.sent_count = stats['sent_count']
+    campaign.failed_count = stats['failed_count']
+    campaign.completed_at = timezone.now()
+    campaign.save()
 
 
 @celery_app.task(name='email.start_notification_campaign')
@@ -188,6 +208,8 @@ def start_notification_campaign(campaign_id, restart_failed=False):
 
     if not restart_failed:
         create_campaign_recipients(filters=filters, campaign_id=campaign_id)
+        campaign.recipient_count = NotificationCampaignRecipient.objects.filter(campaign_id=campaign_id).count()
+        campaign.save()
 
     execution = campaign.metadata.get('execution', {})
     batch_size = execution.get('batch_size', settings.DEFAULT_CAMPAIGN_BATCH_SIZE)
@@ -260,18 +282,21 @@ def send_campaign_batch(context, recipients_ids, notification_type_name='blank',
 
     recipients_qs = NotificationCampaignRecipient.objects.filter(id__in=recipients_ids).select_related('user')
     recipient_records = []
-    success_count = 0
-    failure_count = 0
-    if campaign.metadata.get('sendgrid_bulk', False):
-        recipients_qs_annotated = recipients_qs.annotate(
-            recipient_address=Case(
-                When(user__username__contains='@', then='user_id'),
-                default=Subquery(first_email_subquery),
-                output_field=CharField(),
-            )
+    recipients_qs_annotated = recipients_qs.annotate(
+        recipient_address=Case(
+            When(user__username__contains='@', then='user__username'),
+            default=Subquery(first_email_subquery),
+            output_field=CharField(),
         )
-        valid_emails_qs = recipients_qs_annotated.exclude(recipient_address__isnull=True)
-        invalid_emails_qs = recipients_qs_annotated.filter(recipient_address__isnull=True)
+    )
+    valid_emails_qs = recipients_qs_annotated.exclude(recipient_address__isnull=True)
+    invalid_emails_qs = recipients_qs_annotated.filter(recipient_address__isnull=True)
+    invalid_emails_qs.update(status=NotificationCampaignRecipientStatus.SKIPPED, error_message='Invalid email address')
+
+    success_count = 0
+    failure_count = invalid_emails_qs.count()
+
+    if campaign.metadata.get('sendgrid_bulk', False):
         recipient_emails = list(valid_emails_qs.values_list('recipient_address', flat=True))
         success_count = len(recipient_emails)
         try:
@@ -285,10 +310,9 @@ def send_campaign_batch(context, recipients_ids, notification_type_name='blank',
             failure_count += success_count
             success_count = 0
             pass
-        invalid_emails_qs.update(status=NotificationCampaignRecipientStatus.SKIPPED, error_message='Invalid email address')
 
     else:
-        for recipient in recipients_qs:
+        for recipient in valid_emails_qs:
             try:
                 notification_type.emit(
                     user=recipient.user,

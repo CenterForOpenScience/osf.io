@@ -7,6 +7,16 @@
 {% endblock title %}
 
 {% block content %}
+<div>
+    {% if messages %}
+        <ul>
+        {% for message in messages %}
+        <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}
+        </li>
+        {% endfor %}
+    </ul>
+    {% endif %}
+</div>
 <div class="container-fluid">
     <div class="row">
         <div class="col-md-12 text-center">
@@ -54,13 +64,23 @@
                 <tr>
                     <th style="width: 250px">{{ field }}</th>
                     <td>{{ value|safe }}</td>
-                    {% if field == 'Sent' and value != 0 %}
+                    {% if field == 'Recipients' and value != 0 %}
+                        <td>
+                            <a
+                                href="{% url 'notifications:notification_campaigns_recipients_list' %}?campaign_id={{ notification_campaign.id }}"
+                                class="btn btn-default"
+                                target="_blank">
+                                View Recipients
+                            </a>
+                        </td>
+                        <td></td>
+                    {% elif field == 'Sent' and value != 0 %}
                         <td>
                             <a
                                 href="{% url 'notifications:notification_campaigns_recipients_list' %}?notification_status=sent&campaign_id={{ notification_campaign.id }}"
                                 class="btn btn-default"
                                 target="_blank">
-                                Preview Recipients
+                                View Recipients
                             </a>
                         </td>
                         <td></td>
@@ -70,7 +90,7 @@
                                 href="{% url 'notifications:notification_campaigns_recipients_list' %}?notification_status=failed&campaign_id={{ notification_campaign.id }}"
                                 class="btn btn-default"
                                 target="_blank">
-                                Preview Recipients
+                                View Recipients
                             </a>
                         </td>
                         <td>

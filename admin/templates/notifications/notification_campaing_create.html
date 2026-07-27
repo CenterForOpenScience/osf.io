@@ -7,6 +7,23 @@
 {% endblock title %}
 
 {% block content %}
+<div>
+    {% if messages %}
+        <ul>
+        {% for message in messages %}
+        <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}
+        </li>
+        {% endfor %}
+    </ul>
+    {% endif %}
+</div>
+<div>
+    {% if form.errors %}
+    <div class="alert alert-danger">
+        {{ form.errors }}
+    </div>
+    {% endif %}
+</div>
 <div class="container-fluid">
 
     <div class="row">
@@ -135,7 +152,7 @@
                         "project": "OSF",
                         "deadline": "2026-08-01"
                     }'
-                ></textarea>
+                >{{ default_context }}</textarea>
             </div>
         </div>
 
@@ -184,6 +201,18 @@
                             <p class="help-block">
                                 Non-spam users at or above this activity total are sent first
                             </p>
+                        </td>
+                    </tr>
+
+                    <tr>
+                        <th>Sendgrid Bulk</th>
+                        <td>
+                            <input
+                                class="form-control"
+                                type="text"
+                                name="sendgrid_bulk"
+                                value="{{ form.sendgrid_bulk.initial }}"
+                            >
                         </td>
                     </tr>
                 </table>

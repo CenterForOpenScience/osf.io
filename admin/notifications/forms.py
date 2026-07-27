@@ -39,6 +39,11 @@ class NotificationCampaignCreateForm(forms.ModelForm):
         help_text='Non-spam users at or above this activity total are sent in the high-activity phase.',
     )
 
+    sendgrid_bulk = forms.BooleanField(
+        required=False,
+        initial=False,
+    )
+
     class Meta:
         model = NotificationCampaign
         fields = (
@@ -48,8 +53,14 @@ class NotificationCampaignCreateForm(forms.ModelForm):
 
     def clean_context(self):
         value = self.cleaned_data['context'] or '{}'
-        return json.loads(value)
+        try:
+            return json.loads(value)
+        except Exception as e:
+            forms.ValidationError(e)
 
     def clean_filters(self):
         value = self.cleaned_data['filters'] or '{}'
-        return json.loads(value)
+        try:
+            return json.loads(value)
+        except Exception as e:
+            forms.ValidationError(e)

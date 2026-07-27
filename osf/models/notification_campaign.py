@@ -1,4 +1,4 @@
-from django.db import models
+from django.db import models, transaction
 from django.utils import timezone
 import uuid
 
@@ -83,7 +83,14 @@ class NotificationCampaign(models.Model):
         self.retries = 0
         self.metadata.update({'template': self.notification_type.template})
         self.save()
-        start_notification_campaign.delay(campaign_id=self.id, restart_failed=restart_failed)
+
+        # run start_notification_campaign after transaction
+        transaction.on_commit(
+            lambda: start_notification_campaign.delay(
+                campaign_id=self.id,
+                restart_failed=restart_failed,
+            )
+        )
 
 
 class NotificationCampaignRecipient(models.Model):
