@@ -89,6 +89,7 @@ class NotificationCampaign(models.Model):
             lambda: start_notification_campaign.delay(
                 campaign_id=self.id,
                 restart_failed=restart_failed,
+                restart_stuck=restart_stuck,
             )
         )
 

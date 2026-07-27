@@ -52,9 +52,7 @@ def create_campaign_recipients(filters, campaign_id):
                 )
                 for user_id, activity_score in rows
             ],
-            update_conflicts=True,
-            update_fields=['activity_score'],
-            unique_fields=['campaign', 'user']
+            ignore_conflicts=True
         )
 
 
@@ -191,7 +189,7 @@ def process_campaign_retry(*args, **kwargs):
 
 
 @celery_app.task(name='email.start_notification_campaign')
-def start_notification_campaign(campaign_id, restart_failed=False):
+def start_notification_campaign(campaign_id, restart_failed=False, restart_stuck=False):
     campaign = NotificationCampaign.objects.get(id=campaign_id)
     filters = campaign.metadata.get('filters', {})
     context = campaign.metadata.get('context', {})
@@ -211,7 +209,7 @@ def start_notification_campaign(campaign_id, restart_failed=False):
                 manual_filters[f'{item["field"]}__{item["lookup"]}'] = [value.strip() for value in item['value'].split(',')]
         filters = manual_filters
 
-    if not restart_failed:
+    if not restart_failed and not restart_stuck:
         create_campaign_recipients(filters=filters, campaign_id=campaign_id)
         campaign.recipient_count = NotificationCampaignRecipient.objects.filter(campaign_id=campaign_id).count()
         campaign.save()
