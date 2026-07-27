@@ -241,6 +241,7 @@ def _record_zip_download(payload):
         path=materialized,
         size_bytes=action_meta.get('bytes_downloaded'),
         zip_completed=action_meta.get('completed'),
+        status_code=action_meta.get('status_code'),
         user_guid=(payload.get('auth') or {}).get('id'),
         ip=action_meta.get('ip'),
         source_area=action_meta.get('source', ''),

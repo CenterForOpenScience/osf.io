@@ -408,6 +408,41 @@ class NotificationAdmin(admin.ModelAdmin):
     user.short_description = 'User'
 
 
+# A zip that WaterButler ended on a 5xx failed through no fault of the user (the server
+# buckled) -- distinct from a cancel, which ends completed=False at 200 because the headers
+# already went out. This is the threshold that separates the two.
+DOWNLOAD_FAILURE_MIN_STATUS = 500
+
+
+class DownloadOutcomeFilter(SimpleListFilter):
+    """Filter zips by how they ended: completed, cancelled mid-stream, or failed."""
+
+    title = 'download outcome'
+    parameter_name = 'outcome'
+
+    COMPLETED = 'completed'
+    CANCELLED = 'cancelled'
+    FAILED = 'failed'
+
+    def lookups(self, request, model_admin):
+        return [
+            (self.COMPLETED, 'Completed'),
+            (self.CANCELLED, 'Cancelled mid-download'),
+            (self.FAILED, 'Failed (server error)'),
+        ]
+
+    def queryset(self, request, queryset):
+        if self.value() == self.COMPLETED:
+            return queryset.filter(zip_completed=True)
+        if self.value() == self.FAILED:
+            return queryset.filter(
+                zip_completed=False, status_code__gte=DOWNLOAD_FAILURE_MIN_STATUS)
+        if self.value() == self.CANCELLED:
+            return queryset.filter(zip_completed=False).exclude(
+                status_code__gte=DOWNLOAD_FAILURE_MIN_STATUS)
+        return queryset
+
+
 @admin.register(DownloadEvent)
 class DownloadEventsView(admin.ModelAdmin):
     change_list_template = 'download_events/download_events.html'
@@ -415,7 +450,9 @@ class DownloadEventsView(admin.ModelAdmin):
         'resource_guid',
         'user',
         'download_type',
+        'outcome',
         'zip_completed',
+        'status_code',
         'path',
         'size',
         'user_region',
@@ -432,6 +469,7 @@ class DownloadEventsView(admin.ModelAdmin):
             ),
         ),
         'download_type',
+        DownloadOutcomeFilter,
         'zip_completed',
     )
     ordering = ('-created',)
@@ -447,6 +485,18 @@ class DownloadEventsView(admin.ModelAdmin):
         'source_area'
     )
     search_help_text = 'Search by username, full name, user or node guid, ip, path, user or storage region, source area.'
+
+    @admin.display(description='Outcome')
+    def outcome(self, obj):
+        """Human-readable end state. Single files have no outcome — they're recorded at the
+        redirect before any bytes move, so they never report completion."""
+        if obj.zip_completed is None:
+            return '—'
+        if obj.zip_completed:
+            return 'Completed'
+        if obj.status_code and obj.status_code >= DOWNLOAD_FAILURE_MIN_STATUS:
+            return 'Failed'
+        return 'Cancelled'
 
     @admin.display(description='Size (GB)', ordering=F('size_bytes').desc(nulls_last=True))
     def size(self, obj):
@@ -538,6 +588,19 @@ class DownloadEventsView(admin.ModelAdmin):
         storage_regions = self._build_region_breakdown(queryset, 'storage_region')
         user_regions = self._build_region_breakdown(queryset, 'user_region')
 
+        # Zip outcomes. Single files are recorded before any bytes move, so they have no
+        # outcome and are left out of this breakdown entirely.
+        completed_zips = zip_queryset.filter(zip_completed=True).count()
+        failed_zips = zip_queryset.filter(
+            zip_completed=False, status_code__gte=DOWNLOAD_FAILURE_MIN_STATUS).count()
+        incomplete_zips = zip_queryset.filter(zip_completed=False).count()
+        zip_outcomes = {
+            'completed': completed_zips,
+            # everything that didn't complete and wasn't a server failure is a user cancel
+            'cancelled': incomplete_zips - failed_zips,
+            'failed': failed_zips,
+        }
+
         total_gb = self._to_gb(total_bytes)
         split = {
             'file': {
@@ -559,8 +622,10 @@ class DownloadEventsView(admin.ModelAdmin):
                 'total_downloads': total_downloads,
                 'total_gb': total_gb,
                 'unique_users': queryset.exclude(user_id__isnull=True).values('user_id').distinct().count(),
+                'failed_zips': failed_zips,
             },
             'split': split,
+            'zip_outcomes': zip_outcomes,
             'time_series': time_series,
             'storage_regions': storage_regions,
             'user_regions': user_regions,

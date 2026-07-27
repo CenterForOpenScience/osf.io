@@ -135,6 +135,48 @@ class TestDashboardData(OsfTestCase):
         assert data['split']['file']['count_percent'] == 50
         assert data['split']['zip']['count_percent'] == 50
 
+    def test_zip_outcomes_split_completed_cancelled_failed(self):
+        # a completed zip, a user cancel (False at 200), and a server failure (False at 5xx)
+        make_event(download_type=DownloadEvent.FOLDER_ZIP, zip_completed=True, status_code=200)
+        make_event(download_type=DownloadEvent.FOLDER_ZIP, zip_completed=False, status_code=200)
+        make_event(download_type=DownloadEvent.PROJECT, zip_completed=False, status_code=502)
+        # a single file — has no outcome, must not land in any bucket
+        make_event(download_type=DownloadEvent.FILE)
+
+        outcomes = self.admin.get_dashboard_data(DownloadEvent.objects.all())['zip_outcomes']
+
+        assert outcomes == {'completed': 1, 'cancelled': 1, 'failed': 1}
+
+    def test_failed_zips_summary_counts_only_server_errors(self):
+        make_event(download_type=DownloadEvent.FOLDER_ZIP, zip_completed=False, status_code=500)
+        make_event(download_type=DownloadEvent.FOLDER_ZIP, zip_completed=False, status_code=503)
+        make_event(download_type=DownloadEvent.FOLDER_ZIP, zip_completed=False, status_code=200)
+        make_event(download_type=DownloadEvent.FOLDER_ZIP, zip_completed=True, status_code=200)
+
+        data = self.admin.get_dashboard_data(DownloadEvent.objects.all())
+
+        assert data['summary']['failed_zips'] == 2
+
+    def test_incomplete_zip_without_a_status_counts_as_cancelled(self):
+        """Callbacks from a WaterButler build predating status_code have status None — treat
+        those as cancels, not failures, so we never over-report failures."""
+        make_event(download_type=DownloadEvent.FOLDER_ZIP, zip_completed=False, status_code=None)
+
+        outcomes = self.admin.get_dashboard_data(DownloadEvent.objects.all())['zip_outcomes']
+
+        assert outcomes == {'completed': 0, 'cancelled': 1, 'failed': 0}
+
+    def test_outcome_column_labels(self):
+        completed = make_event(download_type=DownloadEvent.FOLDER_ZIP, zip_completed=True)
+        cancelled = make_event(download_type=DownloadEvent.FOLDER_ZIP, zip_completed=False, status_code=200)
+        failed = make_event(download_type=DownloadEvent.PROJECT, zip_completed=False, status_code=500)
+        single = make_event(download_type=DownloadEvent.FILE)
+
+        assert self.admin.outcome(completed) == 'Completed'
+        assert self.admin.outcome(cancelled) == 'Cancelled'
+        assert self.admin.outcome(failed) == 'Failed'
+        assert self.admin.outcome(single) == '—'
+
     def test_blank_and_null_regions_fold_into_unknown(self):
         make_event(storage_region='')
         make_event(storage_region='   ')

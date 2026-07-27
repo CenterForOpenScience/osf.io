@@ -27,6 +27,12 @@ class DownloadEvent(models.Model):
     download_type = models.CharField(max_length=16, choices=DOWNLOAD_TYPES)
     # null for single files (only zips stream through WB, which reports completion)
     zip_completed = models.BooleanField(null=True, blank=True)
+    # The HTTP status WaterButler ended the download on. Together with zip_completed it tells
+    # the three zip outcomes apart: completed (zip_completed=True), cancelled mid-stream
+    # (zip_completed=False, status 200/302 — headers already sent), and failed through no
+    # fault of the user (zip_completed=False, status >= 400). Null for single files and for
+    # callbacks from a WaterButler build that predates this field.
+    status_code = models.PositiveSmallIntegerField(null=True, blank=True)
     size_bytes = models.BigIntegerField(null=True, blank=True)
 
     # storage_region = where the bytes were served from (capacity);

@@ -138,6 +138,28 @@ class TestZipDownloadTelemetry(OsfTestCase):
 
         assert DownloadEvent.objects.get().zip_completed is False
 
+    def test_successful_zip_records_its_status_code(self):
+        self.app.put(self.url, json=self.build_payload(completed=True, status_code=200))
+
+        event = DownloadEvent.objects.get()
+        assert event.zip_completed is True
+        assert event.status_code == 200
+
+    def test_failed_zip_is_distinguishable_from_a_cancel(self):
+        """A server failure comes through as completed=False at a 5xx; a user cancel comes
+        through as completed=False at 200 (headers already sent). The status tells them apart."""
+        self.app.put(self.url, json=self.build_payload(completed=False, status_code=500))
+        failed = DownloadEvent.objects.get()
+        assert failed.zip_completed is False
+        assert failed.status_code == 500
+
+        DownloadEvent.objects.all().delete()
+
+        self.app.put(self.url, json=self.build_payload(completed=False, status_code=200))
+        cancelled = DownloadEvent.objects.get()
+        assert cancelled.zip_completed is False
+        assert cancelled.status_code == 200
+
     def test_mfr_render_is_not_recorded(self):
         self.app.put(self.url, json=self.build_payload(is_mfr_render=True))
 
@@ -179,6 +201,7 @@ class TestZipDownloadTelemetry(OsfTestCase):
         event = DownloadEvent.objects.get()
         assert event.size_bytes is None
         assert event.zip_completed is None
+        assert event.status_code is None
         assert event.ip is None
 
     def test_storage_region_comes_from_the_projects_node(self):
