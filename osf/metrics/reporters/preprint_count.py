@@ -47,7 +47,11 @@ class PreprintCountReporter(DailyReporter):
 
         for preprint_provider in PreprintProvider.objects.all():
             elastic_query = get_elastic_query(date, preprint_provider)
-            resp = requests.post(f'{settings.SHARE_URL}api/v2/search/creativeworks/_search', json=elastic_query).json()
+            resp = requests.post(
+                f'{settings.SHARE_URL}api/v2/search/creativeworks/_search',
+                json=elastic_query,
+                timeout=settings.EXTERNAL_REQUEST_TIMEOUT,
+            ).json()
 
             yield DailyPreprintSummaryReport(
                 cycle_coverage=cycle_coverage_date(date),
