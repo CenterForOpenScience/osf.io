@@ -205,6 +205,29 @@
                         </tbody>
                     </table>
                 </div>
+                <div class="dashboard-card table-card">
+                    <div class="card-label">By storage provider</div>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Provider</th>
+                                <th>GB</th>
+                                <th>Downloads</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for provider in download_events_dashboard.storage_providers %}
+                                <tr>
+                                    <td>{{ provider.name }}</td>
+                                    <td>{{ provider.gb|floatformat:2 }}</td>
+                                    <td>{{ provider.downloads }}</td>
+                                </tr>
+                            {% empty %}
+                                <tr><td colspan="3">No activity in the current range.</td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
     {% endif %}
