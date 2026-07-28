@@ -177,6 +177,26 @@ class TestDashboardData(OsfTestCase):
         assert self.admin.outcome(failed) == 'Failed'
         assert self.admin.outcome(single) == '—'
 
+    def test_storage_provider_breakdown(self):
+        make_event(storage_provider='osfstorage', size_bytes=3 * 1024 ** 3)
+        make_event(storage_provider='osfstorage', size_bytes=1 * 1024 ** 3)
+        make_event(storage_provider='github', size_bytes=2 * 1024 ** 3)
+
+        providers = self.admin.get_dashboard_data(DownloadEvent.objects.all())['storage_providers']
+        by_name = {row['name']: row for row in providers}
+
+        assert by_name['osfstorage']['downloads'] == 2
+        assert by_name['osfstorage']['gb'] == 4
+        assert by_name['github']['downloads'] == 1
+        assert by_name['github']['gb'] == 2
+
+    def test_blank_storage_provider_folds_into_unknown(self):
+        make_event(storage_provider='')
+
+        providers = self.admin.get_dashboard_data(DownloadEvent.objects.all())['storage_providers']
+
+        assert [row['name'] for row in providers] == ['Unknown']
+
     def test_blank_and_null_regions_fold_into_unknown(self):
         make_event(storage_region='')
         make_event(storage_region='   ')

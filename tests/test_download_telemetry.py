@@ -210,6 +210,11 @@ class TestZipDownloadTelemetry(OsfTestCase):
 
         assert event.storage_region == self.node.osfstorage_region.name
 
+    def test_storage_provider_comes_from_the_callback(self):
+        self.app.put(self.url, json=self.build_payload())
+
+        assert DownloadEvent.objects.get().storage_provider == 'osfstorage'
+
     def test_callback_still_succeeds_when_recording_fails(self, ):
         with pytest.MonkeyPatch.context() as patch:
             patch.setattr(
@@ -251,6 +256,11 @@ class TestSingleFileDownloadTelemetry(OsfTestCase):
         event = DownloadEvent.objects.get()
         assert event.size_bytes == 4096
         assert event.storage_region == self.node.osfstorage_region.name
+
+    def test_storage_provider_comes_from_the_file(self):
+        self.app.get(f'/download/{self.guid}/', auth=self.user.auth)
+
+        assert DownloadEvent.objects.get().storage_provider == 'osfstorage'
 
     def test_zip_completed_is_unset_for_single_files(self):
         """Only zips stream through WaterButler, so nothing reports completion here."""

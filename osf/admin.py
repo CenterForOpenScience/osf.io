@@ -455,6 +455,7 @@ class DownloadEventsView(admin.ModelAdmin):
         'status_code',
         'path',
         'size',
+        'storage_provider',
         'user_region',
         'storage_region',
         'ip',
@@ -471,6 +472,7 @@ class DownloadEventsView(admin.ModelAdmin):
         'download_type',
         DownloadOutcomeFilter,
         'zip_completed',
+        'storage_provider',
     )
     ordering = ('-created',)
     search_fields = (
@@ -480,11 +482,12 @@ class DownloadEventsView(admin.ModelAdmin):
         'resource_guid',
         'ip',
         'path',
+        'storage_provider',
         'user_region',
         'storage_region',
         'source_area'
     )
-    search_help_text = 'Search by username, full name, user or node guid, ip, path, user or storage region, source area.'
+    search_help_text = 'Search by username, full name, user or node guid, ip, path, storage provider, user or storage region, source area.'
 
     @admin.display(description='Outcome')
     def outcome(self, obj):
@@ -587,6 +590,8 @@ class DownloadEventsView(admin.ModelAdmin):
         time_series = self._build_time_series(queryset)
         storage_regions = self._build_region_breakdown(queryset, 'storage_region')
         user_regions = self._build_region_breakdown(queryset, 'user_region')
+        # downloads and GB grouped by where the bytes came from (osfstorage vs addons)
+        storage_providers = self._build_region_breakdown(queryset, 'storage_provider')
 
         # Zip outcomes. Single files are recorded before any bytes move, so they have no
         # outcome and are left out of this breakdown entirely.
@@ -628,6 +633,7 @@ class DownloadEventsView(admin.ModelAdmin):
             'zip_outcomes': zip_outcomes,
             'time_series': time_series,
             'storage_regions': storage_regions,
+            'storage_providers': storage_providers,
             'user_regions': user_regions,
             'top_projects': self._build_top_resource_breakdown(queryset),
             'top_users': self._build_top_user_breakdown(queryset),

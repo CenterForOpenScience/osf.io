@@ -35,6 +35,9 @@ class DownloadEvent(models.Model):
     status_code = models.PositiveSmallIntegerField(null=True, blank=True)
     size_bytes = models.BigIntegerField(null=True, blank=True)
 
+    # which storage the bytes came from -- 'osfstorage' or a connected addon
+    # ('github', 'dropbox', 's3', 'box', ...). Blank for rows recorded before this field.
+    storage_provider = models.CharField(max_length=32, blank=True, default='')
     # storage_region = where the bytes were served from (capacity);
     # user_region = roughly where the user is. Kept separate on purpose.
     storage_region = models.CharField(max_length=64, blank=True, default='')
