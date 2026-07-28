@@ -1,17 +1,26 @@
 import pytest
+import uuid
 from datetime import timedelta
+from unittest import mock
 
 from django.utils import timezone
 
 from osf.email.notification_campaign import (
     create_campaign_recipients,
     get_campaign_recipient_batches,
+    get_campaign_recipient_stats,
+    process_campaign_retry,
+    send_campaign_batch,
+    start_notification_campaign,
 )
-from osf.models import NotificationType, UserActivityCounter
+from osf.models import UserActivityCounter
 from osf.models.notification_campaign import (
     NotificationCampaign,
     NotificationCampaignRecipient,
+    NotificationCampaignRecipientStatus,
+    NotificationCampaignStatus,
 )
+from osf.models.notification_type import NotificationType
 from osf.models.spam import SpamStatus
 from osf_tests.factories import UserFactory
 
@@ -29,7 +38,15 @@ def campaign(notification_type):
     return NotificationCampaign.objects.create(
         name='Test campaign',
         notification_type=notification_type,
-        metadata={'execution': {'activity_threshold': 100, 'batch_size': 2}},
+        metadata={
+            'filters': {'manual': []},
+            'context': {},
+            'execution': {
+                'activity_threshold': 100,
+                'batch_size': 2,
+                'max_retries': 2,
+            },
+        },
     )
 
 
@@ -127,6 +144,69 @@ class TestCreateCampaignRecipients:
         assert user_ids == [newer.id, mid.id, older.id]
 
 
+class TestGetCampaignRecipientStats:
+
+    def test_empty_campaign(self, campaign):
+        assert get_campaign_recipient_stats(campaign.id) == {
+            'recipient_count': 0,
+            'sent_count': 0,
+            'failed_count': 0,
+        }
+
+    def test_counts_sent_failed_and_skipped(self, campaign, notification_type):
+        sent = UserFactory()
+        failed = UserFactory()
+        skipped = UserFactory()
+        pending = UserFactory()
+        create_campaign_recipients(
+            filters={'id__in': [sent.id, failed.id, skipped.id, pending.id]},
+            campaign_id=campaign.id,
+        )
+        NotificationCampaignRecipient.objects.filter(campaign=campaign, user=sent).update(
+            status=NotificationCampaignRecipientStatus.SENT
+        )
+        NotificationCampaignRecipient.objects.filter(campaign=campaign, user=failed).update(
+            status=NotificationCampaignRecipientStatus.FAILED
+        )
+        NotificationCampaignRecipient.objects.filter(campaign=campaign, user=skipped).update(
+            status=NotificationCampaignRecipientStatus.SKIPPED
+        )
+
+        assert get_campaign_recipient_stats(campaign.id) == {
+            'recipient_count': 4,
+            'sent_count': 1,
+            'failed_count': 2,  # FAILED + SKIPPED
+        }
+
+    def test_scopes_to_requested_campaign(self, campaign, notification_type):
+        other = NotificationCampaign.objects.create(
+            name='Other campaign',
+            notification_type=notification_type,
+            metadata={'filters': {}, 'context': {}, 'execution': {}},
+        )
+        user = UserFactory()
+        other_user = UserFactory()
+        create_campaign_recipients(filters={'id__in': [user.id]}, campaign_id=campaign.id)
+        create_campaign_recipients(filters={'id__in': [other_user.id]}, campaign_id=other.id)
+        NotificationCampaignRecipient.objects.filter(campaign=campaign).update(
+            status=NotificationCampaignRecipientStatus.SENT
+        )
+        NotificationCampaignRecipient.objects.filter(campaign=other).update(
+            status=NotificationCampaignRecipientStatus.FAILED
+        )
+
+        assert get_campaign_recipient_stats(campaign.id) == {
+            'recipient_count': 1,
+            'sent_count': 1,
+            'failed_count': 0,
+        }
+        assert get_campaign_recipient_stats(other.id) == {
+            'recipient_count': 1,
+            'sent_count': 0,
+            'failed_count': 1,
+        }
+
+
 class TestGetCampaignRecipientBatches:
 
     @pytest.fixture
@@ -208,3 +288,396 @@ class TestGetCampaignRecipientBatches:
         assert [len(batch) for batch in batches] == [2, 2, 1]
         flat = {recipient_id for batch in batches for recipient_id in batch}
         assert len(flat) == 5
+
+    def test_restart_failed_only_returns_failed(self, campaign, users_and_recipients):
+        data = users_and_recipients
+        failed = NotificationCampaignRecipient.objects.get(campaign=campaign, user=data['high'])
+        failed.status = NotificationCampaignRecipientStatus.FAILED
+        failed.save(update_fields=['status'])
+
+        pending_ids = _recipient_user_ids(campaign.id, spam=False, min_activity=data['threshold'])
+        assert data['high'].id not in pending_ids
+
+        failed_ids = _recipient_user_ids(campaign.id, restart_failed=True)
+        assert failed_ids == [data['high'].id]
+
+    def test_ignore_conflicts_on_duplicate_create(self, campaign):
+        user = UserFactory()
+        _set_activity(user, 10)
+        create_campaign_recipients(filters={'id__in': [user.id]}, campaign_id=campaign.id)
+        create_campaign_recipients(filters={'id__in': [user.id]}, campaign_id=campaign.id)
+        assert NotificationCampaignRecipient.objects.filter(campaign=campaign).count() == 1
+
+
+class TestNotificationCampaignStart:
+
+    @mock.patch('osf.email.notification_campaign.start_notification_campaign.delay')
+    def test_campaign_start_sets_running_state(self, mock_delay, campaign):
+        with mock.patch(
+            'osf.models.notification_campaign.transaction.on_commit',
+            side_effect=lambda callback: callback(),
+        ):
+            campaign.start()
+
+        campaign.refresh_from_db()
+        assert campaign.status == NotificationCampaignStatus.RUNNING
+        assert campaign.run_id is not None
+        assert campaign.started_at is not None
+        assert campaign.retries == 0
+        mock_delay.assert_called_once_with(
+            campaign_id=campaign.id,
+            restart_failed=False,
+            restart_stuck=False,
+        )
+
+    @mock.patch('osf.email.notification_campaign.start_notification_campaign.delay')
+    def test_campaign_start_restart_stuck_counts(self, mock_delay, campaign):
+        campaign.recipient_count = 10
+        campaign.sent_count = 4
+        campaign.failed_count = 4
+        campaign.retries = 1
+        campaign.save()
+
+        with mock.patch(
+            'osf.models.notification_campaign.transaction.on_commit',
+            side_effect=lambda callback: callback(),
+        ):
+            campaign.start(restart_stuck=True)
+
+        campaign.refresh_from_db()
+        assert campaign.recipient_count == 10
+        assert campaign.sent_count == 4
+        assert campaign.failed_count == 0
+        assert campaign.retries == 0
+        mock_delay.assert_called_once_with(
+            campaign_id=campaign.id,
+            restart_failed=False,
+            restart_stuck=True,
+        )
+
+    @mock.patch('osf.email.notification_campaign.chain')
+    def test_start_creates_recipients_and_schedules_workflow(self, mock_chain, campaign):
+        high = UserFactory()
+        low = UserFactory()
+        spam = UserFactory()
+        spam.spam_status = SpamStatus.SPAM
+        spam.save()
+        _set_activity(high, 250)
+        _set_activity(low, 10)
+
+        campaign.metadata['filters'] = {
+            'manual': [{'field': 'id', 'lookup': 'in', 'value': f'{high.id},{low.id},{spam.id}'}],
+        }
+        campaign.run_id = uuid.uuid4()
+        campaign.save()
+
+        mock_chain.return_value.apply_async = mock.Mock()
+
+        start_notification_campaign(campaign.id)
+
+        campaign.refresh_from_db()
+        recipients = {
+            r.user_id: r.activity_score
+            for r in NotificationCampaignRecipient.objects.filter(campaign=campaign)
+        }
+        assert recipients == {high.id: 250, low.id: 10, spam.id: 0}
+        assert campaign.recipient_count == 3
+        mock_chain.assert_called_once()
+        mock_chain.return_value.apply_async.assert_called_once()
+
+    @mock.patch('osf.email.notification_campaign.chain')
+    def test_start_restart_failed_does_not_recreate_recipients(self, mock_chain, campaign):
+        user = UserFactory()
+        _set_activity(user, 50)
+        create_campaign_recipients(filters={'id__in': [user.id]}, campaign_id=campaign.id)
+        recipient = NotificationCampaignRecipient.objects.get(campaign=campaign, user=user)
+        recipient.status = NotificationCampaignRecipientStatus.FAILED
+        recipient.save(update_fields=['status'])
+
+        campaign.run_id = uuid.uuid4()
+        campaign.metadata['filters'] = {
+            'manual': [{'field': 'id', 'lookup': 'in', 'value': str(user.id)}],
+        }
+        campaign.save()
+        mock_chain.return_value.apply_async = mock.Mock()
+
+        start_notification_campaign(campaign.id, restart_failed=True)
+
+        assert NotificationCampaignRecipient.objects.filter(campaign=campaign).count() == 1
+        assert NotificationCampaignRecipient.objects.get(pk=recipient.pk).status == NotificationCampaignRecipientStatus.FAILED
+
+    @mock.patch('osf.email.notification_campaign.chain')
+    def test_start_restart_stuck_does_not_recreate_recipients(self, mock_chain, campaign):
+        user = UserFactory()
+        create_campaign_recipients(filters={'id__in': [user.id]}, campaign_id=campaign.id)
+        campaign.run_id = uuid.uuid4()
+        campaign.recipient_count = 1
+        campaign.save()
+        mock_chain.return_value.apply_async = mock.Mock()
+
+        start_notification_campaign(campaign.id, restart_stuck=True)
+
+        assert NotificationCampaignRecipient.objects.filter(campaign=campaign).count() == 1
+        campaign.refresh_from_db()
+        assert campaign.recipient_count == 1
+
+
+class TestSendCampaignBatch:
+
+    @pytest.fixture
+    def running_campaign(self, campaign):
+        campaign.run_id = uuid.uuid4()
+        campaign.started_at = timezone.now()
+        campaign.status = NotificationCampaignStatus.RUNNING
+        campaign.save()
+        return campaign
+
+    @mock.patch.object(NotificationType, 'emit')
+    def test_send_campaign_batch_marks_recipients_sent(self, mock_emit, running_campaign):
+        user = UserFactory()
+        create_campaign_recipients(filters={'id__in': [user.id]}, campaign_id=running_campaign.id)
+        recipient = NotificationCampaignRecipient.objects.get(campaign=running_campaign, user=user)
+
+        send_campaign_batch(
+            context={},
+            recipients_ids=[recipient.id],
+            notification_type_name='blank',
+            campaign_id=running_campaign.id,
+            run_id=running_campaign.run_id,
+        )
+
+        recipient.refresh_from_db()
+        running_campaign.refresh_from_db()
+        assert recipient.status == NotificationCampaignRecipientStatus.SENT
+        assert running_campaign.sent_count == 1
+        mock_emit.assert_called_once()
+
+    @mock.patch.object(NotificationType, 'emit', side_effect=Exception('send failed'))
+    @mock.patch('osf.email.notification_campaign.sentry.log_exception')
+    def test_send_campaign_batch_marks_recipients_failed(self, mock_sentry, mock_emit, running_campaign):
+        user = UserFactory()
+        create_campaign_recipients(filters={'id__in': [user.id]}, campaign_id=running_campaign.id)
+        recipient = NotificationCampaignRecipient.objects.get(campaign=running_campaign, user=user)
+
+        send_campaign_batch(
+            context={},
+            recipients_ids=[recipient.id],
+            notification_type_name='blank',
+            campaign_id=running_campaign.id,
+            run_id=running_campaign.run_id,
+        )
+
+        recipient.refresh_from_db()
+        running_campaign.refresh_from_db()
+        assert recipient.status == NotificationCampaignRecipientStatus.FAILED
+        assert 'send failed' in recipient.error_message
+        assert running_campaign.failed_count == 1
+
+    def test_send_campaign_batch_skips_invalid_email_addresses(self, running_campaign):
+        user = UserFactory()
+        user.username = 'asd'
+        user.save(update_fields=['username'])
+        user.emails.all().delete()
+
+        create_campaign_recipients(filters={'id__in': [user.id]}, campaign_id=running_campaign.id)
+        recipient = NotificationCampaignRecipient.objects.get(campaign=running_campaign, user=user)
+
+        send_campaign_batch(
+            context={},
+            recipients_ids=[recipient.id],
+            notification_type_name='blank',
+            campaign_id=running_campaign.id,
+            run_id=running_campaign.run_id,
+        )
+
+        recipient.refresh_from_db()
+        running_campaign.refresh_from_db()
+        assert recipient.status == NotificationCampaignRecipientStatus.SKIPPED
+        assert recipient.error_message == 'Invalid email address'
+        assert running_campaign.failed_count == 1
+        assert running_campaign.sent_count == 0
+
+    @mock.patch('osf.email.notification_campaign.send_email_with_send_grid')
+    def test_send_campaign_batch_sendgrid_bulk_success(self, mock_sendgrid, running_campaign):
+        user = UserFactory()
+        running_campaign.metadata['sendgrid_bulk'] = True
+        running_campaign.save(update_fields=['metadata'])
+        create_campaign_recipients(filters={'id__in': [user.id]}, campaign_id=running_campaign.id)
+        recipient = NotificationCampaignRecipient.objects.get(campaign=running_campaign, user=user)
+
+        send_campaign_batch(
+            context={},
+            recipients_ids=[recipient.id],
+            notification_type_name='blank',
+            campaign_id=running_campaign.id,
+            run_id=running_campaign.run_id,
+        )
+
+        recipient.refresh_from_db()
+        running_campaign.refresh_from_db()
+        mock_sendgrid.assert_called_once()
+        assert recipient.status == NotificationCampaignRecipientStatus.SENT
+        assert running_campaign.sent_count == 1
+        assert running_campaign.failed_count == 0
+
+    @mock.patch(
+        'osf.email.notification_campaign.send_email_with_send_grid',
+        side_effect=Exception('bulk failed'),
+    )
+    @mock.patch('osf.email.notification_campaign.sentry.log_exception')
+    def test_send_campaign_batch_sendgrid_bulk_failure(self, mock_sentry, mock_sendgrid, running_campaign):
+        user = UserFactory()
+        running_campaign.metadata['sendgrid_bulk'] = True
+        running_campaign.save(update_fields=['metadata'])
+        create_campaign_recipients(filters={'id__in': [user.id]}, campaign_id=running_campaign.id)
+        recipient = NotificationCampaignRecipient.objects.get(campaign=running_campaign, user=user)
+
+        send_campaign_batch(
+            context={},
+            recipients_ids=[recipient.id],
+            notification_type_name='blank',
+            campaign_id=running_campaign.id,
+            run_id=running_campaign.run_id,
+        )
+
+        recipient.refresh_from_db()
+        running_campaign.refresh_from_db()
+        assert recipient.status == NotificationCampaignRecipientStatus.FAILED
+        assert running_campaign.failed_count == 1
+        assert running_campaign.sent_count == 0
+
+    @mock.patch('osf.email.notification_campaign.sentry.log_message')
+    def test_send_campaign_batch_logs_when_time_window_exceeded(self, mock_sentry, running_campaign):
+        user = UserFactory()
+        running_campaign.started_at = timezone.now() - timedelta(hours=9)
+        running_campaign.metadata['execution']['time_window'] = 8
+        running_campaign.save()
+        create_campaign_recipients(filters={'id__in': [user.id]}, campaign_id=running_campaign.id)
+        recipient = NotificationCampaignRecipient.objects.get(campaign=running_campaign, user=user)
+
+        with mock.patch.object(NotificationType, 'emit'):
+            send_campaign_batch(
+                context={},
+                recipients_ids=[recipient.id],
+                notification_type_name='blank',
+                campaign_id=running_campaign.id,
+                run_id=running_campaign.run_id,
+            )
+
+        running_campaign.refresh_from_db()
+        assert running_campaign.developer_reminder_sent is True
+        mock_sentry.assert_called_once()
+
+    def test_send_campaign_batch_marks_failed_when_notification_type_missing(self, running_campaign):
+        user = UserFactory()
+        create_campaign_recipients(filters={'id__in': [user.id]}, campaign_id=running_campaign.id)
+        recipient = NotificationCampaignRecipient.objects.get(campaign=running_campaign, user=user)
+
+        send_campaign_batch(
+            context={},
+            recipients_ids=[recipient.id],
+            notification_type_name='does-not-exist',
+            campaign_id=running_campaign.id,
+            run_id=running_campaign.run_id,
+        )
+
+        running_campaign.refresh_from_db()
+        recipient.refresh_from_db()
+        assert running_campaign.status == NotificationCampaignStatus.FAILED
+        assert recipient.status == NotificationCampaignRecipientStatus.PENDING
+
+    def test_send_campaign_batch_skips_stale_run_id(self, running_campaign):
+        user = UserFactory()
+        create_campaign_recipients(filters={'id__in': [user.id]}, campaign_id=running_campaign.id)
+        recipient = NotificationCampaignRecipient.objects.get(campaign=running_campaign, user=user)
+
+        send_campaign_batch(
+            context={},
+            recipients_ids=[recipient.id],
+            notification_type_name='blank',
+            campaign_id=running_campaign.id,
+            run_id=uuid.uuid4(),
+        )
+
+        recipient.refresh_from_db()
+        assert recipient.status == NotificationCampaignRecipientStatus.PENDING
+
+    def test_send_campaign_batch_skips_cancelled_campaign(self, running_campaign):
+        user = UserFactory()
+        running_campaign.status = NotificationCampaignStatus.CANCELLED
+        running_campaign.save(update_fields=['status'])
+        create_campaign_recipients(filters={'id__in': [user.id]}, campaign_id=running_campaign.id)
+        recipient = NotificationCampaignRecipient.objects.get(campaign=running_campaign, user=user)
+
+        send_campaign_batch(
+            context={},
+            recipients_ids=[recipient.id],
+            notification_type_name='blank',
+            campaign_id=running_campaign.id,
+            run_id=running_campaign.run_id,
+        )
+
+        recipient.refresh_from_db()
+        assert recipient.status == NotificationCampaignRecipientStatus.PENDING
+
+
+class TestProcessCampaignRetry:
+
+    def test_process_campaign_retry_marks_completed_and_aggregates_stats(self, campaign):
+        sent_user = UserFactory()
+        skipped_user = UserFactory()
+        create_campaign_recipients(
+            filters={'id__in': [sent_user.id, skipped_user.id]},
+            campaign_id=campaign.id,
+        )
+        NotificationCampaignRecipient.objects.filter(campaign=campaign, user=sent_user).update(
+            status=NotificationCampaignRecipientStatus.SENT
+        )
+        NotificationCampaignRecipient.objects.filter(campaign=campaign, user=skipped_user).update(
+            status=NotificationCampaignRecipientStatus.SKIPPED
+        )
+
+        process_campaign_retry(campaign_id=campaign.id)
+
+        campaign.refresh_from_db()
+        assert campaign.status == NotificationCampaignStatus.COMPLETED
+        assert campaign.recipient_count == 2
+        assert campaign.sent_count == 1
+        assert campaign.failed_count == 1
+        assert campaign.completed_at is not None
+
+    @mock.patch('osf.email.notification_campaign.chain')
+    def test_process_campaign_retry_retries_failed_recipients(self, mock_chain, campaign):
+        user = UserFactory()
+        create_campaign_recipients(filters={'id__in': [user.id]}, campaign_id=campaign.id)
+        recipient = NotificationCampaignRecipient.objects.get(campaign=campaign, user=user)
+        recipient.status = NotificationCampaignRecipientStatus.FAILED
+        recipient.save(update_fields=['status'])
+        campaign.run_id = uuid.uuid4()
+        campaign.retries = 0
+        campaign.save()
+        mock_chain.return_value.apply_async = mock.Mock()
+
+        process_campaign_retry(campaign_id=campaign.id)
+
+        campaign.refresh_from_db()
+        assert campaign.retries == 1
+        assert campaign.status != NotificationCampaignStatus.PARTIALLY_COMPLETED
+        mock_chain.assert_called_once()
+
+    def test_process_campaign_retry_marks_partially_completed_after_max_retries(self, campaign):
+        user = UserFactory()
+        create_campaign_recipients(filters={'id__in': [user.id]}, campaign_id=campaign.id)
+        recipient = NotificationCampaignRecipient.objects.get(campaign=campaign, user=user)
+        recipient.status = NotificationCampaignRecipientStatus.FAILED
+        recipient.save(update_fields=['status'])
+        campaign.retries = 2
+        campaign.save(update_fields=['retries'])
+
+        process_campaign_retry(campaign_id=campaign.id)
+
+        campaign.refresh_from_db()
+        assert campaign.status == NotificationCampaignStatus.PARTIALLY_COMPLETED
+        assert campaign.failed_count == 1
+        assert campaign.recipient_count == 1
+        assert campaign.completed_at is not None

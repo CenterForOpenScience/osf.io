@@ -56,11 +56,11 @@ class NotificationCampaignCreateForm(forms.ModelForm):
         try:
             return json.loads(value)
         except Exception as e:
-            forms.ValidationError(e)
+            raise forms.ValidationError(e)
 
     def clean_filters(self):
         value = self.cleaned_data['filters'] or '{}'
         try:
             return json.loads(value)
         except Exception as e:
-            forms.ValidationError(e)
+            raise forms.ValidationError(e)
