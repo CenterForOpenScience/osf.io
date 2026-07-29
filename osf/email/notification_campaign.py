@@ -150,6 +150,8 @@ def get_campaign_recipient_stats(campaign_id):
 def process_campaign_retry(*args, **kwargs):
     campaign_id = kwargs.get('campaign_id')
     campaign = NotificationCampaign.objects.get(id=campaign_id)
+    if kwargs.get('run_id') != campaign.run_id:
+        return
 
     final_status = NotificationCampaignStatus.COMPLETED
 
@@ -178,7 +180,7 @@ def process_campaign_retry(*args, **kwargs):
                 )
                 chain(
                     retry_group,
-                    process_campaign_retry.si(campaign_id=campaign_id),
+                    process_campaign_retry.si(campaign_id=campaign_id, run_id=campaign.run_id),
                 ).apply_async()
                 return
 
@@ -269,7 +271,7 @@ def start_notification_campaign(campaign_id, restart_failed=False, restart_stuck
     if spam_users_tasks:
         workflow.append(spam_users_tasks)
 
-    chain(*workflow, process_campaign_retry.si(campaign_id=campaign_id)).apply_async()
+    chain(*workflow, process_campaign_retry.si(campaign_id=campaign_id, run_id=campaign.run_id)).apply_async()
 
 
 @celery_app.task(name='email.send_campaign_batch', ignore_result=False)
