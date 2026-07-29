@@ -4,7 +4,8 @@ from collections import defaultdict
 from datetime import timedelta
 from django.urls import reverse_lazy
 from django.utils import timezone
-from django.db.models import Q, F
+from django.db.models import Q, F, Subquery
+from django.db.models.functions import Coalesce
 from django.db import models
 from django.shortcuts import get_object_or_404, redirect
 from django.views.generic import ListView, DetailView, UpdateView, CreateView, View
@@ -18,7 +19,7 @@ from mako.lexer import Lexer
 from mako.parsetree import ControlLine
 from string import Formatter
 from osf.email import _render_email_html
-from osf.email.notification_campaign import FILTER_PRESETS
+from osf.email.notification_campaign import FILTER_PRESETS, counter_subquery
 from website import settings
 
 
@@ -374,6 +375,7 @@ class NotificationCampaignsList(PermissionRequiredMixin, ListView):
 
         context['notification_campaigns'] = context['object_list']
         context['page'] = context['page_obj']
+        context['active_campaign'] = NotificationCampaign.objects.filter(status=NotificationCampaignStatus.RUNNING).first()
         return context
 
 
@@ -396,6 +398,7 @@ class NotificationCampaignDetail(PermissionRequiredMixin, DetailView):
                 ('Name', notification_campaign.name),
                 ('Notification Type', notification_campaign.notification_type),
                 ('Created By', notification_campaign.created_by),
+                ('Developer reminder ', 'Sent' if notification_campaign.developer_reminder_sent else ''),
                 ('Status', notification_campaign.get_status_display()),
                 ('Recipients', notification_campaign.recipient_count),
                 ('Sent', notification_campaign.sent_count),
@@ -427,9 +430,59 @@ class NotificationCampaignDetail(PermissionRequiredMixin, DetailView):
                 if k not in {'filters', 'context', 'execution', 'template'}
             },
             'allow_restart_stuck': True if timezone.now() - notification_campaign.updated_at > timedelta(minutes=15) else False,
-            'sent_percent': notification_campaign.sent_count * 100 / notification_campaign.recipient_count if notification_campaign.recipient_count else 0,
-            'failed_percent': notification_campaign.failed_count * 100 / notification_campaign.recipient_count if notification_campaign.recipient_count else 0,
         }
+
+        if notification_campaign.status != NotificationCampaignStatus.CREATED:
+            processed = notification_campaign.sent_count + notification_campaign.failed_count
+            pending = max(notification_campaign.recipient_count - processed, 0)
+
+            sent_percent = (
+                notification_campaign.sent_count / notification_campaign.recipient_count * 100
+                if notification_campaign.recipient_count else 0
+            )
+            failed_percent = (
+                notification_campaign.failed_count / notification_campaign.recipient_count * 100
+                if notification_campaign.recipient_count else 0
+            )
+
+            pending_percent = max(100 - sent_percent - failed_percent, 0)
+            elapsed = None
+            speed = None
+            eta = None
+            estimated_finish = None
+            last_activity_ago = None
+            failure_rate = None
+
+            if notification_campaign.started_at:
+                end_time = notification_campaign.completed_at or timezone.now()
+                elapsed = end_time - notification_campaign.started_at
+                elapsed_seconds = elapsed.total_seconds()
+                if processed > 0 and elapsed_seconds > 0:
+                    speed = processed / elapsed_seconds
+                    if pending:
+                        eta = timedelta(seconds=int(pending / speed))
+                        estimated_finish = timezone.now() + eta
+
+            if notification_campaign.updated_at:
+                last_activity_ago = timezone.now() - notification_campaign.updated_at
+            if processed:
+                failure_rate = notification_campaign.failed_count / processed * 100
+            else:
+                failure_rate = 0
+
+            context.update({
+                'processed': processed,
+                'pending': pending,
+                'sent_percent': sent_percent,
+                'failed_percent': failed_percent,
+                'pending_percent': pending_percent,
+                'elapsed': elapsed,
+                'speed': speed,
+                'eta': eta,
+                'estimated_finish': estimated_finish,
+                'last_activity_ago': last_activity_ago,
+                'failure_rate': failure_rate,
+            })
 
         return context
 
@@ -510,6 +563,7 @@ class NotificationCampaignCreateView(CreateView):
                 'batch_size': form.cleaned_data['batch_size'],
                 'max_retries': form.cleaned_data['max_retries'],
                 'activity_threshold': form.cleaned_data['activity_threshold'],
+                'time_window': form.cleaned_data['time_window'],
             },
             'sendgrid_bulk': form.cleaned_data.get('sendgrid_bulk', False),
         }
@@ -580,9 +634,12 @@ class NotificationCampaignsRecipientsPreview(PermissionRequiredMixin, ListView):
                         filters[f'{item["field"]}__{item["lookup"]}'] = [value.strip() for value in item['value'].split(',')]
 
         qs = OSFUser.objects.filter(**filters)
-        return qs.annotate(
-            guid=F('guids___id')
-        )
+        qs = qs.annotate(
+            guid=F('guids___id'),
+            activity_score=Coalesce(Subquery(counter_subquery), 0)
+        ).order_by('-activity_score')
+
+        return qs
 
     def get_context_data(self, **kwargs):
         users = self.get_queryset()

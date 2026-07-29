@@ -18,6 +18,7 @@
                 <th>Status</th>
                 <th>Error</th>
                 <th>Updated at</th>
+                <th>Activity score</th>
             </tr>
         </thead>
         <tbody>
@@ -39,6 +40,9 @@
                     </td>
                     <td>
                         {{ record.updated_at }}
+                    </td>
+                    <td>
+                        {{ record.activity_score }}
                     </td>
                 </tr>
             {% endfor %}
