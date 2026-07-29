@@ -140,7 +140,8 @@ class OsfStorageFileNode(BaseFileNode):
     # overrides BaseFileNode
     @property
     def current_version_number(self):
-        return self.versions.count() or 1
+        latest_identifier = self.versions.order_by('-created').values_list('identifier', flat=True).first()
+        return int(latest_identifier) if latest_identifier else 1
 
     def _check_delete_allowed(self):
         if self.is_preprint_primary:
@@ -312,7 +313,10 @@ class OsfStorageFile(OsfStorageFileNode, File):
         version = self.get_version(version)
         earliest_version = self.versions.order_by('created').first()
         ret.update({
-            'version': self.versions.count(),
+            # Must be the resolved version's own identifier, not versions.count() -- after a
+            # non-latest version is deleted, count() no longer matches any existing identifier,
+            # which breaks osfstorage_download's file_node.get_version(identifier=..., required=True).
+            'version': int(version.identifier) if version else 0,
             'md5': version.metadata.get('md5') if version else None,
             'sha256': version.metadata.get('sha256') if version else None,
             'modified': version.created.isoformat() if version else None,
@@ -328,7 +332,11 @@ class OsfStorageFile(OsfStorageFileNode, File):
 
     def create_version(self, creator, location, metadata=None):
         latest_version = self.get_version()
-        version = FileVersion(identifier=self.versions.count() + 1, creator=creator, location=location)
+        # Must be based on the highest surviving identifier, not versions.count() -- after a
+        # non-latest version is deleted, count() + 1 can collide with an identifier that's
+        # still in use by a surviving version, producing two versions with the same identifier.
+        next_identifier = self.current_version_number + 1 if self.versions.exists() else 1
+        version = FileVersion(identifier=next_identifier, creator=creator, location=location)
 
         if latest_version and latest_version.is_duplicate(version):
             return latest_version

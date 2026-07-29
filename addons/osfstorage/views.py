@@ -205,7 +205,7 @@ def osfstorage_get_children(file_node, **kwargs):
                         , 'kind', 'file'
                         , 'size', LATEST_VERSION.size
                         , 'downloads',  COALESCE(DOWNLOAD_COUNT, 0)
-                        , 'version', (SELECT COUNT(*) FROM osf_basefileversionsthrough WHERE osf_basefileversionsthrough.basefilenode_id = F.id)
+                        , 'version', COALESCE(LATEST_VERSION.identifier::int, 0)
                         , 'contentType', LATEST_VERSION.content_type
                         , 'modified', LATEST_VERSION.created
                         , 'created', EARLIEST_VERSION.created
@@ -228,7 +228,9 @@ def osfstorage_get_children(file_node, **kwargs):
                 SELECT * FROM osf_fileversion
                 JOIN osf_basefileversionsthrough ON osf_fileversion.id = osf_basefileversionsthrough.fileversion_id
                 WHERE osf_basefileversionsthrough.basefilenode_id = F.id
-                ORDER BY created DESC
+                -- osf_fileversion.id as a tiebreak for versions created within the same instant,
+                -- matching FileVersion.Meta.ordering = ('-created', '-id')
+                ORDER BY created DESC, osf_fileversion.id DESC
                 LIMIT 1
             ) LATEST_VERSION ON TRUE
             LEFT JOIN LATERAL (
