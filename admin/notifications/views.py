@@ -716,6 +716,14 @@ class StartNotificationCampaign(PermissionRequiredMixin, View):
                 pk=notification_campaign.pk,
             )
 
+        cancel_campaign = request.GET.get('cancel') == 'true'
+        if cancel_campaign:
+            notification_campaign.cancel()
+            return redirect(
+                'notifications:notification_campaigns_detail',
+                pk=notification_campaign.pk,
+            )
+
         restart_failed = request.GET.get('restart_failed') == 'true'
         restart_stuck = request.GET.get('restart_stuck') == 'true'
 

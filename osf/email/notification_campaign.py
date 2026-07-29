@@ -150,6 +150,11 @@ def get_campaign_recipient_stats(campaign_id):
 def process_campaign_retry(*args, **kwargs):
     campaign_id = kwargs.get('campaign_id')
     campaign = NotificationCampaign.objects.get(id=campaign_id)
+
+    if campaign.status == NotificationCampaignStatus.CANCELLED:
+        logger.info(f"Campaign {campaign_id} was cancelled")
+        return
+
     failed_recipients = NotificationCampaignRecipient.objects.filter(campaign=campaign, status=NotificationCampaignRecipientStatus.FAILED)
     max_retries = campaign.metadata.get('execution', {}).get('max_retries', settings.DEFAULT_CAMPAIGN_MAX_RETRIES)
     batch_size = campaign.metadata.get('execution', {}).get('batch_size', settings.DEFAULT_CAMPAIGN_BATCH_SIZE)
@@ -178,15 +183,26 @@ def process_campaign_retry(*args, **kwargs):
             ).apply_async()
             return
 
-        campaign.status = NotificationCampaignStatus.PARTIALLY_COMPLETED
+        final_status = NotificationCampaignStatus.PARTIALLY_COMPLETED
     else:
-        campaign.status = NotificationCampaignStatus.COMPLETED
+        final_status = NotificationCampaignStatus.COMPLETED
 
+    # Refresh in case the campaign was cancelled while we were running.
+    campaign.refresh_from_db(fields=['status', 'completed_at'])
+
+    # Sync statistics regardless of status.
     stats = get_campaign_recipient_stats(campaign_id)
     campaign.recipient_count = stats['recipient_count']
     campaign.sent_count = stats['sent_count']
     campaign.failed_count = stats['failed_count']
-    campaign.completed_at = timezone.now()
+
+    if campaign.completed_at is None:
+        campaign.completed_at = timezone.now()
+
+    # Don't overwrite CANCELLED.
+    if campaign.status != NotificationCampaignStatus.CANCELLED:
+        campaign.status = final_status
+
     campaign.save()
 
 

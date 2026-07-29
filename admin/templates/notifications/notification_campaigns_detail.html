@@ -177,6 +177,18 @@
             Restart stuck Campaign
         </button>
     </form>
+    <form
+        id="cancel-campaign-form"
+        method="post"
+        action="{% url 'notifications:notification_campaigns_start' notification_campaign.id %}?cancel=true"
+        style="display:inline;"
+    >
+        {% csrf_token %}
+        <button type="submit" class="btn btn-primary" {% if notification_campaign.status != "running" %}disabled{% endif %}
+        title="Cancel the campaign, but allow any tasks that are already running to finish.">
+            Cancel Campaign
+        </button>
+    </form>
 
     <!-- General information -->
     <div class="row">
