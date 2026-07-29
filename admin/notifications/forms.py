@@ -39,6 +39,12 @@ class NotificationCampaignCreateForm(forms.ModelForm):
         help_text='Non-spam users at or above this activity total are sent in the high-activity phase.',
     )
 
+    time_window = forms.IntegerField(
+        min_value=1,
+        initial=8,
+        help_text='The time in hours before the developer reminder is sent.',
+    )
+
     sendgrid_bulk = forms.BooleanField(
         required=False,
         initial=False,

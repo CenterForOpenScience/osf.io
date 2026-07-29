@@ -18,6 +18,7 @@
                 <th>Fullname</th>
                 <th>Date confirmed</th>
                 <th>Date disabled</th>
+                <th>Activity score</th>
             </tr>
         </thead>
         <tbody>
@@ -39,6 +40,9 @@
                     </td>
                     <td>
                         {{ user.is_disabled }}
+                    </td>
+                    <td>
+                        {{ user.activity_score }}
                     </td>
                 </tr>
             {% endfor %}

@@ -203,6 +203,21 @@
                             </p>
                         </td>
                     </tr>
+                    <tr>
+                        <th>Time window</th>
+                        <td>
+                            <input
+                                class="form-control"
+                                type="number"
+                                name="time_window"
+                                value="{{ form.time_window.initial }}"
+                                min="1"
+                            >
+                            <p class="help-block">
+                                The time in hours before the developer reminder is sent.
+                            </p>
+                        </td>
+                    </tr>
 
                     <tr>
                         <th>Sendgrid Bulk</th>

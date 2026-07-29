@@ -658,7 +658,7 @@ class TestProcessCampaignRetry:
         campaign.save()
         mock_chain.return_value.apply_async = mock.Mock()
 
-        process_campaign_retry(campaign_id=campaign.id)
+        process_campaign_retry(campaign_id=campaign.id, run_id=campaign.run_id)
 
         campaign.refresh_from_db()
         assert campaign.retries == 1

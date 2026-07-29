@@ -27,21 +27,132 @@
         </div>
     </div>
     {% if notification_campaign.status != 'created' %}
+    <div class="alert
+        {% if notification_campaign.status == 'running' %}
+            alert-info
+        {% elif notification_campaign.status == 'completed' %}
+            alert-success
+        {% elif notification_campaign.status == 'partially_completed' %}
+            alert-warning
+        {% elif notification_campaign.status == 'failed' %}
+            alert-danger
+        {% else %}
+            alert-default
+        {% endif %}
+    ">
+
+        <strong>Status:</strong>
+        {{ notification_campaign.get_status_display }}
+
+        {% if elapsed %}
+            <br>
+            <strong>Running for:</strong> {{ elapsed }}
+        {% endif %}
+
+        {% if last_activity_ago %}
+            <br>
+            <strong>Last activity:</strong> {{ last_activity_ago }} ago
+        {% endif %}
+    </div>
+    <div class="progress">
+
+        <div class="progress-bar progress-bar-success"
+            style="width: {{ sent_percent }}%;">
+            {{ notification_campaign.sent_count }}
+        </div>
+
+        <div class="progress-bar progress-bar-danger"
+            style="width: {{ failed_percent }}%;">
+            {{ notification_campaign.failed_count }}
+        </div>
+
+        <div class="progress-bar progress-bar-default"
+            style="width: {{ pending_percent }}%;">
+            {{ pending }}
+        </div>
+
+    </div>
     <h4>Progress</h4>
 
-        <div class="progress">
-            <div class="progress-bar progress-bar-success"
-                style="width: {{ sent_percent }}%">
-                {{ notification_campaign.sent_count }}
-            </div>
-            <div class="progress-bar progress-bar-danger"
-                style="width: {{ failed_percent }}%">
-                {{ notification_campaign.failed_count }}
-            </div>
-        </div>
-        <p class="help-block">
-            {{ notification_campaign.sent_count|add:notification_campaign.failed_count }}/{{ notification_campaign.recipient_count }} processed
-        </p>
+<table class="table table-bordered">
+    <tr>
+        <th style="width:250px;">Processed</th>
+        <td>{{ processed }} / {{ notification_campaign.recipient_count }}</td>
+    </tr>
+
+    <tr>
+        <th>Pending</th>
+        <td>{{ pending }}</td>
+    </tr>
+
+    <tr>
+        <th>Success rate</th>
+        <td>{{ sent_percent|floatformat:2 }}%</td>
+    </tr>
+
+    <tr>
+        <th>Failure rate</th>
+        <td>{{ failure_rate|floatformat:2 }}%</td>
+    </tr>
+
+    <tr>
+        <th>Average speed</th>
+        <td>
+            {% if speed %}
+                {{ speed|floatformat:2 }} recipients/sec
+            {% else %}
+                —
+            {% endif %}
+        </td>
+    </tr>
+
+    <tr>
+        <th>Elapsed</th>
+        <td>
+            {% if elapsed %}
+                {{ elapsed }}
+            {% else %}
+                —
+            {% endif %}
+        </td>
+    </tr>
+
+    <tr>
+        <th>ETA</th>
+        <td>
+            {% if eta %}
+                {{ eta }}
+            {% else %}
+                —
+            {% endif %}
+        </td>
+    </tr>
+
+    <tr>
+        <th>Estimated completion</th>
+        <td>
+            {% if estimated_finish %}
+                {{ estimated_finish }}
+            {% else %}
+                —
+            {% endif %}
+        </td>
+    </tr>
+
+</table>
+{% if allow_restart_stuck and notification_campaign.status == "running" %}
+<div class="alert alert-warning">
+    <strong>Warning!</strong>
+    No activity has been detected for more than 15 minutes.
+    The campaign may be stuck and can be restarted.
+</div>
+{% endif %}
+{% if notification_campaign.developer_reminder_sent and notification_campaign.status == "running" %}
+<div class="alert alert-warning">
+    <strong>Warning!</strong>
+    The campaign exceeded the expected timeframe ({{ metadata.execution.time_window }}h). A reminder was sent.
+</div>
+{% endif %}
     {% endif %}
     <form
         id="start-campaign-form"
@@ -64,6 +175,18 @@
         <button type="submit" class="btn btn-primary" {% if not allow_restart_stuck or notification_campaign.status != "running" %}disabled{% endif %}
         title="Restart the campaign after 15 minutes of inactivity.">
             Restart stuck Campaign
+        </button>
+    </form>
+    <form
+        id="cancel-campaign-form"
+        method="post"
+        action="{% url 'notifications:notification_campaigns_start' notification_campaign.id %}?cancel=true"
+        style="display:inline;"
+    >
+        {% csrf_token %}
+        <button type="submit" class="btn btn-primary" {% if notification_campaign.status != "running" %}disabled{% endif %}
+        title="Cancel the campaign, but allow any tasks that are already running to finish.">
+            Cancel Campaign
         </button>
     </form>
 

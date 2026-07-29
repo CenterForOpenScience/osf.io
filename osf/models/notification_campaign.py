@@ -71,6 +71,12 @@ class NotificationCampaign(models.Model):
 
     developer_reminder_sent = models.BooleanField(default=False)
 
+    def cancel(self):
+        self.status = NotificationCampaignStatus.CANCELLED
+        if self.completed_at is None:
+            self.completed_at = timezone.now()
+        self.save()
+
     def start(self, restart_failed=False, restart_stuck=False):
         from osf.email.notification_campaign import start_notification_campaign
         self.status = NotificationCampaignStatus.RUNNING

@@ -150,43 +150,62 @@ def get_campaign_recipient_stats(campaign_id):
 def process_campaign_retry(*args, **kwargs):
     campaign_id = kwargs.get('campaign_id')
     campaign = NotificationCampaign.objects.get(id=campaign_id)
-    failed_recipients = NotificationCampaignRecipient.objects.filter(campaign=campaign, status=NotificationCampaignRecipientStatus.FAILED)
-    max_retries = campaign.metadata.get('execution', {}).get('max_retries', settings.DEFAULT_CAMPAIGN_MAX_RETRIES)
-    batch_size = campaign.metadata.get('execution', {}).get('batch_size', settings.DEFAULT_CAMPAIGN_BATCH_SIZE)
-    failed_recipients_count = failed_recipients.count()
-    if failed_recipients_count:
-        if campaign.retries < max_retries:
-            message = (
-                f"[Notification Campaign] Retrying "
-                f"{failed_recipients_count} failed recipients for campaign {campaign_id}"
-            )
-            logger.info(message)
-            sentry.log_message(message)
-            campaign.retries += 1
-            campaign.save(update_fields=['retries'])
-            retry_group = build_campaign_group(
-                batch_size=batch_size,
-                campaign_id=campaign_id,
-                restart_failed=True,
-                notification_type_name=campaign.notification_type.name,
-                context=campaign.metadata.get('context', {}),
-                run_id=campaign.run_id,
-            )
-            chain(
-                retry_group,
-                process_campaign_retry.si(campaign_id=campaign_id),
-            ).apply_async()
-            return
+    if kwargs.get('run_id') != campaign.run_id:
+        return
 
-        campaign.status = NotificationCampaignStatus.PARTIALLY_COMPLETED
+    final_status = NotificationCampaignStatus.COMPLETED
+
+    if campaign.status != NotificationCampaignStatus.CANCELLED:
+        failed_recipients = NotificationCampaignRecipient.objects.filter(campaign=campaign, status=NotificationCampaignRecipientStatus.FAILED)
+        max_retries = campaign.metadata.get('execution', {}).get('max_retries', settings.DEFAULT_CAMPAIGN_MAX_RETRIES)
+        batch_size = campaign.metadata.get('execution', {}).get('batch_size', settings.DEFAULT_CAMPAIGN_BATCH_SIZE)
+        failed_recipients_count = failed_recipients.count()
+        if failed_recipients_count:
+            if campaign.retries < max_retries:
+                message = (
+                    f"[Notification Campaign] Retrying "
+                    f"{failed_recipients_count} failed recipients for campaign {campaign_id}"
+                )
+                logger.info(message)
+                sentry.log_message(message)
+                campaign.retries += 1
+                campaign.save(update_fields=['retries'])
+                retry_group = build_campaign_group(
+                    batch_size=batch_size,
+                    campaign_id=campaign_id,
+                    restart_failed=True,
+                    notification_type_name=campaign.notification_type.name,
+                    context=campaign.metadata.get('context', {}),
+                    run_id=campaign.run_id,
+                )
+                chain(
+                    retry_group,
+                    process_campaign_retry.si(campaign_id=campaign_id, run_id=campaign.run_id),
+                ).apply_async()
+                return
+
+            final_status = NotificationCampaignStatus.PARTIALLY_COMPLETED
     else:
-        campaign.status = NotificationCampaignStatus.COMPLETED
+        message = f'[Notification Campaign] Campaign {campaign_id} {campaign.name} was cancelled.'
+        logger.info(message)
+        sentry.log_message(message)
 
+    # Refresh in case the campaign was cancelled while we were running.
+    campaign.refresh_from_db(fields=['status', 'completed_at'])
+
+    # Sync statistics regardless of status.
     stats = get_campaign_recipient_stats(campaign_id)
     campaign.recipient_count = stats['recipient_count']
     campaign.sent_count = stats['sent_count']
     campaign.failed_count = stats['failed_count']
-    campaign.completed_at = timezone.now()
+
+    if campaign.completed_at is None:
+        campaign.completed_at = timezone.now()
+
+    # Don't overwrite CANCELLED.
+    if campaign.status != NotificationCampaignStatus.CANCELLED:
+        campaign.status = final_status
+
     campaign.save()
 
 
@@ -252,7 +271,7 @@ def start_notification_campaign(campaign_id, restart_failed=False, restart_stuck
     if spam_users_tasks:
         workflow.append(spam_users_tasks)
 
-    chain(*workflow, process_campaign_retry.si(campaign_id=campaign_id)).apply_async()
+    chain(*workflow, process_campaign_retry.si(campaign_id=campaign_id, run_id=campaign.run_id)).apply_async()
 
 
 @celery_app.task(name='email.send_campaign_batch', ignore_result=False)

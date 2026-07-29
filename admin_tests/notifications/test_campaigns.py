@@ -57,6 +57,7 @@ def _valid_form_data(notification_type, **overrides):
         'max_retries': settings.DEFAULT_CAMPAIGN_MAX_RETRIES,
         'activity_threshold': settings.DEFAULT_CAMPAIGN_ACTIVITY_THRESHOLD,
         'sendgrid_bulk': False,
+        'time_window': 8,
     }
     data.update(overrides)
     return data
@@ -172,6 +173,7 @@ class TestNotificationCampaignCreateView(AdminTestCase):
                 max_retries=4,
                 activity_threshold=77,
                 sendgrid_bulk=True,
+                time_window=8
             ),
         )
         request.user = self.user
@@ -193,6 +195,7 @@ class TestNotificationCampaignCreateView(AdminTestCase):
             'batch_size': 25,
             'max_retries': 4,
             'activity_threshold': 77,
+            'time_window': 8
         }
         assert campaign.metadata['sendgrid_bulk'] is True
         assert campaign.metadata['filters'] == {'predefined': 'active'}
