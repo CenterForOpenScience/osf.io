@@ -620,6 +620,55 @@ class TestSendCampaignBatch:
         recipient.refresh_from_db()
         assert recipient.status == NotificationCampaignRecipientStatus.PENDING
 
+    @mock.patch.object(NotificationType, 'emit')
+    def test_send_campaign_batch_uses_fallback_email_when_username_has_no_at(self, mock_emit, running_campaign):
+        user = UserFactory()
+        user.username = 'invalid'
+        user.save(update_fields=['username'])
+        user.emails.all().delete()
+        user.emails.create(address='fallback@example.com')
+
+        create_campaign_recipients(filters={'id__in': [user.id]}, campaign_id=running_campaign.id)
+        recipient = NotificationCampaignRecipient.objects.get(campaign=running_campaign, user=user)
+
+        send_campaign_batch(
+            context={},
+            recipients_ids=[recipient.id],
+            notification_type_name='blank',
+            campaign_id=running_campaign.id,
+            run_id=running_campaign.run_id,
+        )
+
+        recipient.refresh_from_db()
+        running_campaign.refresh_from_db()
+        assert recipient.status == NotificationCampaignRecipientStatus.SENT
+        assert running_campaign.sent_count == 1
+        assert running_campaign.failed_count == 0
+        mock_emit.assert_called_once()
+
+
+class TestNotificationCampaignCancel:
+
+    def test_cancel_sets_cancelled_status_and_completed_at(self, campaign):
+        assert campaign.completed_at is None
+
+        campaign.cancel()
+
+        campaign.refresh_from_db()
+        assert campaign.status == NotificationCampaignStatus.CANCELLED
+        assert campaign.completed_at is not None
+
+    def test_cancel_does_not_overwrite_existing_completed_at(self, campaign):
+        completed_at = timezone.now() - timedelta(hours=1)
+        campaign.completed_at = completed_at
+        campaign.save(update_fields=['completed_at'])
+
+        campaign.cancel()
+
+        campaign.refresh_from_db()
+        assert campaign.status == NotificationCampaignStatus.CANCELLED
+        assert campaign.completed_at == completed_at
+
 
 class TestProcessCampaignRetry:
 
@@ -636,8 +685,10 @@ class TestProcessCampaignRetry:
         NotificationCampaignRecipient.objects.filter(campaign=campaign, user=skipped_user).update(
             status=NotificationCampaignRecipientStatus.SKIPPED
         )
+        campaign.run_id = uuid.uuid4()
+        campaign.save(update_fields=['run_id'])
 
-        process_campaign_retry(campaign_id=campaign.id)
+        process_campaign_retry(campaign_id=campaign.id, run_id=campaign.run_id)
 
         campaign.refresh_from_db()
         assert campaign.status == NotificationCampaignStatus.COMPLETED
@@ -645,6 +696,51 @@ class TestProcessCampaignRetry:
         assert campaign.sent_count == 1
         assert campaign.failed_count == 1
         assert campaign.completed_at is not None
+
+    def test_process_campaign_retry_skips_stale_run_id(self, campaign):
+        user = UserFactory()
+        create_campaign_recipients(filters={'id__in': [user.id]}, campaign_id=campaign.id)
+        NotificationCampaignRecipient.objects.filter(campaign=campaign).update(
+            status=NotificationCampaignRecipientStatus.SENT
+        )
+        campaign.run_id = uuid.uuid4()
+        campaign.status = NotificationCampaignStatus.RUNNING
+        campaign.save()
+
+        process_campaign_retry(campaign_id=campaign.id, run_id=uuid.uuid4())
+
+        campaign.refresh_from_db()
+        assert campaign.status == NotificationCampaignStatus.RUNNING
+        assert campaign.completed_at is None
+        assert campaign.sent_count == 0
+
+    @mock.patch('osf.email.notification_campaign.sentry.log_message')
+    def test_process_campaign_retry_keeps_cancelled_status_and_syncs_stats(self, mock_sentry, campaign):
+        sent_user = UserFactory()
+        failed_user = UserFactory()
+        create_campaign_recipients(
+            filters={'id__in': [sent_user.id, failed_user.id]},
+            campaign_id=campaign.id,
+        )
+        NotificationCampaignRecipient.objects.filter(campaign=campaign, user=sent_user).update(
+            status=NotificationCampaignRecipientStatus.SENT
+        )
+        NotificationCampaignRecipient.objects.filter(campaign=campaign, user=failed_user).update(
+            status=NotificationCampaignRecipientStatus.FAILED
+        )
+        campaign.run_id = uuid.uuid4()
+        campaign.status = NotificationCampaignStatus.CANCELLED
+        campaign.save()
+
+        process_campaign_retry(campaign_id=campaign.id, run_id=campaign.run_id)
+
+        campaign.refresh_from_db()
+        assert campaign.status == NotificationCampaignStatus.CANCELLED
+        assert campaign.recipient_count == 2
+        assert campaign.sent_count == 1
+        assert campaign.failed_count == 1
+        assert campaign.completed_at is not None
+        mock_sentry.assert_called_once()
 
     @mock.patch('osf.email.notification_campaign.chain')
     def test_process_campaign_retry_retries_failed_recipients(self, mock_chain, campaign):
@@ -655,6 +751,7 @@ class TestProcessCampaignRetry:
         recipient.save(update_fields=['status'])
         campaign.run_id = uuid.uuid4()
         campaign.retries = 0
+        campaign.status = NotificationCampaignStatus.RUNNING
         campaign.save()
         mock_chain.return_value.apply_async = mock.Mock()
 
@@ -662,7 +759,7 @@ class TestProcessCampaignRetry:
 
         campaign.refresh_from_db()
         assert campaign.retries == 1
-        assert campaign.status != NotificationCampaignStatus.PARTIALLY_COMPLETED
+        assert campaign.status == NotificationCampaignStatus.RUNNING
         mock_chain.assert_called_once()
 
     def test_process_campaign_retry_marks_partially_completed_after_max_retries(self, campaign):
@@ -671,10 +768,11 @@ class TestProcessCampaignRetry:
         recipient = NotificationCampaignRecipient.objects.get(campaign=campaign, user=user)
         recipient.status = NotificationCampaignRecipientStatus.FAILED
         recipient.save(update_fields=['status'])
+        campaign.run_id = uuid.uuid4()
         campaign.retries = 2
-        campaign.save(update_fields=['retries'])
+        campaign.save()
 
-        process_campaign_retry(campaign_id=campaign.id)
+        process_campaign_retry(campaign_id=campaign.id, run_id=campaign.run_id)
 
         campaign.refresh_from_db()
         assert campaign.status == NotificationCampaignStatus.PARTIALLY_COMPLETED
