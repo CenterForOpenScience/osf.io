@@ -5,22 +5,23 @@ from django.core.management.base import BaseCommand
 from django.db import transaction
 from django.utils import timezone
 
-from osf.models import OSFUser, UserActivityCounter
+from osf.models import OSFUser, SpamStatus, UserActivityCounter
 from website.app import setup_django
 from website.security import random_string
 
 setup_django()
 
-
 logger = logging.getLogger(__name__)
 
 
-def generate_users(prefix, suffix, domain, total):
-    """Generate usernames paired with full names.
+def generate_users(prefix, suffix, domain, total, start=1):
+    """Generate usernames paired with full names: prefix+NNNN+suffix@domain
     """
+    if start + total > 9999:
+        raise Exception(f'The max numbered user cannot be greater than 9999: start({start}) + total({total}) = {start + total}!')
     return {
         f'{prefix}+{str(i).zfill(4)}+{suffix}@{domain}': f'{prefix}{str(i).zfill(4)} {suffix}{str(i).zfill(4)}'
-        for i in range(1, total + 1)
+        for i in range(start, total + start)
     }
 
 
@@ -29,15 +30,18 @@ def create_confirmed_test_users(
         suffix='enter',
         domain='cos.io',
         total=100,
+        start=1,
         password=None,
         set_activity=True,
+        no_email=False,
+        flagged=False,
         dry_run=False
 ):
     """Create a given number of confirmed users, with generated usernames and full names. For each created user,
     optionally creates a matching UserActivityCounter entry with a random total between 1 and 100.
     """
     created_user_ids = []
-    username_to_fullname = generate_users(prefix, suffix, domain, total)
+    username_to_fullname = generate_users(prefix, suffix, domain, total, start)
 
     for raw_username, fullname in username_to_fullname.items():
         username = raw_username.lower().strip()
@@ -55,10 +59,14 @@ def create_confirmed_test_users(
             logger.error(f'Failed to create confirmed user "{username}" ({fullname}): error={e}.')
             continue
         user.accepted_terms_of_service = timezone.now()
+        if no_email:
+            user.emails.all().delete()
+            user.username = user._id
+        if flagged:
+            user.spam_status = SpamStatus.FLAGGED
         user.save()
         logger.info(f'Created confirmed user "{username}" ({fullname})')
         created_user_ids.append(user._id)
-
     if set_activity:
         UserActivityCounter.objects.bulk_create(
             [
@@ -72,7 +80,6 @@ def create_confirmed_test_users(
             ],
             ignore_conflicts=True,
         )
-
     logger.info(f'Done. Created {len(created_user_ids)} user(s); skipped {len(username_to_fullname) - len(created_user_ids)}.')
 
 
@@ -109,6 +116,12 @@ class Command(BaseCommand):
             help='Total number of users to create',
         )
         parser.add_argument(
+            '--start',
+            type=int,
+            default=1,
+            help='The starting number of the first user to create',
+        )
+        parser.add_argument(
             '--password',
             type=str,
             dest='password',
@@ -119,6 +132,18 @@ class Command(BaseCommand):
             action='store_true',
             dest='no_activity',
             help='Skip setting a random activity total for the created users',
+        )
+        parser.add_argument(
+            '--no-email',
+            action='store_true',
+            dest='no_email',
+            help='Set username to guid and remove all emails',
+        )
+        parser.add_argument(
+            '--flagged',
+            action='store_true',
+            dest='flagged',
+            help='Flag user (flagged spam but not confirmed)',
         )
         parser.add_argument(
             '--dry',
@@ -132,8 +157,11 @@ class Command(BaseCommand):
         suffix = options.get('suffix')
         domain = options.get('domain')
         total = options.get('total')
+        start = options.get('start')
         password = options.get('password')
         set_activity = not options.get('no_activity', False)
+        no_email = options.get('no_email', False)
+        flagged = options.get('flagged', False)
         dry_run = options.get('dry_run', False)
 
         if dry_run:
@@ -145,7 +173,10 @@ class Command(BaseCommand):
                 suffix=suffix,
                 domain=domain,
                 total=total,
+                start=start,
                 password=password,
                 set_activity=set_activity,
+                no_email=no_email,
+                flagged=flagged,
                 dry_run=dry_run,
             )
