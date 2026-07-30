@@ -701,7 +701,7 @@ class NotificationCampaignsRecipientsView(PermissionRequiredMixin, ListView):
         )
 
 class StartNotificationCampaign(PermissionRequiredMixin, View):
-    permission_required = 'osf.change_notificationtype'
+    permission_required = 'osf.change_notificationcampaign'
 
     def post(self, request, *args, **kwargs):
         notification_campaign = get_object_or_404(

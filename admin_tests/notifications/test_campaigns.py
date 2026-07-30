@@ -266,7 +266,7 @@ class TestNotificationCampaignAdminPermissions(AdminTestCase):
         response = NotificationCampaignDetail.as_view()(request, pk=self.campaign.pk)
         assert response.status_code == 200
 
-    def test_start_requires_change_notificationtype_permission(self):
+    def test_start_requires_change_notificationcampaign_permission(self):
         request = RequestFactory().post(
             reverse('notifications:notification_campaigns_start', kwargs={'pk': self.campaign.pk})
         )
@@ -275,7 +275,7 @@ class TestNotificationCampaignAdminPermissions(AdminTestCase):
         with self.assertRaises(PermissionDenied):
             StartNotificationCampaign.as_view()(request, pk=self.campaign.pk)
 
-        grant_permission(self.user, 'change_notificationtype')
+        grant_permission(self.user, 'change_notificationcampaign')
         with mock.patch.object(NotificationCampaign, 'start') as mock_start:
             response = StartNotificationCampaign.as_view()(request, pk=self.campaign.pk)
         assert response.status_code == 302
@@ -284,7 +284,7 @@ class TestNotificationCampaignAdminPermissions(AdminTestCase):
     def test_start_rejects_when_another_campaign_is_running(self):
         from osf.models.notification_campaign import NotificationCampaignStatus
 
-        grant_permission(self.user, 'change_notificationtype')
+        grant_permission(self.user, 'change_notificationcampaign')
         NotificationCampaign.objects.create(
             name='Already Running',
             notification_type=self.notification_type,
