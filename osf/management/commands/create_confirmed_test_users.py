@@ -1,7 +1,6 @@
 import logging
 import random
 
-from django.core.management import CommandError
 from django.core.management.base import BaseCommand
 from django.db import transaction
 from django.utils import timezone
@@ -37,7 +36,7 @@ def create_confirmed_test_users(
     """Create a given number of confirmed users, with generated usernames and full names. For each created user,
     optionally creates a matching UserActivityCounter entry with a random total between 1 and 100.
     """
-    created_users = []
+    created_user_ids = []
     username_to_fullname = generate_users(prefix, suffix, domain, total)
 
     for raw_username, fullname in username_to_fullname.items():
@@ -57,46 +56,56 @@ def create_confirmed_test_users(
             continue
         user.accepted_terms_of_service = timezone.now()
         user.save()
-        if set_activity:
-            UserActivityCounter.objects.create(
-                _id=user._id,
-                action={},
-                date={},
-                total=random.randint(1, 100),
-            )
-        created_users.append(user)
         logger.info(f'Created confirmed user "{username}" ({fullname})')
+        created_user_ids.append(user._id)
 
-    logger.info(f'Done. Created {len(created_users)} user(s); skipped {len(username_to_fullname) - len(created_users)}.')
-    return created_users
+    if set_activity:
+        UserActivityCounter.objects.bulk_create(
+            [
+                UserActivityCounter(
+                    _id=_id,
+                    action={},
+                    date={},
+                    total=random.randint(1, 100)
+                )
+                for _id in created_user_ids
+            ],
+            ignore_conflicts=True,
+        )
+
+    logger.info(f'Done. Created {len(created_user_ids)} user(s); skipped {len(username_to_fullname) - len(created_user_ids)}.')
 
 
 class Command(BaseCommand):
     help = '''Create a given number of confirmed users, with generated usernames and full names.
 
-    python3 manage.py project_enter_create_test_users longze --suffix enter --domain cos.io --total 100
+    python3 manage.py create_confirmed_test_users --prefix longze --suffix enter --domain cos.io --total 100
     '''
 
     def add_arguments(self, parser):
         super().add_arguments(parser)
         parser.add_argument(
-            'prefix',
+            '--prefix',
             type=str,
+            required=True,
             help='Prefix for generated usernames and full names',
         )
         parser.add_argument(
             '--suffix',
             type=str,
+            default='enter',
             help='Suffix for generated usernames and full names',
         )
         parser.add_argument(
             '--domain',
             type=str,
+            default='cos.io',
             help='Domain for generated usernames',
         )
         parser.add_argument(
             '--total',
             type=int,
+            default=100,
             help='Total number of users to create',
         )
         parser.add_argument(
@@ -120,8 +129,6 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         prefix = options.get('prefix')
-        if not prefix:
-            raise CommandError('--prefix required')
         suffix = options.get('suffix')
         domain = options.get('domain')
         total = options.get('total')
