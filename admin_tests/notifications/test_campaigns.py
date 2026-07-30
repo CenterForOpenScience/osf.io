@@ -7,6 +7,8 @@ from django.contrib.messages.storage.fallback import FallbackStorage
 from django.core.exceptions import PermissionDenied
 from django.test import RequestFactory
 from django.urls import reverse
+from django.utils import timezone
+from datetime import timedelta
 
 from admin.notifications.forms import NotificationCampaignCreateForm
 from admin.notifications.views import (
@@ -73,6 +75,7 @@ class TestNotificationCampaignCreateForm:
         assert form.cleaned_data['batch_size'] == settings.DEFAULT_CAMPAIGN_BATCH_SIZE
         assert form.cleaned_data['max_retries'] == settings.DEFAULT_CAMPAIGN_MAX_RETRIES
         assert form.cleaned_data['activity_threshold'] == settings.DEFAULT_CAMPAIGN_ACTIVITY_THRESHOLD
+        assert form.cleaned_data['time_window'] == 8
         assert form.cleaned_data['sendgrid_bulk'] is False
 
     def test_defaults_come_from_settings(self):
@@ -80,6 +83,7 @@ class TestNotificationCampaignCreateForm:
         assert form.fields['batch_size'].initial == settings.DEFAULT_CAMPAIGN_BATCH_SIZE
         assert form.fields['max_retries'].initial == settings.DEFAULT_CAMPAIGN_MAX_RETRIES
         assert form.fields['activity_threshold'].initial == settings.DEFAULT_CAMPAIGN_ACTIVITY_THRESHOLD
+        assert form.fields['time_window'].initial == 8
         assert form.fields['sendgrid_bulk'].initial is False
 
     def test_invalid_context_json(self, notification_type):
@@ -124,6 +128,20 @@ class TestNotificationCampaignCreateForm:
         )
         assert not form.is_valid()
         assert 'activity_threshold' in form.errors
+
+    def test_time_window_must_be_at_least_one(self, notification_type):
+        form = NotificationCampaignCreateForm(
+            data=_valid_form_data(notification_type, time_window=0)
+        )
+        assert not form.is_valid()
+        assert 'time_window' in form.errors
+
+    def test_time_window_is_accepted(self, notification_type):
+        form = NotificationCampaignCreateForm(
+            data=_valid_form_data(notification_type, time_window=6)
+        )
+        assert form.is_valid()
+        assert form.cleaned_data['time_window'] == 6
 
     def test_name_is_required(self, notification_type):
         form = NotificationCampaignCreateForm(
@@ -265,6 +283,33 @@ class TestNotificationCampaignAdminPermissions(AdminTestCase):
         grant_permission(self.user, 'change_notificationcampaign')
         response = NotificationCampaignDetail.as_view()(request, pk=self.campaign.pk)
         assert response.status_code == 200
+
+    def test_detail_allow_restart_stuck_false_when_recently_updated(self):
+        grant_permission(self.user, 'change_notificationcampaign')
+        request = RequestFactory().get(
+            reverse('notifications:notification_campaigns_detail', kwargs={'pk': self.campaign.pk})
+        )
+        request.user = self.user
+
+        response = NotificationCampaignDetail.as_view()(request, pk=self.campaign.pk)
+
+        assert response.status_code == 200
+        assert response.context_data['allow_restart_stuck'] is False
+
+    def test_detail_allow_restart_stuck_true_when_updated_long_time_ago(self):
+        grant_permission(self.user, 'change_notificationcampaign')
+        NotificationCampaign.objects.filter(pk=self.campaign.pk).update(
+            updated_at=timezone.now() - timedelta(minutes=16),
+        )
+        request = RequestFactory().get(
+            reverse('notifications:notification_campaigns_detail', kwargs={'pk': self.campaign.pk})
+        )
+        request.user = self.user
+
+        response = NotificationCampaignDetail.as_view()(request, pk=self.campaign.pk)
+
+        assert response.status_code == 200
+        assert response.context_data['allow_restart_stuck'] is True
 
     def test_start_requires_change_notificationtype_permission(self):
         request = RequestFactory().post(
