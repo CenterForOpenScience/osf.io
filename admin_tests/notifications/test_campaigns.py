@@ -284,7 +284,7 @@ class TestNotificationCampaignAdminPermissions(AdminTestCase):
     def test_start_rejects_when_another_campaign_is_running(self):
         from osf.models.notification_campaign import NotificationCampaignStatus
 
-        grant_permission(self.user, 'change_notificationtype')
+        grant_permission(self.user, 'change_notificationcampaign')
         NotificationCampaign.objects.create(
             name='Already Running',
             notification_type=self.notification_type,
