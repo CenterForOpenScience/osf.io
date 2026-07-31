@@ -2224,11 +2224,15 @@ class TestUserGdprDelete:
 
         assert mock_update_search.called
 
-    def test_can_gdpr_delete(self, user):
+    @mock.patch('framework.auth.cas.CasClient.revoke_orcid_token')
+    def test_can_gdpr_delete(self, mock_revoke_orcid_token, user):
+        user.external_identity = {'ORCID': {'fake-orcid-id': 'VERIFIED'}}
+        user.orcid_token_stored = True
+        user.save()
+
         user.social = ['fake social']
         user.schools = ['fake schools']
         user.jobs = ['fake jobs']
-        user.external_identity = ['fake external identity']
         user.external_accounts.add(ExternalAccountFactory())
 
         user.gdpr_delete()
@@ -2242,6 +2246,33 @@ class TestUserGdprDelete:
         assert not user.emails.exists()
         assert not user.external_accounts.exists()
         assert user.is_disabled
+        assert user.deleted is not None
+        mock_revoke_orcid_token.assert_called_once_with('fake-orcid-id')
+        assert user.orcid_token_stored is False
+
+    @mock.patch('framework.auth.cas.CasClient.revoke_orcid_token')
+    def test_gdpr_delete_no_orcid_no_cas_call(self, mock_revoke_orcid_token, user):
+        assert user.external_identity == {}
+
+        user.gdpr_delete()
+
+        mock_revoke_orcid_token.assert_not_called()
+
+    @mock.patch('framework.auth.cas.CasClient.revoke_orcid_token')
+    def test_gdpr_delete_orcid_revoke_failure_does_not_block_delete(self, mock_revoke_orcid_token, user):
+        from framework.auth import cas
+        mock_revoke_orcid_token.side_effect = cas.CasHTTPError(
+            code=400, message='Bad Request', headers={}, content=b'',
+        )
+        user.external_identity = {'ORCID': {'fake-orcid-id': 'VERIFIED'}}
+        user.orcid_token_stored = True
+        user.save()
+
+        user.gdpr_delete()
+
+        mock_revoke_orcid_token.assert_called_once_with('fake-orcid-id')
+        assert user.external_identity == {}
+        assert user.orcid_token_stored is False
         assert user.deleted is not None
 
     def test_can_gdpr_delete_personal_nodes(self, user):

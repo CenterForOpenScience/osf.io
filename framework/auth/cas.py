@@ -28,6 +28,7 @@ class CasHTTPError(CasError):
 
     def __init__(self, code, message, headers, content):
         super().__init__(code, message)
+        self.message = message
         self.headers = headers
         self.content = content
 
@@ -95,6 +96,10 @@ class CasClient:
 
     def get_auth_token_revocation_url(self):
         url = furl(self.BASE_URL).add(path=['oauth2', 'revoke'])
+        return url.url
+
+    def get_orcid_token_revocation_url(self):
+        url = furl(self.BASE_URL).add(path=['osf', 'orcid', 'revoke'])
         return url.url
 
     def service_validate(self, ticket, service_url):
@@ -193,6 +198,17 @@ class CasClient:
         url = self.get_auth_token_revocation_url()
 
         resp = requests.post(url, data=payload)
+        if resp.status_code == 204:
+            return True
+        else:
+            self._handle_error(resp)
+
+    def revoke_orcid_token(self, orcid_id):
+        url = self.get_orcid_token_revocation_url()
+        headers = {
+            'Authorization': f'Bearer {settings.CAS_ORCID_REVOKE_SHARED_SECRET}',
+        }
+        resp = requests.post(url, json={'orcid_id': orcid_id}, headers=headers)
         if resp.status_code == 204:
             return True
         else:

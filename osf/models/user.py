@@ -26,7 +26,7 @@ from django.db.models.signals import post_save
 from django.utils import timezone
 
 from framework import sentry
-from framework.auth import Auth, signals, utils
+from framework.auth import Auth, cas, signals, utils
 from framework.auth.core import generate_verification_key
 from framework.auth.exceptions import (
     ChangePasswordError,
@@ -407,6 +407,12 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
     accepted_terms_of_service = NonNaiveDateTimeField(null=True, blank=True)
 
     chronos_user_id = models.TextField(null=True, blank=True, db_index=True)
+
+    date_orcid_initial_authorized = NonNaiveDateTimeField(null=True, blank=True)
+
+    date_orcid_last_authorized = NonNaiveDateTimeField(null=True, blank=True)
+
+    orcid_token_stored = models.BooleanField(default=False)
 
     allow_indexing = models.BooleanField(null=True, blank=True, default=None)
 
@@ -2172,6 +2178,22 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
                 account.profile_url = None
                 account.save()
             self.external_accounts.clear()
+
+        # Revoke any ORCID OAuth token CAS holds for this user, so OSF no longer shows as a
+        # trusted party on the user's ORCID account. Best-effort: never blocks GDPR delete.
+        orcid_ids = self.external_identity.get('ORCID', {})
+        if orcid_ids:
+            for orcid_id in orcid_ids:
+                try:
+                    cas.get_client().revoke_orcid_token(orcid_id)
+                except cas.CasHTTPError as e:
+                    logger.error(f'Unable to revoke ORCID token via CAS for user {self._id}, orcid_id={orcid_id}: {e}')
+                    sentry.log_exception(e)
+                except Exception as e:
+                    logger.error(f'Unexpected error revoking ORCID token via CAS for user {self._id}, orcid_id={orcid_id}: {e}')
+                    sentry.log_exception(e)
+            self.orcid_token_stored = False
+
         self.external_identity = {}
         self.deleted = timezone.now()
 

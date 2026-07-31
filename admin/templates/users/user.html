@@ -127,6 +127,18 @@
                     </td>
                 </tr>
                 <tr>
+                    <td>Initial ORCID Authorization</td>
+                    <td>{{ user.date_orcid_initial_authorized }}</td>
+                </tr>
+                <tr>
+                    <td>Last ORCID Authorization</td>
+                    <td>{{ user.date_orcid_last_authorized }}</td>
+                </tr>
+                <tr>
+                    <td>ORCID Token Reserved</td>
+                    <td>{{ user.orcid_token_stored }}</td>
+                </tr>
+                <tr>
                     <td>Registered</td>
                     <td>{{ user.is_registered }} [{{ user.date_registered }}]</td>
                 </tr>
