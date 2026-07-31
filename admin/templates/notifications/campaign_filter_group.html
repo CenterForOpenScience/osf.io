@@ -1,0 +1,22 @@
+<div class="filter-group{% if not is_root %} ms-4{% endif %}">
+    <div class="d-flex align-items-center gap-2 mb-2">
+        <strong>Match</strong>
+        <span class="badge bg-secondary">{{ group.operator }}</span>
+    </div>
+
+    <div class="filter-children border-start ps-3">
+        {% for child in group.children %}
+            {% if child.children %}
+                {% include "notifications/campaign_filter_group.html" with group=child is_root=False %}
+            {% else %}
+                <div class="mb-2">
+                    <strong>{{ child.field }}</strong>
+                    {{ child.lookup }}
+                    <code>{{ child.value }}</code>
+                </div>
+            {% endif %}
+        {% empty %}
+            <div class="text-muted">No filters configured.</div>
+        {% endfor %}
+    </div>
+</div>

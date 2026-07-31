@@ -557,6 +557,14 @@ class NotificationCampaignCreateView(CreateView):
     def form_valid(self, form):
         form.instance.created_by = self.request.user
 
+        if 'manual' in form.cleaned_data['filters']:
+            if not form.cleaned_data['filters']['manual']['children']:
+                form.add_error(
+                    'filters',
+                    'Manual filters cannot be empty.'
+                )
+                return self.form_invalid(form)
+
         form.instance.metadata = {
             'filters': form.cleaned_data['filters'],
             'context': form.cleaned_data['context'],
