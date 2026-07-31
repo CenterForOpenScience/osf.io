@@ -736,18 +736,27 @@ class DownloadEventsView(admin.ModelAdmin):
         return value.strftime('%Y-%m-%d')
 
     def _build_region_breakdown(self, queryset, field_name):
-        """Grouped in the database — the range can cover millions of rows."""
+        """Grouped in the database — the range can cover millions of rows.
+
+        `downloads` is the total request count; `file_count` and `zip_count` split it by
+        request type (a zip is either a folder or a whole-project zip), so file + zip always
+        equals the total.
+        """
         rows = queryset.values(field_name).annotate(
             downloads=Count('id'),
             total_bytes=Sum('size_bytes'),
+            file_count=Count('id', filter=Q(download_type=DownloadEvent.FILE)),
+            zip_count=Count('id', filter=~Q(download_type=DownloadEvent.FILE)),
         )
 
-        breakdown = defaultdict(lambda: {'downloads': 0, 'gb': 0.0})
+        breakdown = defaultdict(lambda: {'downloads': 0, 'gb': 0.0, 'file_count': 0, 'zip_count': 0})
         for row in rows:
             # blank and null both mean "we could not tell", so they fold together
             region_name = (row[field_name] or 'Unknown').strip() or 'Unknown'
             breakdown[region_name]['downloads'] += row['downloads']
             breakdown[region_name]['gb'] += (row['total_bytes'] or 0) / (1024**3)
+            breakdown[region_name]['file_count'] += row['file_count']
+            breakdown[region_name]['zip_count'] += row['zip_count']
 
         ordered = sorted(breakdown.items(), key=lambda item: item[1]['gb'], reverse=True)[:10]
         max_gb = max((data['gb'] for _, data in ordered), default=0)
@@ -756,6 +765,8 @@ class DownloadEventsView(admin.ModelAdmin):
             {
                 'name': name,
                 'downloads': data['downloads'],
+                'file_count': data['file_count'],
+                'zip_count': data['zip_count'],
                 'gb': round(data['gb'], 2),
                 'gb_percent': self._percent(data['gb'], max_gb),
                 'download_percent': self._percent(data['downloads'], max_downloads),
