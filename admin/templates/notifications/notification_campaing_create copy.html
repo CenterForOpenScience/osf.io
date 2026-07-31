@@ -287,21 +287,20 @@ const initialState = JSON.parse(
 );
 
 updateMode();
+createGroup(builder)
 
 if (initialState) {
     filterMode.value = initialState.mode || "predefined";
     updateMode();
-    console.log(initialState)
 
     if (initialState.mode === "manual") {
         createGroup(builder, initialState);
     } else if (initialState.mode === "predefined") {
         document.getElementById("filter-row").value =
-        initialState.filter;
+            initialState.filter;
     }
 }
 
-createGroup(builder)
 
 function updateValueName(field, operator, value) {
     value.name = `${field.value}__${operator.value}`;
@@ -417,7 +416,7 @@ document.getElementById("render-preview").addEventListener("click", async () => 
     });
 });
 
-function createGroup(parent, initialState = {}) {
+function createGroup(parent, initialState) {
     const group = document.createElement("div");
     group.className = "group";
 
@@ -453,10 +452,6 @@ function createGroup(parent, initialState = {}) {
 
     const children = group.querySelector(".children");
 
-    // Set operator
-    group.querySelector(".group-operator").value =
-        initialState.operator || "AND";
-
     group.querySelector(".add-condition").onclick = () =>
         createCondition(children);
 
@@ -467,27 +462,23 @@ function createGroup(parent, initialState = {}) {
         group.remove();
     });
 
-    // Restore children
-    (initialState.children || []).forEach(child => {
-        if ("children" in child) {
-            createGroup(children, child);
-        } else {
-            createCondition(children, child);
-        }
-    });
-
     return group;
 }
 
-function createCondition(parent, initialState = {}) {
+function createCondition(parent) {
     const row = document.createElement("div");
     row.className = "condition";
 
     row.innerHTML = `
         <select class="field"></select>
+
         <select class="lookup"></select>
+
         <input class="value">
-        <button type="button" class="remove-condition">✕</button>
+
+        <button type="button" class="remove-condition">
+            ✕
+        </button>
     `;
 
     const field = row.querySelector(".field");
@@ -503,29 +494,14 @@ function createCondition(parent, initialState = {}) {
     });
 
     lookup.addEventListener("change", () => {
-        updateValueName(field, lookup, value);
+        updateValueName(field, lookup, row.querySelector(".value"));
     });
-
-    parent.appendChild(row);
-
-    // Set field first so available lookups are populated
-    if (initialState.field) {
-        field.value = initialState.field;
-    }
 
     updateOperatorAndValue(row, field, lookup, value);
 
-    if (initialState.lookup) {
-        lookup.value = initialState.lookup;
-    }
-
-    if (initialState.value !== undefined) {
-        value.value = initialState.value;
-    }
-
     row.querySelector(".remove-condition").onclick = () => row.remove();
 
-    return row;
+    parent.appendChild(row);
 }
 
 function serializeGroup(group) {
