@@ -37,10 +37,42 @@ counter_subquery = (
     .values('total')[:1]
 )
 
+
+def build_query(node):
+    """
+    Convert a filter tree into a Django Q object.
+    """
+
+    if 'field' in node:
+        value = node['value']
+
+        if node['lookup'] == 'in':
+            value = [v.strip() for v in value.split(',')]
+
+        return Q(**{
+            f'{node["field"]}__{node["lookup"]}': value
+        })
+
+    operator = node.get('operator', 'AND')
+    children = node.get('children', [])
+
+    if not children:
+        return Q()
+
+    query = build_query(children[0])
+
+    for child in children[1:]:
+        if operator == 'AND':
+            query &= build_query(child)
+        else:
+            query |= build_query(child)
+
+    return query
+
 def create_campaign_recipients(filters, campaign_id):
     qs = (
         OSFUser.objects
-        .filter(**filters)
+        .filter(filters)
         .annotate(activity_score=Coalesce(Subquery(counter_subquery), 0))
         .values_list(
             'id',
@@ -220,15 +252,9 @@ def start_notification_campaign(campaign_id, restart_failed=False, restart_stuck
         del getattr(NotificationTypeEnum, notification_type_name).instance
 
     if predefined_filter_name := filters.get('predefined'):
-        filters = FILTER_PRESETS.get(predefined_filter_name, {})
+        filters = Q(**FILTER_PRESETS.get(predefined_filter_name, {}))
     else:
-        manual_filters = {}
-        for item in filters.get('manual', []):
-            if item['lookup'] != 'in':
-                manual_filters[f'{item["field"]}__{item["lookup"]}'] = item['value']
-            else:
-                manual_filters[f'{item["field"]}__{item["lookup"]}'] = [value.strip() for value in item['value'].split(',')]
-        filters = manual_filters
+        filters = build_query(filters.get('manual', []))
 
     if not restart_failed and not restart_stuck:
         create_campaign_recipients(filters=filters, campaign_id=campaign_id)

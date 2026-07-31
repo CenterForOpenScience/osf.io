@@ -7,6 +7,14 @@
 {% endblock title %}
 
 {% block content %}
+<style>
+.filter-group {
+    padding-left: 24px;
+    border-left: 2px solid #000000;
+    margin-left: 8px;
+}
+</style>
+
 <div>
     {% if messages %}
         <ul>
@@ -261,30 +269,13 @@
 
             {% if not "predefined" in metadata.filters  %}
 
-                <table class="table table-bordered table-striped">
-                    <thead>
-                        <tr>
-                            <th style="width:35%;">Field</th>
-                            <th style="width:25%;">Lookup</th>
-                            <th>Value</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for filter in metadata.filters.manual %}
-                        <tr>
-                            <td>{{ filter.field }}</td>
-                            <td>{{ filter.lookup }}</td>
-                            <td><code>{{ filter.value }}</code></td>
-                        </tr>
-                        {% empty %}
-                        <tr>
-                            <td colspan="3" class="text-center">
-                                No filters configured.
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
+                {% if not "predefined" in metadata.filters %}
+                    {% if metadata.filters.manual %}
+                        {% include "notifications/campaign_filter_group.html" with group=metadata.filters.manual is_root=True %}
+                    {% else %}
+                        <p class="text-muted">No filters configured.</p>
+                    {% endif %}
+                {% endif %}
 
             {% elif "predefined" in metadata.filters %}
 

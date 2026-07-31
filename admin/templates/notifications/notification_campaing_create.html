@@ -7,6 +7,28 @@
 {% endblock title %}
 
 {% block content %}
+<style>
+.group > .children {
+    padding-left: 24px;
+    border-left: 2px solid #000000;
+    margin-left: 8px;
+}
+.group-toolbar {
+    display: flex;
+    justify-content: space-between; /* or flex-start */
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 8px;
+}
+
+.group-header,
+.group-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+</style>
+
 <div>
     {% if messages %}
         <ul>
@@ -97,17 +119,7 @@
                 </div>
 
                 <div id="manual-filters">
-
                     <div id="filter-builder"></div>
-
-                    <button
-                        type="button"
-                        id="add-filter"
-                        class="btn btn-default"
-                    >
-                        + Add Filter
-                    </button>
-
                 </div>
 
                 <div
@@ -276,7 +288,7 @@
 const filterMode = document.getElementById("filter-mode");
 const manualFilters = document.getElementById("manual-filters");
 const predefinedFilter = document.getElementById("predefined-filter");
-const container = document.getElementById("filter-builder");
+const builder = document.getElementById("filter-builder");
 const form = document.querySelector("form");
 
 function updateMode() {
@@ -299,67 +311,18 @@ const initialState = JSON.parse(
 updateMode();
 
 if (initialState) {
-    filterMode.value = initialState.mode || "manual";
+    filterMode.value = initialState.mode || "predefined";
     updateMode();
 
     if (initialState.mode === "manual") {
-        (initialState.filters || []).forEach(addFilter);
+        createGroup(builder, initialState);
     } else if (initialState.mode === "predefined") {
         document.getElementById("filter-row").value =
             initialState.filter;
     }
 }
 
-document
-    .getElementById("add-filter")
-    .addEventListener("click", () => addFilter());
-
-function addFilter(initial = null) {
-
-    const row = document.createElement("div");
-    row.className = "filter-row form-inline";
-    row.style.marginBottom = "10px";
-
-    const field = document.createElement("select");
-    field.className = "field form-control";
-
-    const operator = document.createElement("select");
-    operator.className = "operator form-control";
-
-    const value = document.createElement("input");
-    value.className = "value form-control";
-
-    const remove = document.createElement("button");
-    remove.type = "button";
-    remove.className = "btn btn-danger";
-    remove.textContent = "✕";
-    remove.onclick = () => row.remove();
-
-    Object.entries(filterConfig).forEach(([name, config]) => {
-        field.add(new Option(config.label, name));
-    });
-
-    field.onchange = () => updateOperatorAndValue(row, field, operator, value);
-
-    operator.onchange = () => {
-        updateValueName(field, operator, row.querySelector(".value"));
-    };
-
-    row.append(field, operator, value, remove);
-    container.appendChild(row);
-
-    if (initial) {
-        field.value = initial.field;
-    }
-
-    updateOperatorAndValue(row, field, operator, value);
-
-    if (initial) {
-        operator.value = initial.lookup;
-        updateValueName(field, operator, row.querySelector(".value"));
-        row.querySelector(".value").value = initial.value;
-    }
-}
+createGroup(builder)
 
 function updateValueName(field, operator, value) {
     value.name = `${field.value}__${operator.value}`;
@@ -415,6 +378,7 @@ function updateOperatorAndValue(row, field, operator, value) {
 
     updateValueName(field, operator, newValue);
 }
+
 function buildFilters() {
 
     if (filterMode.value === "predefined") {
@@ -423,17 +387,8 @@ function buildFilters() {
         };
     }
 
-    const filters = [];
-
-    document.querySelectorAll(".filter-row").forEach(row => {
-        filters.push({
-            field: row.querySelector(".field").value,
-            lookup: row.querySelector(".operator").value,
-            value: row.querySelector(".value").value
-        });
-    });
-
-    return {"manual": filters}
+    const root = builder.querySelector(":scope > .group");
+    return {"manual": serializeGroup(root)}
 }
 
 function updateFiltersInput() {
@@ -482,6 +437,149 @@ document.getElementById("render-preview").addEventListener("click", async () => 
         console.error("Preview render failed:", error);
     });
 });
+
+function createGroup(parent, initialState = {}) {
+    const group = document.createElement("div");
+    group.className = "group";
+
+    group.innerHTML = `
+        <div class="group-toolbar">
+            <div class="group-header">
+                Match
+                <select class="group-operator">
+                    <option value="AND">AND</option>
+                    <option value="OR">OR</option>
+                </select>
+
+                ${
+                    parent !== builder
+                        ? `<button class="remove-group" type="button">✕ Group</button>`
+                        : ""
+                }
+            </div>
+
+
+            <div class="group-actions">
+                <button class="add-condition" type="button">
+                    + Condition
+                    </button>
+
+                <button class="add-group" type="button">
+                    + Group
+                </button>
+            </div>
+        </div>
+        <div class="children"></div>
+    `;
+
+    parent.appendChild(group);
+
+    const children = group.querySelector(".children");
+
+    // Set operator
+    group.querySelector(".group-operator").value =
+        initialState.operator || "AND";
+
+    group.querySelector(".add-condition").onclick = () =>
+        createCondition(children);
+
+    group.querySelector(".add-group").onclick = () =>
+        createGroup(children);
+
+    group.querySelector(".remove-group")?.addEventListener("click", () => {
+        group.remove();
+    });
+
+    // Restore children
+    (initialState.children || []).forEach(child => {
+        if ("children" in child) {
+            createGroup(children, child);
+        } else {
+            createCondition(children, child);
+        }
+    });
+
+    return group;
+}
+
+function createCondition(parent, initialState = {}) {
+    const row = document.createElement("div");
+    row.className = "condition";
+
+    row.innerHTML = `
+        <select class="field"></select>
+        <select class="lookup"></select>
+        <input class="value">
+        <button type="button" class="remove-condition">✕</button>
+    `;
+
+    const field = row.querySelector(".field");
+    const lookup = row.querySelector(".lookup");
+    const value = row.querySelector(".value");
+
+    Object.entries(filterConfig).forEach(([name, config]) => {
+        field.add(new Option(config.label, name));
+    });
+
+    field.addEventListener("change", () => {
+        updateOperatorAndValue(row, field, lookup, value);
+    });
+
+    lookup.addEventListener("change", () => {
+        updateValueName(field, lookup, value);
+    });
+
+    parent.appendChild(row);
+
+    // Set field first so available lookups are populated
+    if (initialState.field) {
+        field.value = initialState.field;
+    }
+
+    updateOperatorAndValue(row, field, lookup, value);
+
+    if (initialState.lookup) {
+        lookup.value = initialState.lookup;
+    }
+
+    if (initialState.value !== undefined) {
+        value.value = initialState.value;
+    }
+
+    row.querySelector(".remove-condition").onclick = () => row.remove();
+
+    return row;
+}
+
+function serializeGroup(group) {
+
+    const result = {
+        operator: group.querySelector(".group-operator").value,
+        children: []
+    };
+
+    group.querySelector(":scope > .children").childNodes.forEach(child => {
+
+        if (child.classList.contains("condition")) {
+
+            result.children.push({
+                field: child.querySelector(".field").value,
+                lookup: child.querySelector(".lookup").value,
+                value: child.querySelector(".value").value
+            });
+
+        } else if (child.classList.contains("group")) {
+
+            result.children.push(
+                serializeGroup(child)
+            );
+
+        }
+
+    });
+
+    return result;
+}
 
 </script>
 {% endblock %}

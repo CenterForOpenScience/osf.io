@@ -19,8 +19,9 @@ from mako.lexer import Lexer
 from mako.parsetree import ControlLine
 from string import Formatter
 from osf.email import _render_email_html
-from osf.email.notification_campaign import FILTER_PRESETS, counter_subquery
+from osf.email.notification_campaign import FILTER_PRESETS, counter_subquery, build_query
 from website import settings
+from urllib.parse import urlencode
 
 
 def delete_selected_notifications(selected_ids):
@@ -556,6 +557,14 @@ class NotificationCampaignCreateView(CreateView):
     def form_valid(self, form):
         form.instance.created_by = self.request.user
 
+        if 'manual' in form.cleaned_data['filters']:
+            if not form.cleaned_data['filters']['manual']['children']:
+                form.add_error(
+                    'filters',
+                    'Manual filters cannot be empty.'
+                )
+                return self.form_invalid(form)
+
         form.instance.metadata = {
             'filters': form.cleaned_data['filters'],
             'context': form.cleaned_data['context'],
@@ -620,20 +629,16 @@ class NotificationCampaignsRecipientsPreview(PermissionRequiredMixin, ListView):
     paginate_by = 25
 
     def get_queryset(self):
-        filters = {}
+        query = Q()
         raw_filters = self.request.GET.get('filters', None)
         if raw_filters:
             json_filters = json.loads(raw_filters)
             if predefined := json_filters.get('predefined'):
-                filters = FILTER_PRESETS.get(predefined, {})
+                query = Q(**FILTER_PRESETS.get(predefined, {}))
             else:
-                for item in json_filters.get('manual', []):
-                    if item['lookup'] != 'in':
-                        filters[f'{item["field"]}__{item["lookup"]}'] = item['value']
-                    else:
-                        filters[f'{item["field"]}__{item["lookup"]}'] = [value.strip() for value in item['value'].split(',')]
+                query = build_query(json_filters.get('manual'))
 
-        qs = OSFUser.objects.filter(**filters)
+        qs = OSFUser.objects.filter(query)
         qs = qs.annotate(
             guid=F('guids___id'),
             activity_score=Coalesce(Subquery(counter_subquery), 0)
@@ -649,8 +654,10 @@ class NotificationCampaignsRecipientsPreview(PermissionRequiredMixin, ListView):
             users,
             page_size,
         )
+
+        filters = self.request.GET.get('filters')
         # append search param to pagination links
-        kwargs.update({'extra_query_params': f'&filters={self.request.GET.get("filters")}'})
+        kwargs.update({'extra_query_params': f'&{urlencode({'filters': filters})}'})
         return super().get_context_data(
             **kwargs,
             page=page,
