@@ -2,6 +2,7 @@ from datetime import datetime
 import itertools
 import logging
 
+from django.utils import timezone
 from lxml import etree
 import pytz
 import requests
@@ -54,6 +55,16 @@ def update_affiliation_for_orcid_sso_users(user_id, orcid_id):
         logger.error(error_message)
         sentry.log_message(error_message)
         return
+
+    # Best-effort tracking of ORCID (re)authorization for admin visibility and GDPR-delete triage.
+    # This reflects that OSF observed a completed ORCID login, not a confirmed CAS-side token write.
+    now = timezone.now()
+    if not user.date_orcid_initial_authorized:
+        user.date_orcid_initial_authorized = now
+    user.date_orcid_last_authorized = now
+    user.orcid_token_stored = True
+    user.save()
+
     institution = check_institution_affiliation(orcid_id)
     if institution:
         logger.info(f'Eligible institution affiliation has been found for ORCiD SSO user: '
