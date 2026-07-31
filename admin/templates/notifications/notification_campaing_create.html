@@ -313,13 +313,12 @@ updateMode();
 if (initialState) {
     filterMode.value = initialState.mode || "predefined";
     updateMode();
-    console.log(initialState)
 
     if (initialState.mode === "manual") {
         createGroup(builder, initialState);
     } else if (initialState.mode === "predefined") {
         document.getElementById("filter-row").value =
-        initialState.filter;
+            initialState.filter;
     }
 }
 
