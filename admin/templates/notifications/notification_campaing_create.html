@@ -7,6 +7,28 @@
 {% endblock title %}
 
 {% block content %}
+<style>
+.group > .children {
+    padding-left: 24px;
+    border-left: 2px solid #000000;
+    margin-left: 8px;
+}
+.group-toolbar {
+    display: flex;
+    justify-content: space-between; /* or flex-start */
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 8px;
+}
+
+.group-header,
+.group-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+</style>
+
 <div>
     {% if messages %}
         <ul>
@@ -422,31 +444,33 @@ function createGroup(parent, initialState = {}) {
     group.className = "group";
 
     group.innerHTML = `
-        <div class="group-header">
-            Match
-            <select class="group-operator">
-                <option value="AND">AND</option>
-                <option value="OR">OR</option>
-            </select>
+        <div class="group-toolbar">
+            <div class="group-header">
+                Match
+                <select class="group-operator">
+                    <option value="AND">AND</option>
+                    <option value="OR">OR</option>
+                </select>
 
-            ${
-                parent !== builder
-                    ? `<button class="remove-group" type="button">✕ Group</button>`
-                    : ""
-            }
+                ${
+                    parent !== builder
+                        ? `<button class="remove-group" type="button">✕ Group</button>`
+                        : ""
+                }
+            </div>
+
+
+            <div class="group-actions">
+                <button class="add-condition" type="button">
+                    + Condition
+                    </button>
+
+                <button class="add-group" type="button">
+                    + Group
+                </button>
+            </div>
         </div>
-
         <div class="children"></div>
-
-        <div class="group-actions">
-            <button class="add-condition" type="button">
-                + Condition
-            </button>
-
-            <button class="add-group" type="button">
-                + Group
-            </button>
-        </div>
     `;
 
     parent.appendChild(group);
