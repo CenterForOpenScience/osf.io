@@ -197,6 +197,40 @@ class TestDashboardData(OsfTestCase):
 
         assert [row['name'] for row in providers] == ['Unknown']
 
+    def test_region_breakdown_splits_requests_by_type(self):
+        # Germany: 2 files + 1 folder zip + 1 project zip = 4 total, 3 zips
+        make_event(storage_region='Germany', download_type=DownloadEvent.FILE)
+        make_event(storage_region='Germany', download_type=DownloadEvent.FILE)
+        make_event(storage_region='Germany', download_type=DownloadEvent.FOLDER_ZIP)
+        make_event(storage_region='Germany', download_type=DownloadEvent.PROJECT)
+
+        regions = self.admin.get_dashboard_data(DownloadEvent.objects.all())['storage_regions']
+        germany = next(r for r in regions if r['name'] == 'Germany')
+
+        assert germany['file_count'] == 2
+        assert germany['zip_count'] == 2
+        # file + zip always equals the total — the invariant QA will check
+        assert germany['file_count'] + germany['zip_count'] == germany['downloads'] == 4
+
+    def test_region_type_counts_match_the_period_totals(self):
+        """Summed across regions, file/zip counts equal the header's split totals — so the
+        subtitle and the bars can never disagree."""
+        make_event(storage_region='Germany', download_type=DownloadEvent.FILE)
+        make_event(storage_region='United States', download_type=DownloadEvent.FILE)
+        make_event(storage_region='Germany', download_type=DownloadEvent.FOLDER_ZIP)
+
+        data = self.admin.get_dashboard_data(DownloadEvent.objects.all())
+        regions = data['storage_regions']
+
+        assert sum(r['file_count'] for r in regions) == data['split']['file']['count'] == 2
+        assert sum(r['zip_count'] for r in regions) == data['split']['zip']['count'] == 1
+
+    def test_region_type_counts_present_even_when_empty(self):
+        data = self.admin.get_dashboard_data(DownloadEvent.objects.none())
+
+        assert data['storage_regions'] == []
+        assert data['user_regions'] == []
+
     def test_blank_and_null_regions_fold_into_unknown(self):
         make_event(storage_region='')
         make_event(storage_region='   ')

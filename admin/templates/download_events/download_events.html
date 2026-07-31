@@ -38,6 +38,11 @@
                 color: #777;
                 margin-bottom: 8px;
             }
+            .card-sublabel {
+                font-size: 12px;
+                color: #9c9c9c;
+                margin: -4px 0 10px;
+            }
             .card-value {
                 font-size: 28px;
                 font-weight: 600;
@@ -109,6 +114,11 @@
             <div class="dashboard-grid charts-grid">
                 <div class="dashboard-card chart-card">
                     <div class="card-label">GB by storage region</div>
+                    <div class="card-sublabel">
+                        Requests in range — Files: {{ download_events_dashboard.split.file.count }}
+                        · Zips: {{ download_events_dashboard.split.zip.count }}
+                        · Total: {{ download_events_dashboard.summary.total_downloads }}
+                    </div>
 
                     <div class="chart-container">
                         <canvas id="storageRegionChart"></canvas>
@@ -117,6 +127,11 @@
 
                 <div class="dashboard-card chart-card">
                     <div class="card-label">Downloads / GB by user region</div>
+                    <div class="card-sublabel">
+                        Requests in range — Files: {{ download_events_dashboard.split.file.count }}
+                        · Zips: {{ download_events_dashboard.split.zip.count }}
+                        · Total: {{ download_events_dashboard.summary.total_downloads }}
+                    </div>
 
                     <div class="chart-container">
                         <canvas id="userRegionChart"></canvas>
@@ -296,6 +311,24 @@ const storageGB = [
     {% endfor %}
 ];
 
+const storageFileCounts = [
+    {% for region in download_events_dashboard.storage_regions %}
+        {{ region.file_count }},
+    {% endfor %}
+];
+
+const storageZipCounts = [
+    {% for region in download_events_dashboard.storage_regions %}
+        {{ region.zip_count }},
+    {% endfor %}
+];
+
+const storageTotalCounts = [
+    {% for region in download_events_dashboard.storage_regions %}
+        {{ region.downloads }},
+    {% endfor %}
+];
+
 const userRegionLabels = [
     {% for region in download_events_dashboard.user_regions %}
         "{{ region.name|escapejs }}",
@@ -311,6 +344,24 @@ const userDownloads = [
 const userGB = [
     {% for region in download_events_dashboard.user_regions %}
         {{ region.gb }},
+    {% endfor %}
+];
+
+const userFileCounts = [
+    {% for region in download_events_dashboard.user_regions %}
+        {{ region.file_count }},
+    {% endfor %}
+];
+
+const userZipCounts = [
+    {% for region in download_events_dashboard.user_regions %}
+        {{ region.zip_count }},
+    {% endfor %}
+];
+
+const userTotalCounts = [
+    {% for region in download_events_dashboard.user_regions %}
+        {{ region.downloads }},
     {% endfor %}
 ];
 
@@ -406,6 +457,17 @@ new Chart(
                 ...commonOptions.plugins,
                 legend: {
                     display: false
+                },
+                tooltip: {
+                    ...commonOptions.plugins.tooltip,
+                    callbacks: {
+                        footer: function (items) {
+                            const i = items[0].dataIndex;
+                            return "Files: " + storageFileCounts[i] +
+                                "  ·  Zips: " + storageZipCounts[i] +
+                                "  ·  Total: " + storageTotalCounts[i];
+                        }
+                    }
                 }
             },
             scales: {
@@ -456,6 +518,20 @@ new Chart(
         options: {
             ...commonOptions,
             indexAxis: "y",
+            plugins: {
+                ...commonOptions.plugins,
+                tooltip: {
+                    ...commonOptions.plugins.tooltip,
+                    callbacks: {
+                        footer: function (items) {
+                            const i = items[0].dataIndex;
+                            return "Files: " + userFileCounts[i] +
+                                "  ·  Zips: " + userZipCounts[i] +
+                                "  ·  Total: " + userTotalCounts[i];
+                        }
+                    }
+                }
+            },
             scales: {
 
                 x: {
