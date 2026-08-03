@@ -136,7 +136,7 @@ class TestDashboardData(OsfTestCase):
         assert data['split']['zip']['count_percent'] == 50
 
     def test_zip_outcomes_split_completed_cancelled_failed(self):
-        # a completed zip, a user cancel (False at 200), and a server failure (False at 5xx)
+        # a completed zip, a user cancel (False at 200), and a failure (False at an error status)
         make_event(download_type=DownloadEvent.FOLDER_ZIP, zip_completed=True, status_code=200)
         make_event(download_type=DownloadEvent.FOLDER_ZIP, zip_completed=False, status_code=200)
         make_event(download_type=DownloadEvent.PROJECT, zip_completed=False, status_code=502)
@@ -147,15 +147,19 @@ class TestDashboardData(OsfTestCase):
 
         assert outcomes == {'completed': 1, 'cancelled': 1, 'failed': 1}
 
-    def test_failed_zips_summary_counts_only_server_errors(self):
+    def test_failed_zips_summary_counts_error_statuses(self):
+        # any 4xx or 5xx that didn't complete is a failure; a 404 from an add-on provider
+        # is just as much a failure as a 500 from our server
+        make_event(download_type=DownloadEvent.FOLDER_ZIP, zip_completed=False, status_code=404)
         make_event(download_type=DownloadEvent.FOLDER_ZIP, zip_completed=False, status_code=500)
         make_event(download_type=DownloadEvent.FOLDER_ZIP, zip_completed=False, status_code=503)
+        # a cancel (ended on a success status) must NOT count as failed
         make_event(download_type=DownloadEvent.FOLDER_ZIP, zip_completed=False, status_code=200)
         make_event(download_type=DownloadEvent.FOLDER_ZIP, zip_completed=True, status_code=200)
 
         data = self.admin.get_dashboard_data(DownloadEvent.objects.all())
 
-        assert data['summary']['failed_zips'] == 2
+        assert data['summary']['failed_zips'] == 3
 
     def test_incomplete_zip_without_a_status_counts_as_cancelled(self):
         """Callbacks from a WaterButler build predating status_code have status None — treat
@@ -169,12 +173,15 @@ class TestDashboardData(OsfTestCase):
     def test_outcome_column_labels(self):
         completed = make_event(download_type=DownloadEvent.FOLDER_ZIP, zip_completed=True)
         cancelled = make_event(download_type=DownloadEvent.FOLDER_ZIP, zip_completed=False, status_code=200)
-        failed = make_event(download_type=DownloadEvent.PROJECT, zip_completed=False, status_code=500)
+        failed_5xx = make_event(download_type=DownloadEvent.PROJECT, zip_completed=False, status_code=500)
+        # an add-on provider 404 is a failure, not a cancel
+        failed_404 = make_event(download_type=DownloadEvent.FOLDER_ZIP, zip_completed=False, status_code=404)
         single = make_event(download_type=DownloadEvent.FILE)
 
         assert self.admin.outcome(completed) == 'Completed'
         assert self.admin.outcome(cancelled) == 'Cancelled'
-        assert self.admin.outcome(failed) == 'Failed'
+        assert self.admin.outcome(failed_5xx) == 'Failed'
+        assert self.admin.outcome(failed_404) == 'Failed'
         assert self.admin.outcome(single) == '—'
 
     def test_storage_provider_breakdown(self):
