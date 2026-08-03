@@ -379,6 +379,7 @@ def send_campaign_batch(context, recipients_ids, notification_type_name='blank',
             valid_emails_qs.update(status=NotificationCampaignRecipientStatus.FAILED, error_message=str(exc))
     else:
         for recipient in valid_emails_qs:
+            notification_started_at = timezone.now()
             try:
                 notification_type.emit(
                     user=recipient.user,
@@ -397,6 +398,15 @@ def send_campaign_batch(context, recipients_ids, notification_type_name='blank',
                 recipient.status = NotificationCampaignRecipientStatus.FAILED
                 recipient.error_message = str(exc)
                 recipient_records.append(recipient)
+            notification_finished_at = timezone.now()
+            notification_sent_run_time = (notification_finished_at - notification_started_at).total_seconds()
+            if notification_sent_run_time > settings.ESTIMATED_PER_REQUEST_THRESHOLD:
+                message = (f'[Notification Campaign #{campaign_id}] WARNING: Slow Notification, '
+                           f'run_time(threshold)={notification_sent_run_time}({settings.ESTIMATED_PER_REQUEST_THRESHOLD}), '
+                           f'user={recipient.user.username}({recipient.user._id})'
+                           f'campaign_name={campaign.name}')
+                logger.warning(message)
+                sentry.log_message(message)
         NotificationCampaignRecipient.objects.bulk_update(recipient_records, ['status', 'error_message'])
 
     # Lock the campaign row so concurrent batches cannot overwrite counters with a stale aggregate snapshot
