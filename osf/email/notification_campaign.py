@@ -275,7 +275,7 @@ def start_notification_campaign(campaign_id, restart_failed=False, restart_stuck
         message = (f'[Notification Campaign #{campaign_id}] INFO: '
                    f'Recipients creation finished in {recipients_creation_run_time} seconds '
                    f'(start={recipients_creation_started_at}, finish={recipients_creation_finished_at}) '
-                   f'for Campaign {campaign.name} (start={campaign.start_at}).')
+                   f'for Campaign {campaign.name} (start={campaign.started_at}).')
         logger.info(message)
         sentry.log_message(message)
 
