@@ -15,7 +15,7 @@ from osf.email.notification_campaign import (
     start_notification_campaign,
     build_query,
 )
-from osf.models import UserActivityCounter
+from osf.models import UserActivityCounter, OSFUser
 from osf.models.notification_campaign import (
     NotificationCampaign,
     NotificationCampaignRecipient,
@@ -79,6 +79,61 @@ def _recipient_scores(campaign_id, **batch_kwargs):
         }
         scores.extend(by_id[recipient_id] for recipient_id in batch)
     return scores
+
+
+class TestBuildQuery:
+
+    def test_not_contains_excludes_matching_usernames(self):
+        email_user = UserFactory(username='user@example.com')
+        plain_user = UserFactory()
+        plain_user.username = 'deleted user'
+        plain_user.save(update_fields=['username'])
+
+        query = build_query({
+            'field': 'username',
+            'lookup': 'not_contains',
+            'value': '@',
+        })
+        user_ids = set(OSFUser.objects.filter(query).values_list('id', flat=True))
+
+        assert plain_user.id in user_ids
+        assert email_user.id not in user_ids
+
+    def test_regex_matches_usernames_without_at(self):
+        email_user = UserFactory(username='user@example.com')
+        plain_user = UserFactory()
+        plain_user.username = 'gdpr-deleted-id'
+        plain_user.save(update_fields=['username'])
+
+        query = build_query({
+            'field': 'username',
+            'lookup': 'regex',
+            'value': r'^[^@]+$',
+        })
+        user_ids = set(OSFUser.objects.filter(query).values_list('id', flat=True))
+
+        assert plain_user.id in user_ids
+        assert email_user.id not in user_ids
+
+    def test_or_combines_usernames(self):
+        staging_user = UserFactory(username='tester@staging.example')
+        plain_user = UserFactory()
+        plain_user.username = 'uuid-style-name'
+        plain_user.save(update_fields=['username'])
+        other_email = UserFactory(username='other@elsewhere.example')
+
+        query = build_query({
+            'operator': 'OR',
+            'children': [
+                {'field': 'username', 'lookup': 'endswith', 'value': '@staging.example'},
+                {'field': 'username', 'lookup': 'not_contains', 'value': '@'},
+            ],
+        })
+        user_ids = set(OSFUser.objects.filter(query).values_list('id', flat=True))
+
+        assert staging_user.id in user_ids
+        assert plain_user.id in user_ids
+        assert other_email.id not in user_ids
 
 
 class TestCreateCampaignRecipients:

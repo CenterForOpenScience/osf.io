@@ -45,12 +45,22 @@ def build_query(node):
 
     if 'field' in node:
         value = node['value']
+        lookup = node['lookup']
+        negated_lookups = {  # not native Django field lookups
+            'not_contains': 'contains',
+            'not_icontains': 'icontains',
+        }
 
-        if node['lookup'] == 'in':
+        if lookup == 'in':
             value = [v.strip() for v in value.split(',')]
 
+        if lookup in negated_lookups:
+            return ~Q(**{
+                f'{node["field"]}__{negated_lookups[lookup]}': value
+            })
+
         return Q(**{
-            f'{node["field"]}__{node["lookup"]}': value
+            f'{node["field"]}__{lookup}': value
         })
 
     operator = node.get('operator', 'AND')
