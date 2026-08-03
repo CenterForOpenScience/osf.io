@@ -408,10 +408,12 @@ class NotificationAdmin(admin.ModelAdmin):
     user.short_description = 'User'
 
 
-# A zip that WaterButler ended on a 5xx failed through no fault of the user (the server
-# buckled) -- distinct from a cancel, which ends completed=False at 200 because the headers
-# already went out. This is the threshold that separates the two.
-DOWNLOAD_FAILURE_MIN_STATUS = 500
+# A zip that didn't complete failed through no fault of the user whenever it ended on an
+# error status -- a 4xx (e.g. an add-on provider returning 404 for the resource) or a 5xx
+# (the server buckled). A cancel is the other case: completed=False at a success status
+# (200/302), because the headers already went out and the client aborted mid-stream. This
+# threshold is what separates a real failure from a cancel.
+DOWNLOAD_FAILURE_MIN_STATUS = 400
 
 
 class DownloadOutcomeFilter(SimpleListFilter):
@@ -428,7 +430,7 @@ class DownloadOutcomeFilter(SimpleListFilter):
         return [
             (self.COMPLETED, 'Completed'),
             (self.CANCELLED, 'Cancelled mid-download'),
-            (self.FAILED, 'Failed (server error)'),
+            (self.FAILED, 'Failed (server or provider error)'),
         ]
 
     def queryset(self, request, queryset):
