@@ -41,7 +41,7 @@ class NotificationCampaignCreateForm(forms.ModelForm):
 
     time_window = forms.IntegerField(
         min_value=1,
-        initial=8 * 60 * 60,  # 8 hours
+        initial=settings.DEFAULT_CAMPAIGN_WINDOW_TIME,
         help_text='The time in seconds before the developer reminder is sent.',
     )
 

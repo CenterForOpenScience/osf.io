@@ -204,10 +204,9 @@ def process_campaign_retry(*args, **kwargs):
         failed_recipients_count = failed_recipients.count()
         if failed_recipients_count:
             if campaign.retries < max_retries:
-                message = (
-                    f"[Notification Campaign] Retrying "
-                    f"{failed_recipients_count} failed recipients for campaign {campaign_id}"
-                )
+                message = (f'[Notification Campaign #{campaign_id}] WARNING: '
+                           f'Retrying {failed_recipients_count} failed recipients, '
+                           f'previous retry attempts: {campaign.retries}/{max_retries}')
                 logger.info(message)
                 sentry.log_message(message)
                 campaign.retries += 1
@@ -228,7 +227,7 @@ def process_campaign_retry(*args, **kwargs):
 
             final_status = NotificationCampaignStatus.PARTIALLY_COMPLETED
     else:
-        message = f'[Notification Campaign] Campaign {campaign_id} {campaign.name} was cancelled.'
+        message = f'[Notification Campaign #{campaign_id}] WARNING: Campaign {campaign.name} was cancelled.'
         logger.info(message)
         sentry.log_message(message)
 
@@ -267,9 +266,18 @@ def start_notification_campaign(campaign_id, restart_failed=False, restart_stuck
         filters = build_query(filters.get('manual', []))
 
     if not restart_failed and not restart_stuck:
+        recipients_creation_started_at = timezone.now()
         create_campaign_recipients(filters=filters, campaign_id=campaign_id)
         campaign.recipient_count = NotificationCampaignRecipient.objects.filter(campaign_id=campaign_id).count()
         campaign.save()
+        recipients_creation_finished_at = timezone.now()
+        recipients_creation_run_time = (recipients_creation_finished_at - recipients_creation_started_at).total_seconds()
+        message = (f'[Notification Campaign #{campaign_id}] INFO: '
+                   f'Recipients creation finished in {recipients_creation_run_time} seconds '
+                   f'(start={recipients_creation_started_at}, finish={recipients_creation_finished_at}) '
+                   f'for Campaign {campaign.name} (start={campaign.start_at}).')
+        logger.info(message)
+        sentry.log_message(message)
 
     execution = campaign.metadata.get('execution', {})
     batch_size = execution.get('batch_size', settings.DEFAULT_CAMPAIGN_BATCH_SIZE)
@@ -318,23 +326,27 @@ def send_campaign_batch(context, recipients_ids, notification_type_name='blank',
     if campaign.status == NotificationCampaignStatus.CANCELLED:
         logger.warning(f"Campaign {campaign_id} was cancelled")
         return
+    batch_started_at = timezone.now()
     if hasattr(NotificationTypeEnum, notification_type_name):
         notification_type = getattr(NotificationTypeEnum, notification_type_name).instance
     else:
         notification_type = NotificationType.objects.filter(
             name=notification_type_name
         ).first()  # TODO cache
-
         if notification_type is None:
             if campaign.status != NotificationCampaignStatus.FAILED:
                 campaign.status = NotificationCampaignStatus.FAILED
                 campaign.save()
+            message = f'[Notification Campaign #{campaign_id}] ERROR: Batch failed due to none notification_type (template)'
+            logger.error(message)
+            sentry.log_message(message)
             return
 
-    execution_time_window = campaign.metadata.get('execution', {}).get('time_window', 8 * 60 * 60)
+    execution_time_window = campaign.metadata.get('execution', {}).get('time_window', settings.DEFAULT_CAMPAIGN_WINDOW_TIME)
     if campaign.started_at < timezone.now() - timedelta(seconds=execution_time_window):
         if not campaign.developer_reminder_sent:
-            message = f'[Notification Campaign] Campaign {campaign_id} exceeded its execution time window ({execution_time_window}s).'
+            message = (f'[Notification Campaign #{campaign_id}] WARNING: '
+                       f'Campaign {campaign.name} exceeded its execution time window ({execution_time_window} seconds).')
             logger.warning(message)
             sentry.log_message(message)
             campaign.developer_reminder_sent = True
@@ -354,16 +366,17 @@ def send_campaign_batch(context, recipients_ids, notification_type_name='blank',
     invalid_emails_qs.update(status=NotificationCampaignRecipientStatus.SKIPPED, error_message='Invalid email address')
 
     if campaign.metadata.get('sendgrid_bulk', False):
+        # NOTE: sendgrid bulk send feature has not been fully implemented and tested
         recipient_emails = list(valid_emails_qs.values_list('recipient_address', flat=True))
         try:
             send_email_with_send_grid(to_addr=recipient_emails, notification_type=notification_type, context=context)
             valid_emails_qs.update(status=NotificationCampaignRecipientStatus.SENT, error_message=None)
         except Exception as exc:
-            message = f'[Notification Campaign] Campaign {campaign_id} sendgrid bulk request failed. {str(exc)}'
+            message = (f'[Notification Campaign #{campaign_id}] ERROR: '
+                       f'Campaign {campaign.name} sendgrid bulk request failed, error={str(exc)}')
             logger.error(message)
-            sentry.log_exception(message)
+            sentry.log_message(message)
             valid_emails_qs.update(status=NotificationCampaignRecipientStatus.FAILED, error_message=str(exc))
-
     else:
         for recipient in valid_emails_qs:
             try:
@@ -372,23 +385,21 @@ def send_campaign_batch(context, recipients_ids, notification_type_name='blank',
                     event_context=context,
                     save=False,  # Too many write operations
                 )
-
                 recipient.status = NotificationCampaignRecipientStatus.SENT
                 recipient.error_message = None
                 recipient_records.append(recipient)
             except Exception as exc:
-                message = f'[Notification Campaign] Campaign {campaign_id} sendgrid request failed for user {recipient.user.username}. {str(exc)}'
+                message = (f'[Notification Campaign #{campaign_id}] ERROR:'
+                           f'SendGrid request failed for user {recipient.user.username} ({recipient.user._id}),'
+                           f'error={str(exc)}')
                 logger.error(message)
-                sentry.log_exception(message)
-
+                sentry.log_message(message)
                 recipient.status = NotificationCampaignRecipientStatus.FAILED
                 recipient.error_message = str(exc)
                 recipient_records.append(recipient)
-
         NotificationCampaignRecipient.objects.bulk_update(recipient_records, ['status', 'error_message'])
 
-    # Lock the campaign row so concurrent batches cannot
-    # overwrite counters with a stale aggregate snapshot
+    # Lock the campaign row so concurrent batches cannot overwrite counters with a stale aggregate snapshot
     with transaction.atomic():
         notification_campaign = NotificationCampaign.objects.select_for_update().get(pk=campaign_id)
         stats = get_campaign_recipient_stats(campaign_id)
@@ -396,4 +407,13 @@ def send_campaign_batch(context, recipients_ids, notification_type_name='blank',
         notification_campaign.failed_count = stats['failed_count']
         notification_campaign.save(update_fields=['sent_count', 'failed_count'])
 
-    logger.info('Batch finished')  # TODO: add/update logs
+    batch_finished_at = timezone.now()
+    batch_run_time = (batch_finished_at - batch_started_at).total_seconds()
+    if batch_run_time > settings.ESTIMATED_BATCH_RUN_TIME_THRESHOLD:
+        message = (f'[Notification Campaign #{campaign_id}] WARNING: Slow Batch, '
+                   f'run_time(threshold)={batch_run_time}({settings.ESTIMATED_BATCH_RUN_TIME_THRESHOLD}), '
+                   f'campaign_name={campaign.name}')
+        logger.warning(message)
+        sentry.log_message(message)
+    logger.info(f'[Notification Campaign #{campaign_id}] INFO: '
+                f'Batch finished in {batch_run_time} seconds for campaign {campaign.name}')
