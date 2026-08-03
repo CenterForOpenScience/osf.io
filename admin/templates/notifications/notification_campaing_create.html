@@ -12,6 +12,30 @@
     padding-left: 24px;
     border-left: 2px solid #000000;
     margin-left: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+.group > .children > .condition {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    align-items: center;
+    gap: 8px;
+}
+.group > .children > .condition .field,
+.group > .children > .condition .lookup {
+    width: auto;
+    min-width: 140px;
+    flex: 0 1 auto;
+}
+.group > .children > .condition .value {
+    width: auto;
+    min-width: 160px;
+    flex: 1 1 auto;
+}
+.group > .children > .condition .remove-condition {
+    flex: 0 0 auto;
 }
 .group-toolbar {
     display: flex;
