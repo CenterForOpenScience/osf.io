@@ -551,7 +551,7 @@ class TestSendCampaignBatch:
     @mock.patch('osf.email.notification_campaign.sentry.log_message')
     def test_send_campaign_batch_logs_when_time_window_exceeded(self, mock_sentry, running_campaign):
         user = UserFactory()
-        running_campaign.started_at = timezone.now() - timedelta(hours=9)
+        running_campaign.started_at = timezone.now() - timedelta(seconds=9)
         running_campaign.metadata['execution']['time_window'] = 8
         running_campaign.save()
         create_campaign_recipients(Q(**{'id__in': [user.id]}), campaign_id=running_campaign.id)
