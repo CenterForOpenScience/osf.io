@@ -41,8 +41,8 @@ class NotificationCampaignCreateForm(forms.ModelForm):
 
     time_window = forms.IntegerField(
         min_value=1,
-        initial=8,
-        help_text='The time in hours before the developer reminder is sent.',
+        initial=8 * 60 * 60,  # 8 hours
+        help_text='The time in seconds before the developer reminder is sent.',
     )
 
     sendgrid_bulk = forms.BooleanField(

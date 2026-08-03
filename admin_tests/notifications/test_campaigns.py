@@ -59,7 +59,7 @@ def _valid_form_data(notification_type, **overrides):
         'max_retries': settings.DEFAULT_CAMPAIGN_MAX_RETRIES,
         'activity_threshold': settings.DEFAULT_CAMPAIGN_ACTIVITY_THRESHOLD,
         'sendgrid_bulk': False,
-        'time_window': 8,
+        'time_window': 8 * 60 * 60,
     }
     data.update(overrides)
     return data
@@ -75,7 +75,7 @@ class TestNotificationCampaignCreateForm:
         assert form.cleaned_data['batch_size'] == settings.DEFAULT_CAMPAIGN_BATCH_SIZE
         assert form.cleaned_data['max_retries'] == settings.DEFAULT_CAMPAIGN_MAX_RETRIES
         assert form.cleaned_data['activity_threshold'] == settings.DEFAULT_CAMPAIGN_ACTIVITY_THRESHOLD
-        assert form.cleaned_data['time_window'] == 8
+        assert form.cleaned_data['time_window'] == 8 * 60 * 60
         assert form.cleaned_data['sendgrid_bulk'] is False
 
     def test_defaults_come_from_settings(self):
@@ -83,7 +83,7 @@ class TestNotificationCampaignCreateForm:
         assert form.fields['batch_size'].initial == settings.DEFAULT_CAMPAIGN_BATCH_SIZE
         assert form.fields['max_retries'].initial == settings.DEFAULT_CAMPAIGN_MAX_RETRIES
         assert form.fields['activity_threshold'].initial == settings.DEFAULT_CAMPAIGN_ACTIVITY_THRESHOLD
-        assert form.fields['time_window'].initial == 8
+        assert form.fields['time_window'].initial == 8 * 60 * 60
         assert form.fields['sendgrid_bulk'].initial is False
 
     def test_invalid_context_json(self, notification_type):
@@ -138,10 +138,10 @@ class TestNotificationCampaignCreateForm:
 
     def test_time_window_is_accepted(self, notification_type):
         form = NotificationCampaignCreateForm(
-            data=_valid_form_data(notification_type, time_window=6)
+            data=_valid_form_data(notification_type, time_window=3600)
         )
         assert form.is_valid()
-        assert form.cleaned_data['time_window'] == 6
+        assert form.cleaned_data['time_window'] == 3600
 
     def test_name_is_required(self, notification_type):
         form = NotificationCampaignCreateForm(
@@ -191,7 +191,7 @@ class TestNotificationCampaignCreateView(AdminTestCase):
                 max_retries=4,
                 activity_threshold=77,
                 sendgrid_bulk=True,
-                time_window=8
+                time_window=28800
             ),
         )
         request.user = self.user
@@ -213,7 +213,7 @@ class TestNotificationCampaignCreateView(AdminTestCase):
             'batch_size': 25,
             'max_retries': 4,
             'activity_threshold': 77,
-            'time_window': 8
+            'time_window': 28800
         }
         assert campaign.metadata['sendgrid_bulk'] is True
         assert campaign.metadata['filters'] == {'predefined': 'active'}
