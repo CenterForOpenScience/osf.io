@@ -92,7 +92,7 @@
                     <div class="card-value compact-value">{{ download_events_dashboard.split.file.gb|floatformat:2 }} / {{ download_events_dashboard.split.zip.gb|floatformat:2 }}</div>
                 </div>
                 <div class="dashboard-card summary-card">
-                    <div class="card-label">Failed zip downloads (server error)</div>
+                    <div class="card-label">Failed zip downloads (server or provider error)</div>
                     <div class="card-value">{{ download_events_dashboard.summary.failed_zips }}</div>
                 </div>
                 <div class="dashboard-card summary-card">
