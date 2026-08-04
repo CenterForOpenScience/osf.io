@@ -883,7 +883,10 @@ class FileVersion(ObjectIDMixin, BaseModel):
         })
 
     class Meta:
-        ordering = ('-created',)
+        # '-id' is a deterministic tiebreak for versions created within the same instant (e.g. a
+        # version attached directly via add_version() right after another, in the same test/request) --
+        # without it, .first()/.last() on ties is undefined and can flip between identical queries.
+        ordering = ('-created', '-id')
 
 
 class BaseFileVersionsThrough(models.Model):
