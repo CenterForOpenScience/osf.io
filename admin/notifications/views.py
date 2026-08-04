@@ -348,7 +348,7 @@ class NotificationTypeChangeForm(PermissionRequiredMixin, UpdateView):
 class NotificationCampaignsList(PermissionRequiredMixin, ListView):
     paginate_by = 25
     template_name = 'notifications/notification_campaigns_list.html'
-    ordering = 'name'
+    ordering = '-created_at'
     permission_required = 'osf.view_notificationcampaign'
     raise_exception = True
     model = NotificationCampaign
