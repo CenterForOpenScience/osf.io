@@ -155,7 +155,7 @@
     The campaign may be stuck and can be restarted.
 </div>
 {% endif %}
-{% if notification_campaign.developer_reminder_sent and notification_campaign.status == "running" %}
+{% if notification_campaign.developer_reminder_sent %}
 <div class="alert alert-warning">
     <strong>Warning!</strong>
     The campaign exceeded the expected timeframe ({{ metadata.execution.time_window }}s). A reminder was sent.
