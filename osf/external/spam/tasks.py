@@ -238,7 +238,9 @@ def check_resource_for_spam_postcommit(guid, content, author, author_email, requ
             request_kwargs,
         )
 
-    resource.save()
+    updated_fields = resource.get_dirty_fields().keys()
+    updated_fields_without_moderation_state = [field for field in updated_fields if field != 'moderation_state']
+    resource.save(update_fields=updated_fields_without_moderation_state)
 
     user = OSFUser.objects.get(username=author_email)
     if hasattr(resource, 'check_spam_user') and not user.is_hammy:
