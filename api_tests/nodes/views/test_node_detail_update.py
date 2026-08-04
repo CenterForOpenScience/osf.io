@@ -745,6 +745,50 @@ class TestNodeUpdateProjectReadOnly(NodeCRUDTestCase):
         assert project_private.description == description_new
         assert project_private.category == category_new
 
+    def test_patch_make_public_allowed_when_project_read_only_flag_active(
+            self, app, user, project_private, url_private, make_node_payload):
+        with override_flag(features.PROJECT_READ_ONLY, active=True):
+            res = app.patch_json_api(
+                url_private,
+                make_node_payload(project_private, {'public': True}),
+                auth=user.auth
+            )
+        assert res.status_code == 200
+        project_private.reload()
+        assert project_private.is_public
+
+    def test_patch_make_private_blocked_when_project_read_only_flag_active(
+            self, app, user, project_public, url_public, make_node_payload):
+        with override_flag(features.PROJECT_READ_ONLY, active=True):
+            res = app.patch_json_api(
+                url_public,
+                make_node_payload(project_public, {'public': False}),
+                auth=user.auth,
+                expect_errors=True
+            )
+        assert res.status_code == 405
+        assert res.json['errors'][0]['detail'] == 'This action is no longer available. Contact support if you have any questions.'
+        project_public.reload()
+        assert project_public.is_public
+
+    def test_patch_make_public_with_other_attributes_blocked_when_project_read_only_flag_active(
+            self, app, user, title_new, project_private, url_private, make_node_payload):
+        with override_flag(features.PROJECT_READ_ONLY, active=True):
+            res = app.patch_json_api(
+                url_private,
+                make_node_payload(project_private, {
+                    'public': True,
+                    'title': title_new,
+                }),
+                auth=user.auth,
+                expect_errors=True
+            )
+        assert res.status_code == 405
+        assert res.json['errors'][0]['detail'] == 'This action is no longer available. Contact support if you have any questions.'
+        project_private.reload()
+        assert not project_private.is_public
+        assert project_private.title != title_new
+
 
 @pytest.mark.django_db
 class TestUpdateNodeSubjects(UpdateSubjectsMixin):

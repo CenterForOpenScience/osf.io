@@ -380,9 +380,31 @@ class ProjectCreationNotAllowed(permissions.BasePermission):
 
 class ProjectEditingNotAllowed(permissions.BasePermission):
 
+    # 'id' and 'type' are always present on a flattened JSON:API resource object;
+    # 'public' is the only attribute this exception allows through.
+    PUBLIC_ONLY_ALLOWED_KEYS = {'id', 'type', 'public'}
+
     def has_permission(self, request, view):
         if request.method in ['PUT', 'PATCH'] and waffle.flag_is_active(request, features.PROJECT_READ_ONLY):
+            if request.method == 'PATCH' and self._is_make_public_only_request(request.data):
+                return True
             raise exceptions.MethodNotAllowed(request.method, detail='This action is no longer available. Contact support if you have any questions.')
+        return True
+
+    @classmethod
+    def _is_make_public_only_request(cls, data):
+        """True if every resource object in the (possibly bulk) request body only sets `public` to True."""
+        items = data if isinstance(data, list) else [data]
+        if not items:
+            return False
+
+        for item in items:
+            if not isinstance(item, dict):
+                return False
+            if set(item.keys()) - cls.PUBLIC_ONLY_ALLOWED_KEYS:
+                return False
+            if item.get('public') is not True:
+                return False
         return True
 
 
