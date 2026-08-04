@@ -371,6 +371,7 @@ function updateOperatorAndValue(row, field, operator, value) {
         case "booleanfield":
             newValue = document.createElement("select");
             newValue.className = "value form-control";
+            newValue.required = true;
 
             newValue.add(new Option("True", "True"));
             newValue.add(new Option("False", "False"));
@@ -379,6 +380,7 @@ function updateOperatorAndValue(row, field, operator, value) {
         default:
             newValue = document.createElement("input");
             newValue.className = "value form-control";
+            newValue.required = true;
 
             switch (config.type) {
                 case "datetimefield":
@@ -421,11 +423,17 @@ function updateFiltersInput() {
     );
 }
 
-form.addEventListener("submit", function () {
+form.addEventListener("submit", function (e) {
     updateFiltersInput();
+    if (!validateManualFilterValues()) {
+        e.preventDefault();
+    }
 });
 
 document.getElementById("preview-recipients").addEventListener("click", function () {
+    if (!validateManualFilterValues()) {
+        return;
+    }
     const filters = JSON.stringify(buildFilters());
 
     const url = `/notifications/notification_campaigns_recipients_preview/?filters=${
@@ -434,6 +442,22 @@ document.getElementById("preview-recipients").addEventListener("click", function
 
     window.open(url, "_blank");
 });
+
+function validateManualFilterValues() {
+    if (filterMode.value !== "manual") {
+        return true;
+    }
+
+    const values = builder.querySelectorAll(".condition .value");
+    for (const input of values) {
+        if (!String(input.value || "").trim()) {
+            input.focus();
+            alert("Filter value cannot be empty.");
+            return false;
+        }
+    }
+    return true;
+}
 
 document.getElementById("render-preview").addEventListener("click", async () => {
     const mockData = document.getElementById("context")?.value;

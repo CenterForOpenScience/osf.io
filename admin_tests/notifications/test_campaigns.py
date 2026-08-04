@@ -108,6 +108,75 @@ class TestNotificationCampaignCreateForm:
         assert form.cleaned_data['context'] == {}
         assert form.cleaned_data['filters'] == {}
 
+    def test_manual_filter_value_cannot_be_empty(self, notification_type):
+        filters = json.dumps({
+            'manual': {
+                'operator': 'AND',
+                'children': [
+                    {'field': 'username', 'lookup': 'contains', 'value': ''},
+                ],
+            },
+        })
+        form = NotificationCampaignCreateForm(
+            data=_valid_form_data(notification_type, filters=filters)
+        )
+        assert not form.is_valid()
+        assert 'filters' in form.errors
+        assert 'Filter value cannot be empty.' in form.errors['filters'][0]
+
+    def test_manual_filter_value_cannot_be_none(self, notification_type):
+        filters = json.dumps({
+            'manual': {
+                'operator': 'AND',
+                'children': [
+                    {'field': 'username', 'lookup': 'contains', 'value': None},
+                ],
+            },
+        })
+        form = NotificationCampaignCreateForm(
+            data=_valid_form_data(notification_type, filters=filters)
+        )
+        assert not form.is_valid()
+        assert 'filters' in form.errors
+        assert 'Filter value cannot be empty.' in form.errors['filters'][0]
+
+    def test_manual_filter_field_cannot_be_empty(self, notification_type):
+        filters = json.dumps({
+            'manual': {
+                'operator': 'AND',
+                'children': [
+                    {'field': '', 'lookup': 'contains', 'value': '@'},
+                ],
+            },
+        })
+        form = NotificationCampaignCreateForm(
+            data=_valid_form_data(notification_type, filters=filters)
+        )
+        assert not form.is_valid()
+        assert 'filters' in form.errors
+        assert 'Filter field cannot be empty.' in form.errors['filters'][0]
+
+    def test_nested_manual_filter_value_cannot_be_empty(self, notification_type):
+        filters = json.dumps({
+            'manual': {
+                'operator': 'OR',
+                'children': [
+                    {'field': 'username', 'lookup': 'endswith', 'value': '@cos.io'},
+                    {
+                        'operator': 'AND',
+                        'children': [
+                            {'field': 'username', 'lookup': 'not_contains', 'value': '   '},
+                        ],
+                    },
+                ],
+            },
+        })
+        form = NotificationCampaignCreateForm(
+            data=_valid_form_data(notification_type, filters=filters)
+        )
+        assert not form.is_valid()
+        assert 'filters' in form.errors
+
     def test_batch_size_must_be_at_least_one(self, notification_type):
         form = NotificationCampaignCreateForm(
             data=_valid_form_data(notification_type, batch_size=0)

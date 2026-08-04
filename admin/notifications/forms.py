@@ -67,6 +67,28 @@ class NotificationCampaignCreateForm(forms.ModelForm):
     def clean_filters(self):
         value = self.cleaned_data['filters'] or '{}'
         try:
-            return json.loads(value)
+            data = json.loads(value)
         except Exception as e:
             raise forms.ValidationError(e)
+
+        if isinstance(data, dict) and 'manual' in data:
+            self._validate_filter_node(data['manual'])
+
+        return data
+
+    def _validate_filter_node(self, node):
+        if not isinstance(node, dict):
+            raise forms.ValidationError('Invalid filter structure.')
+
+        if 'field' in node:
+            if not str(node.get('field') or '').strip():
+                raise forms.ValidationError('Filter field cannot be empty.')
+            if not str(node.get('lookup') or '').strip():
+                raise forms.ValidationError('Filter lookup cannot be empty.')
+            value = node.get('value')
+            if value is None or (isinstance(value, str) and not value.strip()):
+                raise forms.ValidationError('Filter value cannot be empty.')
+            return
+
+        for child in node.get('children') or []:
+            self._validate_filter_node(child)
