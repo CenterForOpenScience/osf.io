@@ -1,0 +1,455 @@
+{% extends "base.html" %}
+{% load static %}
+{% load render_bundle from webpack_loader %}
+
+{% block title %}
+    <title>{{ notification_campaign.name }}</title>
+{% endblock title %}
+
+{% block content %}
+<style>
+.filter-group {
+    padding-left: 24px;
+    border-left: 2px solid #000000;
+    margin-left: 8px;
+}
+</style>
+
+<div>
+    {% if messages %}
+        <ul>
+        {% for message in messages %}
+        <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}
+        </li>
+        {% endfor %}
+    </ul>
+    {% endif %}
+</div>
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-md-12 text-center">
+            <h2 id="campaign_name">{{ notification_campaign.name }}</h2>
+            <p class="text-muted">
+                Campaign #{{ notification_campaign.id }}
+            </p>
+        </div>
+    </div>
+    {% if notification_campaign.status != 'created' %}
+    <div class="alert
+        {% if notification_campaign.status == 'running' %}
+            alert-info
+        {% elif notification_campaign.status == 'completed' %}
+            alert-success
+        {% elif notification_campaign.status == 'partially_completed' %}
+            alert-warning
+        {% elif notification_campaign.status == 'failed' %}
+            alert-danger
+        {% else %}
+            alert-default
+        {% endif %}
+    ">
+
+        <strong>Status:</strong>
+        {{ notification_campaign.get_status_display }}
+
+        {% if elapsed %}
+            <br>
+            <strong>Running for:</strong> {{ elapsed }}
+        {% endif %}
+
+        {% if last_activity_ago %}
+            <br>
+            <strong>Last activity:</strong> {{ last_activity_ago }} ago
+        {% endif %}
+    </div>
+    <div class="progress">
+
+        <div class="progress-bar progress-bar-success"
+            style="width: {{ sent_percent }}%;">
+            {{ notification_campaign.sent_count }}
+        </div>
+
+        <div class="progress-bar progress-bar-danger"
+            style="width: {{ failed_percent }}%;">
+            {{ notification_campaign.failed_count }}
+        </div>
+
+        <div class="progress-bar progress-bar-default"
+            style="width: {{ pending_percent }}%;">
+            {{ pending }}
+        </div>
+
+    </div>
+    <h4>Progress</h4>
+
+<table class="table table-bordered">
+    <tr>
+        <th style="width:250px;">Processed</th>
+        <td>{{ processed }} / {{ notification_campaign.recipient_count }}</td>
+    </tr>
+
+    <tr>
+        <th>Pending</th>
+        <td>{{ pending }}</td>
+    </tr>
+
+    <tr>
+        <th>Success rate</th>
+        <td>{{ sent_percent|floatformat:2 }}%</td>
+    </tr>
+
+    <tr>
+        <th>Failure rate</th>
+        <td>{{ failure_rate|floatformat:2 }}%</td>
+    </tr>
+
+    <tr>
+        <th>Average speed</th>
+        <td>
+            {% if speed %}
+                {{ speed|floatformat:2 }} recipients/sec
+            {% else %}
+                —
+            {% endif %}
+        </td>
+    </tr>
+
+    <tr>
+        <th>Elapsed</th>
+        <td>
+            {% if elapsed %}
+                {{ elapsed }}
+            {% else %}
+                —
+            {% endif %}
+        </td>
+    </tr>
+
+    <tr>
+        <th>ETA</th>
+        <td>
+            {% if eta %}
+                {{ eta }}
+            {% else %}
+                —
+            {% endif %}
+        </td>
+    </tr>
+
+    <tr>
+        <th>Estimated completion</th>
+        <td>
+            {% if estimated_finish %}
+                {{ estimated_finish }}
+            {% else %}
+                —
+            {% endif %}
+        </td>
+    </tr>
+
+</table>
+{% if allow_restart_stuck and notification_campaign.status == "running" %}
+<div class="alert alert-warning">
+    <strong>Warning!</strong>
+    No activity has been detected for more than 15 minutes.
+    The campaign may be stuck and can be restarted.
+</div>
+{% endif %}
+{% if notification_campaign.developer_reminder_sent %}
+<div class="alert alert-warning">
+    <strong>Warning!</strong>
+    The campaign exceeded the expected timeframe ({{ metadata.execution.time_window }}s). A reminder was sent.
+</div>
+{% endif %}
+    {% endif %}
+    <form
+        id="start-campaign-form"
+        method="post"
+        action="{% url 'notifications:notification_campaigns_start' notification_campaign.id %}"
+        style="display:inline;"
+    >
+        {% csrf_token %}
+        <button type="submit" class="btn btn-primary" {% if notification_campaign.status != "created" %}disabled{% endif %}>
+            Start Campaign
+        </button>
+    </form>
+    <form
+        id="restart-stuck-campaign-form"
+        method="post"
+        action="{% url 'notifications:notification_campaigns_start' notification_campaign.id %}?restart_stuck=true"
+        style="display:inline;"
+    >
+        {% csrf_token %}
+        <button type="submit" class="btn btn-primary" {% if not allow_restart_stuck or notification_campaign.status != "running" %}disabled{% endif %}
+        title="Restart the campaign after 15 minutes of inactivity.">
+            Restart stuck Campaign
+        </button>
+    </form>
+    <form
+        id="cancel-campaign-form"
+        method="post"
+        action="{% url 'notifications:notification_campaigns_start' notification_campaign.id %}?cancel=true"
+        style="display:inline;"
+    >
+        {% csrf_token %}
+        <button type="submit" class="btn btn-primary" {% if notification_campaign.status != "running" %}disabled{% endif %}
+        title="Cancel the campaign, but allow any tasks that are already running to finish.">
+            Cancel Campaign
+        </button>
+    </form>
+
+    <!-- General information -->
+    <div class="row">
+        <div class="col-md-12">
+            <h4>General</h4>
+            <table class="table table-striped table-bordered">
+                {% for field, value in display_fields %}
+                <tr>
+                    <th style="width: 250px">{{ field }}</th>
+                    <td>{{ value|safe }}</td>
+                    {% if field == 'Recipients' and value != 0 %}
+                        <td>
+                            <a
+                                href="{% url 'notifications:notification_campaigns_recipients_list' %}?campaign_id={{ notification_campaign.id }}"
+                                class="btn btn-default"
+                                target="_blank">
+                                View Recipients
+                            </a>
+                        </td>
+                        <td></td>
+                    {% elif field == 'Sent' and value != 0 %}
+                        <td>
+                            <a
+                                href="{% url 'notifications:notification_campaigns_recipients_list' %}?notification_status=sent&campaign_id={{ notification_campaign.id }}"
+                                class="btn btn-default"
+                                target="_blank">
+                                View Recipients
+                            </a>
+                        </td>
+                        <td></td>
+                    {% elif field == 'Failed' and value != 0 %}
+                        <td>
+                            <a
+                                href="{% url 'notifications:notification_campaigns_recipients_list' %}?notification_status=failed&campaign_id={{ notification_campaign.id }}"
+                                class="btn btn-default"
+                                target="_blank">
+                                View Recipients
+                            </a>
+                        </td>
+                        <td>
+
+                            <form
+                                id="restart-campaign-form"
+                                method="post"
+                                action="{% url 'notifications:notification_campaigns_start' notification_campaign.id %}?restart_failed=true"
+                                style="display:inline;"
+                            >
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-primary" {% if notification_campaign.status != "partially_completed" %}disabled{% endif %}>
+                                    Restart Campaign
+                                </button>
+                            </form>
+                        </td>
+                    {% else %}
+                        <td></td>
+                        <td></td>
+
+                    {% endif %}
+                </tr>
+                {% endfor %}
+            </table>
+        </div>
+    </div>
+
+    <!-- Filters -->
+    {% if metadata.filters %}
+    <div class="row">
+        <div class="col-md-12">
+            <h4>Recipient Filters</h4>
+
+            {% if not "predefined" in metadata.filters  %}
+
+                {% if not "predefined" in metadata.filters %}
+                    {% if metadata.filters.manual %}
+                        {% include "notifications/campaign_filter_group.html" with group=metadata.filters.manual is_root=True %}
+                    {% else %}
+                        <p class="text-muted">No filters configured.</p>
+                    {% endif %}
+                {% endif %}
+
+            {% elif "predefined" in metadata.filters %}
+
+                <table class="table table-bordered">
+                    <tr>
+                        <th style="width:250px;">Predefined Filter</th>
+                        <td>{{ metadata.filters.predefined }}</td>
+                    </tr>
+                </table>
+
+            {% endif %}
+
+            <a
+                href="{% url 'notifications:notification_campaigns_recipients_preview' %}?filters={{ filters_json|urlencode }}"
+                class="btn btn-default"
+                target="_blank"
+            >
+                Preview Recipients
+            </a>
+
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Context -->
+    {% if metadata.context %}
+    <div class="row">
+        <div class="col-md-12">
+            <h4>Context</h4>
+            <table class="table table-bordered">
+                {% for key, value in metadata.context.items %}
+                <tr>
+                    <th style="width:250px">{{ key }}</th>
+                    <td><pre>{{ value }}</pre></td>
+                </tr>
+                {% endfor %}
+            </table>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Execution -->
+    {% if metadata.execution %}
+    <div class="row">
+        <div class="col-md-12">
+            <h4>Execution</h4>
+            <table class="table table-bordered">
+                {% for key, value in metadata.execution.items %}
+                <tr>
+                    <th style="width:250px">{{ key }}</th>
+                    <td>{{ value }}</td>
+                </tr>
+                {% endfor %}
+            </table>
+        </div>
+    </div>
+    {% endif %}
+
+    {% if template or metadata.template %}
+    <div class="row">
+        <div class="col-md-12">
+            <h4>Email Template</h4>
+
+            <ul class="nav nav-tabs" role="tablist">
+                {% if template %}
+                <li class="active">
+                    <a href="#rendered-template"
+                    data-toggle="tab"
+                    role="tab">
+                        Notification Type
+                    </a>
+                </li>
+                {% endif %}
+
+                {% if metadata.template %}
+                <li {% if not template %}class="active"{% endif %}>
+                    <a href="#original-template"
+                    data-toggle="tab"
+                    role="tab">
+                        Used for compaign
+                    </a>
+                </li>
+                {% endif %}
+            </ul>
+
+            <div class="tab-content" style="margin-top:15px;">
+
+                {% if template %}
+                <div
+                    id="rendered-template"
+                    class="tab-pane fade in active"
+                >
+                    <pre style="max-height:400px;overflow:auto">{{ template }}</pre>
+                </div>
+                {% endif %}
+
+                {% if metadata.template %}
+                <div
+                    id="original-template"
+                    class="tab-pane fade {% if not template %}in active{% endif %}"
+                >
+                    <pre style="max-height:400px;overflow:auto">{{ metadata.template }}</pre>
+                </div>
+                {% endif %}
+
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Any remaining metadata -->
+    {% if other_metadata %}
+    <div class="row">
+        <div class="col-md-12">
+            <h4>Additional Metadata</h4>
+            <table class="table table-bordered">
+                {% for key, value in other_metadata.items %}
+                <tr>
+                    <th style="width:250px">{{ key }}</th>
+                    <td><pre>{{ value }}</pre></td>
+                </tr>
+                {% endfor %}
+            </table>
+        </div>
+    </div>
+    {% endif %}
+
+</div>
+{% endblock content %}
+
+{% block bottom_js %}
+<script>
+    function confirmCampaign(form, e) {
+        e.preventDefault();
+
+        const campaignName = document
+            .getElementById("campaign_name")
+            .textContent
+            .trim();
+
+        const input = prompt(
+            `Type the campaign name to confirm:\n\n${campaignName}`
+        );
+
+        if (input === campaignName) {
+            form.submit();
+        } else if (input !== null) {
+            alert("Campaign name does not match.");
+        }
+    }
+
+    const startForm = document.getElementById("start-campaign-form");
+
+    if (startForm) {
+        startForm.addEventListener("submit", function (e) {
+            confirmCampaign(this, e);
+        });
+    }
+
+    const restartForm = document.getElementById("restart-campaign-form");
+
+    if (restartForm) {
+        restartForm.addEventListener("submit", function (e) {
+            confirmCampaign(this, e);
+        });
+    }
+
+    const restartstuckForm = document.getElementById("restart-stuck-campaign-form");
+
+    if (restartstuckForm) {
+        restartstuckForm.addEventListener("submit", function (e) {
+            confirmCampaign(this, e);
+        });
+    }
+
+</script>
+{% endblock %}
