@@ -432,6 +432,7 @@ class CeleryConfig:
     task_low_queue = 'low'
     task_med_queue = 'med'
     task_high_queue = 'high'
+    task_project_enter_queue = 'project_enter'
     task_remote_computing_queue = 'remote'
     task_account_status_changes_queue = 'account_status_changes'
     task_external_high_queue = 'external_high'
@@ -449,6 +450,11 @@ class CeleryConfig:
 
     remote_computing_modules = {
         'addons.boa.tasks.submit_to_boa',
+    }
+
+    project_enter_modules = {
+        'email.send_campaign_batch',
+        'email.process_campaign_retry',
     }
 
     low_pri_modules = {
@@ -500,7 +506,7 @@ class CeleryConfig:
         'api.share.utils',
         'scripts.check_manual_restart_approval',
         'scripts.enhanced_stuck_registration_audit',
-        'osf.email.notification_campaign',
+        'email.start_notification_campaign',
     }
 
     background_migration_modules = {
@@ -542,6 +548,12 @@ class CeleryConfig:
                 Exchange(task_high_queue),
                 routing_key=task_high_queue,
                 consumer_arguments={'x-priority': 10},
+            ),
+            Queue(
+                task_project_enter_queue,
+                Exchange(task_project_enter_queue),
+                routing_key=task_project_enter_queue,
+                consumer_arguments={'x-priority': 8},
             ),
             Queue(
                 task_account_status_changes_queue,

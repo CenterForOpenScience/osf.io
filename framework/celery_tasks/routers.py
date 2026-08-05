@@ -11,6 +11,8 @@ def match_by_module(task_path):
             return CeleryConfig.task_med_queue
         if task_subpath in CeleryConfig.high_pri_modules:
             return CeleryConfig.task_high_queue
+        if task_subpath in CeleryConfig.project_enter_modules:
+            return CeleryConfig.task_project_enter_queue
         if task_subpath in CeleryConfig.background_migration_modules:
             return CeleryConfig.task_background_migration_queue
         if task_subpath in CeleryConfig.remote_computing_modules:
