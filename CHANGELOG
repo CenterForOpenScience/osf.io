@@ -2,6 +2,16 @@
 
 We follow the CalVer (https://calver.org/) versioning scheme: YY.MINOR.MICRO.
 
+26.17.1 (2026-08-03)
+====================
+
+- Fix miscategorized download failures.
+
+26.17.0 (2026-08-03)
+====================
+
+- Add download dashboard to monitor OSF download usage, performance, and reliability.
+
 26.16.0 (2026-07-20)
 ====================
 
