@@ -191,6 +191,16 @@ NO_LOGIN_OSF4M_WAIT_TIME = timedelta(weeks=52)  # 1 year for "We miss you at OSF
 NOTIFICATIONS_CLEANUP_AGE = timedelta(weeks=12)  # 3 months to clean up old notifications and email tasks
 NOTIFICATIONS_CLEANUP_BATCH_SIZE = 10000  # Batch size for notifications and email tasks cleanup
 
+# Notification campaign execution defaults (overridable per campaign in admin metadata)
+DEFAULT_CAMPAIGN_ACTIVITY_THRESHOLD = 3  # Users at/above this activity total are scheduled in the high-activity phase
+DEFAULT_CAMPAIGN_BATCH_SIZE = 1000
+DEFAULT_CAMPAIGN_WINDOW_TIME = 28800  # 8 hours
+DEFAULT_CAMPAIGN_MAX_RETRIES = 3
+# The following are rough estimates so we can log to sentry those batches and sendgrid quests which run longer than normal
+ESTIMATED_EIGHT_HOUR_WINDOW_USERS = 600000  # 600K Users (where the actual number is around 500K)
+ESTIMATED_BATCH_RUN_TIME_THRESHOLD = DEFAULT_CAMPAIGN_WINDOW_TIME / (ESTIMATED_EIGHT_HOUR_WINDOW_USERS / DEFAULT_CAMPAIGN_BATCH_SIZE)  # By default, 48 seconds per batch of 1000 requests
+ESTIMATED_PER_REQUEST_THRESHOLD = ESTIMATED_BATCH_RUN_TIME_THRESHOLD / DEFAULT_CAMPAIGN_BATCH_SIZE  # By default, 0.048 seconds (21 requests / second)
+
 # Configuration for "We miss you at OSF" email (`NotificationTypeEnum.USER_NO_LOGIN`)
 # Note: 1) we can gradually increase `MAX_DAILY_NO_LOGIN_EMAILS` to 10000, 100000, etc. or set it to `None` after we
 # have verified that users are not spammed by this email after NR release. 2) If we want to clean up database for those
@@ -422,6 +432,7 @@ class CeleryConfig:
     task_low_queue = 'low'
     task_med_queue = 'med'
     task_high_queue = 'high'
+    task_project_enter_queue = 'project_enter'
     task_remote_computing_queue = 'remote'
     task_account_status_changes_queue = 'account_status_changes'
     task_external_high_queue = 'external_high'
@@ -439,6 +450,11 @@ class CeleryConfig:
 
     remote_computing_modules = {
         'addons.boa.tasks.submit_to_boa',
+    }
+
+    project_enter_modules = {
+        'email.send_campaign_batch',
+        'email.process_campaign_retry',
     }
 
     low_pri_modules = {
@@ -490,6 +506,7 @@ class CeleryConfig:
         'api.share.utils',
         'scripts.check_manual_restart_approval',
         'scripts.enhanced_stuck_registration_audit',
+        'email.start_notification_campaign',
     }
 
     background_migration_modules = {
@@ -531,6 +548,12 @@ class CeleryConfig:
                 Exchange(task_high_queue),
                 routing_key=task_high_queue,
                 consumer_arguments={'x-priority': 10},
+            ),
+            Queue(
+                task_project_enter_queue,
+                Exchange(task_project_enter_queue),
+                routing_key=task_project_enter_queue,
+                consumer_arguments={'x-priority': 8},
             ),
             Queue(
                 task_account_status_changes_queue,
@@ -612,6 +635,7 @@ class CeleryConfig:
         'scripts.disable_removed_beat_tasks',
         'osf.management.commands.delete_withdrawn_or_failed_registration_files',
         'osf.management.commands.migrate_osfmetrics_fix_6to8',
+        'osf.email.notification_campaign',
     )
 
     # Modules that need metrics and release requirements
