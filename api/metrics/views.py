@@ -59,6 +59,7 @@ from osf.metrics.daily_reports import (
 )
 from osf.metrics.monthly_reports import (
     BaseMonthlyReport,
+    MonthlyPublicItemUsageReport,
     MonthlySpamSummaryReport,
 )
 from osf.metrics.openapi import get_metrics_openapi_json_dict
@@ -79,6 +80,7 @@ VIEWABLE_REPORTS = {
     'user_summary': DailyUserSummaryReport,
     'spam_summary': MonthlySpamSummaryReport,
     'new_user_domains': DailyNewUserDomainReport,
+    'items_usage': MonthlyPublicItemUsageReport,
 }
 
 
