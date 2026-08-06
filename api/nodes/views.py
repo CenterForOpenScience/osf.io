@@ -2283,6 +2283,7 @@ class NodeRequestListCreate(JSONAPIBaseView, generics.ListCreateAPIView, ListFil
         base_permissions.TokenHasScope,
         NodeRequestPermission,
         InstitutionalAdminRequestTypePermission,
+        ProjectRelationshipsEditingNotAllowed,
     )
 
     required_read_scopes = [CoreScopes.NODE_REQUESTS_READ]
