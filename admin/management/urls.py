@@ -27,4 +27,6 @@ urlpatterns = [
             name='migrate_funder_names_to_ror'),
     re_path(r'^reject_pending_collection_submissions', views.RejectPendingCollectionSubmissions.as_view(),
             name='reject_pending_collection_submissions'),
+    re_path(r'^reject_pending_node_requests', views.RejectPendingNodeRequests.as_view(),
+            name='reject_pending_node_requests'),
 ]
