@@ -44,7 +44,7 @@ def parse_dates(query_params, is_monthly=False) -> tuple[datetime.date, datetime
     end_date = (
         parse_date_param(end_date_param)
         if end_date_param
-        else datetime.date.today()
+        else timezone.now().date()
     )
 
     if start_date > end_date:
@@ -53,9 +53,7 @@ def parse_dates(query_params, is_monthly=False) -> tuple[datetime.date, datetime
     return start_date, end_date
 
 
-def parse_date_range(
-    query_params, is_monthly=False,
-) -> tuple[datetime.date, datetime.date]:
+def parse_date_range(query_params, is_monthly=False):
     _from: datetime.date | None = None
     _until: datetime.date = timezone.now()
     if _days_back := query_params.get('days_back'):
@@ -68,7 +66,11 @@ def parse_date_range(
         _from = _until - datetime.timedelta(days=_days_back)
     else:
         _from, _until = parse_dates(query_params, is_monthly=is_monthly)
-    return (_from, _until)
+    return (
+        ((_from.year, _from.month), (_until.year, _until.month))
+        if is_monthly
+        else (_from, _until)
+    )
 
 
 def _user_has_read_on_resolved_node(user, guid_referent):

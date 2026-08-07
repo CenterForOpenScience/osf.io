@@ -141,6 +141,11 @@ class TestMetricsReportsRealElastic:
                 new_public_file_bytes=x,
             )
         _reports = [
+            _make('1233-12', 18),
+            _make('1234-01', 19),
+            _make('1234-02', 20),
+            _make('1234-03', 21),
+            _make('1234-04', 22),
             _make('1234-05', 23),
             _make('1234-06', 24),
             _make('1234-07', 25),
@@ -148,9 +153,6 @@ class TestMetricsReportsRealElastic:
             _make('1234-09', 27),
             _make('1234-10', 28),
             _make('1234-11', 29),
-            _make('1234-12', 30),
-            _make('1235-01', 31),
-            _make('1235-02', 32),
         ]
         MonthlyOsfstorageFileCountReport.refresh()
         return _reports
@@ -274,9 +276,24 @@ class TestMetricsReportsRealElastic:
         assert resp.headers['Content-Type'] == 'application/vnd.api+json; charset=utf-8'
         _data = resp.json['data']
         _expected_yms = [
-            '1235-02',
-            '1235-01',
-            '1234-12',
+            '1234-11',
+            '1234-10',
+            '1234-09',
+            '1234-08',
+            '1234-07',
+        ]
+        _actual_yms = [_item['attributes']['report_yearmonth'] for _item in _data]
+        assert _actual_yms == _expected_yms
+        _expected_counts = [29, 28, 27, 26, 25]
+        _actual_counts = [_item['attributes']['total_file_count'] for _item in _data]
+        assert _actual_counts == _expected_counts
+
+        # test yearmonth range
+        resp = app.get('/_/metrics/reports/monthly_osfstorage_file_count/recent/?start_date=1234-02&end_date=1234-12')
+        assert resp.status_code == 200
+        assert resp.headers['Content-Type'] == 'application/vnd.api+json; charset=utf-8'
+        _data = resp.json['data']
+        _expected_yms = [
             '1234-11',
             '1234-10',
             '1234-09',
@@ -284,48 +301,38 @@ class TestMetricsReportsRealElastic:
             '1234-07',
             '1234-06',
             '1234-05',
+            '1234-04',
+            '1234-03',
+            '1234-02',
         ]
         _actual_yms = [_item['attributes']['report_yearmonth'] for _item in _data]
         assert _actual_yms == _expected_yms
-        _expected_counts = [32, 31, 30, 29, 28, 27, 26, 25, 24, 23]
-        _actual_counts = [_item['attributes']['total_file_count'] for _item in _data]
-        assert _actual_counts == _expected_counts
-
-        # test yearmonth range
-        resp = app.get('/_/metrics/reports/monthly_osfstorage_file_count/recent/?start_date=1234-08&end_date=1235-02')
-        assert resp.status_code == 200
-        assert resp.headers['Content-Type'] == 'application/vnd.api+json; charset=utf-8'
-        _data = resp.json['data']
-        _expected_yms = [
-            '1235-01',
-            '1234-12',
-            '1234-11',
-            '1234-10',
-            '1234-09',
-            '1234-08',
-        ]
-        _actual_yms = [_item['attributes']['report_yearmonth'] for _item in _data]
-        assert _actual_yms == _expected_yms
-        _expected_counts = [31, 30, 29, 28, 27, 26]
+        _expected_counts = [29, 28, 27, 26, 25, 24, 23, 22, 21, 20]
         _actual_counts = [_item['attributes']['total_file_count'] for _item in _data]
         assert _actual_counts == _expected_counts
 
         # test date range
-        resp = app.get('/_/metrics/reports/monthly_osfstorage_file_count/recent/?start_date=1234-07-01&end_date=1235-01-01')
+        resp = app.get('/_/metrics/reports/monthly_osfstorage_file_count/recent/?start_date=1233-11-01&end_date=1235-01-01')
         assert resp.status_code == 200
         assert resp.headers['Content-Type'] == 'application/vnd.api+json; charset=utf-8'
         _data = resp.json['data']
         _expected_yms = [
-            '1234-12',
             '1234-11',
             '1234-10',
             '1234-09',
             '1234-08',
             '1234-07',
+            '1234-06',
+            '1234-05',
+            '1234-04',
+            '1234-03',
+            '1234-02',
+            '1234-01',
+            '1233-12',
         ]
         _actual_yms = [_item['attributes']['report_yearmonth'] for _item in _data]
         assert _actual_yms == _expected_yms
-        _expected_counts = [30, 29, 28, 27, 26, 25, 24]
+        _expected_counts = [29, 28, 27, 26, 25, 24, 23, 22, 21, 20, 19, 18]
         _actual_counts = [_item['attributes']['total_file_count'] for _item in _data]
         assert _actual_counts == _expected_counts
 
@@ -335,20 +342,15 @@ class TestMetricsReportsRealElastic:
         assert resp.headers['Content-Type'] == 'text/tab-separated-values; charset=utf-8'
         _rows = list(csv.DictReader(StringIO(resp.unicode_body), dialect='excel-tab'))
         _expected_yms = [
-            '1235-02',
-            '1235-01',
-            '1234-12',
             '1234-11',
             '1234-10',
             '1234-09',
             '1234-08',
             '1234-07',
-            '1234-06',
-            '1234-05',
         ]
         _actual_yms = [_row['report_yearmonth'] for _row in _rows]
         assert _actual_yms == _expected_yms
-        _expected_counts = [32, 31, 30, 29, 28, 27, 26, 25, 24, 23]
+        _expected_counts = [29, 28, 27, 26, 25]
         _actual_counts = [int(_row['total_file_count']) for _row in _rows]
         assert _actual_counts == _expected_counts
 
@@ -358,19 +360,14 @@ class TestMetricsReportsRealElastic:
         assert resp.headers['Content-Type'] == 'text/csv; charset=utf-8'
         _rows = list(csv.DictReader(StringIO(resp.unicode_body)))
         _expected_yms = [
-            '1235-02',
-            '1235-01',
-            '1234-12',
             '1234-11',
             '1234-10',
             '1234-09',
             '1234-08',
             '1234-07',
-            '1234-06',
-            '1234-05',
         ]
         _actual_yms = [_row['report_yearmonth'] for _row in _rows]
         assert _actual_yms == _expected_yms
-        _expected_counts = [32, 31, 30, 29, 28, 27, 26, 25, 24, 23]
+        _expected_counts = [29, 28, 27, 26, 25]
         _actual_counts = [int(_row['total_file_count']) for _row in _rows]
         assert _actual_counts == _expected_counts
