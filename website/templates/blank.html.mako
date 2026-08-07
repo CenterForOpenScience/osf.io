@@ -17,7 +17,7 @@
     <tr>
         <td style="background:#214762;text-align:center;padding:22px 0;">
             <img
-                src="${domain}static/img/osf.png"
+                src="https://osf.io/assets/images/logo.svg"
                 alt="OSF"
                 style="max-height:100px;border:0;">
         </td>
