@@ -1,15 +1,8 @@
 [tool.poetry]
 name = "osf-io"
-version = "26.16.0"
+version = "26.18.0"
 description = "The code for [https://osf.io](https://osf.io)."
-authors = [
-    "Brian J. Geiger <bgeiger@pobox.com>",
-    "Longze Chen <cslzchen@gmail.com>",
-    "Yuhuai Liu <yuhuai@cos.io>",
-    "Fitz Elliott <felliott@fiskur.org>",
-    "Ostap Zherebetskyi <ozherebetskyi@exoft.net>",
-    "Anton Krytskyi <ant.krytskyi@gmail.com>",
-]
+authors = ["Center for Open Science <contact@cos.io>"]
 license = "Apache License 2.0"
 readme = "README.md"
 packages = [{include = "osf"}]
@@ -80,6 +73,7 @@ django-guardian = "2.4.0"
 # Admin requirements
 django-webpack-loader = {git = "https://github.com/CenterForOpenScience/django-webpack-loader.git", rev = "6b62fef7d6bc9d25d7b7b7a303f4580ad24831a6"} # branch is feature/v1-webpack-stats
 django-sendgrid-v5 = "1.2.3" # metadata says python 3.10 not supported, but tests pass
+django-admin-rangefilter = "0.13.5"
 
 # OSF models
 django-typed-models = "0.14.0"
