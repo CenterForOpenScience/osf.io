@@ -28,7 +28,6 @@ class CasHTTPError(CasError):
 
     def __init__(self, code, message, headers, content):
         super().__init__(code, message)
-        self.message = message
         self.headers = headers
         self.content = content
 
@@ -96,10 +95,6 @@ class CasClient:
 
     def get_auth_token_revocation_url(self):
         url = furl(self.BASE_URL).add(path=['oauth2', 'revoke'])
-        return url.url
-
-    def get_orcid_token_revocation_url(self):
-        url = furl(self.BASE_URL).add(path=['osf', 'orcid', 'revoke'])
         return url.url
 
     def service_validate(self, ticket, service_url):
@@ -203,17 +198,6 @@ class CasClient:
         else:
             self._handle_error(resp)
 
-    def revoke_orcid_token(self, orcid_id):
-        url = self.get_orcid_token_revocation_url()
-        headers = {
-            'Authorization': f'Bearer {settings.CAS_ORCID_REVOKE_SHARED_SECRET}',
-        }
-        resp = requests.post(url, json={'orcid_id': orcid_id}, headers=headers)
-        if resp.status_code == 204:
-            return True
-        else:
-            self._handle_error(resp)
-
 
 def parse_auth_header(header):
     """
@@ -305,6 +289,19 @@ def make_response_from_ticket(ticket, service_url):
             if tos_checked_via_cas:
                 user_updates['accepted_terms_of_service'] = timezone.now()
                 print_cas_log(f'CAS TOS consent checked: {user.guids.first()._id}, {user.username}', LogLevel.INFO)
+            orcid_id = cas_resp.attributes.get('orcidId')
+            orcid_access_token = cas_resp.attributes.get('orcidAccessToken')
+            if orcid_id and orcid_access_token:
+                from osf.models.external import ExternalAccount
+                account, _ = ExternalAccount.objects.update_or_create(
+                    provider='orcid',
+                    provider_id=orcid_id,
+                    defaults={
+                        'provider_name': 'ORCID',
+                        'oauth_key': orcid_access_token,
+                    },
+                )
+                user.external_accounts.add(account)
             # if we successfully authenticate and a verification key is present, invalidate it
             if user.verification_key:
                 user_updates['verification_key'] = None

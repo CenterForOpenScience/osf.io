@@ -383,7 +383,6 @@ SPAM_SUBMIT_TASK_SOFT_TIME_LIMIT = 60
 SPAM_SUBMIT_TASK_HARD_TIME_LIMIT = 90
 
 CAS_SERVER_URL = 'http://localhost:8080'
-CAS_ORCID_REVOKE_SHARED_SECRET = os.environ.get('CAS_ORCID_REVOKE_SHARED_SECRET', 'changeme')
 MFR_SERVER_URL = 'http://localhost:7778'
 
 ###### ARCHIVER ###########
@@ -796,6 +795,10 @@ ORCID_PUBLIC_API_REQUEST_TIMEOUT = None
 ORCID_RECORD_ACCEPT_TYPE = 'application/vnd.orcid+xml'
 ORCID_RECORD_EMPLOYMENT_PATH = '/employments'
 ORCID_RECORD_EDUCATION_PATH = '/educations'
+
+ORCID_OAUTH_CLIENT_ID = os.environ.get('ORCID_OAUTH_CLIENT_ID', 'changeme')
+ORCID_OAUTH_CLIENT_SECRET = os.environ.get('ORCID_OAUTH_CLIENT_SECRET', 'changeme')
+ORCID_OAUTH_REVOKE_URL = os.environ.get('ORCID_OAUTH_REVOKE_URL', 'https://sandbox.orcid.org/oauth/revoke')
 
 # Source: https://github.com/maxd/fake_email_validator/blob/master/config/fake_domains.list
 BLACKLISTED_DOMAINS = [

@@ -6,9 +6,10 @@ import unittest
 
 from framework.auth import cas
 
+from osf.models import ExternalAccount
 from tests.base import OsfTestCase, fake
 from tests.utils import run_celery_tasks
-from osf_tests.factories import UserFactory
+from osf_tests.factories import ExternalAccountFactory, UserFactory
 
 
 def make_successful_response(user):
@@ -28,6 +29,18 @@ def make_successful_response_with_tos_consent(user):
         attributes={
             'accessToken': fake.md5(),
             'termsOfServiceChecked': 'true'
+        }
+    )
+
+
+def make_successful_response_with_orcid_attrs(user, orcid_id=None, access_token=None):
+    return cas.CasResponse(
+        authenticated=True,
+        user=user._id,
+        attributes={
+            'accessToken': fake.md5(),
+            'orcidId': orcid_id or fake.numerify('####-####-####-####'),
+            'orcidAccessToken': access_token or fake.md5(),
         }
     )
 
@@ -260,6 +273,53 @@ class TestCASTicketAuthentication(OsfTestCase):
         assert resp.status_code == 302
         assert mock_service_validate.call_count == 1
         assert mock_get_user_from_cas_resp.call_count == 1
+
+    @mock.patch('framework.auth.cas.get_user_from_cas_resp')
+    @mock.patch('framework.auth.cas.CasClient.service_validate')
+    def test_make_response_from_ticket_success_with_orcid_attrs(self, mock_service_validate, mock_get_user_from_cas_resp):
+        orcid_id = fake.numerify('####-####-####-####')
+        access_token = fake.md5()
+        mock_service_validate.return_value = make_successful_response_with_orcid_attrs(
+            self.user, orcid_id=orcid_id, access_token=access_token
+        )
+        mock_get_user_from_cas_resp.return_value = (self.user, None, 'authenticate')
+        ticket = fake.md5()
+        service_url = 'http://localhost:5000/'
+        resp = cas.make_response_from_ticket(ticket, service_url)
+        assert resp.status_code == 302
+        account = ExternalAccount.objects.get(provider='orcid', provider_id=orcid_id)
+        assert account.oauth_key == access_token
+        assert account in self.user.external_accounts.all()
+
+    @mock.patch('framework.auth.cas.get_user_from_cas_resp')
+    @mock.patch('framework.auth.cas.CasClient.service_validate')
+    def test_make_response_from_ticket_updates_existing_orcid_account(self, mock_service_validate, mock_get_user_from_cas_resp):
+        orcid_id = fake.numerify('####-####-####-####')
+        existing_account = ExternalAccountFactory(provider='orcid', provider_id=orcid_id, oauth_key='old-token')
+        self.user.external_accounts.add(existing_account)
+        new_access_token = fake.md5()
+        mock_service_validate.return_value = make_successful_response_with_orcid_attrs(
+            self.user, orcid_id=orcid_id, access_token=new_access_token
+        )
+        mock_get_user_from_cas_resp.return_value = (self.user, None, 'authenticate')
+        ticket = fake.md5()
+        service_url = 'http://localhost:5000/'
+        resp = cas.make_response_from_ticket(ticket, service_url)
+        assert resp.status_code == 302
+        assert ExternalAccount.objects.filter(provider='orcid', provider_id=orcid_id).count() == 1
+        existing_account.reload()
+        assert existing_account.oauth_key == new_access_token
+
+    @mock.patch('framework.auth.cas.get_user_from_cas_resp')
+    @mock.patch('framework.auth.cas.CasClient.service_validate')
+    def test_make_response_from_ticket_no_orcid_attrs_no_account_created(self, mock_service_validate, mock_get_user_from_cas_resp):
+        mock_service_validate.return_value = make_successful_response(self.user)
+        mock_get_user_from_cas_resp.return_value = (self.user, None, 'authenticate')
+        ticket = fake.md5()
+        service_url = 'http://localhost:5000/'
+        resp = cas.make_response_from_ticket(ticket, service_url)
+        assert resp.status_code == 302
+        assert not ExternalAccount.objects.filter(provider='orcid').exists()
 
     @mock.patch('framework.auth.cas.get_user_from_cas_resp')
     @mock.patch('framework.auth.cas.CasClient.service_validate')

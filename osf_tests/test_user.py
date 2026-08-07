@@ -12,6 +12,8 @@ from django.conf import settings as django_conf_settings
 from unittest import mock
 import itsdangerous
 import pytest
+import requests
+import responses
 from importlib import import_module
 
 from framework.auth.exceptions import ExpiredTokenError, InvalidTokenError, ChangePasswordError
@@ -2222,15 +2224,11 @@ class TestUserGdprDelete:
 
         assert mock_update_search.called
 
-    @mock.patch('framework.auth.cas.CasClient.revoke_orcid_token')
-    def test_can_gdpr_delete(self, mock_revoke_orcid_token, user):
-        user.external_identity = {'ORCID': {'fake-orcid-id': 'VERIFIED'}}
-        user.orcid_token_stored = True
-        user.save()
-
+    def test_can_gdpr_delete(self, user):
         user.social = ['fake social']
         user.schools = ['fake schools']
         user.jobs = ['fake jobs']
+        user.external_identity = ['fake external identity']
         user.external_accounts.add(ExternalAccountFactory())
 
         user.gdpr_delete()
@@ -2245,33 +2243,57 @@ class TestUserGdprDelete:
         assert not user.external_accounts.exists()
         assert user.is_disabled
         assert user.deleted is not None
-        mock_revoke_orcid_token.assert_called_once_with('fake-orcid-id')
-        assert user.orcid_token_stored is False
 
-    @mock.patch('framework.auth.cas.CasClient.revoke_orcid_token')
-    def test_gdpr_delete_no_orcid_no_cas_call(self, mock_revoke_orcid_token, user):
-        assert user.external_identity == {}
-
-        user.gdpr_delete()
-
-        mock_revoke_orcid_token.assert_not_called()
-
-    @mock.patch('framework.auth.cas.CasClient.revoke_orcid_token')
-    def test_gdpr_delete_orcid_revoke_failure_does_not_block_delete(self, mock_revoke_orcid_token, user):
-        from framework.auth import cas
-        mock_revoke_orcid_token.side_effect = cas.CasHTTPError(
-            code=400, message='Bad Request', headers={}, content=b'',
+    @responses.activate
+    def test_gdpr_delete_revokes_orcid_token(self, user):
+        responses.add(
+            responses.POST,
+            settings.ORCID_OAUTH_REVOKE_URL,
+            status=200,
         )
-        user.external_identity = {'ORCID': {'fake-orcid-id': 'VERIFIED'}}
-        user.orcid_token_stored = True
-        user.save()
+        account = ExternalAccountFactory(provider='orcid', oauth_key='fake-orcid-token')
+        user.external_accounts.add(account)
 
         user.gdpr_delete()
 
-        mock_revoke_orcid_token.assert_called_once_with('fake-orcid-id')
-        assert user.external_identity == {}
-        assert user.orcid_token_stored is False
+        assert len(responses.calls) == 1
+        request_body = responses.calls[0].request.body
+        assert f'token={account.oauth_key}' in request_body
+        assert f'client_id={settings.ORCID_OAUTH_CLIENT_ID}' in request_body
+        assert f'client_secret={settings.ORCID_OAUTH_CLIENT_SECRET}' in request_body
+        account.reload()
+        assert account.oauth_key is None
+
+    @responses.activate
+    def test_gdpr_delete_no_orcid_account_no_revoke_call(self, user):
+        responses.add(
+            responses.POST,
+            settings.ORCID_OAUTH_REVOKE_URL,
+            status=200,
+        )
+        user.external_accounts.add(ExternalAccountFactory(provider='github'))
+
+        user.gdpr_delete()
+
+        assert len(responses.calls) == 0
+
+    @responses.activate
+    def test_gdpr_delete_orcid_revoke_failure_does_not_block_delete(self, user):
+        responses.add(
+            responses.POST,
+            settings.ORCID_OAUTH_REVOKE_URL,
+            body=requests.exceptions.ConnectionError('boom'),
+        )
+        account = ExternalAccountFactory(provider='orcid', oauth_key='fake-orcid-token')
+        user.external_accounts.add(account)
+
+        user.gdpr_delete()
+
+        assert len(responses.calls) == 1
         assert user.deleted is not None
+        assert not user.external_accounts.exists()
+        account.reload()
+        assert account.oauth_key is None
 
     def test_can_gdpr_delete_personal_nodes(self, user):
 
