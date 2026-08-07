@@ -65,6 +65,8 @@ def get_admin_read_permissions():
         'view_notificationtype',
         'view_notificationsubscription',
         'view_emailtask',
+        'view_notificationcampaign',
+        'view_notificationcampaignrecipient',
     ])
 
 
@@ -118,6 +120,7 @@ def get_admin_write_permissions():
         'delete_notificationsubscription',
         'change_emailtask',
         'delete_emailtask',
+        'change_notificationcampaign',
     ])
 
 
