@@ -372,7 +372,7 @@ def build_file_tree(reg, node_settings, *args, **kwargs):
             'version': int(file_obj.versions.latest('created').identifier) if file_obj.versions.exists() else None
         }
         if not file_obj.is_file:
-            nonlocal reg
+            nonlocal reg  # noqa: F824
             all_children = OsfStorageFileNode.objects.filter(
                 target_object_id=node.id,
                 target_content_type_id=ct_id,
