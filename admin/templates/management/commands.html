@@ -248,6 +248,22 @@
                     </nav>
                 </form>
             </section>
+            <section>
+                <h4><u>Reject pending project access requests</u></h4>
+                <p>
+                    Use this management command to reject all project access requests (including institutional
+                    curator requests) currently in the pending state.
+                </p>
+                <form method="post"
+                      action="{% url 'management:reject_pending_node_requests'%}">
+                    {% csrf_token %}
+                    Comment: <input type="text" name="comment" style="width: 550px;"
+                                    placeholder="Leave blank for default rejection message 'This project is now read-only, so this access request has been automatically rejected.'" />
+                    <nav>
+                        <input class="btn btn-success" type="submit" value="Run" />
+                    </nav>
+                </form>
+            </section>
         </div>
     </section>
 {% endblock %}
