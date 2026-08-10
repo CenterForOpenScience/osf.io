@@ -3,11 +3,12 @@ from datetime import timedelta
 from django.apps import apps as global_apps
 from django.contrib.admin.sites import AdminSite
 from django.contrib.auth.models import Group, Permission
+from django.test import RequestFactory
 from django.utils import timezone
 
 from osf.admin import DASHBOARD_GROUP_NAME, DownloadEventsView
 from osf.models import DownloadEvent
-from osf_tests.factories import AuthUserFactory, ProjectFactory
+from osf_tests.factories import AuthUserFactory, ProjectFactory, PreprintFactory
 from tests.base import OsfTestCase
 
 
@@ -265,6 +266,16 @@ class TestDashboardData(OsfTestCase):
 
         assert data['top_projects'][0]['name'] == 'notaguid'
 
+    def test_top_projects_resolves_preprint_title(self):
+        """Preprints aren't nodes (and their guid can be versioned), but the name should
+        still resolve — ENG-11849."""
+        preprint = PreprintFactory(title='A Preprint About Downloads')
+        make_event(resource_guid=preprint._id, size_bytes=4 * 1024 ** 3)
+
+        data = self.admin.get_dashboard_data(DownloadEvent.objects.all())
+
+        assert data['top_projects'][0]['name'] == f'A Preprint About Downloads ({preprint._id})'
+
     def test_time_series_buckets_by_type(self):
         make_event(size_bytes=1024 ** 3)
         make_event(size_bytes=3 * 1024 ** 3, download_type=DownloadEvent.FOLDER_ZIP)
@@ -330,6 +341,50 @@ class TestDashboardData(OsfTestCase):
         data = self.admin.get_dashboard_data(DownloadEvent.objects.all())
 
         assert data['summary']['unique_users'] == 1
+
+
+class TestSortableColumns(OsfTestCase):
+    """Outcome and User are made sortable (ENG-11863, ENG-11864)."""
+
+    def setUp(self):
+        super().setUp()
+        self.admin = DownloadEventsView(DownloadEvent, AdminSite())
+        self.request = RequestFactory().get('/admin/osf/downloadevent/')
+
+    def test_outcome_column_declares_a_sort_field(self):
+        assert self.admin.outcome.admin_order_field == '_outcome_rank'
+
+    def test_outcome_rank_orders_completed_cancelled_failed_then_single(self):
+        completed = make_event(download_type=DownloadEvent.FOLDER_ZIP, zip_completed=True)
+        cancelled = make_event(download_type=DownloadEvent.FOLDER_ZIP, zip_completed=False, status_code=200)
+        failed = make_event(download_type=DownloadEvent.PROJECT, zip_completed=False, status_code=404)
+        single = make_event(download_type=DownloadEvent.FILE)
+
+        ordered = list(
+            self.admin.get_queryset(self.request).order_by('_outcome_rank').values_list('id', flat=True)
+        )
+
+        assert ordered == [completed.id, cancelled.id, failed.id, single.id]
+
+    def test_user_column_sorts_by_username_not_pk(self):
+        assert self.admin.user_display.admin_order_field == 'user__username'
+
+    def test_user_display_falls_back_for_anonymous(self):
+        anon = make_event(user=None)
+        assert self.admin.user_display(anon) == '—'
+
+    def test_outcome_annotation_does_not_change_dashboard_numbers(self):
+        """Production feeds get_queryset() (annotated with _outcome_rank for sorting) into
+        get_dashboard_data. The annotation must not alter any aggregate — guards against a
+        stray GROUP BY. Full equality, since the region sort is now deterministic."""
+        make_event(download_type=DownloadEvent.FILE, storage_region='Germany', size_bytes=2 * 1024 ** 3)
+        make_event(download_type=DownloadEvent.FOLDER_ZIP, storage_region='Germany', zip_completed=True, size_bytes=3 * 1024 ** 3)
+        make_event(download_type=DownloadEvent.PROJECT, storage_region='United States', zip_completed=False, status_code=404, size_bytes=5 * 1024 ** 3)
+
+        annotated = self.admin.get_dashboard_data(self.admin.get_queryset(self.request))
+        plain = self.admin.get_dashboard_data(DownloadEvent.objects.all())
+
+        assert annotated == plain
 
 
 class TestStaffAccessMigration(OsfTestCase):
