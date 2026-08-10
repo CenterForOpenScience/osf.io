@@ -130,11 +130,12 @@ class TestRejectPendingNodeRequests:
     def test_machine_error_is_handled_gracefully(self, actor):
         request_1 = make_pending_request()
         request_2 = make_pending_request()
+        original_run_reject = NodeRequest.run_reject
 
         def patched_run_reject(self, user, comment):
             if self.pk == request_1.pk:
                 raise MachineError('Simulated error')
-            return NodeRequest.run_reject(self, user=user, comment=comment)
+            return original_run_reject(self, user=user, comment=comment)
 
         with mock.patch.object(NodeRequest, 'run_reject', patched_run_reject):
             with capture_notifications():
