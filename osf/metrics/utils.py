@@ -149,12 +149,19 @@ class YearMonth:
             return YearMonth.from_date(data)
         raise ValueError(f'cannot coerce {data} into YearMonth')
 
+    @classmethod
+    def range(cls, start_ym: YearMonth, end_ym: YearMonth) -> cabc.Iterator[YearMonth]:
+        _ym = start_ym
+        while _ym < end_ym:
+            yield _ym
+            _ym = _ym.next()
+
     def __str__(self):
         """convert to string of "YYYY-MM" format"""
         return f'{self.year}-{self.month:0>2}'
 
-    def __le__(self, other):
-        return (self.year <= other.year) and (self.month <= other.month)
+    def __lt__(self, other):
+        return (self.year, self.month) < (other.year, other.month)
 
     def next(self) -> YearMonth:
         """get a new YearMonth for the month after this one"""

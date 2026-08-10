@@ -17,6 +17,7 @@ __all__ = (
     'MonthlyPrivateSpamMetricsReport',
     'MonthlyPublicItemUsageReport',
     'MonthlySpamSummaryReport',
+    'MonthlyOsfstorageFileCountReport',
 )
 
 
@@ -198,3 +199,18 @@ class MonthlyPrivateSpamMetricsReport(BaseMonthlyReport):
 
     class Meta:
         timeseries_index_timedepth = YEARLY
+
+
+class MonthlyOsfstorageFileCountReport(BaseMonthlyReport):
+    # total_file_count: number of files created (but not deleted) before the end of the
+    #   given month belonging to non-spam non-deleted osf objects (public or private)
+    total_file_count: int = esdsl.mapped_field(esdsl.Long())
+    total_file_bytes: int = esdsl.mapped_field(esdsl.Long())
+
+    # public_file_count: same as total_file_count, but only public osf objects
+    public_file_count: int = esdsl.mapped_field(esdsl.Long())
+    public_file_bytes: int = esdsl.mapped_field(esdsl.Long())
+
+    # new_public_file_count: same as public_file_count, but files created only during the given month
+    new_public_file_count: int = esdsl.mapped_field(esdsl.Long())
+    new_public_file_bytes: int = esdsl.mapped_field(esdsl.Long())

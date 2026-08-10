@@ -60,6 +60,7 @@ from osf.metrics.daily_reports import (
 from osf.metrics.monthly_reports import (
     BaseMonthlyReport,
     MonthlySpamSummaryReport,
+    MonthlyOsfstorageFileCountReport,
 )
 from osf.metrics.openapi import get_metrics_openapi_json_dict
 from osf.models import AbstractNode
@@ -69,7 +70,7 @@ from osf.utils.workflows import RegistrationModerationTriggers, RegistrationMode
 logger = logging.getLogger(__name__)
 
 
-VIEWABLE_REPORTS = {
+_BACKCOMPAT_VIEWABLE_REPORTS = {
     'download_count': DailyDownloadCountReport,
     'institution_summary': DailyInstitutionSummaryReport,
     'node_summary': DailyNodeSummaryReport,
@@ -80,6 +81,38 @@ VIEWABLE_REPORTS = {
     'spam_summary': MonthlySpamSummaryReport,
     'new_user_domains': DailyNewUserDomainReport,
 }
+
+VIEWABLE_REPORTS = {
+    'daily_download_count': DailyDownloadCountReport,
+    'daily_institution_summary': DailyInstitutionSummaryReport,
+    'daily_new_user_domains': DailyNewUserDomainReport,
+    'daily_node_summary': DailyNodeSummaryReport,
+    'daily_osfstorage_file_count': DailyOsfstorageFileCountReport,
+    'daily_preprint_summary': DailyPreprintSummaryReport,
+    'daily_storage_addon_usage': DailyStorageAddonUsageReport,
+    'daily_user_summary': DailyUserSummaryReport,
+    'monthly_osfstorage_file_count': MonthlyOsfstorageFileCountReport,
+    'monthly_spam_summary': MonthlySpamSummaryReport,
+}
+
+
+def _get_report_cls(report_name: str):
+    try:
+        return VIEWABLE_REPORTS[report_name]
+    except KeyError:
+        pass
+    try:
+        return _BACKCOMPAT_VIEWABLE_REPORTS[report_name]
+    except KeyError:
+        return Response(
+            {
+                'errors': [{
+                    'title': 'unknown report name',
+                    'detail': f'unknown report: "{report_name}"',
+                }],
+            },
+            status=404,
+        )
 
 
 class RawMetricsView(GenericAPIView):
@@ -303,18 +336,7 @@ class ReportList(ElasticsearchListView):
 
     def get_default_search(self):
         _report_name = self.kwargs['report_name']
-        try:
-            _report_cls = VIEWABLE_REPORTS[_report_name]
-        except KeyError:
-            return Response(
-                {
-                    'errors': [{
-                        'title': 'unknown report name',
-                        'detail': f'unknown report: "{_report_name}"',
-                    }],
-                },
-                status=404,
-            )
+        _report_cls = _get_report_cls(_report_name)
         return _report_cls.search()
 
     def get_serializer_context(self):
@@ -345,18 +367,7 @@ class RecentReportList(JSONAPIBaseView):
     )
 
     def get(self, request, *args, report_name):
-        try:
-            report_class = VIEWABLE_REPORTS[report_name]
-        except KeyError:
-            return Response(
-                {
-                    'errors': [{
-                        'title': 'unknown report name',
-                        'detail': f'unknown report: "{report_name}"',
-                    }],
-                },
-                status=404,
-            )
+        report_class = _get_report_cls(report_name)
         is_daily = issubclass(report_class, BaseDailyReport)
         is_monthly = issubclass(report_class, BaseMonthlyReport)
         assert is_daily or is_monthly

@@ -95,3 +95,19 @@ False
 True
 >>> YearMonth(1000, 3) >= YearMonth(1000, 3)
 True
+>>> YearMonth(1000, 10) < YearMonth(1001, 3)
+True
+>>> YearMonth(1000, 10) > YearMonth(1001, 3)
+False
+
+YearMonth.range(start, end):
+>>> list(YearMonth.range(YearMonth(2000, 1), YearMonth(2000, 3)))
+[YearMonth(year=2000, month=1), YearMonth(year=2000, month=2)]
+>>> list(YearMonth.range(YearMonth(1999, 10), YearMonth(2000, 1)))
+[YearMonth(year=1999, month=10), YearMonth(year=1999, month=11), YearMonth(year=1999, month=12)]
+>>> list(YearMonth.range(YearMonth(1999, 10), YearMonth(2000, 4)))
+[YearMonth(year=1999, month=10), YearMonth(year=1999, month=11), YearMonth(year=1999, month=12), YearMonth(year=2000, month=1), YearMonth(year=2000, month=2), YearMonth(year=2000, month=3)]
+>>> list(YearMonth.range(YearMonth(2000, 1), YearMonth(2000, 1)))
+[]
+>>> list(YearMonth.range(YearMonth(2000, 2), YearMonth(2000, 1)))
+[]

@@ -39,6 +39,9 @@ class TestInstiSummaryMonthlyReporter(TestCase):
         published_preprint.affiliated_institutions.add(institution)
         published_preprint.created = created
         published_preprint.save()
+        published_preprint.primary_file.created = created
+        published_preprint.primary_file.save()
+        published_preprint.primary_file.versions.all().update(created=created)
         return published_preprint
 
     @classmethod
