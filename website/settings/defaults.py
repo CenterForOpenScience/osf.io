@@ -632,7 +632,6 @@ class CeleryConfig:
         'scripts.remove_after_use.merge_notification_subscription_provider_ct',
         'scripts.disable_removed_beat_tasks',
         'osf.management.commands.delete_withdrawn_or_failed_registration_files',
-        'osf.management.commands.migrate_osfmetrics_fix_6to8',
         'osf.email.notification_campaign',
     )
 
