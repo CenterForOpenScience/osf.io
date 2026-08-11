@@ -1,7 +1,10 @@
 import pytest
+from waffle.testutils import override_flag
 
 from addons.osfstorage.models import OsfStorageFile
 from api.base.settings.defaults import API_BASE
+from osf import features
+from osf.utils.permissions import ADMIN, WRITE
 from osf_tests.factories import (
     AuthUserFactory,
     PreprintFactory,
@@ -204,3 +207,39 @@ class TestGuidDetail:
         assert referent['links']['related']['href'] == related_url
         assert referent['data']['id'] == registration._id
         assert referent['data']['type'] == 'registrations'
+
+
+@pytest.mark.django_db
+class TestGuidDetailPermissionsSeenByGravyValet:
+    """
+    GravyValet authorizes addon writes by calling this endpoint and reading
+    `current_user_permissions` off the embedded referent. It asks the same
+    question for connecting, configuring and disconnecting an addon, so whatever
+    this endpoint reports decides all three at once.
+    """
+
+    @pytest.fixture()
+    def admin(self):
+        return AuthUserFactory()
+
+    @pytest.fixture()
+    def project(self, admin):
+        return ProjectFactory(creator=admin)
+
+    def _permissions_gravy_valet_sees(self, app, admin, project):
+        # the exact request GravyValet makes: _osfapi_guid_url + embed=referent
+        url = f'/{API_BASE}guids/{project._id}/?resolve=false&embed=referent'
+        res = app.get(url, auth=admin.auth)
+        referent = res.json['data']['embeds']['referent']['data']
+        return referent['attributes']['current_user_permissions']
+
+    def test_admin_keeps_write_when_project_read_only_active(self, app, admin, project):
+        assert project.has_permission(admin, ADMIN)
+        with override_flag(features.PROJECT_READ_ONLY, active=True):
+            permissions = self._permissions_gravy_valet_sees(app, admin, project)
+        # GravyValet checks `WRITE in current_user_permissions` before allowing a
+        # PATCH (configure) or DELETE (disconnect) on a configured addon.
+        assert WRITE in permissions, (
+            f'GravyValet sees {permissions} and will refuse to configure or '
+            f'disconnect any addon on this project'
+        )

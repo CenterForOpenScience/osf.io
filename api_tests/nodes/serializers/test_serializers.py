@@ -243,6 +243,12 @@ class TestSparseRegistrationSerializer:
 
 @pytest.mark.django_db
 class TestGetCurrentUserPermissionsProjectReadOnly:
+    """`current_user_permissions` reports permissions, it does not enforce them —
+    writes are blocked by the permission classes instead. GravyValet authorizes
+    addon writes off this field and asks the same question for connecting,
+    configuring and disconnecting, so filtering it down to READ would also stop
+    users configuring and disconnecting addons they already have.
+    """
 
     @pytest.fixture
     def contributor(self):
@@ -252,20 +258,11 @@ class TestGetCurrentUserPermissionsProjectReadOnly:
     def project(self, contributor):
         return ProjectFactory(creator=contributor)
 
-    def test_write_and_admin_stripped_when_project_read_only_active(self, contributor, project):
+    @pytest.mark.parametrize('flag_active', [True, False])
+    def test_permissions_are_reported_regardless_of_project_read_only(self, contributor, project, flag_active):
         request = make_drf_request_with_version(version='2.0')
         request.user = contributor
-        with override_flag(features.PROJECT_READ_ONLY, active=True):
-            serializer = NodeSerializer(project, context={'request': request})
-            perms = serializer.get_current_user_permissions(project)
-        assert osf_permissions.WRITE not in perms
-        assert osf_permissions.ADMIN not in perms
-        assert osf_permissions.READ in perms
-
-    def test_permissions_not_stripped_when_project_read_only_inactive(self, contributor, project):
-        request = make_drf_request_with_version(version='2.0')
-        request.user = contributor
-        with override_flag(features.PROJECT_READ_ONLY, active=False):
+        with override_flag(features.PROJECT_READ_ONLY, active=flag_active):
             serializer = NodeSerializer(project, context={'request': request})
             perms = serializer.get_current_user_permissions(project)
         assert osf_permissions.WRITE in perms

@@ -17,8 +17,11 @@ from addons.owncloud.tests.factories import OwnCloudAccountFactory, OwnCloudNode
 from addons.s3.tests.factories import S3AccountFactory, S3NodeSettingsFactory
 from addons.figshare.tests.factories import FigshareAccountFactory, FigshareNodeSettingsFactory
 from api.base.settings.defaults import API_BASE
-from osf_tests.factories import AuthUserFactory
+from framework.auth import Auth
+from osf import features
+from osf_tests.factories import AuthUserFactory, ProjectFactory
 from tests.base import ApiAddonTestCase
+from waffle.testutils import override_flag
 
 from addons.mendeley.tests.factories import (
     MendeleyAccountFactory, MendeleyNodeSettingsFactory
@@ -1406,3 +1409,74 @@ class TestNodeForwardAddon(
         # This test doesn't apply forward, as it does not use ExternalAccounts.
         # Overridden because it's required by the superclass.
         pass
+
+
+@pytest.mark.django_db
+class TestNodeAddonConnectionProjectReadOnly:
+    """
+    Connecting a new addon is blocked while PROJECT_READ_ONLY is active;
+    reconfiguring and disconnecting an already-connected one stay available.
+    """
+
+    short_name = 'box'
+
+    @pytest.fixture()
+    def user(self):
+        return AuthUserFactory()
+
+    @pytest.fixture()
+    def node(self, user):
+        return ProjectFactory(creator=user)
+
+    @pytest.fixture()
+    def url(self, node):
+        return f'/{API_BASE}nodes/{node._id}/addons/{self.short_name}/'
+
+    @pytest.fixture()
+    def payload(self):
+        return {'data': {'id': self.short_name, 'type': 'node_addons', 'attributes': {}}}
+
+    @pytest.fixture()
+    def connected_addon(self, user, node):
+        account = BoxAccountFactory()
+        user.external_accounts.add(account)
+        user.save()
+        user.get_or_add_addon(self.short_name)
+        node_settings = node.get_or_add_addon(self.short_name, auth=Auth(user))
+        node_settings.set_auth(account, user)
+        node_settings.folder_id = '1234567890'
+        node_settings.save()
+        return node_settings
+
+    def test_connecting_new_addon_is_blocked(self, app, user, node, url, payload):
+        with override_flag(features.PROJECT_READ_ONLY, active=True):
+            res = app.post_json_api(url, payload, auth=user.auth, expect_errors=True)
+        assert res.status_code == 405
+        assert node.get_addon(self.short_name) is None
+
+    def test_connecting_new_addon_is_allowed_when_flag_inactive(self, app, user, node, url, payload):
+        with override_flag(features.PROJECT_READ_ONLY, active=False):
+            res = app.post_json_api(url, payload, auth=user.auth)
+        assert res.status_code == 201
+        assert node.get_addon(self.short_name) is not None
+
+    def test_reconfiguring_connected_addon_is_allowed(self, app, user, url, connected_addon):
+        assert connected_addon.has_auth
+        payload = {'data': {
+            'id': self.short_name,
+            'type': 'node_addons',
+            'attributes': {'external_account_id': None},
+        }}
+        with override_flag(features.PROJECT_READ_ONLY, active=True):
+            res = app.patch_json_api(url, payload, auth=user.auth)
+        assert res.status_code == 200
+        assert not res.json['data']['attributes']['node_has_auth']
+        connected_addon.reload()
+        assert not connected_addon.has_auth
+
+    def test_disconnecting_connected_addon_is_allowed(self, app, user, node, url, connected_addon):
+        assert node.get_addon(self.short_name) is not None
+        with override_flag(features.PROJECT_READ_ONLY, active=True):
+            res = app.delete_json_api(url, auth=user.auth)
+        assert res.status_code == 204
+        assert node.get_addon(self.short_name) is None

@@ -106,6 +106,7 @@ from api.nodes.permissions import (
     NodeIdentifierCreationNotAllowed,
     NodeContributorWriteNotAllowed,
     NodeDraftRegistrationCreationNotAllowed,
+    NodeAddonConnectionNotAllowed,
 )
 from api.wikis.permissions import WikisEditingNotAllowed
 from osf.utils import permissions as osf_permissions
@@ -1369,6 +1370,7 @@ class NodeAddonDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, ge
         ContributorOrPublic,
         ExcludeWithdrawals,
         ReadOnlyIfRegistration,
+        NodeAddonConnectionNotAllowed,
         base_permissions.TokenHasScope,
     )
 
