@@ -1062,3 +1062,47 @@ class TestRecoverDeletedPreprintView(AdminTestCase):
         recovered = Preprint.load('abcde')
         assert recovered.primary_file is not None
         assert recovered.primary_file.copied_from_id == source_file.id
+
+    def _orphan_guid(self, provider):
+        # Leave a base Guid with a dangling referent (the deleted-preprint state we recover from).
+        # Detach the GenericRelation first so deleting the preprint doesn't cascade the Guid away.
+        from osf.models import Guid
+        pp = PreprintFactory(provider=provider)
+        guid_str = pp.get_guid()._id
+        Guid.objects.filter(_id=guid_str).update(object_id=None, content_type=None)
+        pp.versioned_guids.all().delete()
+        Preprint.objects.filter(id=pp.id).delete()
+        return guid_str
+
+    def test_recover_reuses_orphaned_guid(self):
+        from osf.models import Guid
+        guid_str = self._orphan_guid(self.provider)
+        assert Guid.objects.filter(_id=guid_str).exists()
+        assert Guid.objects.get(_id=guid_str).referent is None
+        assert Preprint.load(guid_str) is None
+
+        response = self._post(self._base_data(guid=guid_str))
+        assert response.status_code == 302
+
+        recovered = Preprint.load(guid_str)
+        assert recovered is not None
+        assert recovered._id == f'{guid_str}_v1'
+        assert recovered.title == 'Recovered Title'
+        assert Guid.objects.filter(_id=guid_str).count() == 1
+        assert Guid.objects.get(_id=guid_str).referent == recovered
+        assert AdminLogEntry.objects.filter(action_flag=PREPRINT_RECOVERED).exists()
+
+    def test_create_rejects_guid_pointing_at_live_preprint(self):
+        from django.core.exceptions import ValidationError
+        live = PreprintFactory(provider=self.provider)
+        guid_str = live.get_guid()._id
+        with pytest.raises(ValidationError, match='GUID cannot be manually assigned'):
+            Preprint.create(
+                provider=self.provider,
+                title='x',
+                creator=self.user,
+                description='y',
+                manual_guid=guid_str,
+            )
+        # The live preprint's guid still points at it, untouched.
+        assert Preprint.load(guid_str).id == live.id

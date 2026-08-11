@@ -356,9 +356,17 @@ class Preprint(DirtyFieldsMixin, VersionedGuidMixin, IdentifierMixin, Reviewable
         preprint.save(guid_ready=False)
         # Step 2: Create the base guid obj
         if manual_guid:
-            if not check_manually_assigned_guid(manual_guid):
+            existing_guid = Guid.objects.filter(_id=manual_guid).first()
+            if existing_guid is not None:
+                # Reuse an orphaned guid so deleted preprints can be recovered at their
+                # original id; a guid still pointing at a live object is a real collision.
+                if existing_guid.referent is not None:
+                    raise ValidationError(f'GUID cannot be manually assigned: guid_str={manual_guid}.')
+                base_guid_obj = existing_guid
+            elif check_manually_assigned_guid(manual_guid):
+                base_guid_obj = Guid.objects.create(_id=manual_guid)
+            else:
                 raise ValidationError(f'GUID cannot be manually assigned: guid_str={manual_guid}.')
-            base_guid_obj = Guid.objects.create(_id=manual_guid)
         else:
             base_guid_obj = Guid.objects.create()
         base_guid_obj.referent = preprint
