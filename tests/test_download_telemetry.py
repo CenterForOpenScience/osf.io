@@ -108,6 +108,7 @@ class TestZipDownloadTelemetry(OsfTestCase):
                 'provider': 'osfstorage',
             },
             'action_meta': meta,
+            'request_meta': {'user_agent': 'TestZipAgent/1.0'},
         }
         message, signature = signing.default_signer.sign_payload(options)
         return {'payload': message, 'signature': signature}
@@ -215,6 +216,29 @@ class TestZipDownloadTelemetry(OsfTestCase):
 
         assert DownloadEvent.objects.get().storage_provider == 'osfstorage'
 
+    def test_user_agent_comes_from_the_callback(self):
+        self.app.put(self.url, json=self.build_payload())
+
+        assert DownloadEvent.objects.get().user_agent == 'TestZipAgent/1.0'
+
+    def test_missing_request_meta_leaves_user_agent_blank(self):
+        """A callback from a WaterButler build that predates request_meta records an empty
+        user agent rather than failing."""
+        options = {
+            'auth': {'id': self.user._id},
+            'action': 'download_zip',
+            'provider': 'osfstorage',
+            'time': time.time() + 1000,
+            'metadata': {'nid': self.node._id, 'materialized': '/', 'path': '/',
+                         'kind': 'folder', 'provider': 'osfstorage'},
+            'action_meta': {},
+        }
+        message, signature = signing.default_signer.sign_payload(options)
+        res = self.app.put(self.url, json={'payload': message, 'signature': signature})
+
+        assert res.status_code == 200
+        assert DownloadEvent.objects.get().user_agent == ''
+
     def test_callback_still_succeeds_when_recording_fails(self, ):
         with pytest.MonkeyPatch.context() as patch:
             patch.setattr(
@@ -261,6 +285,23 @@ class TestSingleFileDownloadTelemetry(OsfTestCase):
         self.app.get(f'/download/{self.guid}/', auth=self.user.auth)
 
         assert DownloadEvent.objects.get().storage_provider == 'osfstorage'
+
+    def test_user_agent_comes_from_the_request(self):
+        self.app.get(
+            f'/download/{self.guid}/', auth=self.user.auth,
+            headers={'User-Agent': 'PytestClient/9.9'},
+        )
+
+        assert DownloadEvent.objects.get().user_agent == 'PytestClient/9.9'
+
+    def test_long_user_agent_is_capped(self):
+        """The User-Agent is client-controlled, so the write caps it to the column width."""
+        self.app.get(
+            f'/download/{self.guid}/', auth=self.user.auth,
+            headers={'User-Agent': 'x' * 900},
+        )
+
+        assert len(DownloadEvent.objects.get().user_agent) == 512
 
     def test_zip_completed_is_unset_for_single_files(self):
         """Only zips stream through WaterButler, so nothing reports completion here."""

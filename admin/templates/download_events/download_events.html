@@ -78,6 +78,10 @@
                 <div class="dashboard-card summary-card">
                     <div class="card-label">Total downloads</div>
                     <div class="card-value">{{ download_events_dashboard.summary.total_downloads }}</div>
+                    <div class="card-sublabel">
+                        Files: {{ download_events_dashboard.split.file.count }}
+                        · Zips: {{ download_events_dashboard.split.zip.count }}
+                    </div>
                 </div>
                 <div class="dashboard-card summary-card">
                     <div class="card-label">Total GB</div>

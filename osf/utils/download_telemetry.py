@@ -63,6 +63,7 @@ def write_download_event(
     status_code=None,
     user_guid=None,
     ip=None,
+    user_agent='',
     source_area='',
     tz='',
 ):
@@ -99,6 +100,8 @@ def write_download_event(
         storage_region=_truncate(storage_region, 64),
         user_region=_truncate(derive_user_region(tz, user, storage_region), 64),
         ip=ip or None,
+        # capped: the User-Agent comes off the request, so it's client-controlled
+        user_agent=_truncate(user_agent, 512),
         source_area=_truncate(source_area, 128),
         user=user,
     )

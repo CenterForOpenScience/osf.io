@@ -44,6 +44,9 @@ class DownloadEvent(models.Model):
     user_region = models.CharField(max_length=64, blank=True, default='')
     ip = models.GenericIPAddressField(null=True, blank=True)
     source_area = models.CharField(max_length=128, blank=True, default='')
+    # the client's User-Agent, to tell frontend downloads apart from API clients and
+    # crawlers. Blank when we couldn't read one (and for rows recorded before this field).
+    user_agent = models.TextField(blank=True, default='')
 
     # nullable: anonymous downloads of public files
     user = models.ForeignKey(

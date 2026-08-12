@@ -6,7 +6,7 @@ from django.urls import re_path, reverse, path
 from django.template.response import TemplateResponse
 from django_extensions.admin import ForeignKeyAutocompleteAdmin
 from django.contrib.auth.models import Group
-from django.db.models import Q, Count, Sum, F, Min, Max
+from django.db.models import Q, Count, Sum, F, Min, Max, Case, When, Value, IntegerField
 from django.db.models.functions import Trunc
 from django.http import HttpResponseRedirect, HttpResponse, JsonResponse
 from django.utils import timezone
@@ -31,7 +31,7 @@ from osf.models import (
     Notification,
     DownloadEvent
 )
-from osf.models import AbstractNode
+from osf.models import AbstractNode, Preprint, Guid
 from osf.models.notification_type import get_default_frequency_choices
 from osf.models.notable_domain import DomainReference
 
@@ -450,7 +450,7 @@ class DownloadEventsView(admin.ModelAdmin):
     change_list_template = 'download_events/download_events.html'
     list_display = (
         'resource_guid',
-        'user',
+        'user_display',
         'download_type',
         'outcome',
         'zip_completed',
@@ -462,6 +462,7 @@ class DownloadEventsView(admin.ModelAdmin):
         'storage_region',
         'ip',
         'source_area',
+        'user_agent_display',
         'created'
     )
     list_filter = (
@@ -487,11 +488,46 @@ class DownloadEventsView(admin.ModelAdmin):
         'storage_provider',
         'user_region',
         'storage_region',
-        'source_area'
+        'source_area',
+        'user_agent'
     )
-    search_help_text = 'Search by username, full name, user or node guid, ip, path, storage provider, user or storage region, source area.'
+    search_help_text = 'Search by username, full name, user or node guid, ip, path, storage provider, user or storage region, source area, user agent.'
 
-    @admin.display(description='Outcome')
+    def get_queryset(self, request):
+        """Annotate an outcome rank so the computed Outcome column is sortable.
+
+        The rank mirrors :meth:`outcome` exactly. It's just an ordering key — it doesn't
+        change what rows are returned, so the table and the dashboard aggregates are
+        unaffected.
+        """
+        return super().get_queryset(request).annotate(
+            _outcome_rank=Case(
+                When(zip_completed=True, then=Value(0)),  # Completed
+                When(
+                    zip_completed=False,
+                    status_code__gte=DOWNLOAD_FAILURE_MIN_STATUS,
+                    then=Value(2),  # Failed
+                ),
+                When(zip_completed=False, then=Value(1)),  # Cancelled
+                default=Value(3),  # single files have no outcome ('—')
+                output_field=IntegerField(),
+            )
+        )
+
+    @admin.display(description='User', ordering='user__username')
+    def user_display(self, obj):
+        """Sort the User column by the username (email) rather than the raw FK id."""
+        return obj.user or '—'
+
+    @admin.display(description='User agent', ordering='user_agent')
+    def user_agent_display(self, obj):
+        """Truncated in the table so it doesn't dominate the row; the full value is still
+        searchable and shows on the record's detail view."""
+        if not obj.user_agent:
+            return '—'
+        return obj.user_agent if len(obj.user_agent) <= 80 else obj.user_agent[:79] + '…'
+
+    @admin.display(description='Outcome', ordering='_outcome_rank')
     def outcome(self, obj):
         """Human-readable end state. Single files have no outcome — they're recorded at the
         redirect before any bytes move, so they never report completion."""
@@ -760,7 +796,9 @@ class DownloadEventsView(admin.ModelAdmin):
             breakdown[region_name]['file_count'] += row['file_count']
             breakdown[region_name]['zip_count'] += row['zip_count']
 
-        ordered = sorted(breakdown.items(), key=lambda item: item[1]['gb'], reverse=True)[:10]
+        # gb descending, then name ascending so the order is deterministic when GB ties
+        # (and never depends on the incoming queryset's row order)
+        ordered = sorted(breakdown.items(), key=lambda item: (-item[1]['gb'], item[0]))[:10]
         max_gb = max((data['gb'] for _, data in ordered), default=0)
         max_downloads = max((data['downloads'] for _, data in ordered), default=0)
         return [
@@ -788,6 +826,14 @@ class DownloadEventsView(admin.ModelAdmin):
         titles = dict(
             AbstractNode.objects.filter(guids___id__in=guids).values_list('guids___id', 'title')
         )
+        # preprints aren't nodes, and a preprint guid can be versioned (e.g. abcde_v1), which
+        # the node query above never matches. Resolve whatever's left through the guid — at
+        # most ten lookups, since this is a top-ten table.
+        for guid in guids:
+            if guid not in titles:
+                referent, _ = Guid.load_referent(guid)
+                if isinstance(referent, Preprint) and referent.title:
+                    titles[guid] = referent.title
         return [
             {
                 # a deleted project keeps its title, but fall back to the bare guid so
