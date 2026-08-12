@@ -715,11 +715,6 @@ class CeleryConfig:
             'schedule': crontab(minute=0, hour=5),  # Daily 12 a.m
             'kwargs': {'dry_run': False},
         },
-        'new-and-noteworthy': {
-            'task': 'scripts.populate_new_and_noteworthy_projects',
-            'schedule': crontab(minute=0, hour=7, day_of_week=6),  # Saturday 2:00 a.m.
-            'kwargs': {'dry_run': False}
-        },
         'registration_schema_metrics': {
             'task': 'management.commands.registration_schema_metrics',
             'schedule': crontab(minute=45, hour=7, day_of_month=3),  # Third day of month 2:45 a.m.
