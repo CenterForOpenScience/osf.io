@@ -373,6 +373,21 @@ class TestSortableColumns(OsfTestCase):
         anon = make_event(user=None)
         assert self.admin.user_display(anon) == '—'
 
+    def test_user_agent_column_declares_a_sort_field(self):
+        assert self.admin.user_agent_display.admin_order_field == 'user_agent'
+
+    def test_user_agent_display_shows_short_agents_in_full(self):
+        event = make_event(user_agent='curl/8.0')
+        assert self.admin.user_agent_display(event) == 'curl/8.0'
+
+    def test_user_agent_display_truncates_long_agents(self):
+        event = make_event(user_agent='Mozilla/5.0 ' + 'x' * 200)
+        shown = self.admin.user_agent_display(event)
+        assert len(shown) == 80 and shown.endswith('…')
+
+    def test_user_agent_display_falls_back_when_blank(self):
+        assert self.admin.user_agent_display(make_event(user_agent='')) == '—'
+
     def test_outcome_annotation_does_not_change_dashboard_numbers(self):
         """Production feeds get_queryset() (annotated with _outcome_rank for sorting) into
         get_dashboard_data. The annotation must not alter any aggregate — guards against a

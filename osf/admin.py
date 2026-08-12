@@ -462,6 +462,7 @@ class DownloadEventsView(admin.ModelAdmin):
         'storage_region',
         'ip',
         'source_area',
+        'user_agent_display',
         'created'
     )
     list_filter = (
@@ -487,9 +488,10 @@ class DownloadEventsView(admin.ModelAdmin):
         'storage_provider',
         'user_region',
         'storage_region',
-        'source_area'
+        'source_area',
+        'user_agent'
     )
-    search_help_text = 'Search by username, full name, user or node guid, ip, path, storage provider, user or storage region, source area.'
+    search_help_text = 'Search by username, full name, user or node guid, ip, path, storage provider, user or storage region, source area, user agent.'
 
     def get_queryset(self, request):
         """Annotate an outcome rank so the computed Outcome column is sortable.
@@ -516,6 +518,14 @@ class DownloadEventsView(admin.ModelAdmin):
     def user_display(self, obj):
         """Sort the User column by the username (email) rather than the raw FK id."""
         return obj.user or '—'
+
+    @admin.display(description='User agent', ordering='user_agent')
+    def user_agent_display(self, obj):
+        """Truncated in the table so it doesn't dominate the row; the full value is still
+        searchable and shows on the record's detail view."""
+        if not obj.user_agent:
+            return '—'
+        return obj.user_agent if len(obj.user_agent) <= 80 else obj.user_agent[:79] + '…'
 
     @admin.display(description='Outcome', ordering='_outcome_rank')
     def outcome(self, obj):

@@ -213,6 +213,7 @@ def _record_file_download(target, file_node, query_params, auth, version=None):
         storage_provider=getattr(file_node, 'provider', '') or '',
         user_guid=getattr(getattr(auth, 'user', None), '_id', None),
         ip=request.remote_addr,
+        user_agent=request.headers.get('User-Agent', ''),
         source_area=query_params.get('source', ''),
         tz=query_params.get('tz', ''),
     )
@@ -246,6 +247,7 @@ def _record_zip_download(payload):
         status_code=action_meta.get('status_code'),
         user_guid=(payload.get('auth') or {}).get('id'),
         ip=action_meta.get('ip'),
+        user_agent=(payload.get('request_meta') or {}).get('user_agent', ''),
         source_area=action_meta.get('source', ''),
         tz=action_meta.get('tz', ''),
     )
