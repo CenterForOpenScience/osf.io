@@ -1,0 +1,364 @@
+import importlib
+import logging
+import time
+
+import pytest
+from django.apps import apps as django_apps
+from django.contrib.auth.models import Group
+
+from addons.osfstorage.settings import DEFAULT_REGION_NAME
+from api_tests.utils import create_test_file
+from framework.auth import signing
+from osf.models import DownloadEvent, OSFUser
+from osf.utils.download_telemetry import derive_user_region, record_download
+from osf_tests.factories import AuthUserFactory, ProjectFactory
+from tests.base import OsfTestCase
+
+download_event_migration = importlib.import_module('osf.migrations.0045_downloadevent')
+
+
+@pytest.mark.django_db
+class TestDownloadEventModel:
+    """The table and indexes the dashboard's time-range group-bys rely on."""
+
+    def test_expected_fields(self):
+        field_names = {field.name for field in DownloadEvent._meta.get_fields()}
+
+        assert field_names >= {
+            'created',
+            'resource_guid',
+            'path',
+            'download_type',
+            'zip_completed',
+            'size_bytes',
+            'storage_region',
+            'user_region',
+            'ip',
+            'source_area',
+            'user',
+        }
+
+    def test_expected_indexes(self):
+        index_names = {index.name for index in DownloadEvent._meta.indexes}
+
+        assert index_names == {
+            'download_event_crt_type',
+            'download_event_crt_regn',
+            'download_event_crt_user',
+        }
+
+    def test_deleting_the_user_keeps_the_row_and_nulls_the_user(self):
+        user = AuthUserFactory()
+        download_event = DownloadEvent.objects.create(download_type=DownloadEvent.FILE, user=user)
+        OSFUser.objects.filter(id=user.id).delete()
+        download_event.refresh_from_db()
+
+        assert download_event.user_id is None
+
+
+@pytest.mark.django_db
+class TestDownloadEventDashboardGroupMigration:
+
+    def test_create_dashboard_group_adds_dashboard_users(self):
+        seed_user = AuthUserFactory(username=download_event_migration.DASHBOARD_USERS[0])
+        download_event_migration.create_dashboard_group(django_apps, None)
+        group = Group.objects.get(name=download_event_migration.DASHBOARD_GROUP_NAME)
+
+        assert seed_user in group.user_set.all()
+
+    def test_create_dashboard_group_skips_not_dashboard_users(self):
+        download_event_migration.create_dashboard_group(django_apps, None)
+        group = Group.objects.get(name=download_event_migration.DASHBOARD_GROUP_NAME)
+
+        assert group.user_set.count() == 0
+
+
+class TestZipDownloadTelemetry(OsfTestCase):
+    """Folder and project zips, recorded from the WaterButler callback.
+
+    Zips are requested straight from WaterButler, so this callback is the only place we
+    hear about them.
+    """
+
+    def setUp(self):
+        super().setUp()
+        self.user = AuthUserFactory()
+        self.node = ProjectFactory(creator=self.user)
+        self.url = self.node.api_url_for('create_waterbutler_log')
+
+    def build_payload(self, materialized='/', action='download_zip', **action_meta):
+        meta = dict(
+            bytes_downloaded=2048,
+            completed=True,
+            ip='198.51.100.7',
+            source='files',
+            tz='Europe/Kyiv',
+        )
+        meta.update(action_meta)
+        options = {
+            'auth': {'id': self.user._id},
+            'action': action,
+            'provider': 'osfstorage',
+            'time': time.time() + 1000,
+            'metadata': {
+                'nid': self.node._id,
+                'materialized': materialized,
+                'path': materialized,
+                'kind': 'folder',
+                'provider': 'osfstorage',
+            },
+            'action_meta': meta,
+        }
+        message, signature = signing.default_signer.sign_payload(options)
+        return {'payload': message, 'signature': signature}
+
+    def test_project_zip_is_recorded(self):
+        res = self.app.put(self.url, json=self.build_payload(materialized='/'))
+
+        assert res.status_code == 200
+        event = DownloadEvent.objects.get()
+        assert event.download_type == DownloadEvent.PROJECT
+        assert event.resource_guid == self.node._id
+        assert event.user == self.user
+        assert event.size_bytes == 2048
+        assert event.zip_completed is True
+        assert event.ip == '198.51.100.7'
+        assert event.source_area == 'files'
+        assert event.user_region == 'Europe/Kyiv'
+
+    def test_folder_zip_is_recorded_with_its_path(self):
+        self.app.put(self.url, json=self.build_payload(materialized='/data/raw/'))
+
+        event = DownloadEvent.objects.get()
+        assert event.download_type == DownloadEvent.FOLDER_ZIP
+        assert event.path == '/data/raw/'
+
+    def test_incomplete_zip_is_recorded_as_incomplete(self):
+        self.app.put(self.url, json=self.build_payload(completed=False))
+
+        assert DownloadEvent.objects.get().zip_completed is False
+
+    def test_successful_zip_records_its_status_code(self):
+        self.app.put(self.url, json=self.build_payload(completed=True, status_code=200))
+
+        event = DownloadEvent.objects.get()
+        assert event.zip_completed is True
+        assert event.status_code == 200
+
+    def test_failed_zip_is_distinguishable_from_a_cancel(self):
+        """A server failure comes through as completed=False at a 5xx; a user cancel comes
+        through as completed=False at 200 (headers already sent). The status tells them apart."""
+        self.app.put(self.url, json=self.build_payload(completed=False, status_code=500))
+        failed = DownloadEvent.objects.get()
+        assert failed.zip_completed is False
+        assert failed.status_code == 500
+
+        DownloadEvent.objects.all().delete()
+
+        self.app.put(self.url, json=self.build_payload(completed=False, status_code=200))
+        cancelled = DownloadEvent.objects.get()
+        assert cancelled.zip_completed is False
+        assert cancelled.status_code == 200
+
+    def test_mfr_render_is_not_recorded(self):
+        self.app.put(self.url, json=self.build_payload(is_mfr_render=True))
+
+        assert not DownloadEvent.objects.exists()
+
+    def test_single_file_action_is_not_recorded_here(self):
+        """Single files are caught at the redirect view — recording them here too would
+        double count every one of them."""
+        self.app.put(self.url, json=self.build_payload(action='download_file'))
+
+        assert not DownloadEvent.objects.exists()
+
+    def test_oversized_source_is_truncated_to_the_column(self):
+        self.app.put(self.url, json=self.build_payload(source='f' * 500))
+
+        assert len(DownloadEvent.objects.get().source_area) == 128
+
+    def test_payload_missing_the_new_waterbutler_fields_records(self):
+        """Guards the rollout window: osf.io must keep reading zip callbacks from a
+        WaterButler build that predates bytes_downloaded/completed/ip in action_meta."""
+        options = {
+            'auth': {'id': self.user._id},
+            'action': 'download_zip',
+            'provider': 'osfstorage',
+            'time': time.time() + 1000,
+            'metadata': {
+                'nid': self.node._id,
+                'materialized': '/',
+                'path': '/',
+                'kind': 'folder',
+                'provider': 'osfstorage',
+            },
+            'action_meta': {},
+        }
+        message, signature = signing.default_signer.sign_payload(options)
+        res = self.app.put(self.url, json={'payload': message, 'signature': signature})
+
+        assert res.status_code == 200
+        event = DownloadEvent.objects.get()
+        assert event.size_bytes is None
+        assert event.zip_completed is None
+        assert event.status_code is None
+        assert event.ip is None
+
+    def test_storage_region_comes_from_the_projects_node(self):
+        self.app.put(self.url, json=self.build_payload())
+        event = DownloadEvent.objects.get()
+
+        assert event.storage_region == self.node.osfstorage_region.name
+
+    def test_storage_provider_comes_from_the_callback(self):
+        self.app.put(self.url, json=self.build_payload())
+
+        assert DownloadEvent.objects.get().storage_provider == 'osfstorage'
+
+    def test_callback_still_succeeds_when_recording_fails(self, ):
+        with pytest.MonkeyPatch.context() as patch:
+            patch.setattr(
+                'addons.base.views.record_download',
+                lambda **kwargs: (_ for _ in ()).throw(ValueError('boom')),
+            )
+            res = self.app.put(self.url, json=self.build_payload())
+
+        assert res.status_code == 200
+
+
+class TestSingleFileDownloadTelemetry(OsfTestCase):
+    """Single files, recorded at the redirect view before we 302 on to WaterButler."""
+
+    def setUp(self):
+        super().setUp()
+        self.user = AuthUserFactory()
+        self.node = ProjectFactory(creator=self.user)
+        self.file = create_test_file(self.node, self.user, size=4096)
+        self.guid = self.file.get_guid()._id
+
+    def test_download_is_recorded_with_link_tags(self):
+        res = self.app.get(
+            f'/download/{self.guid}/?source=file-detail&tz=Europe%2FKyiv',
+            auth=self.user.auth,
+        )
+
+        assert res.status_code == 302
+        event = DownloadEvent.objects.get()
+        assert event.download_type == DownloadEvent.FILE
+        assert event.resource_guid == self.node._id
+        assert event.user == self.user
+        assert event.source_area == 'file-detail'
+        assert event.user_region == 'Europe/Kyiv'
+
+    def test_size_and_region_come_from_the_file_version(self):
+        self.app.get(f'/download/{self.guid}/', auth=self.user.auth)
+
+        event = DownloadEvent.objects.get()
+        assert event.size_bytes == 4096
+        assert event.storage_region == self.node.osfstorage_region.name
+
+    def test_storage_provider_comes_from_the_file(self):
+        self.app.get(f'/download/{self.guid}/', auth=self.user.auth)
+
+        assert DownloadEvent.objects.get().storage_provider == 'osfstorage'
+
+    def test_zip_completed_is_unset_for_single_files(self):
+        """Only zips stream through WaterButler, so nothing reports completion here."""
+        self.app.get(f'/download/{self.guid}/', auth=self.user.auth)
+
+        assert DownloadEvent.objects.get().zip_completed is None
+
+    def test_anonymous_download_is_recorded_without_a_user(self):
+        self.node.is_public = True
+        self.node.save()
+
+        self.app.get(f'/download/{self.guid}/')
+
+        event = DownloadEvent.objects.get()
+        assert event.user is None
+
+    def test_mfr_render_is_not_recorded(self):
+        self.app.get(f'/download/{self.guid}/?mode=render', auth=self.user.auth)
+
+        assert not DownloadEvent.objects.exists()
+
+    def test_download_still_succeeds_when_recording_fails(self):
+        with pytest.MonkeyPatch.context() as patch:
+            patch.setattr(
+                'addons.base.views.record_download',
+                lambda **kwargs: (_ for _ in ()).throw(ValueError('boom')),
+            )
+            res = self.app.get(f'/download/{self.guid}/', auth=self.user.auth)
+
+        assert res.status_code == 302
+
+
+class TestUserRegionDerivation:
+    """The fallback chain, most to least trustworthy."""
+
+    class FakeUser:
+        def __init__(self, timezone):
+            self.timezone = timezone
+
+    def test_live_browser_timezone_wins(self):
+        user = self.FakeUser('America/New_York')
+        assert derive_user_region('Europe/Kyiv', user, 'Germany') == 'Europe/Kyiv'
+
+    def test_falls_back_to_profile_timezone(self):
+        user = self.FakeUser('America/New_York')
+        assert derive_user_region('', user, 'Germany') == 'America/New_York'
+
+    def test_default_profile_timezone_is_not_a_signal(self):
+        """Every user has Etc/UTC until they change it, so it says nothing."""
+        user = self.FakeUser('Etc/UTC')
+        assert derive_user_region('', user, 'Germany') == 'Germany'
+
+    def test_falls_back_to_storage_region(self):
+        assert derive_user_region('', None, 'Germany') == 'Germany'
+
+    def test_default_storage_region_is_not_a_signal(self):
+        assert derive_user_region('', None, DEFAULT_REGION_NAME) == ''
+
+    def test_unknown_is_empty(self):
+        assert derive_user_region('', None, '') == ''
+
+
+@pytest.mark.django_db
+class TestRecordDownloadNeverRaises:
+
+    def test_enqueue_failure_is_swallowed(self, monkeypatch):
+        def explode(*args, **kwargs):
+            raise ValueError('boom')
+
+        monkeypatch.setattr('osf.utils.download_telemetry.enqueue_postcommit_task', explode)
+
+        record_download(download_type=DownloadEvent.FILE, resource_guid='abcde')
+
+        assert not DownloadEvent.objects.exists()
+
+    def test_failure_is_logged_with_the_cause_and_the_download(self, monkeypatch, caplog):
+        """A report has to be actionable without reproducing it."""
+        def explode(*args, **kwargs):
+            raise ValueError('boom')
+
+        monkeypatch.setattr('osf.utils.download_telemetry.enqueue_postcommit_task', explode)
+
+        with caplog.at_level(logging.ERROR, logger='osf.utils.download_telemetry'):
+            record_download(
+                download_type=DownloadEvent.FILE,
+                resource_guid='abcde',
+                user_guid='zyxwv',
+                ip='198.51.100.7',
+            )
+
+        record = caplog.records[0]
+        message = record.getMessage()
+        assert 'ValueError' in message
+        assert 'boom' in message
+        assert 'record_download' in message
+        assert "resource_guid='abcde'" in message
+        assert "user_guid='zyxwv'" in message
+        # the IP is not debugging information
+        assert '198.51.100.7' not in message
+        # the traceback is still attached
+        assert record.exc_info is not None
