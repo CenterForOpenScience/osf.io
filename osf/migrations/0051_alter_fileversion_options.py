@@ -6,7 +6,7 @@ from django.db import migrations
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('osf', '0044_notification_scheduled'),
+        ('osf', '0050_downloadevent_user_agent'),
     ]
 
     operations = [
