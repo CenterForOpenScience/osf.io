@@ -12,6 +12,7 @@ from .email_task import EmailTask
 from .admin_log_entry import AdminLogEntry
 from .admin_profile import AdminProfile
 from .analytics import UserActivityCounter, PageCounter
+from .download_event import DownloadEvent
 from .archive import ArchiveJob, ArchiveTarget
 from .banner import ScheduledBanner
 from .base import (
@@ -67,6 +68,7 @@ from .notifications import NotificationSubscriptionLegacy
 from .notification_subscription import NotificationSubscription
 from .notification_type import NotificationType, NotificationTypeEnum
 from .notification import Notification
+from .notification_campaign import NotificationCampaign, NotificationCampaignRecipient
 
 from .oauth import (
     ApiOAuth2Application,
