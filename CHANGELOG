@@ -2,6 +2,11 @@
 
 We follow the CalVer (https://calver.org/) versioning scheme: YY.MINOR.MICRO.
 
+26.18.1 (2026-08-07)
+====================
+
+- Project ENTER: Bug-fix, improvement & config update
+
 26.18.0 (2026-08-05)
 ====================
 

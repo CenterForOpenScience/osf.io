@@ -346,7 +346,7 @@ def send_campaign_batch(context, recipients_ids, notification_type_name='blank',
     if campaign.started_at < timezone.now() - timedelta(seconds=execution_time_window):
         if not campaign.developer_reminder_sent:
             message = (f'[Notification Campaign #{campaign_id}] WARNING: '
-                       f'Campaign {campaign.name} exceeded its execution time window ({execution_time_window} seconds).')
+                       f'Exceeded execution time window ({execution_time_window}s): name={campaign.name}.')
             logger.warning(message)
             sentry.log_message(message)
             campaign.developer_reminder_sent = True
