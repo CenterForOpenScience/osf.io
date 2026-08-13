@@ -295,6 +295,7 @@ def start_notification_campaign(campaign_id, restart_failed=False, restart_stuck
     high_activity_tasks = build_campaign_group(
         min_activity=activity_threshold,
         spam=False,
+        developer_reminder=True,
         **batch_task_kwargs
     )
     if high_activity_tasks:
@@ -319,7 +320,14 @@ def start_notification_campaign(campaign_id, restart_failed=False, restart_stuck
 
 
 @celery_app.task(name='email.send_campaign_batch', ignore_result=False)
-def send_campaign_batch(context, recipients_ids, notification_type_name='blank', campaign_id=None, run_id=None):
+def send_campaign_batch(
+    context,
+    recipients_ids,
+    notification_type_name='blank',
+    campaign_id=None,
+    run_id=None,
+    developer_reminder=False,
+):
     campaign = NotificationCampaign.objects.get(id=campaign_id)
     if campaign.run_id != run_id:
         return
@@ -342,15 +350,21 @@ def send_campaign_batch(context, recipients_ids, notification_type_name='blank',
             sentry.log_message(message)
             return
 
-    execution_time_window = campaign.metadata.get('execution', {}).get('time_window', settings.DEFAULT_CAMPAIGN_WINDOW_TIME)
-    if campaign.started_at < timezone.now() - timedelta(seconds=execution_time_window):
-        if not campaign.developer_reminder_sent:
-            message = (f'[Notification Campaign #{campaign_id}] WARNING: '
-                       f'Exceeded execution time window ({execution_time_window}s): name={campaign.name}.')
-            logger.warning(message)
-            sentry.log_message(message)
-            campaign.developer_reminder_sent = True
-            campaign.save()
+    if developer_reminder:
+        execution_time_window = campaign.metadata.get('execution', {}).get('time_window', settings.DEFAULT_CAMPAIGN_WINDOW_TIME)
+        if campaign.started_at < timezone.now() - timedelta(seconds=execution_time_window):
+            # Atomic claim so concurrent high-activity batches only alert once
+            updated = NotificationCampaign.objects.filter(
+                pk=campaign_id,
+                developer_reminder_sent=False,
+            ).update(developer_reminder_sent=True)
+            if updated:
+                message = (
+                    f'[Notification Campaign #{campaign_id}] WARNING: Campaign {campaign.name} exceeded '
+                    f'its high-activity execution time window ({execution_time_window} seconds).'
+                )
+                logger.warning(message)
+                sentry.log_message(message)
 
     recipients_qs = NotificationCampaignRecipient.objects.filter(id__in=recipients_ids).select_related('user')
     recipient_records = []

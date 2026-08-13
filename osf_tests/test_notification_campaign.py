@@ -619,6 +619,70 @@ class TestSendCampaignBatch:
                 notification_type_name='blank',
                 campaign_id=running_campaign.id,
                 run_id=running_campaign.run_id,
+                developer_reminder=True,
+            )
+
+        running_campaign.refresh_from_db()
+        assert running_campaign.developer_reminder_sent is True
+        mock_sentry.assert_called_once()
+
+    @mock.patch('osf.email.notification_campaign.sentry.log_message')
+    def test_send_campaign_batch_skips_reminder_without_developer_reminder_flag(
+        self, mock_sentry, running_campaign
+    ):
+        user = UserFactory()
+        running_campaign.started_at = timezone.now() - timedelta(seconds=9)
+        running_campaign.metadata['execution']['time_window'] = 8
+        running_campaign.save()
+        create_campaign_recipients(Q(**{'id__in': [user.id]}), campaign_id=running_campaign.id)
+        recipient = NotificationCampaignRecipient.objects.get(campaign=running_campaign, user=user)
+
+        with mock.patch.object(NotificationType, 'emit'):
+            send_campaign_batch(
+                context={},
+                recipients_ids=[recipient.id],
+                notification_type_name='blank',
+                campaign_id=running_campaign.id,
+                run_id=running_campaign.run_id,
+            )
+
+        running_campaign.refresh_from_db()
+        assert running_campaign.developer_reminder_sent is False
+        mock_sentry.assert_not_called()
+
+    @mock.patch('osf.email.notification_campaign.sentry.log_message')
+    def test_send_campaign_batch_reminder_claimed_only_once(self, mock_sentry, running_campaign):
+        user_a = UserFactory()
+        user_b = UserFactory()
+        running_campaign.started_at = timezone.now() - timedelta(seconds=9)
+        running_campaign.metadata['execution']['time_window'] = 8
+        running_campaign.save()
+        create_campaign_recipients(
+            Q(**{'id__in': [user_a.id, user_b.id]}),
+            campaign_id=running_campaign.id,
+        )
+        recipients = list(
+            NotificationCampaignRecipient.objects.filter(campaign=running_campaign).values_list(
+                'id', flat=True
+            )
+        )
+
+        with mock.patch.object(NotificationType, 'emit'):
+            send_campaign_batch(
+                context={},
+                recipients_ids=[recipients[0]],
+                notification_type_name='blank',
+                campaign_id=running_campaign.id,
+                run_id=running_campaign.run_id,
+                developer_reminder=True,
+            )
+            send_campaign_batch(
+                context={},
+                recipients_ids=[recipients[1]],
+                notification_type_name='blank',
+                campaign_id=running_campaign.id,
+                run_id=running_campaign.run_id,
+                developer_reminder=True,
             )
 
         running_campaign.refresh_from_db()
