@@ -2285,12 +2285,14 @@ class SpamOverrideMixin(SpamMixin):
         super().unspam(save=save)
         self.undelete(save=save)
 
-    def confirm_spam(self, domains=None, save=True, train_spam_services=True):
+    def confirm_spam(self, domains=None, save=True, train_spam_services=True, notify=True):
         """
         This should add behavior specific nodes/preprints confirmed to be spam.
         :param save:
         :return:
         """
+        was_already_spam = self.spam_status == SpamStatus.SPAM
+
         super().confirm_spam(save=save, domains=domains or [], train_spam_services=train_spam_services)
         self.deleted = timezone.now()
         was_public = self.was_public_at_spam
@@ -2307,6 +2309,27 @@ class SpamOverrideMixin(SpamMixin):
         log.save()
         if save:
             self.save()
+
+        if notify and not was_already_spam:
+            Preprint = apps.get_model('osf.Preprint')
+            notification_type = (
+                NotificationTypeEnum.PREPRINT_CONFIRMED_SPAM
+                if isinstance(self, Preprint)
+                else NotificationTypeEnum.NODE_CONFIRMED_SPAM
+            )
+            resource_type_label = 'preprint' if isinstance(self, Preprint) else 'project'
+            for contributor in self.contributors:
+                notification_type.instance.emit(
+                    user=contributor,
+                    subscribed_object=self,
+                    event_context={
+                        'user_fullname': contributor.fullname,
+                        'resource_title': self.title,
+                        'resource_absolute_url': self.absolute_url,
+                        'resource_type_label': resource_type_label,
+                        'osf_support_email': settings.OSF_SUPPORT_EMAIL,
+                    }
+                )
 
     def confirm_ham(self, save=False, train_spam_services=True):
         """
@@ -2403,29 +2426,22 @@ class SpamOverrideMixin(SpamMixin):
 
         self.flag_spam(skip_user_suspension=True)
 
-        # Suspend the flagged user for spam.
-        if not user.is_disabled:
-            user.deactivate_account()
-            NotificationTypeEnum.USER_SPAM_BANNED.instance.emit(
-                user,
-                event_context={
-                    'user_fullname': user.fullname,
-                    'osf_support_email': settings.OSF_SUPPORT_EMAIL,
-                }
-            )
-
+        # Suspend the flagged user for spam. Deactivation and the account-ban
+        # notification are both handled inside user.confirm_spam().
         user.confirm_spam(domains=domains or [], save=False, skip_resources_spam=True)
         user.save()
 
-        # Make public nodes private from this contributor
+        # Make public nodes private from this contributor. These are a side effect
+        # of the account-level ban, so they don't get their own notification --
+        # the single account-ban email already covers it.
         for node in user.all_nodes:
             if (self._id != node._id or self_spam) and len(node.contributors) == 1 and node.is_public:
-                node.confirm_spam(save=True, domains=domains, train_spam_services=False)
+                node.confirm_spam(save=True, domains=domains, train_spam_services=False, notify=False)
 
         # Make preprints private from this contributor
         for preprint in user.preprints.all():
             if (self._id != preprint._id or self_spam) and len(preprint.contributors) == 1 and preprint.is_public:
-                preprint.confirm_spam(save=True, domains=domains, train_spam_services=False)
+                preprint.confirm_spam(save=True, domains=domains, train_spam_services=False, notify=False)
 
     def flag_spam(self, skip_user_suspension=False):
         """ Overrides SpamMixin#flag_spam.

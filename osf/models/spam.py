@@ -165,7 +165,7 @@ class SpamMixin(models.Model):
                 )
             )
 
-    def confirm_spam(self, domains=None, save=True, train_spam_services=True):
+    def confirm_spam(self, domains=None, save=True, train_spam_services=True, notify=True):
         if domains:
             if 'domains' in self.spam_data:
                 self.spam_data['domains'].extend(domains)

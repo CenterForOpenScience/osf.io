@@ -156,7 +156,8 @@ class TestPreprintView:
 
         view = views.PreprintConfirmSpamView()
         view = setup_view(view, request, guid=flagged_preprint._id)
-        view.post(request)
+        with assert_notification(type=NotificationTypeEnum.PREPRINT_CONFIRMED_SPAM):
+            view.post(request)
 
         assert flagged_preprint.is_public
         flagged_preprint.refresh_from_db()

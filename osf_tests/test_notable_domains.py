@@ -11,7 +11,8 @@ from osf.external.spam import tasks as spam_tasks
 from osf.models import (
     NotableDomain,
     DomainReference,
-    SpamStatus
+    SpamStatus,
+    NotificationTypeEnum,
 )
 from osf.utils.workflows import DefaultStates
 from osf_tests.factories import (
@@ -21,6 +22,7 @@ from osf_tests.factories import (
     RegistrationFactory,
     UserFactory
 )
+from tests.utils import capture_notifications
 
 
 class TestDomainExtraction:
@@ -248,6 +250,23 @@ class TestNotableDomain:
             referrer_content_type=ContentType.objects.get_for_model(obj),
             domain__domain=spam_domain.netloc
         ).count() == 1
+
+    def test_check_resource_for_spam_postcommit_bans_user_flagged_via_domain(self, spam_domain, marked_as_spam_domain):
+        user = UserFactory()
+        with mock.patch.object(spam_tasks.requests, 'head'), capture_notifications() as notifications:
+            spam_tasks.check_resource_for_spam_postcommit(
+                guid=user._id,
+                content=spam_domain.geturl(),
+                author=user.fullname,
+                author_email=user.username,
+                request_headers={},
+            )
+
+        user.reload()
+        assert user.is_disabled
+        assert user.spam_status == SpamStatus.SPAM
+        assert len(notifications['emits']) == 1
+        assert notifications['emits'][0]['type'] == NotificationTypeEnum.USER_SPAM_BANNED
 
     @pytest.mark.enable_enqueue_task
     def test_extract_domains_from_wiki__public_project_extracts_domains_on_wiki_save(self, request_context):
