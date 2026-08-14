@@ -612,6 +612,9 @@ class TestArchiverTasks(ArchiverTestCase):
             'rename': 'Archive of OSF Storage',
             'resource': self.archive_job.info()[1]._id,
             'provider': 'osfstorage',
+            # 'replace' keeps the copy idempotent so a retried copy request doesn't fail
+            # the archive with WaterButler's "already exists" naming conflict.
+            'conflict': 'replace',
         }
 
     @mock.patch('website.archiver.tasks.archive_callback.delay')
@@ -619,6 +622,14 @@ class TestArchiverTasks(ArchiverTestCase):
         archive_addon('osfstorage', self.archive_job._id)
 
         mock_archive_callback.assert_not_called()
+
+    def test_copy_request_is_idempotent_and_uses_archive_timeout(self):
+        # The copy must be retry-safe: WaterButler defaults to conflict='warn' and raises
+        # "already exists" on a retried copy, which fails the whole archive.
+        payload = make_waterbutler_payload(self.dst._id, 'Archive of OSF Storage')
+        assert payload['conflict'] == 'replace'
+        # WaterButler's copy is synchronous; large trees need more than the general 30s timeout.
+        assert settings.ARCHIVE_COPY_REQUEST_TIMEOUT[1] > settings.EXTERNAL_REQUEST_TIMEOUT[1]
 
     @mock.patch.object(archive_node, 'replace')
     @mock.patch('website.archiver.tasks.archive_callback.si')
