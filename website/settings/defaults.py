@@ -386,6 +386,10 @@ SHARE_URL = 'https://share.osf.io/'
 SHARE_API_TOKEN = None  # Required to send project updates to SHARE
 
 EXTERNAL_REQUEST_TIMEOUT = (10, 30)  # (connect, read) timeout for outbound requests to external services
+# The archive copy request is synchronous on WaterButler's side: it holds the connection open until
+# the whole osfstorage tree has been copied. Large registrations exceed the 30s general read timeout,
+# so give this specific request a longer read timeout while keeping the connect timeout short.
+ARCHIVE_COPY_REQUEST_TIMEOUT = (10, 600)
 
 SHARE_UPDATE_TASK_SOFT_TIME_LIMIT = 90
 SHARE_UPDATE_TASK_HARD_TIME_LIMIT = 120

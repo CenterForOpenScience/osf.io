@@ -242,6 +242,11 @@ def stat_addon(self, addon_short_name, job_pk):
     return result
 
 
+def archive_target_succeeded(job, addon_short_name):
+    target = job.get_target(addon_short_name)
+    return target is not None and target.status == ARCHIVER_SUCCESS
+
+
 @celery_app.task(
     bind=True,
     base=ArchiverTask,
@@ -264,6 +269,11 @@ def make_copy_request(self, params, job_pk):
     addon_short_name = params['addon_short_name']
     url = params['url']
     data = params['data']
+
+    if archive_target_succeeded(job, addon_short_name):
+        logger.info(f'Skipping copy request for addon: {addon_short_name} on node: {dst._id}, already archived')
+        return
+
     logger.info(f"Sending copy request for addon: {data['provider']} on node: {dst._id}")
     cookie = furl(url).query.params.get('cookie')
     try:
@@ -271,13 +281,15 @@ def make_copy_request(self, params, job_pk):
             url,
             data=json.dumps(data),
             cookies={settings.COOKIE_NAME: cookie},
-            timeout=settings.EXTERNAL_REQUEST_TIMEOUT,
+            timeout=settings.ARCHIVE_COPY_REQUEST_TIMEOUT,
         )
     except requests.RequestException as exc:
         # A failed copy request marks the target as failed, which fails the whole
         # archive and deletes the registration. Retry transient network errors first.
         if self.request.retries < self.max_retries:
             raise self.retry(exc=exc)
+        if archive_target_succeeded(job, addon_short_name):
+            return
         job.update_target(addon_short_name, ARCHIVER_FAILURE, errors=[str(exc)])
         raise
 
@@ -285,6 +297,8 @@ def make_copy_request(self, params, job_pk):
         # Retry server-side WaterButler errors before failing (and deleting) the archive.
         if res.status_code >= 500 and self.request.retries < self.max_retries:
             raise self.retry(exc=HTTPError(res.status_code))
+        if archive_target_succeeded(job, addon_short_name):
+            return
         job.update_target(addon_short_name, ARCHIVER_FAILURE, errors=[res.text or f'WaterButler request failed with status {res.status_code}'])
         raise HTTPError(res.status_code)
 
@@ -295,6 +309,11 @@ def make_waterbutler_payload(dst_id, rename):
         'rename': rename.replace('/', '-'),
         'resource': dst_id,
         'provider': settings.ARCHIVE_PROVIDER,
+        # Archive into a freshly-created registration, so overwriting is always safe. Without this
+        # WaterButler defaults to conflict='warn' and raises "already exists" if the copy is retried
+        # (e.g. after a client-side timeout on a copy WaterButler actually completed), which fails
+        # the whole archive. 'replace' makes the copy idempotent under retry.
+        'conflict': 'replace',
     }
 
 @celery_app.task(
