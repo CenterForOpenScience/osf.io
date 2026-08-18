@@ -59,6 +59,7 @@ from osf.metrics.daily_reports import (
 )
 from osf.metrics.monthly_reports import (
     BaseMonthlyReport,
+    MonthlyPublicItemUsageReport,
     MonthlySpamSummaryReport,
     MonthlyOsfstorageFileCountReport,
 )
@@ -80,6 +81,7 @@ _BACKCOMPAT_VIEWABLE_REPORTS = {
     'user_summary': DailyUserSummaryReport,
     'spam_summary': MonthlySpamSummaryReport,
     'new_user_domains': DailyNewUserDomainReport,
+    'items_usage': MonthlyPublicItemUsageReport,
 }
 
 VIEWABLE_REPORTS = {
