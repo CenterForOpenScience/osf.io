@@ -2312,12 +2312,16 @@ class SpamOverrideMixin(SpamMixin):
 
         if notify and not was_already_spam:
             Preprint = apps.get_model('osf.Preprint')
-            notification_type = (
-                NotificationTypeEnum.PREPRINT_CONFIRMED_SPAM
-                if isinstance(self, Preprint)
-                else NotificationTypeEnum.NODE_CONFIRMED_SPAM
-            )
-            resource_type_label = 'preprint' if isinstance(self, Preprint) else 'project'
+            Registration = apps.get_model('osf.Registration')
+            if isinstance(self, Preprint):
+                notification_type = NotificationTypeEnum.PREPRINT_CONFIRMED_SPAM
+                resource_type_label = 'preprint'
+            elif isinstance(self, Registration):
+                notification_type = NotificationTypeEnum.NODE_CONFIRMED_SPAM
+                resource_type_label = 'registration'
+            else:
+                notification_type = NotificationTypeEnum.NODE_CONFIRMED_SPAM
+                resource_type_label = 'project'
             for contributor in self.contributors:
                 notification_type.instance.emit(
                     user=contributor,
