@@ -1,6 +1,6 @@
 import itertools
 from calendar import monthrange
-from datetime import date, timedelta
+from datetime import date
 from django.db import connection
 from django.utils import timezone
 from django.core.validators import EmailValidator
@@ -553,7 +553,7 @@ def delete_batch(
 def delete_notification_campaign_recipients(self):
     """Delete recipients for old notification campaigns."""
 
-    cutoff = timezone.now() - timedelta(days=90)
+    cutoff = timezone.now() - settings.NOTIFICATION_CAMPAIGN_RECIPIENTS_CLEANUP_AGE
 
     campaigns = NotificationCampaign.objects.filter(
         completed_at__lt=cutoff,
@@ -565,7 +565,7 @@ def delete_notification_campaign_recipients(self):
             recipient_ids = list(
                 NotificationCampaignRecipient.objects
                 .filter(campaign_id=campaign_id)
-                .values_list('id', flat=True)[:5000]
+                .values_list('id', flat=True)[:settings.NOTIFICATION_CAMPAIGN_RECIPIENTS_CLEANUP_BATCH_SIZE]
             )
 
             if not recipient_ids:
@@ -577,6 +577,4 @@ def delete_notification_campaign_recipients(self):
 
             total_deleted += deleted
 
-        logger.info(f'Deleted {deleted} recipients for campaign {campaign_id}')
-
-    return
+        logger.info(f'Deleted {total_deleted} recipients for campaign {campaign_id}')
