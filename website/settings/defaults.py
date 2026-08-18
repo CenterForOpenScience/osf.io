@@ -712,6 +712,10 @@ class CeleryConfig:
             'schedule': crontab(minute=0, hour=7),  # Daily 2 a.m
             'kwargs': {'dry_run': False},
         },
+        'delete_notification_campaign_recipients': {
+            'task': 'notifications.tasks.delete_notification_campaign_recipients',
+            'schedule': crontab(minute=0, hour=3, day_of_month=1),
+        },
         'clear_expired_sessions': {
             'task': 'osf.management.commands.clear_expired_sessions',
             'schedule': crontab(minute=0, hour=5),  # Daily 12 a.m
