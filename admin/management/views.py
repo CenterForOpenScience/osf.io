@@ -262,3 +262,11 @@ class RejectPendingNodeRequests(ManagementCommandPermissionView):
         })
         messages.success(request, 'Pending project access requests have been queued for rejection.')
         return redirect(reverse('management:commands'))
+
+
+class FixRestoredTrashedFiles(ManagementCommandPermissionView):
+
+    def post(self, request):
+        call_command('fix_restored_trashed_files')
+        messages.success(request, 'Restored trashed files have been successfully fixed.')
+        return redirect(reverse('management:commands'))
