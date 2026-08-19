@@ -314,9 +314,6 @@ class OsfStorageFile(OsfStorageFileNode, File):
         version = self.get_version(version)
         earliest_version = self.versions.order_by('created').first()
         ret.update({
-            # Must be the resolved version's own identifier, not versions.count() -- after a
-            # non-latest version is deleted, count() no longer matches any existing identifier,
-            # which breaks osfstorage_download's file_node.get_version(identifier=..., required=True).
             'version': int(version.identifier) if version else 0,
             'md5': version.metadata.get('md5') if version else None,
             'sha256': version.metadata.get('sha256') if version else None,
