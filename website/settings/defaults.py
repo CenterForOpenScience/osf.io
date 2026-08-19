@@ -745,7 +745,7 @@ class CeleryConfig:
         },
         'resync_preprint_dois_v1': {
             'task': 'osf.management.commands.resync_preprint_dois_v1',
-            'schedule': crontab(minute=0, hour=5),  # Daily 12 a.m EDT
+            'schedule': crontab(minute='*/5'),  # Every 5 minutes
             'kwargs': {'dry_run': False},
         },
     }

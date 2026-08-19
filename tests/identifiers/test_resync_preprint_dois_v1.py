@@ -117,7 +117,7 @@ class TestResyncPreprintDoisV1:
 
     @mock.patch('osf.management.commands.resync_preprint_dois_v1.async_request_identifier_update')
     def test_live_run_queues_task_for_each_preprint(self, mock_task, preprint):
-        resync_preprint_dois_v1(dry_run=False, rate_limit=0)
+        resync_preprint_dois_v1(dry_run=False)
         mock_task.apply_async.assert_called_once_with(kwargs={'preprint_id': preprint._id})
 
     @mock.patch('osf.management.commands.resync_preprint_dois_v1.async_request_identifier_update')
@@ -129,7 +129,7 @@ class TestResyncPreprintDoisV1:
             pp.set_identifier_values(doi=old_doi, save=True)
             preprints.append(pp)
 
-        resync_preprint_dois_v1(dry_run=False, batch_size=2, rate_limit=0)
+        resync_preprint_dois_v1(dry_run=False, batch_size=2)
         assert mock_task.apply_async.call_count == 2
 
     @mock.patch('osf.management.commands.resync_preprint_dois_v1.async_request_identifier_update')
@@ -141,7 +141,7 @@ class TestResyncPreprintDoisV1:
         old_doi = '10.000/old-doi'
         pp.set_identifier_values(doi=old_doi, save=True)
 
-        resync_preprint_dois_v1(dry_run=False, rate_limit=0)
+        resync_preprint_dois_v1(dry_run=False)
         queued_ids = [
             call.kwargs['kwargs']['preprint_id']
             for call in mock_task.apply_async.call_args_list
@@ -157,7 +157,7 @@ class TestResyncPreprintDoisV1:
         old_doi = settings.DOI_FORMAT.format(prefix=other_provider.doi_prefix, guid=other_pp.get_guid()._id)
         other_pp.set_identifier_values(doi=old_doi, save=True)
 
-        resync_preprint_dois_v1(dry_run=False, rate_limit=0, provider_id=provider._id)
+        resync_preprint_dois_v1(dry_run=False, provider_id=provider._id)
 
         queued_ids = [
             call.kwargs['kwargs']['preprint_id']
@@ -168,20 +168,9 @@ class TestResyncPreprintDoisV1:
 
     @mock.patch('osf.management.commands.resync_preprint_dois_v1.async_request_identifier_update')
     def test_already_versioned_doi_is_not_queued(self, mock_task, preprint_with_v1_doi):
-        resync_preprint_dois_v1(dry_run=False, rate_limit=0)
+        resync_preprint_dois_v1(dry_run=False)
         queued_ids = [
             call.kwargs['kwargs']['preprint_id']
             for call in mock_task.apply_async.call_args_list
         ]
         assert preprint_with_v1_doi._id not in queued_ids
-
-    @mock.patch('osf.management.commands.resync_preprint_dois_v1.time.sleep')
-    @mock.patch('osf.management.commands.resync_preprint_dois_v1.async_request_identifier_update')
-    def test_rate_limit_triggers_sleep(self, mock_task, mock_sleep, provider):
-        for _ in range(3):
-            pp = PreprintFactory(provider=provider, is_published=True)
-            old_doi = settings.DOI_FORMAT.format(prefix=provider.doi_prefix, guid=pp.get_guid()._id)
-            pp.set_identifier_values(doi=old_doi, save=True)
-
-        resync_preprint_dois_v1(dry_run=False, rate_limit=2)
-        mock_sleep.assert_called_once()

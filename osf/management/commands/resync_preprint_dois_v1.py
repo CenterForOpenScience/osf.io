@@ -12,11 +12,6 @@ from osf.management.commands.sync_doi_metadata import async_request_identifier_u
 
 logger = logging.getLogger(__name__)
 
-# 5-minute pause between rate-limit windows to avoid flooding the Crossref API
-# with too many deposit requests in a short period.
-RATE_LIMIT_SLEEP = 60 * 5
-
-
 def get_preprints_needing_v1_doi(provider_id=None):
     content_type = ContentType.objects.get_for_model(Preprint)
 
@@ -47,7 +42,7 @@ def get_preprints_needing_v1_doi(provider_id=None):
     return qs
 
 
-def resync_preprint_dois_v1(dry_run=True, batch_size=500, rate_limit=100, provider_id=None):
+def resync_preprint_dois_v1(dry_run=True, batch_size=1000, provider_id=None):
     preprints_to_update = get_preprints_needing_v1_doi(provider_id=provider_id)
 
     total = preprints_to_update.count()
@@ -65,7 +60,7 @@ def resync_preprint_dois_v1(dry_run=True, batch_size=500, rate_limit=100, provid
     queued = 0
     skipped = 0
     errored = 0
-    for record_number, preprint in enumerate(preprints_iterable, 1):
+    for preprint in preprints_iterable:
         if not preprint.provider.doi_prefix:
             logger.warning(
                 f'Skipping preprint {preprint._id}: '
@@ -78,10 +73,6 @@ def resync_preprint_dois_v1(dry_run=True, batch_size=500, rate_limit=100, provid
             logger.info(f'[DRY RUN] Would resync DOI for preprint {preprint._id}')
             queued += 1
             continue
-
-        if rate_limit and not record_number % rate_limit:
-            logger.info(f'Rate limit reached at {record_number} preprints, sleeping {RATE_LIMIT_SLEEP}s')
-            time.sleep(RATE_LIMIT_SLEEP)
 
         try:
             async_request_identifier_update.apply_async(kwargs={'preprint_id': preprint._id})
@@ -139,7 +130,7 @@ def get_preprints_needing_unversioned_doi(provider_id=None):
     return qs
 
 
-def register_missing_unversioned_dois(dry_run=True, batch_size=500, rate_limit=100, provider_id=None):
+def register_missing_unversioned_dois(dry_run=True, batch_size=1000, provider_id=None):
     preprints_to_update = get_preprints_needing_unversioned_doi(provider_id=provider_id)
 
     total = preprints_to_update.count()
@@ -157,7 +148,7 @@ def register_missing_unversioned_dois(dry_run=True, batch_size=500, rate_limit=1
     queued = 0
     skipped = 0
     errored = 0
-    for record_number, preprint in enumerate(preprints_iterable, 1):
+    for preprint in preprints_iterable:
         if not preprint.provider.doi_prefix:
             logger.warning(
                 f'Skipping preprint {preprint._id}: '
@@ -170,10 +161,6 @@ def register_missing_unversioned_dois(dry_run=True, batch_size=500, rate_limit=1
             logger.info(f'[DRY RUN] Would register unversioned DOI for preprint {preprint._id}')
             queued += 1
             continue
-
-        if rate_limit and not record_number % rate_limit:
-            logger.info(f'Rate limit reached at {record_number} preprints, sleeping {RATE_LIMIT_SLEEP}s')
-            time.sleep(RATE_LIMIT_SLEEP)
 
         try:
             async_request_identifier_update.apply_async(kwargs={'preprint_id': preprint._id})
@@ -195,17 +182,15 @@ def register_missing_unversioned_dois(dry_run=True, batch_size=500, rate_limit=1
 
 
 @app.task(name='osf.management.commands.resync_preprint_dois_v1', max_retries=0)
-def resync_preprint_dois_v1_task(batch_size=500, rate_limit=100, dry_run=False, provider_id=None):
+def resync_preprint_dois_v1_task(batch_size=1000, dry_run=False, provider_id=None):
     resync_preprint_dois_v1(
         dry_run=dry_run,
         batch_size=batch_size,
-        rate_limit=rate_limit,
         provider_id=provider_id,
     )
     register_missing_unversioned_dois(
         dry_run=dry_run,
         batch_size=batch_size,
-        rate_limit=rate_limit,
         provider_id=provider_id,
     )
 
@@ -231,19 +216,12 @@ class Command(BaseCommand):
             '--batch_size',
             '-b',
             type=int,
-            default=500,
+            default=1000,
             help=(
-                'Maximum number of preprints to process per run (default: 500). '
+                'Maximum number of preprints to process per run (default: 1000). '
                 'The command processes the first N eligible preprints and exits; '
                 're-run the command to continue with the next batch.'
             ),
-        )
-        parser.add_argument(
-            '--rate_limit',
-            '-r',
-            type=int,
-            default=100,
-            help='Sleep between Crossref submissions every N preprints.',
         )
         parser.add_argument(
             '--provider',
@@ -258,6 +236,5 @@ class Command(BaseCommand):
         resync_preprint_dois_v1(
             dry_run=options['dry_run'],
             batch_size=options['batch_size'],
-            rate_limit=options['rate_limit'],
             provider_id=options['provider_id'],
         )
