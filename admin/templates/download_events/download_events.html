@@ -67,11 +67,47 @@
             th { font-size: 12px; color: #777; }
             td { padding: 8px 10px; border-bottom: 1px solid #505050; color: #aaa; }
             .empty-state { color: #777; font-size: 13px; }
+            .active-filters {
+                display: flex;
+                flex-wrap: wrap;
+                align-items: center;
+                gap: 8px;
+                margin: 0 0 18px;
+            }
+            .active-filters-label {
+                font-size: 12px;
+                text-transform: uppercase;
+                letter-spacing: 0.04em;
+                color: #777;
+            }
+            .filter-chip {
+                font-size: 12px;
+                color: #cfcfcf;
+                background: #3a3a3a;
+                border: 1px solid #505050;
+                border-radius: 12px;
+                padding: 3px 10px;
+            }
+            .filter-chip .chip-label { color: #8f8f8f; }
+            .unknown-note {
+                font-size: 12px;
+                color: #9c9c9c;
+                margin: 10px 0 0;
+            }
+            .unknown-note strong { color: #cfcfcf; font-weight: 600; }
         </style>
         <div class="download-events-dashboard">
             <div class="dashboard-header">
                 <h2>Download telemetry dashboard</h2>
                 <p>Summaries and charts are scoped to the same filters and search terms as the table below.</p>
+                <div class="active-filters">
+                    <span class="active-filters-label">Applied filters:</span>
+                    {% for applied in download_events_active_filters %}
+                        <span class="filter-chip"><span class="chip-label">{{ applied.label }}:</span> {{ applied.value }}</span>
+                    {% empty %}
+                        <span class="filter-chip">None — showing the full current range</span>
+                    {% endfor %}
+                </div>
             </div>
 
             <div class="dashboard-grid">
@@ -85,7 +121,7 @@
                 </div>
                 <div class="dashboard-card summary-card">
                     <div class="card-label">Total GB</div>
-                    <div class="card-value">{{ download_events_dashboard.summary.total_gb|floatformat:2 }}</div>
+                    <div class="card-value">{{ download_events_dashboard.summary.total_gb|floatformat:2 }}{{ download_events_dashboard.summary.total_gb_tb_suffix }}</div>
                 </div>
                 <div class="dashboard-card summary-card">
                     <div class="card-label">Unique users</div>
@@ -93,7 +129,7 @@
                 </div>
                 <div class="dashboard-card summary-card">
                     <div class="card-label">File vs zip (including whole-project zip) (GB)</div>
-                    <div class="card-value compact-value">{{ download_events_dashboard.split.file.gb|floatformat:2 }} / {{ download_events_dashboard.split.zip.gb|floatformat:2 }}</div>
+                    <div class="card-value compact-value">{{ download_events_dashboard.split.file.gb|floatformat:2 }}{{ download_events_dashboard.split.file.gb_tb_suffix }} / {{ download_events_dashboard.split.zip.gb|floatformat:2 }}{{ download_events_dashboard.split.zip.gb_tb_suffix }}</div>
                 </div>
                 <div class="dashboard-card summary-card">
                     <div class="card-label">Failed zip downloads (server or provider error)</div>
@@ -127,6 +163,15 @@
                     <div class="chart-container">
                         <canvas id="storageRegionChart"></canvas>
                     </div>
+                    {% with unknown=download_events_dashboard.storage_regions_unknown %}
+                        {% if unknown %}
+                            <p class="unknown-note">
+                                Not shown (region unknown): <strong>{{ unknown.downloads }}</strong> downloads ·
+                                <strong>{{ unknown.gb|floatformat:2 }}</strong> GB
+                                — Files: {{ unknown.file_count }} · Zips: {{ unknown.zip_count }}
+                            </p>
+                        {% endif %}
+                    {% endwith %}
                 </div>
 
                 <div class="dashboard-card chart-card">
@@ -140,6 +185,15 @@
                     <div class="chart-container">
                         <canvas id="userRegionChart"></canvas>
                     </div>
+                    {% with unknown=download_events_dashboard.user_regions_unknown %}
+                        {% if unknown %}
+                            <p class="unknown-note">
+                                Not shown (region unknown): <strong>{{ unknown.downloads }}</strong> downloads ·
+                                <strong>{{ unknown.gb|floatformat:2 }}</strong> GB
+                                — Files: {{ unknown.file_count }} · Zips: {{ unknown.zip_count }}
+                            </p>
+                        {% endif %}
+                    {% endwith %}
                 </div>
 
                 <div class="dashboard-card chart-card">
@@ -246,6 +300,14 @@
                             {% endfor %}
                         </tbody>
                     </table>
+                    {% with unknown=download_events_dashboard.storage_providers_unknown %}
+                        {% if unknown %}
+                            <p class="unknown-note">
+                                No provider recorded: <strong>{{ unknown.downloads }}</strong> downloads ·
+                                <strong>{{ unknown.gb|floatformat:2 }}</strong> GB
+                            </p>
+                        {% endif %}
+                    {% endwith %}
                 </div>
             </div>
         </div>
