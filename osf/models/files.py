@@ -671,6 +671,10 @@ class TrashedFileNode(BaseFileNode):
 
         type_cls = File if self.is_file else Folder
 
+        self.deleted = None
+        self.deleted_by = None
+        self.deleted_on = None
+
         self.recast(self._resolve_class(type_cls)._typedmodels_type)
 
         if save:
