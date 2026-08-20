@@ -13,6 +13,7 @@ from unittest import mock
 import itsdangerous
 import pytest
 from importlib import import_module
+from waffle.testutils import override_flag
 
 from framework.auth.exceptions import ExpiredTokenError, InvalidTokenError, ChangePasswordError
 from framework.auth.signals import user_account_merged
@@ -42,6 +43,7 @@ from framework.auth.core import Auth
 from osf.utils.names import impute_names_model
 from osf.utils import permissions
 from osf.exceptions import ValidationError, BlockedEmailError, UserStateError, InstitutionAffiliationStateError
+from osf.features import ENABLE_GV
 
 from .utils import capture_signals
 from .factories import (
@@ -2325,6 +2327,16 @@ class TestUserGdprDelete:
 
         assert exc_info.value.args[0] == 'You cannot delete Node {} because it would' \
                                          ' be a Node with contributors, but with no admin.'.format(project_user_is_only_admin._id)
+
+    def test_can_gdpr_delete_shared_node_without_guid(self, user, project_with_two_admins):
+        project_with_two_admins.guids.all().delete()
+        node = AbstractNode.objects.get(pk=project_with_two_admins.pk)
+        assert node._id is None
+
+        with override_flag(ENABLE_GV, active=True):
+            user.gdpr_delete()
+
+        assert user.nodes.all().count() == 0
 
     def test_cant_gdpr_delete_with_addon_credentials(self, user, project_with_two_admins_and_addon_credentials):
 
