@@ -518,6 +518,7 @@ class DownloadEventsView(admin.ModelAdmin):
         'storage_region',
         'ip',
         'source_area',
+        'channel_display',
         'user_agent_display',
         'created'
     )
@@ -531,6 +532,7 @@ class DownloadEventsView(admin.ModelAdmin):
         ProjectGuidFilter,
         DownloadUserFilter,
         'download_type',
+        'download_channel',
         DownloadOutcomeFilter,
         'zip_completed',
         'storage_provider',
@@ -576,6 +578,12 @@ class DownloadEventsView(admin.ModelAdmin):
     def user_display(self, obj):
         """Sort the User column by the username (email) rather than the raw FK id."""
         return obj.user or '—'
+
+    @admin.display(description='Channel', ordering='download_channel')
+    def channel_display(self, obj):
+        """Human-readable frontend/api/other. Blank ('—') for rows recorded before the
+        field existed and for zip downloads whose channel couldn't be resolved."""
+        return obj.get_download_channel_display() if obj.download_channel else '—'
 
     @admin.display(description='User agent', ordering='user_agent')
     def user_agent_display(self, obj):
@@ -793,6 +801,7 @@ class DownloadEventsView(admin.ModelAdmin):
             'storage_providers_unknown': storage_providers_unknown,
             'user_regions': user_regions,
             'user_regions_unknown': user_regions_unknown,
+            'channels': self._build_channel_breakdown(queryset),
             'top_projects': self._build_top_resource_breakdown(queryset),
             'top_users': self._build_top_user_breakdown(queryset),
         }
@@ -951,6 +960,38 @@ class DownloadEventsView(admin.ModelAdmin):
                 'gb': round(unknown_data['gb'], 2),
             }
         return known_regions, unknown
+
+    def _build_channel_breakdown(self, queryset):
+        """Downloads + GB grouped by channel (frontend / api / other) — the explicit split
+        the User-Agent alone could never give us. Rows with no channel (recorded before the
+        field, or zips whose channel couldn't be resolved) are reported as 'Unknown'."""
+        rows = queryset.values('download_channel').annotate(
+            downloads=Count('id'),
+            total_bytes=Sum('size_bytes'),
+        )
+        labels = dict(DownloadEvent.DOWNLOAD_CHANNELS)
+        # Fold by channel in Python: a pre-existing annotation on the queryset (e.g. the
+        # sort's _outcome_rank) can leak into the GROUP BY and split a channel across rows,
+        # so sum them back together — same reason _build_region_breakdown folds.
+        folded = defaultdict(lambda: {'downloads': 0, 'bytes': 0})
+        for row in rows:
+            channel = row['download_channel'] or ''
+            folded[channel]['downloads'] += row['downloads']
+            folded[channel]['bytes'] += (row['total_bytes'] or 0)
+
+        # frontend, api, other, then unknown last — a stable, meaningful order
+        rank = {DownloadEvent.FRONTEND: 0, DownloadEvent.API: 1, DownloadEvent.OTHER: 2, '': 3}
+        breakdown = [
+            {
+                'name': labels.get(channel, 'Unknown') if channel else 'Unknown',
+                'channel': channel,
+                'downloads': data['downloads'],
+                'gb': self._to_gb(data['bytes']),
+            }
+            for channel, data in folded.items()
+        ]
+        breakdown.sort(key=lambda item: (rank.get(item['channel'], 4), item['name']))
+        return breakdown
 
     def _build_top_resource_breakdown(self, queryset):
         rows = queryset.exclude(resource_guid='').values('resource_guid').annotate(

@@ -279,6 +279,33 @@
                     </table>
                 </div>
                 <div class="dashboard-card table-card">
+                    <div class="card-label">By channel (frontend / API / other)</div>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Channel</th>
+                                <th>GB</th>
+                                <th>Downloads</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for channel in download_events_dashboard.channels %}
+                                <tr>
+                                    <td>{{ channel.name }}</td>
+                                    <td>{{ channel.gb|floatformat:2 }}</td>
+                                    <td>{{ channel.downloads }}</td>
+                                </tr>
+                            {% empty %}
+                                <tr><td colspan="3">No activity in the current range.</td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                    <p class="unknown-note">
+                        Zips can only be split frontend vs. other — API zip downloads aren't
+                        distinguishable at capture, so they fall under "Other / direct".
+                    </p>
+                </div>
+                <div class="dashboard-card table-card">
                     <div class="card-label">By storage provider</div>
                     <table>
                         <thead>

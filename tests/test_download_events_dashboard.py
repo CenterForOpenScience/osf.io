@@ -304,6 +304,32 @@ class TestDashboardData(OsfTestCase):
 
         assert data['summary']['total_gb_tb_suffix'] == ''
 
+    def test_channel_breakdown_groups_by_channel(self):
+        make_event(download_channel=DownloadEvent.FRONTEND, size_bytes=2 * 1024 ** 3)
+        make_event(download_channel=DownloadEvent.FRONTEND, size_bytes=1024 ** 3)
+        make_event(download_channel=DownloadEvent.API, size_bytes=1024 ** 3)
+        make_event(download_channel='')  # recorded before the field / unresolved
+
+        channels = self.admin.get_dashboard_data(DownloadEvent.objects.all())['channels']
+        by_name = {c['name']: c for c in channels}
+
+        assert by_name['Frontend (website)']['downloads'] == 2
+        assert by_name['Frontend (website)']['gb'] == 3
+        assert by_name['API client']['downloads'] == 1
+        assert by_name['Unknown']['downloads'] == 1
+
+    def test_channel_breakdown_orders_frontend_api_other_then_unknown(self):
+        make_event(download_channel=DownloadEvent.OTHER)
+        make_event(download_channel='')
+        make_event(download_channel=DownloadEvent.FRONTEND)
+        make_event(download_channel=DownloadEvent.API)
+
+        channels = self.admin.get_dashboard_data(DownloadEvent.objects.all())['channels']
+
+        assert [c['name'] for c in channels] == [
+            'Frontend (website)', 'API client', 'Other / direct', 'Unknown',
+        ]
+
     def test_top_projects_shows_title_and_guid(self):
         user = AuthUserFactory()
         node = ProjectFactory(creator=user, title='Panic Download Project')
@@ -443,6 +469,16 @@ class TestSortableColumns(OsfTestCase):
 
     def test_user_agent_display_falls_back_when_blank(self):
         assert self.admin.user_agent_display(make_event(user_agent='')) == '—'
+
+    def test_channel_column_declares_a_sort_field(self):
+        assert self.admin.channel_display.admin_order_field == 'download_channel'
+
+    def test_channel_display_shows_the_human_label(self):
+        event = make_event(download_channel=DownloadEvent.API)
+        assert self.admin.channel_display(event) == 'API client'
+
+    def test_channel_display_falls_back_when_blank(self):
+        assert self.admin.channel_display(make_event(download_channel='')) == '—'
 
     def test_outcome_annotation_does_not_change_dashboard_numbers(self):
         """Production feeds get_queryset() (annotated with _outcome_rank for sorting) into
