@@ -623,6 +623,20 @@ new Chart(
     }
 );
 
+// A zero slice ("File" or "Zip") has no arc, so don't pop a "File 0" / "Zip 0"
+// tooltip for it — that reads as a bug when a filter zeroes one side out.
+const doughnutOptions = {
+    ...commonOptions,
+    cutout: "60%",
+    plugins: {
+        ...commonOptions.plugins,
+        tooltip: {
+            ...commonOptions.plugins.tooltip,
+            filter: (item) => item.parsed !== 0
+        }
+    }
+};
+
 new Chart(
     document.getElementById("downloadsSplitChart"),
     {
@@ -640,10 +654,7 @@ new Chart(
                 ]
             }]
         },
-        options: {
-            ...commonOptions,
-            cutout: "60%"
-        }
+        options: doughnutOptions
     }
 );
 
@@ -664,11 +675,7 @@ new Chart(
                 ]
             }]
         },
-        options: {
-            ...commonOptions,
-            cutout: "60%"
-        }
-
+        options: doughnutOptions
     }
 );
 </script>
