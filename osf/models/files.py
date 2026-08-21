@@ -505,7 +505,7 @@ class File(models.Model):
             data['modified'] = parse_date(
                 data['modified'],
                 ignoretz=True,
-                default=timezone.now()  # Just incase nothing can be parsed
+                default=timezone.now()  # Just in case nothing can be parsed
             )
 
         # if revision is none then version is the latest version

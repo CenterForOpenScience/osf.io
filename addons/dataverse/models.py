@@ -62,7 +62,7 @@ class DataverseFile(DataverseFileNode, File):
             return None
 
     def update(self, revision, data, save=True, user=None):
-        """Note: Dataverse only has psuedo versions (_history), pass None to not save them
+        """Note: Dataverse only has pseudo versions (_history), pass None to not save them
         Call super to update _history and last_touched anyway.
         """
         version = super().update(None, data, user=user, save=save)

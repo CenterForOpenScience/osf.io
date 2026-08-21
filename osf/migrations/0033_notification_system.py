@@ -17,7 +17,7 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        # Step 1: Create legacy tables needs for managment command `migrate_notifications``
+        # Step 1: Create legacy tables needs for management command `migrate_notifications``
         migrations.RunSQL(
             sql="""
                 -- 1. Rename the existing table and its indexes

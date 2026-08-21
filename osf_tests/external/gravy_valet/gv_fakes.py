@@ -828,7 +828,7 @@ def _format_response_body(
         list_view: bool = False,
         include_param='',
 ) -> str:
-    """Formates the stringified json body for responses."""
+    """Formats the stringified json body for responses."""
     if not data:
         return json.dumps({'data': [] if list_view else None})
     if list_view:

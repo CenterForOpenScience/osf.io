@@ -21,7 +21,7 @@ class GitHubClient:
 
         self.access_token = getattr(external_account, 'oauth_key', None) or access_token
         session = GitHubSession()
-        # Caching libary
+        # Caching library
         if github_settings.CACHE:
             session.mount('https://api.github.com/user', default_adapter)
             session.mount('https://', https_cache)
