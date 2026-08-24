@@ -2132,6 +2132,26 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         '''
         This method ensures a user's info is deleted during a GDPR delete
         '''
+        orcid_accounts = self.external_accounts.filter(provider='orcid')
+        for account in orcid_accounts:
+            try:
+                response = requests.post(
+                    website_settings.ORCID_OAUTH_REVOKE_URL,
+                    data={
+                        'client_id': website_settings.ORCID_OAUTH_CLIENT_ID,
+                        'client_secret': website_settings.ORCID_OAUTH_CLIENT_SECRET,
+                        'token': account.oauth_key,
+                    },
+                    timeout=5,
+                )
+                response.raise_for_status()
+            except requests.exceptions.RequestException as e:
+                logger.error(f'Failed to revoke ORCID token for user {self._id}: {e}')
+                raise UserStateError(
+                    'Unable to revoke this user\'s ORCID access right now because ORCID\'s '
+                    'service could not be reached. Please try the GDPR delete again later.'
+                )
+
         # This doesn't remove identifying info, but ensures other users can't see the deleted user's profile etc.
         self.deactivate_account()
 
@@ -2155,21 +2175,6 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         self.social = {}
         self.unclaimed_records = {}
         self.notifications_configured = {}
-        # Revoke ORCID OAuth grant before scrubbing the token below (best-effort, does not block deletion)
-        orcid_accounts = self.external_accounts.filter(provider='orcid')
-        for account in orcid_accounts:
-            try:
-                requests.post(
-                    website_settings.ORCID_OAUTH_REVOKE_URL,
-                    data={
-                        'client_id': website_settings.ORCID_OAUTH_CLIENT_ID,
-                        'client_secret': website_settings.ORCID_OAUTH_CLIENT_SECRET,
-                        'token': account.oauth_key,
-                    },
-                    timeout=5,
-                )
-            except requests.exceptions.RequestException as e:
-                logger.warning(f'Failed to revoke ORCID token for user {self._id}: {e}')
         # Scrub all external accounts
         if self.external_accounts.exists():
             logger.info('Clearing identifying information from external accounts...')

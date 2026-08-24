@@ -2278,7 +2278,7 @@ class TestUserGdprDelete:
         assert len(responses.calls) == 0
 
     @responses.activate
-    def test_gdpr_delete_orcid_revoke_failure_does_not_block_delete(self, user):
+    def test_gdpr_delete_orcid_revoke_failure_blocks_delete(self, user):
         responses.add(
             responses.POST,
             settings.ORCID_OAUTH_REVOKE_URL,
@@ -2287,13 +2287,32 @@ class TestUserGdprDelete:
         account = ExternalAccountFactory(provider='orcid', oauth_key='fake-orcid-token')
         user.external_accounts.add(account)
 
-        user.gdpr_delete()
+        with pytest.raises(UserStateError):
+            user.gdpr_delete()
 
         assert len(responses.calls) == 1
-        assert user.deleted is not None
-        assert not user.external_accounts.exists()
+        # Nothing else should have been touched: fail fast, before any other clearing happens.
+        assert user.deleted is None
+        assert not user.is_disabled
+        assert user.external_accounts.exists()
         account.reload()
-        assert account.oauth_key is None
+        assert account.oauth_key == 'fake-orcid-token'
+
+    @responses.activate
+    def test_gdpr_delete_orcid_revoke_http_error_blocks_delete(self, user):
+        responses.add(
+            responses.POST,
+            settings.ORCID_OAUTH_REVOKE_URL,
+            status=500,
+        )
+        account = ExternalAccountFactory(provider='orcid', oauth_key='fake-orcid-token')
+        user.external_accounts.add(account)
+
+        with pytest.raises(UserStateError):
+            user.gdpr_delete()
+
+        assert len(responses.calls) == 1
+        assert user.deleted is None
 
     def test_can_gdpr_delete_personal_nodes(self, user):
 
