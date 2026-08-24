@@ -2147,6 +2147,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
                 response.raise_for_status()
             except requests.exceptions.RequestException as e:
                 logger.error(f'Failed to revoke ORCID token for user {self._id}: {e}')
+                sentry.log_exception(e)
                 raise UserStateError(
                     'Unable to revoke this user\'s ORCID access right now because ORCID\'s '
                     'service could not be reached. Please try the GDPR delete again later.'
