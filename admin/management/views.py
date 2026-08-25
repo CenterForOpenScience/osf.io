@@ -217,6 +217,21 @@ class RemoveOrcidFromUserSocial(ManagementCommandPermissionView):
         return redirect(reverse('management:commands'))
 
 
+class MigrateOsfmetricsFix6to8(ManagementCommandPermissionView):
+    def post(self, request):
+        _command_kwargs = {
+            'no_color': True,
+            'no_counts': request.POST.get('no_counts'),
+            'delete_es8_usage_reports': request.POST.get('delete_es8_usage_reports'),
+            'start': request.POST.get('start'),
+        }
+        _out_io = StringIO()
+        call_command('migrate_osfmetrics_fix_6to8', **_command_kwargs, stdout=_out_io)
+        for _line in _out_io.getvalue().split('\n'):
+            messages.info(request, _line)
+        return redirect(reverse('management:commands'))
+
+
 class MigrateFunderNamesToRor(ManagementCommandPermissionView):
 
     def post(self, request):
