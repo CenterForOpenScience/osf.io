@@ -163,6 +163,20 @@
                     </select>
                 </div>
 
+                <div class="form-group" style="margin-top:15px;">
+                    <label>
+                        <input
+                            type="checkbox"
+                            id="exclude-unconfirmed"
+                        >
+                        Exclude unconfirmed accounts
+                    </label>
+                    <p class="help-block">
+                        When enabled, users who have not confirmed their accounts
+                        are excluded from the recipient list.
+                    </p>
+                </div>
+
                 <input
                     type="hidden"
                     id="filters-input"
@@ -406,15 +420,37 @@ function updateOperatorAndValue(row, field, operator, value) {
 }
 
 function buildFilters() {
+    let filters;
 
     if (filterMode.value === "predefined") {
-        return {
+        filters = {
             "predefined": document.getElementById("filter-row").value
         };
+    } else {
+        const root = builder.querySelector(":scope > .group");
+        filters = {"manual": serializeGroup(root)};
     }
 
-    const root = builder.querySelector(":scope > .group");
-    return {"manual": serializeGroup(root)}
+    if (document.getElementById("exclude-unconfirmed").checked) {
+        const confirmed = {
+            field: "date_confirmed",
+            lookup: "isnull",
+            value: false,
+        };
+        if (filters.manual) {
+            filters.manual = {
+                operator: "AND",
+                children: [filters.manual, confirmed],
+            };
+        } else {
+            filters.manual = {
+                operator: "AND",
+                children: [confirmed],
+            };
+        }
+    }
+
+    return filters;
 }
 
 function updateFiltersInput() {

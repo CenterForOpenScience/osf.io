@@ -267,25 +267,19 @@
         <div class="col-md-12">
             <h4>Recipient Filters</h4>
 
-            {% if not "predefined" in metadata.filters  %}
-
-                {% if not "predefined" in metadata.filters %}
-                    {% if metadata.filters.manual %}
-                        {% include "notifications/campaign_filter_group.html" with group=metadata.filters.manual is_root=True %}
-                    {% else %}
-                        <p class="text-muted">No filters configured.</p>
-                    {% endif %}
-                {% endif %}
-
-            {% elif "predefined" in metadata.filters %}
-
+            {% if "predefined" in metadata.filters %}
                 <table class="table table-bordered">
                     <tr>
                         <th style="width:250px;">Predefined Filter</th>
                         <td>{{ metadata.filters.predefined }}</td>
                     </tr>
                 </table>
+            {% endif %}
 
+            {% if metadata.filters.manual %}
+                {% include "notifications/campaign_filter_group.html" with group=metadata.filters.manual is_root=True %}
+            {% elif not "predefined" in metadata.filters %}
+                <p class="text-muted">No filters configured.</p>
             {% endif %}
 
             <a

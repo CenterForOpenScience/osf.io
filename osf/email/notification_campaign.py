@@ -3,7 +3,7 @@ import logging
 from osf.models import NotificationType, NotificationTypeEnum, OSFUser, UserActivityCounter, Email
 from osf.models.spam import SpamStatus
 from django.db import transaction
-from django.db.models import OuterRef, Subquery, Case, When, CharField, Count, Q
+from django.db.models import OuterRef, Subquery, Case, When, CharField, Count, Q, BooleanField
 from django.db.models.functions import Coalesce
 from framework.celery_tasks import app as celery_app
 from celery import group, chain
@@ -54,6 +54,9 @@ def build_query(node):
         if lookup == 'in':
             value = [v.strip() for v in value.split(',')]
 
+        if lookup == 'isnull':
+            value = BooleanField().to_python(value)
+
         if lookup in negated_lookups:
             return ~Q(**{
                 f'{node["field"]}__{negated_lookups[lookup]}': value
@@ -78,6 +81,18 @@ def build_query(node):
             query |= build_query(child)
 
     return query
+
+
+def build_campaign_filter_query(filters):
+    """AND together optional predefined and manual filter clauses."""
+    filters = filters or {}
+    query = Q()
+    if predefined := filters.get('predefined'):
+        query &= Q(**FILTER_PRESETS.get(predefined, {}))
+    if manual := filters.get('manual'):
+        query &= build_query(manual)
+    return query
+
 
 def create_campaign_recipients(filters, campaign_id):
     qs = (
@@ -260,14 +275,11 @@ def start_notification_campaign(campaign_id, restart_failed=False, restart_stuck
     if hasattr(NotificationTypeEnum, notification_type_name):
         del getattr(NotificationTypeEnum, notification_type_name).instance
 
-    if predefined_filter_name := filters.get('predefined'):
-        filters = Q(**FILTER_PRESETS.get(predefined_filter_name, {}))
-    else:
-        filters = build_query(filters.get('manual', []))
+    recipient_filters = build_campaign_filter_query(filters)
 
     if not restart_failed and not restart_stuck:
         recipients_creation_started_at = timezone.now()
-        create_campaign_recipients(filters=filters, campaign_id=campaign_id)
+        create_campaign_recipients(filters=recipient_filters, campaign_id=campaign_id)
         campaign.recipient_count = NotificationCampaignRecipient.objects.filter(campaign_id=campaign_id).count()
         campaign.save()
         recipients_creation_finished_at = timezone.now()
