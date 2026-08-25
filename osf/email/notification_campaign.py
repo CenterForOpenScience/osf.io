@@ -210,7 +210,7 @@ def process_campaign_retry(*args, **kwargs):
                 logger.info(message)
                 sentry.log_message(message)
                 campaign.retries += 1
-                campaign.save(update_fields=['retries'])
+                campaign.save(update_fields=['retries', 'updated_at'])
                 retry_group = build_campaign_group(
                     batch_size=batch_size,
                     campaign_id=campaign_id,
@@ -429,7 +429,7 @@ def send_campaign_batch(
         stats = get_campaign_recipient_stats(campaign_id)
         notification_campaign.sent_count = stats['sent_count']
         notification_campaign.failed_count = stats['failed_count']
-        notification_campaign.save(update_fields=['sent_count', 'failed_count'])
+        notification_campaign.save(update_fields=['sent_count', 'failed_count', 'updated_at'])
 
     batch_finished_at = timezone.now()
     batch_run_time = (batch_finished_at - batch_started_at).total_seconds()
