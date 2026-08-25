@@ -119,6 +119,7 @@ def get_admin_write_permissions():
         'change_emailtask',
         'delete_emailtask',
         'change_notificationcampaign',
+        'delete_notificationcampaign',
     ])
 
 

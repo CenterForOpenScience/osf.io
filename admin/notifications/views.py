@@ -431,6 +431,7 @@ class NotificationCampaignDetail(PermissionRequiredMixin, DetailView):
                 if k not in {'filters', 'context', 'execution', 'template'}
             },
             'allow_restart_stuck': True if timezone.now() - notification_campaign.updated_at > timedelta(minutes=15) else False,
+            'delete_allowed': notification_campaign.status != NotificationCampaignStatus.RUNNING
         }
 
         if notification_campaign.status != NotificationCampaignStatus.CREATED:
@@ -748,3 +749,18 @@ class StartNotificationCampaign(PermissionRequiredMixin, View):
             'notifications:notification_campaigns_detail',
             pk=notification_campaign.pk,
         )
+
+class DeleteNotificationCampaign(PermissionRequiredMixin, View):
+    permission_required = 'osf.delete_notificationcampaign'
+
+    def post(self, request, *args, **kwargs):
+        notification_campaign = get_object_or_404(
+            NotificationCampaign,
+            pk=kwargs['pk'],
+        )
+        if notification_campaign.status == NotificationCampaignStatus.RUNNING:
+            messages.error(request, 'Cannot delete a running campaign.')
+            return redirect('notifications:notification_campaigns_detail', pk=notification_campaign.pk)
+        notification_campaign.delete()
+        messages.success(request, f'Notification campaign {notification_campaign.name} deleted successfully.')
+        return redirect('notifications:notification_campaigns_list')
