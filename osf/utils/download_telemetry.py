@@ -16,6 +16,34 @@ UNSET_USER_TIMEZONE = 'Etc/UTC'
 LOGGED_CONTEXT_KEYS = ('download_type', 'resource_guid', 'file_id', 'user_guid')
 
 
+def classify_download_channel(source_area, is_api_token=False):
+    """Best server-side guess at where a download came from, for the dashboard's
+    frontend-vs-API split.
+
+    Deliberately does NOT trust the User-Agent — browsers and bots alike set it (the QA
+    screenshots showed automated traffic sending ordinary Chrome UA strings). The signals
+    here are ones the client can't fake into looking like the OSF UI:
+
+    - an API/OAuth bearer token means a programmatic client (a browser navigating a
+      download link never sends one) -> API
+    - otherwise a ``source`` tag means the request came from an OSF UI download link,
+      which only our own frontend adds -> FRONTEND
+    - everything else (direct links, crawlers) -> OTHER
+
+    Only single-file downloads, captured at the redirect view, can see the token. Zip
+    downloads are captured from the WaterButler callback, which doesn't carry the original
+    request's auth, so their API traffic can't be told from OTHER — they still split
+    FRONTEND vs not by the source tag. ``is_api_token`` is always False for zips.
+    """
+    from osf.models import DownloadEvent
+
+    if is_api_token:
+        return DownloadEvent.API
+    if source_area:
+        return DownloadEvent.FRONTEND
+    return DownloadEvent.OTHER
+
+
 def never_breaks_downloads(fn):
     """Swallow and log anything this raises.
 
@@ -65,6 +93,7 @@ def write_download_event(
     ip=None,
     user_agent='',
     source_area='',
+    download_channel='',
     tz='',
 ):
     """Resolve the expensive bits and write one row.
@@ -103,6 +132,7 @@ def write_download_event(
         # capped: the User-Agent comes off the request, so it's client-controlled
         user_agent=_truncate(user_agent, 512),
         source_area=_truncate(source_area, 128),
+        download_channel=_truncate(download_channel, 16),
         user=user,
     )
 
