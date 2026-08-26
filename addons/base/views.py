@@ -369,7 +369,7 @@ def _check_resource_permissions(resource, auth, action):
     if required_permission == permissions.READ:
         has_resource_permissions = resource.can_view_files(auth=auth)
     else:
-        _ensure_resource_not_read_only()
+        _ensure_resource_not_read_only(resource)
         has_resource_permissions = resource.can_edit(auth=auth)
 
     if not (has_resource_permissions or _check_hierarchical_permissions(resource, auth, action)):
@@ -377,8 +377,11 @@ def _check_resource_permissions(resource, auth, action):
     return True
 
 
-def _ensure_resource_not_read_only():
+def _ensure_resource_not_read_only(resource):
     """Block file/folder writes via Waterbutler while the resource is in read-only mode."""
+    if not isinstance(resource, Node):
+        return
+
     if flag_is_active(request, features.PROJECT_READ_ONLY):
         raise HTTPError(http_status.HTTP_403_FORBIDDEN, message='This project is read-only; file writes are disabled.')
 
