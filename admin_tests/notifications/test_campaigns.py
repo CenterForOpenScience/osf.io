@@ -16,6 +16,7 @@ from admin.notifications.views import (
     NotificationCampaignDetail,
     NotificationCampaignsList,
     StartNotificationCampaign,
+    DeleteNotificationCampaign,
 )
 from admin_tests.utilities import setup_form_view
 from osf.models import NotificationType
@@ -419,3 +420,33 @@ class TestNotificationCampaignAdminPermissions(AdminTestCase):
         mock_start.assert_not_called()
         self.campaign.refresh_from_db()
         assert self.campaign.status == NotificationCampaignStatus.CREATED
+
+class TestNotificationCampaignDeleteView(AdminTestCase):
+
+    def setUp(self):
+        super().setUp()
+        self.user = AuthUserFactory()
+        self.notification_type, _ = NotificationType.objects.get_or_create(
+            name='blank',
+            defaults={'subject': 'Test', 'template': 'Hello'},
+        )
+        self.campaign = NotificationCampaign.objects.create(
+            name='Campaign',
+            notification_type=self.notification_type,
+            metadata={'filters': {}, 'context': {}, 'execution': {}},
+        )
+
+    def test_delete_requires_change_notificationcampaign_permission(self):
+        request = RequestFactory().post(
+            reverse('notifications:notification_campaigns_delete', kwargs={'pk': self.campaign.pk})
+        )
+        request.user = self.user
+        patch_messages(request)
+
+        with self.assertRaises(PermissionDenied):
+            DeleteNotificationCampaign.as_view()(request, pk=self.campaign.pk)
+
+        grant_permission(self.user, 'delete_notificationcampaign')
+        response = DeleteNotificationCampaign.as_view()(request, pk=self.campaign.pk)
+        assert response.status_code == 302
+        assert not NotificationCampaign.objects.filter(pk=self.campaign.pk).exists()

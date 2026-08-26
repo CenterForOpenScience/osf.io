@@ -197,6 +197,18 @@
             Cancel Campaign
         </button>
     </form>
+    <form
+        id="delete-campaign-form"
+        method="post"
+        action="{% url 'notifications:notification_campaigns_delete' notification_campaign.id %}"
+        style="display:inline;"
+    >
+        {% csrf_token %}
+        <button type="submit" class="btn btn-primary" {% if not delete_allowed %}disabled{% endif %}
+        title="Delete the campaign and all associated data.">
+            Delete Campaign
+        </button>
+    </form>
 
     <!-- General information -->
     <div class="row">
@@ -447,6 +459,14 @@
 
     if (restartstuckForm) {
         restartstuckForm.addEventListener("submit", function (e) {
+            confirmCampaign(this, e);
+        });
+    }
+
+    const deleteForm = document.getElementById("delete-campaign-form");
+
+    if (deleteForm) {
+        deleteForm.addEventListener("submit", function (e) {
             confirmCampaign(this, e);
         });
     }

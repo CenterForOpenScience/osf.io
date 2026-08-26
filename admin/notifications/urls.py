@@ -17,4 +17,5 @@ urlpatterns = [
     re_path(r'notification_campaigns_recipients_preview/$', views.NotificationCampaignsRecipientsPreview.as_view(), name='notification_campaigns_recipients_preview'),
     re_path(r'notification_campaigns_recipients_list/$', views.NotificationCampaignsRecipientsView.as_view(), name='notification_campaigns_recipients_list'),
     re_path(r'notification_campaigns_start/(?P<pk>\d+)/$', views.StartNotificationCampaign.as_view(), name='notification_campaigns_start'),
+    re_path(r'notification_campaigns_delete/(?P<pk>\d+)/$', views.DeleteNotificationCampaign.as_view(), name='notification_campaigns_delete'),
 ]
