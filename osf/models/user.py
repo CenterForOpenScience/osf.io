@@ -2154,12 +2154,12 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
                     },
                     timeout=5,
                 )
-                response.raise_for_status()
                 sentry.log_message(
                     f'[GDPR delete] user={self._id}: ORCID account={account._id} revoked, '
-                    f'status_code={response.status_code}',
+                    f'status_code={response.status_code}, response_text={response.text}, response={response}',
                     level=logging.INFO,
                 )
+                response.raise_for_status()
             except requests.exceptions.RequestException as e:
                 sentry.log_message(
                     f'[GDPR delete] Failed to revoke ORCID token for user {self._id}: {e}',
