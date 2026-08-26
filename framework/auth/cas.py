@@ -8,6 +8,9 @@ from urllib.parse import quote
 from lxml import etree
 import requests
 
+import logging
+
+from framework import sentry
 from framework.auth import authenticate, external_first_login_authenticate
 from framework.auth.core import get_user, generate_verification_key
 from framework.auth.utils import print_cas_log, LogLevel
@@ -291,15 +294,25 @@ def make_response_from_ticket(ticket, service_url):
                 print_cas_log(f'CAS TOS consent checked: {user.guids.first()._id}, {user.username}', LogLevel.INFO)
             orcid_id = cas_resp.attributes.get('orcidId')
             orcid_access_token = cas_resp.attributes.get('orcidAccessToken')
+            sentry.log_message(
+                f'CAS response ORCID attributes: user=[{user._id}], orcidId=[{orcid_id}], '
+                f'orcidAccessToken=[{"present" if orcid_access_token else "missing"}]',
+                level=logging.INFO,
+            )
             if orcid_id and orcid_access_token:
                 from osf.models.external import ExternalAccount
-                account, _ = ExternalAccount.objects.update_or_create(
+                account, created = ExternalAccount.objects.update_or_create(
                     provider='orcid',
                     provider_id=orcid_id,
                     defaults={
                         'provider_name': 'ORCID',
                         'oauth_key': orcid_access_token,
                     },
+                )
+                sentry.log_message(
+                    f'ORCID external account {"created" if created else "updated"}: '
+                    f'user=[{user._id}], account=[{account._id}], provider_id=[{orcid_id}]',
+                    level=logging.INFO,
                 )
                 user.external_accounts.add(account)
             # if we successfully authenticate and a verification key is present, invalidate it

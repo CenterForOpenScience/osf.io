@@ -2133,7 +2133,17 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         This method ensures a user's info is deleted during a GDPR delete
         '''
         orcid_accounts = self.external_accounts.filter(provider='orcid')
+        sentry.log_message(
+            f'[GDPR delete; _clear_identifying_information] user={self._id}: '
+            f'found {orcid_accounts.count()} ORCID account(s) to revoke',
+            level=logging.INFO,
+        )
         for account in orcid_accounts:
+            sentry.log_message(
+                f'[GDPR delete] user={self._id}: revoking ORCID account={account._id} '
+                f'via {website_settings.ORCID_OAUTH_REVOKE_URL}',
+                level=logging.INFO,
+            )
             try:
                 response = requests.post(
                     website_settings.ORCID_OAUTH_REVOKE_URL,
@@ -2145,8 +2155,16 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
                     timeout=5,
                 )
                 response.raise_for_status()
+                sentry.log_message(
+                    f'[GDPR delete] user={self._id}: ORCID account={account._id} revoked, '
+                    f'status_code={response.status_code}',
+                    level=logging.INFO,
+                )
             except requests.exceptions.RequestException as e:
-                logger.error(f'Failed to revoke ORCID token for user {self._id}: {e}')
+                sentry.log_message(
+                    f'[GDPR delete] Failed to revoke ORCID token for user {self._id}: {e}',
+                    level=logging.ERROR,
+                )
                 sentry.log_exception(e)
                 raise UserStateError(
                     'Unable to revoke this user\'s ORCID access right now because ORCID\'s '
