@@ -3,7 +3,7 @@ import logging
 from rest_framework import serializers as ser
 
 from api.base.utils import absolute_reverse
-from osf.metrics.events import OsfCountedUsageEvent
+from osf.metrics.events import OsfCountedUsageEvent, SSRMetricsEvent
 
 
 logger = logging.getLogger(__name__)
@@ -63,6 +63,27 @@ class CountedAuthUsageSerializer(ser.Serializer):
             user_id=self.context.get('user_id'),
             request_host=self.context.get('request_host'),
             request_useragent=self.context.get('request_useragent'),
+        )
+
+
+class SSRMetricsSerializer(ser.Serializer):
+    url = ser.URLField(max_length=4095, required=True)
+    status = ser.IntegerField(min_value=100, max_value=599, required=True)
+    ttfb = ser.IntegerField(min_value=0, required=True)
+    is_bot = ser.BooleanField(required=True)
+    is_complete = ser.BooleanField(required=True)
+    content_type = ser.CharField(max_length=255, required=False, allow_null=True)
+    user_agent = ser.CharField(max_length=4095, required=True)
+
+    def create(self, validated_data):
+        return SSRMetricsEvent.record(
+            url=validated_data['url'],
+            status=validated_data['status'],
+            ttfb=validated_data['ttfb'],
+            isBot=validated_data['is_bot'],
+            isComplete=validated_data['is_complete'],
+            userAgent=validated_data['user_agent'],
+            contentType=validated_data.get('content_type'),
         )
 
 

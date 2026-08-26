@@ -15,6 +15,7 @@ from api.metrics.views import (
     RegistriesModerationMetricsView,
     CountedAuthUsageView,
     MetricsOpenapiView,
+    SSRMetricsView,
 )
 from api.users.views import (
     ClaimUser,
@@ -64,6 +65,7 @@ class TestApiBaseViews(ApiTestCase):
             ClaimUser,
             CopyFileMetadataView,
             CountedAuthUsageView,
+            SSRMetricsView,
             MoveFileMetadataView,
             ParseCrossRefConfirmation,
             RawMetricsView,
