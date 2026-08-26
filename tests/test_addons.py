@@ -21,6 +21,7 @@ from tests.base import OsfTestCase
 from api_tests.utils import create_test_file
 from osf_tests.factories import (
     AuthUserFactory,
+    PreprintFactory,
     ProjectFactory,
     RegistrationFactory,
 )
@@ -1118,26 +1119,37 @@ class TestCheckAuth(OsfTestCase):
         assert not component.has_permission(self.user, WRITE)
         assert views._check_resource_permissions(component, Auth(user=self.user), 'copyfrom')
 
-    def test_upload_blocked_when_project_read_only_active(self):
+    def test_node_upload_blocked_when_project_read_only_active(self):
         with override_flag(features.PROJECT_READ_ONLY, active=True):
             with self.assertRaises(HTTPError) as exc_info:
                 views._check_resource_permissions(self.node, Auth(user=self.user), 'upload')
         assert exc_info.exception.code == 403
 
-    def test_create_folder_blocked_when_project_read_only_active(self):
+    def test_node_create_folder_blocked_when_project_read_only_active(self):
         with override_flag(features.PROJECT_READ_ONLY, active=True):
             with self.assertRaises(HTTPError) as exc_info:
                 views._check_resource_permissions(self.node, Auth(user=self.user), 'create_folder')
         assert exc_info.exception.code == 403
 
-    def test_download_allowed_when_project_read_only_active(self):
+    def test_node_download_allowed_when_project_read_only_active(self):
         with override_flag(features.PROJECT_READ_ONLY, active=True):
             assert views._check_resource_permissions(self.node, Auth(user=self.user), 'download')
 
-    def test_upload_allowed_when_project_read_only_inactive(self):
+    def test_node_upload_allowed_when_project_read_only_inactive(self):
         with override_flag(features.PROJECT_READ_ONLY, active=False):
             assert views._check_resource_permissions(self.node, Auth(user=self.user), 'upload')
 
+    def test_node_component_upload_blocked_when_project_read_only_active(self):
+        component = ProjectFactory(creator=self.user, is_public=False, parent=self.node)
+        with override_flag(features.PROJECT_READ_ONLY, active=True):
+            with self.assertRaises(HTTPError) as exc_info:
+                views._check_resource_permissions(component, Auth(user=self.user), 'upload')
+        assert exc_info.exception.code == 403
+
+    def test_preprint_upload_allowed_when_project_read_only_active(self):
+        preprint = PreprintFactory(creator=self.user)
+        with override_flag(features.PROJECT_READ_ONLY, active=True):
+            assert views._check_resource_permissions(preprint, Auth(user=self.user), 'upload')
 
 class TestCheckOAuth(OsfTestCase):
 
