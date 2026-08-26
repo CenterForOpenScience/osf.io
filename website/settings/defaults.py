@@ -190,6 +190,8 @@ NO_LOGIN_WAIT_TIME = timedelta(weeks=52)   # 1 year for "We miss you at OSF" ema
 NO_LOGIN_OSF4M_WAIT_TIME = timedelta(weeks=52)  # 1 year for "We miss you at OSF" email to users created from OSF4M
 NOTIFICATIONS_CLEANUP_AGE = timedelta(weeks=12)  # 3 months to clean up old notifications and email tasks
 NOTIFICATIONS_CLEANUP_BATCH_SIZE = 10000  # Batch size for notifications and email tasks cleanup
+NOTIFICATION_CAMPAIGN_RECIPIENTS_CLEANUP_AGE = timedelta(weeks=12)  # 3 months to clean up old notification campaign recipients
+NOTIFICATION_CAMPAIGN_RECIPIENTS_CLEANUP_BATCH_SIZE = 5000  # Batch size for notification campaign recipients cleanup
 
 # Notification campaign execution defaults (overridable per campaign in admin metadata)
 DEFAULT_CAMPAIGN_ACTIVITY_THRESHOLD = 3  # Users at/above this activity total are scheduled in the high-activity phase
@@ -711,6 +713,10 @@ class CeleryConfig:
             'task': 'notifications.tasks.notifications_cleanup_task',
             'schedule': crontab(minute=0, hour=7),  # Daily 2 a.m
             'kwargs': {'dry_run': False},
+        },
+        'delete_notification_campaign_recipients': {
+            'task': 'notifications.tasks.delete_notification_campaign_recipients',
+            'schedule': crontab(minute=0, hour=3, day_of_month=1),
         },
         'clear_expired_sessions': {
             'task': 'osf.management.commands.clear_expired_sessions',
