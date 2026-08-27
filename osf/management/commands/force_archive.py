@@ -45,6 +45,7 @@ from api.base.utils import waterbutler_api_url_for
 from api.waffle.utils import flag_is_active
 from scripts import utils as script_utils
 from website.archiver import ARCHIVER_SUCCESS
+from website.archiver import utils as archiver_utils
 from website.settings import ARCHIVE_TIMEOUT_TIMEDELTA, ARCHIVE_PROVIDER, COOKIE_NAME, EXTERNAL_REQUEST_TIMEOUT
 from website.files.utils import attach_versions
 
@@ -431,6 +432,10 @@ def archive(registration, *args, permissible_addons=DEFAULT_PERMISSIBLE_ADDONS, 
             else:
                 assert reg.archiving, f'{reg._id}: Must be `archiving` for WB to copy'
                 perform_wb_copy(reg, node_settings, *args, **kwargs)
+
+    # The archive_success task rewrites these links, but it never runs for a
+    # force-archived registration, without this call the files stay on the private project.
+    archiver_utils.migrate_file_metadata(registration.root)
 
 def archive_registrations(*args, **kwargs):
     for reg in deepcopy(VERIFIED):
