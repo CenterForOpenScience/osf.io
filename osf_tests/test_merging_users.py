@@ -273,6 +273,31 @@ class TestUserMerging(OsfTestCase):
         assert linking_user.external_identity == {}
         assert no_provider_user.external_identity == {'ORCID': {'1234-1234-1234-1234': 'VERIFIED', '4321-4321-4321-4321': 'VERIFIED'}}
 
+    def test_merge_transfers_external_identity_access_token(self):
+        surviving_user = UserFactory(
+            external_identity={'ORCID': {'1234-1234-1234-1234': 'VERIFIED'}},
+        )
+        merged_user = UserFactory(
+            external_identity={'ORCID': {'1234-1234-1234-1234': 'VERIFIED', '4321-4321-4321-4321': 'VERIFIED'}},
+            external_identity_access_token={
+                'ORCID': {
+                    '1234-1234-1234-1234': {'access_token': 'token-1234', 'refresh_token': None},
+                    '4321-4321-4321-4321': {'access_token': 'token-4321', 'refresh_token': None},
+                },
+            },
+        )
+
+        with override_flag(ENABLE_GV, active=True):
+            surviving_user.merge_user(merged_user)
+
+        assert surviving_user.external_identity_access_token == {
+            'ORCID': {
+                '1234-1234-1234-1234': {'access_token': 'token-1234', 'refresh_token': None},
+                '4321-4321-4321-4321': {'access_token': 'token-4321', 'refresh_token': None},
+            },
+        }
+        assert merged_user.external_identity_access_token == {}
+
     def test_merge_unregistered(self):
         # test only those behaviors that are not tested with unconfirmed users
         self._add_unregistered_user()

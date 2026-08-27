@@ -12,6 +12,7 @@ from django.conf import settings as django_conf_settings
 from unittest import mock
 import itsdangerous
 import pytest
+import requests
 from importlib import import_module
 from waffle.testutils import override_flag
 
@@ -2224,10 +2225,13 @@ class TestUserGdprDelete:
 
         assert mock_update_search.called
 
-    @mock.patch('framework.auth.cas.CasClient.revoke_orcid_token')
-    def test_can_gdpr_delete(self, mock_revoke_orcid_token, user):
+    @mock.patch('osf.models.user.requests.post')
+    def test_can_gdpr_delete(self, mock_post, user):
+        mock_post.return_value = mock.Mock(status_code=200)
         user.external_identity = {'ORCID': {'fake-orcid-id': 'VERIFIED'}}
-        user.orcid_token_stored = True
+        user.external_identity_access_token = {
+            'ORCID': {'fake-orcid-id': {'access_token': 'fake-orcid-token', 'refresh_token': None}},
+        }
         user.save()
 
         user.social = ['fake social']
@@ -2243,37 +2247,37 @@ class TestUserGdprDelete:
         assert user.schools == []
         assert user.jobs == []
         assert user.external_identity == {}
+        assert user.external_identity_access_token == {}
         assert not user.emails.exists()
         assert not user.external_accounts.exists()
         assert user.is_disabled
         assert user.deleted is not None
-        mock_revoke_orcid_token.assert_called_once_with('fake-orcid-id')
-        assert user.orcid_token_stored is False
+        mock_post.assert_called_once()
+        assert mock_post.call_args.kwargs['data']['token'] == 'fake-orcid-token'
 
-    @mock.patch('framework.auth.cas.CasClient.revoke_orcid_token')
-    def test_gdpr_delete_no_orcid_no_cas_call(self, mock_revoke_orcid_token, user):
-        assert user.external_identity == {}
-
+    @mock.patch('osf.models.user.requests.post')
+    def test_gdpr_delete_no_orcid_token_no_revoke_call(self, mock_post, user):
         user.gdpr_delete()
 
-        mock_revoke_orcid_token.assert_not_called()
+        mock_post.assert_not_called()
 
-    @mock.patch('framework.auth.cas.CasClient.revoke_orcid_token')
-    def test_gdpr_delete_orcid_revoke_failure_does_not_block_delete(self, mock_revoke_orcid_token, user):
-        from framework.auth import cas
-        mock_revoke_orcid_token.side_effect = cas.CasHTTPError(
-            code=400, message='Bad Request', headers={}, content=b'',
-        )
-        user.external_identity = {'ORCID': {'fake-orcid-id': 'VERIFIED'}}
-        user.orcid_token_stored = True
+    @mock.patch('osf.models.user.requests.post')
+    def test_gdpr_delete_orcid_revoke_failure_blocks_delete(self, mock_post, user):
+        mock_post.side_effect = requests.exceptions.ConnectionError('boom')
+        user.external_identity_access_token = {
+            'ORCID': {'fake-orcid-id': {'access_token': 'fake-orcid-token', 'refresh_token': None}},
+        }
         user.save()
 
-        user.gdpr_delete()
+        with pytest.raises(UserStateError):
+            user.gdpr_delete()
 
-        mock_revoke_orcid_token.assert_called_once_with('fake-orcid-id')
-        assert user.external_identity == {}
-        assert user.orcid_token_stored is False
-        assert user.deleted is not None
+        mock_post.assert_called_once()
+        assert user.deleted is None
+        assert not user.is_disabled
+        assert user.external_identity_access_token == {
+            'ORCID': {'fake-orcid-id': {'access_token': 'fake-orcid-token', 'refresh_token': None}},
+        }
 
     def test_can_gdpr_delete_personal_nodes(self, user):
 

@@ -55,6 +55,19 @@ def make_external_response(release=True, unicode=False):
     )
 
 
+def make_external_response_with_orcid_access_token(access_token=None):
+    return cas.CasResponse(
+        authenticated=True,
+        user='OrcidProfile#{}'.format(fake.numerify('####-####-####-####')),
+        attributes={
+            'accessToken': fake.md5(),
+            'given-names': fake.first_name(),
+            'family-name': fake.last_name(),
+            'orcidAccessToken': access_token or fake.md5(),
+        }
+    )
+
+
 def generate_external_user_with_resp(service_url, user=True, release=True):
     """
     Generate mock user, external credential and cas response for tests.
@@ -370,6 +383,75 @@ class TestCASExternalLogin(OsfTestCase):
         resp = cas.make_response_from_ticket(ticket, service_url)
         self.user.reload()
         assert self.user.verification_key != verification_key
+
+    @mock.patch('framework.auth.cas.CasClient.service_validate')
+    def test_make_response_from_ticket_stores_orcid_access_token(self, mock_service_validate):
+        access_token = fake.md5()
+        mock_response = make_external_response_with_orcid_access_token(access_token=access_token)
+        validated_creds = cas.validate_external_credential(mock_response.user)
+        self.user.external_identity = {
+            validated_creds['provider']: {
+                validated_creds['id']: 'VERIFIED'
+            }
+        }
+        self.user.save()
+        mock_service_validate.return_value = mock_response
+        ticket = fake.md5()
+        service_url = 'http://localhost:5000/'
+        resp = cas.make_response_from_ticket(ticket, service_url)
+        assert resp.status_code == 302
+        self.user.reload()
+        assert self.user.external_identity_access_token == {
+            validated_creds['provider']: {
+                validated_creds['id']: {'access_token': access_token, 'refresh_token': None},
+            },
+        }
+
+    @mock.patch('framework.auth.cas.CasClient.service_validate')
+    def test_make_response_from_ticket_updates_existing_orcid_access_token(self, mock_service_validate):
+        mock_response = make_external_response_with_orcid_access_token()
+        validated_creds = cas.validate_external_credential(mock_response.user)
+        self.user.external_identity = {
+            validated_creds['provider']: {
+                validated_creds['id']: 'VERIFIED'
+            }
+        }
+        self.user.external_identity_access_token = {
+            validated_creds['provider']: {
+                validated_creds['id']: {'access_token': 'old-token', 'refresh_token': None},
+            },
+        }
+        self.user.save()
+        mock_service_validate.return_value = mock_response
+        ticket = fake.md5()
+        service_url = 'http://localhost:5000/'
+        resp = cas.make_response_from_ticket(ticket, service_url)
+        assert resp.status_code == 302
+        self.user.reload()
+        new_access_token = mock_response.attributes['orcidAccessToken']
+        assert self.user.external_identity_access_token == {
+            validated_creds['provider']: {
+                validated_creds['id']: {'access_token': new_access_token, 'refresh_token': None},
+            },
+        }
+
+    @mock.patch('framework.auth.cas.CasClient.service_validate')
+    def test_make_response_from_ticket_no_orcid_access_token_no_entry_created(self, mock_service_validate):
+        mock_response = make_external_response()
+        validated_creds = cas.validate_external_credential(mock_response.user)
+        self.user.external_identity = {
+            validated_creds['provider']: {
+                validated_creds['id']: 'VERIFIED'
+            }
+        }
+        self.user.save()
+        mock_service_validate.return_value = mock_response
+        ticket = fake.md5()
+        service_url = 'http://localhost:5000/'
+        resp = cas.make_response_from_ticket(ticket, service_url)
+        assert resp.status_code == 302
+        self.user.reload()
+        assert self.user.external_identity_access_token == {}
 
     @mock.patch('framework.auth.cas.CasClient.service_validate')
     def test_make_response_from_ticket_handles_unicode(self, mock_service_validate):

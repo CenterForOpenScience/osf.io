@@ -8,6 +8,9 @@ from urllib.parse import quote
 from lxml import etree
 import requests
 
+import logging
+
+from framework import sentry
 from framework.auth import authenticate, external_first_login_authenticate
 from framework.auth.core import get_user, generate_verification_key
 from framework.auth.utils import print_cas_log, LogLevel
@@ -269,6 +272,24 @@ def get_profile_url():
 
     return get_client().get_profile_url()
 
+def save_orcid_access_and_refresh_token_to_user(user, orcid_id: str, access_token: str, refresh_token: str):
+    sentry.log_message(
+        f'CAS response ORCID attributes: user=[{user._id}], orcidId=[{orcid_id}], '
+        f'orcidAccessToken=[{"present" if access_token else "missing"}]',
+        level=logging.INFO,
+    )
+    if orcid_id and access_token:
+        provider = settings.EXTERNAL_IDENTITY_PROFILE['OrcidProfile']
+        user.external_identity_access_token.setdefault(provider, {})[orcid_id] = {
+            'access_token': access_token,
+            'refresh_token': refresh_token,
+        }
+        sentry.log_message(
+            f'ORCID token stored on external_identity_access_token: user=[{user._id}], '
+            f'provider_id=[{orcid_id}], access_token=[{access_token if access_token else "missing"}]'
+            f'refresh_token=[{refresh_token if refresh_token else "missing"}]',
+            level=logging.INFO,
+        )
 
 def make_response_from_ticket(ticket, service_url):
     """
@@ -291,6 +312,8 @@ def make_response_from_ticket(ticket, service_url):
         user_updates = {}  # serialize updates to user to be applied async
         # user found and authenticated
         if user and action == 'authenticate':
+            access_token = cas_resp.attributes.get('orcidAccessToken', None)
+            refresh_token = cas_resp.attributes.get('orcidRefreshToken', None)
             print_cas_log(
                 f'CAS response - authenticating user: user=[{user._id}], '
                 f'external=[{external_credential}], action=[{action}]',
@@ -306,6 +329,13 @@ def make_response_from_ticket(ticket, service_url):
                 user_updates['accepted_terms_of_service'] = timezone.now()
                 print_cas_log(f'CAS TOS consent checked: {user.guids.first()._id}, {user.username}', LogLevel.INFO)
             # if we successfully authenticate and a verification key is present, invalidate it
+            if external_credential and access_token and refresh_token:
+                save_orcid_access_and_refresh_token_to_user(
+                    user,
+                    external_credential['id'],
+                    access_token,
+                    refresh_token,
+                )
             if user.verification_key:
                 user_updates['verification_key'] = None
 
@@ -314,6 +344,12 @@ def make_response_from_ticket(ticket, service_url):
             # current CAS session created by external login must be cleared first before authentication
             if external_credential:
                 user.verification_key = generate_verification_key()
+                save_orcid_access_and_refresh_token_to_user(
+                    user,
+                    external_credential['id'],
+                    access_token,
+                    refresh_token,
+                )
                 user.save()
                 print_cas_log(
                     f'CAS response - redirect existing external IdP login to verification key login: user=[{user._id}]',
