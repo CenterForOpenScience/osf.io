@@ -238,7 +238,33 @@ def send_email_over_smtp(to_email, notification_type, context, email_context):
             email.attach(attachment_name, attachment_content)
     email.send()
 
-def send_email_with_send_grid(to_addr, notification_type, context, email_context=None):
+def _build_sendgrid_personalizations(to_list, email_context=None, is_multiple=False):
+    """Build SendGrid personalizations for one shared message or one message per recipient.
+
+    When ``is_multiple`` is True, each address gets its own personalization (separate
+    delivery; recipients do not see each other). CC/BCC are omitted in that mode to
+    avoid duplicating copies per recipient.
+    """
+    email_context = email_context or {}
+
+    if is_multiple:
+        # If we attached the same CC/BCC to every personalization in is_multiple mode,
+        # a batch of N recipients would produce N separate emails each including that CC
+        # so the CC address would get N copies of the same message
+        # TODO: decide if it's safe to add the CC/BCC to each personalization
+        return [{'to': [{'email': addr}]} for addr in to_list]
+
+    personalization = {'to': [{'email': addr} for addr in to_list]}
+    cc_addr = email_context.get('cc_addr')
+    if cc_addr:
+        personalization['cc'] = [{'email': a} for a in ([cc_addr] if isinstance(cc_addr, str) else cc_addr)]
+    bcc_addr = email_context.get('bcc_addr')
+    if bcc_addr:
+        personalization['bcc'] = [{'email': a} for a in ([bcc_addr] if isinstance(bcc_addr, str) else bcc_addr)]
+    return [personalization]
+
+
+def send_email_with_send_grid(to_addr, notification_type, context, email_context=None, *, is_multiple=False):
 
     email_context = email_context or {}
     to_list = [to_addr] if isinstance(to_addr, str) else [a for a in (to_addr or []) if a]
@@ -256,18 +282,12 @@ def send_email_with_send_grid(to_addr, notification_type, context, email_context
     subject_tpl = getattr(notification_type, 'subject', None)
     subject = subject_tpl.format(**context) if subject_tpl else f'Notification: {getattr(notification_type, "name", "OSF")}'
 
-    personalization = {'to': [{'email': addr} for addr in to_list]}
-    cc_addr = email_context.get('cc_addr')
-    if cc_addr:
-        personalization['cc'] = [{'email': a} for a in ([cc_addr] if isinstance(cc_addr, str) else cc_addr)]
-    bcc_addr = email_context.get('bcc_addr')
-    if bcc_addr:
-        personalization['bcc'] = [{'email': a} for a in ([bcc_addr] if isinstance(bcc_addr, str) else bcc_addr)]
-
     payload = {
         'from': {'email': from_email},
         'subject': subject,
-        'personalizations': [personalization],
+        'personalizations': _build_sendgrid_personalizations(
+            to_list, email_context=email_context, is_multiple=is_multiple
+        ),
         'content': [
             {'type': 'text/html', 'value': html},
         ],

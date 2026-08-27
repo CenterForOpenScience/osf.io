@@ -6,6 +6,7 @@ from unittest import mock
 from django.utils import timezone
 from django.db.models import Q
 
+from osf.email import _build_sendgrid_personalizations
 from osf.email.notification_campaign import (
     create_campaign_recipients,
     get_campaign_recipient_batches,
@@ -573,9 +574,32 @@ class TestSendCampaignBatch:
         recipient.refresh_from_db()
         running_campaign.refresh_from_db()
         mock_sendgrid.assert_called_once()
+        assert mock_sendgrid.call_args.kwargs.get('is_multiple') is True
         assert recipient.status == NotificationCampaignRecipientStatus.SENT
         assert running_campaign.sent_count == 1
         assert running_campaign.failed_count == 0
+
+    def test_build_sendgrid_personalizations_shared_to_list(self):
+        personalizations = _build_sendgrid_personalizations(
+            ['a@example.com', 'b@example.com'],
+            is_multiple=False,
+        )
+        assert personalizations == [{
+            'to': [
+                {'email': 'a@example.com'},
+                {'email': 'b@example.com'},
+            ],
+        }]
+
+    def test_build_sendgrid_personalizations_one_per_recipient(self):
+        personalizations = _build_sendgrid_personalizations(
+            ['a@example.com', 'b@example.com'],
+            is_multiple=True,
+        )
+        assert personalizations == [
+            {'to': [{'email': 'a@example.com'}]},
+            {'to': [{'email': 'b@example.com'}]},
+        ]
 
     @mock.patch(
         'osf.email.notification_campaign.send_email_with_send_grid',
