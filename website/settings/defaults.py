@@ -393,6 +393,11 @@ SPAM_SUBMIT_TASK_HARD_TIME_LIMIT = 90
 
 CAS_SERVER_URL = 'http://localhost:8080'
 CAS_ORCID_REVOKE_SHARED_SECRET = os.environ.get('CAS_ORCID_REVOKE_SHARED_SECRET', 'changeme')
+ORCID_OAUTH_CLIENT_ID = os.environ.get('ORCID_OAUTH_CLIENT_ID', 'changeme')
+ORCID_OAUTH_CLIENT_SECRET = os.environ.get('ORCID_OAUTH_CLIENT_SECRET', 'changeme')
+ORCID_OAUTH_REVOKE_URL = os.environ.get('ORCID_OAUTH_REVOKE_URL', 'https://orcid.org/oauth/revoke')
+ORCID_OAUTH_REVOKE_REQUEST_TIMEOUT = os.environ.get('ORCID_OAUTH_REVOKE_REQUEST_TIMEOUT', 15)
+
 MFR_SERVER_URL = 'http://localhost:7778'
 
 ###### ARCHIVER ###########

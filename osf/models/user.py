@@ -320,7 +320,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
     #   },
     #   ...
     # }
-    external_identity_access_token = DateTimeAwareJSONField(default=dict, blank=True)
+    external_identity_tokens = DateTimeAwareJSONField(default=dict, blank=True)
     # Format: {
     #   <external_id_provider>: {
     #       <external_id>: {
@@ -2154,17 +2154,15 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         '''
         This method ensures a user's info is deleted during a GDPR delete
         '''
-        orcid_tokens = {
-            orcid_id: token_entry.get('access_token')
-            for orcid_id, token_entry in self.external_identity_access_token.get('ORCID', {}).items()
-            if token_entry.get('access_token')
-        }
+        # A user has at most one ORCID identity, so there is at most one token entry to revoke.
+        orcid_id, token_entry = next(iter(self.external_identity_access_token.get('ORCID', {}).items()), (None, None))
+        orcid_token = token_entry.get('access_token') if token_entry else None
         sentry.log_message(
             f'[GDPR delete; _clear_identifying_information] user={self._id}: '
-            f'found {len(orcid_tokens)} ORCID token(s) to revoke',
+            f'{"found" if orcid_token else "no"} ORCID token to revoke',
             level=logging.INFO,
         )
-        for orcid_id, orcid_token in orcid_tokens.items():
+        if orcid_id and orcid_token:
             sentry.log_message(
                 f'[GDPR delete] user={self._id}: revoking ORCID id={orcid_id} '
                 f'via {website_settings.ORCID_OAUTH_REVOKE_URL}',
@@ -2178,24 +2176,27 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
                         'client_secret': website_settings.ORCID_OAUTH_CLIENT_SECRET,
                         'token': orcid_token,
                     },
-                    timeout=5,
+                    timeout=website_settings.ORCID_OAUTH_REVOKE_REQUEST_TIMEOUT,
                 )
                 sentry.log_message(
                     f'[GDPR delete] user={self._id}: ORCID id={orcid_id} revoked, '
-                    f'status_code={response.status_code}, response_text={response.text}, response={response}',
+                    f'status_code={response.status_code}, response_text={response.text}',
                     level=logging.INFO,
                 )
                 response.raise_for_status()
             except requests.exceptions.RequestException as e:
                 sentry.log_message(
-                    f'[GDPR delete] Failed to revoke ORCID token for user {self._id}: {e}',
+                    f'[GDPR delete] Failed to revoke ORCID token for user {self._id} ORCID id {orcid_id}: {e}',
                     level=logging.ERROR,
                 )
                 sentry.log_exception(e)
                 raise UserStateError(
-                    'Unable to revoke this user\'s ORCID access right now because ORCID\'s '
-                    'service could not be reached. Please try the GDPR delete again later.'
+                    'Fail to revoke ORCID\'s service could not be reached'
                 )
+        else:
+            raise UserStateError(
+                'User do not have connected ORCID'
+            )
 
         # This doesn't remove identifying info, but ensures other users can't see the deleted user's profile etc.
         self.deactivate_account()

@@ -31,7 +31,6 @@ class CasHTTPError(CasError):
 
     def __init__(self, code, message, headers, content):
         super().__init__(code, message)
-        self.message = message
         self.headers = headers
         self.content = content
 
@@ -101,9 +100,6 @@ class CasClient:
         url = furl(self.BASE_URL).add(path=['oauth2', 'revoke'])
         return url.url
 
-    def get_orcid_token_revocation_url(self):
-        url = furl(self.BASE_URL).add(path=['osf', 'orcid', 'revoke'])
-        return url.url
 
     def service_validate(self, ticket, service_url):
         """
@@ -206,17 +202,6 @@ class CasClient:
         else:
             self._handle_error(resp)
 
-    def revoke_orcid_token(self, orcid_id):
-        url = self.get_orcid_token_revocation_url()
-        headers = {
-            'Authorization': f'Bearer {settings.CAS_ORCID_REVOKE_SHARED_SECRET}',
-        }
-        resp = requests.post(url, json={'orcid_id': orcid_id}, headers=headers)
-        if resp.status_code == 204:
-            return True
-        else:
-            self._handle_error(resp)
-
 
 def parse_auth_header(header):
     """
@@ -276,7 +261,7 @@ def save_orcid_access_and_refresh_token_to_user(user, orcid_id: str, access_toke
     sentry.log_message(
         f'CAS response ORCID attributes: user=[{user._id}], orcidId=[{orcid_id}], '
         f'orcidAccessToken=[{"present" if access_token else "missing"}]',
-        level=logging.INFO,
+        level=logging.WARNING,
     )
     if orcid_id and access_token:
         provider = settings.EXTERNAL_IDENTITY_PROFILE['OrcidProfile']
@@ -286,8 +271,8 @@ def save_orcid_access_and_refresh_token_to_user(user, orcid_id: str, access_toke
         }
         sentry.log_message(
             f'ORCID token stored on external_identity_access_token: user=[{user._id}], '
-            f'provider_id=[{orcid_id}], access_token=[{access_token if access_token else "missing"}]'
-            f'refresh_token=[{refresh_token if refresh_token else "missing"}]',
+            f'provider_id=[{orcid_id}], access_token=[{"present" if access_token else "missing"}]'
+            f'refresh_token=[{"present" if refresh_token else "missing"}]',
             level=logging.INFO,
         )
 
@@ -312,8 +297,6 @@ def make_response_from_ticket(ticket, service_url):
         user_updates = {}  # serialize updates to user to be applied async
         # user found and authenticated
         if user and action == 'authenticate':
-            access_token = cas_resp.attributes.get('orcidAccessToken', None)
-            refresh_token = cas_resp.attributes.get('orcidRefreshToken', None)
             print_cas_log(
                 f'CAS response - authenticating user: user=[{user._id}], '
                 f'external=[{external_credential}], action=[{action}]',
@@ -329,13 +312,6 @@ def make_response_from_ticket(ticket, service_url):
                 user_updates['accepted_terms_of_service'] = timezone.now()
                 print_cas_log(f'CAS TOS consent checked: {user.guids.first()._id}, {user.username}', LogLevel.INFO)
             # if we successfully authenticate and a verification key is present, invalidate it
-            if external_credential and access_token and refresh_token:
-                save_orcid_access_and_refresh_token_to_user(
-                    user,
-                    external_credential['id'],
-                    access_token,
-                    refresh_token,
-                )
             if user.verification_key:
                 user_updates['verification_key'] = None
 
@@ -343,6 +319,8 @@ def make_response_from_ticket(ticket, service_url):
             # this extra step will guarantee that 2FA are enforced
             # current CAS session created by external login must be cleared first before authentication
             if external_credential:
+                access_token = cas_resp.attributes.get('orcidAccessToken', None)
+                refresh_token = cas_resp.attributes.get('orcidRefreshToken', None)
                 user.verification_key = generate_verification_key()
                 save_orcid_access_and_refresh_token_to_user(
                     user,
