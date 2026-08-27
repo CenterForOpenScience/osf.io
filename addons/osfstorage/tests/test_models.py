@@ -276,9 +276,9 @@ class TestOsfstorageFileNode(StorageTestCase):
         restored_file = trashed_file.restore()
 
         assert restored_file.deleted is None
+        assert restored_file.deleted_on is None
         # None because we do not set deleted_by when delete the child
         assert restored_file.deleted_by is None
-        assert restored_file.deleted_on is not None
 
         assert models.TrashedFileNode.objects.exists() is False
 
