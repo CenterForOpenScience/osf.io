@@ -56,6 +56,7 @@ class TestUserMerging(OsfTestCase):
         self.project_with_unreg_contrib.save()
 
     @pytest.mark.enable_enqueue_task
+    @pytest.mark.enable_search
     @mock.patch('website.mailchimp_utils.get_mailchimp_api')
     def test_merge(self, mock_get_mailchimp_api):
         def is_mrm_field(value):
@@ -273,16 +274,16 @@ class TestUserMerging(OsfTestCase):
         assert linking_user.external_identity == {}
         assert no_provider_user.external_identity == {'ORCID': {'1234-1234-1234-1234': 'VERIFIED', '4321-4321-4321-4321': 'VERIFIED'}}
 
-    def test_merge_transfers_external_identity_access_token(self):
+    def test_merge_transfers_external_identity_tokens(self):
         surviving_user = UserFactory(
             external_identity={'ORCID': {'1234-1234-1234-1234': 'VERIFIED'}},
         )
         merged_user = UserFactory(
             external_identity={'ORCID': {'1234-1234-1234-1234': 'VERIFIED', '4321-4321-4321-4321': 'VERIFIED'}},
-            external_identity_access_token={
+            external_identity_tokens={
                 'ORCID': {
-                    '1234-1234-1234-1234': {'access_token': 'token-1234', 'refresh_token': None},
-                    '4321-4321-4321-4321': {'access_token': 'token-4321', 'refresh_token': None},
+                    '1234-1234-1234-1234': {'access_token': 'token-1234'},
+                    '4321-4321-4321-4321': {'access_token': 'token-4321'},
                 },
             },
         )
@@ -290,13 +291,13 @@ class TestUserMerging(OsfTestCase):
         with override_flag(ENABLE_GV, active=True):
             surviving_user.merge_user(merged_user)
 
-        assert surviving_user.external_identity_access_token == {
+        assert surviving_user.external_identity_tokens == {
             'ORCID': {
-                '1234-1234-1234-1234': {'access_token': 'token-1234', 'refresh_token': None},
-                '4321-4321-4321-4321': {'access_token': 'token-4321', 'refresh_token': None},
+                '1234-1234-1234-1234': {'access_token': 'token-1234'},
+                '4321-4321-4321-4321': {'access_token': 'token-4321'},
             },
         }
-        assert merged_user.external_identity_access_token == {}
+        assert merged_user.external_identity_tokens == {}
 
     def test_merge_unregistered(self):
         # test only those behaviors that are not tested with unconfirmed users

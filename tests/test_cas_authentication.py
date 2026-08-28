@@ -258,6 +258,7 @@ class TestCASTicketAuthentication(OsfTestCase):
         assert mock_get_user_from_cas_resp.call_count == 1
 
     @pytest.mark.enable_enqueue_task
+    @pytest.mark.enable_search
     @mock.patch('framework.auth.cas.get_user_from_cas_resp')
     @mock.patch('framework.auth.cas.CasClient.service_validate')
     def test_make_response_from_ticket_success_with_tos_consent(self, mock_service_validate, mock_get_user_from_cas_resp):
@@ -287,6 +288,7 @@ class TestCASTicketAuthentication(OsfTestCase):
         assert mock_get_user_from_cas_resp.call_count == 0
 
     @pytest.mark.enable_enqueue_task
+    @pytest.mark.enable_search
     @mock.patch('framework.auth.cas.CasClient.service_validate')
     def test_make_response_from_ticket_invalidates_verification_key(self, mock_service_validate):
         self.user.verification_key = fake.md5()
@@ -401,9 +403,9 @@ class TestCASExternalLogin(OsfTestCase):
         resp = cas.make_response_from_ticket(ticket, service_url)
         assert resp.status_code == 302
         self.user.reload()
-        assert self.user.external_identity_access_token == {
+        assert self.user.external_identity_tokens == {
             validated_creds['provider']: {
-                validated_creds['id']: {'access_token': access_token, 'refresh_token': None},
+                validated_creds['id']: {'access_token': access_token},
             },
         }
 
@@ -416,9 +418,9 @@ class TestCASExternalLogin(OsfTestCase):
                 validated_creds['id']: 'VERIFIED'
             }
         }
-        self.user.external_identity_access_token = {
+        self.user.external_identity_tokens = {
             validated_creds['provider']: {
-                validated_creds['id']: {'access_token': 'old-token', 'refresh_token': None},
+                validated_creds['id']: {'access_token': 'old-token'},
             },
         }
         self.user.save()
@@ -429,9 +431,9 @@ class TestCASExternalLogin(OsfTestCase):
         assert resp.status_code == 302
         self.user.reload()
         new_access_token = mock_response.attributes['orcidAccessToken']
-        assert self.user.external_identity_access_token == {
+        assert self.user.external_identity_tokens == {
             validated_creds['provider']: {
-                validated_creds['id']: {'access_token': new_access_token, 'refresh_token': None},
+                validated_creds['id']: {'access_token': new_access_token},
             },
         }
 
@@ -451,7 +453,7 @@ class TestCASExternalLogin(OsfTestCase):
         resp = cas.make_response_from_ticket(ticket, service_url)
         assert resp.status_code == 302
         self.user.reload()
-        assert self.user.external_identity_access_token == {}
+        assert self.user.external_identity_tokens == {}
 
     @mock.patch('framework.auth.cas.CasClient.service_validate')
     def test_make_response_from_ticket_handles_unicode(self, mock_service_validate):

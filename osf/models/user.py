@@ -325,7 +325,6 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
     #   <external_id_provider>: {
     #       <external_id>: {
     #           "access_token" : <token>,
-    #           "refresh_token" : <token>,
     #       }
     #       ...
     #   },
@@ -830,11 +829,11 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
                             service_id: status
                         }
 
-                token_entry = user.external_identity_access_token.get(service, {}).get(service_id)
+                token_entry = user.external_identity_tokens.get(service, {}).get(service_id)
                 if token_entry:
-                    self.external_identity_access_token.setdefault(service, {})[service_id] = token_entry
+                    self.external_identity_tokens.setdefault(service, {})[service_id] = token_entry
         user.external_identity = {}
-        user.external_identity_access_token = {}
+        user.external_identity_tokens = {}
 
         # FOREIGN FIELDS
         self.external_accounts.add(*user.external_accounts.values_list('pk', flat=True))
@@ -2155,14 +2154,18 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         This method ensures a user's info is deleted during a GDPR delete
         '''
         # A user has at most one ORCID identity, so there is at most one token entry to revoke.
-        orcid_id, token_entry = next(iter(self.external_identity_access_token.get('ORCID', {}).items()), (None, None))
+        orcid_id, token_entry = next(iter(self.external_identity_tokens.get('ORCID', {}).items()), (None, None))
         orcid_token = token_entry.get('access_token') if token_entry else None
         sentry.log_message(
             f'[GDPR delete; _clear_identifying_information] user={self._id}: '
             f'{"found" if orcid_token else "no"} ORCID token to revoke',
             level=logging.INFO,
         )
-        if orcid_id and orcid_token:
+        if not (orcid_id and orcid_token):
+            raise UserStateError(
+                'User do not have connected ORCID'
+            )
+        else:
             sentry.log_message(
                 f'[GDPR delete] user={self._id}: revoking ORCID id={orcid_id} '
                 f'via {website_settings.ORCID_OAUTH_REVOKE_URL}',
@@ -2193,10 +2196,6 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
                 raise UserStateError(
                     'Fail to revoke ORCID\'s service could not be reached'
                 )
-        else:
-            raise UserStateError(
-                'User do not have connected ORCID'
-            )
 
         # This doesn't remove identifying info, but ensures other users can't see the deleted user's profile etc.
         self.deactivate_account()
@@ -2235,7 +2234,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
             self.external_accounts.clear()
 
         self.external_identity = {}
-        self.external_identity_access_token = {}
+        self.external_identity_tokens = {}
         self.deleted = timezone.now()
 
     @property
