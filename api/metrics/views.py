@@ -34,6 +34,7 @@ from api.metrics.serializers import (
     UserVisitsSerializer,
     UniqueUserVisitsSerializer,
     CountedAuthUsageSerializer,
+    SSRMetricsSerializer,
 )
 from api.metrics.utils import (
     parse_date_range,
@@ -409,6 +410,19 @@ class CountedAuthUsageView(JSONAPIBaseView):
             pageview_info=serializer.validated_data.get('pageview_info'),
         ):
             return HttpResponse(status=204)
+        serializer.save()
+        return HttpResponse(status=201)
+
+
+class SSRMetricsView(JSONAPIBaseView):
+    view_category = 'metrics'
+    view_name = 'ssr-metrics'
+
+    serializer_class = SSRMetricsSerializer
+
+    def post(self, request, *args, **kwargs):
+        serializer = self.serializer_class(data=request.data)
+        serializer.is_valid(raise_exception=True)
         serializer.save()
         return HttpResponse(status=201)
 
