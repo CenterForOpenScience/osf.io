@@ -61,6 +61,7 @@ from osf.metrics.daily_reports import (
 from osf.metrics.monthly_reports import (
     BaseMonthlyReport,
     MonthlySpamSummaryReport,
+    MonthlyAngularSSRMetricsReport,
 )
 from osf.metrics.openapi import get_metrics_openapi_json_dict
 from osf.models import AbstractNode
@@ -79,6 +80,7 @@ VIEWABLE_REPORTS = {
     'storage_addon_usage': DailyStorageAddonUsageReport,
     'user_summary': DailyUserSummaryReport,
     'spam_summary': MonthlySpamSummaryReport,
+    'angular_ssr_metrics': MonthlyAngularSSRMetricsReport,
     'new_user_domains': DailyNewUserDomainReport,
 }
 

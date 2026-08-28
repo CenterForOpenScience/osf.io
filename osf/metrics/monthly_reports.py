@@ -17,6 +17,7 @@ __all__ = (
     'MonthlyPrivateSpamMetricsReport',
     'MonthlyPublicItemUsageReport',
     'MonthlySpamSummaryReport',
+    'MonthlyAngularSSRMetricsReport',
 )
 
 
@@ -195,6 +196,30 @@ class MonthlyPrivateSpamMetricsReport(BaseMonthlyReport):
     preprint_oopspam_hammed: int
     preprint_akismet_flagged: int
     preprint_akismet_hammed: int
+
+    class Meta:
+        timeseries_index_timedepth = YEARLY
+
+
+class SSRContentTypeCount(esdsl.InnerDoc):
+    content_type: str | None
+    count: int = esdsl.mapped_field(esdsl.Long())
+
+
+class SSRUserAgentCount(esdsl.InnerDoc):
+    user_agent: str | None
+    count: int = esdsl.mapped_field(esdsl.Long())
+
+
+class MonthlyAngularSSRMetricsReport(BaseMonthlyReport):
+    bot_render_count: int
+    bot_render_success_count: int
+    bot_render_success_rate: float = esdsl.mapped_field(esdsl.Float())
+    avg_ttfb_ms: float = esdsl.mapped_field(esdsl.Float())
+    complete_render_count: int
+    complete_render_rate: float = esdsl.mapped_field(esdsl.Float())
+    content_type_breakdown: list[SSRContentTypeCount]
+    user_agent_breakdown: list[SSRUserAgentCount]
 
     class Meta:
         timeseries_index_timedepth = YEARLY
