@@ -228,11 +228,3 @@ class MigrateFunderNamesToRor(ManagementCommandPermissionView):
         for _line in _out_io.getvalue().split('\n'):
             messages.info(request, _line)
         return redirect(reverse('management:commands'))
-
-
-class FixRestoredTrashedFiles(ManagementCommandPermissionView):
-
-    def post(self, request):
-        call_command('fix_restored_trashed_files')
-        messages.success(request, 'Restored trashed files have been successfully fixed.')
-        return redirect(reverse('management:commands'))

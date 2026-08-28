@@ -24,6 +24,4 @@ urlpatterns = [
             name='remove_orcid_from_user_social'),
     re_path(r'^migrate_funder_names_to_ror', views.MigrateFunderNamesToRor.as_view(),
             name='migrate_funder_names_to_ror'),
-    re_path(r'^fix_restored_trashed_files', views.FixRestoredTrashedFiles.as_view(),
-            name='fix_restored_trashed_files'),
 ]

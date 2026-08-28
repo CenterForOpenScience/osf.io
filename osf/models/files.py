@@ -671,9 +671,6 @@ class TrashedFileNode(BaseFileNode):
 
         type_cls = File if self.is_file else Folder
 
-        self.deleted = None
-        self.deleted_on = None
-
         self.recast(self._resolve_class(type_cls)._typedmodels_type)
 
         if save:
@@ -760,10 +757,10 @@ class TrashedFolder(TrashedFileNode):
         :param deleted_on:
         :return:
         """
-        deleted_on = deleted_on or self.deleted_on
         tf = super().restore(recursive=True, parent=None, save=True, deleted_on=None)
 
         if not self.is_file and recursive:
+            deleted_on = deleted_on or self.deleted_on
             for child in TrashedFileNode.objects.filter(parent=self.id, deleted_on=deleted_on):
                 child.restore(recursive=True, save=save, deleted_on=deleted_on)
         return tf
