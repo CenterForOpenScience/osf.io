@@ -18,6 +18,6 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name='notificationcampaignrecipient',
             name='status',
-            field=models.CharField(choices=[('pending', 'Pending'), ('queued', 'Queued'), ('sent', 'Sent'), ('failed', 'Failed'), ('skipped', 'Skipped'), ('postponed', 'Postponed')], db_index=True, default='pending', max_length=20),
+            field=models.CharField(choices=[('queued', 'Queued'), ('pending', 'Pending'), ('sent', 'Sent'), ('failed', 'Failed'), ('skipped', 'Skipped'), ('postponed', 'Postponed')], db_index=True, default='pending', max_length=20),
         ),
     ]
