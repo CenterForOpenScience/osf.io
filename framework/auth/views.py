@@ -1178,6 +1178,7 @@ def clear_external_first_login_anonymous_session_data(session):
     session.pop('auth_user_external_first_login')
     session.pop('auth_user_external_id_provider')
     session.pop('auth_user_external_id')
+    session.pop('auth_user_external_id_access_token')
     session.pop('auth_user_fullname')
     session.pop('service_url')
     session['post_request_removal'] = True
