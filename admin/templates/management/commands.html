@@ -226,19 +226,6 @@
                     </nav>
                 </form>
             </section>
-            <section>
-                <h4><u>Fix restored files</u></h4>
-                <p>
-                    Use this management command to fix restored files that were previously trashed.
-                </p>
-                <form method="post"
-                      action="{% url 'management:fix_restored_trashed_files'%}">
-                    {% csrf_token %}
-                    <nav>
-                        <input class="btn btn-success" type="submit" value="Run" />
-                    </nav>
-                </form>
-            </section>
         </div>
     </section>
 {% endblock %}
