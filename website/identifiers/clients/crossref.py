@@ -167,6 +167,8 @@ class CrossRefClient(AbstractIdentifierClient):
             posted_content.append(relations_program)
 
         minted_doi = preprint.get_identifier_value('doi')
+        if minted_doi and minted_doi == self.build_unversioned_doi(preprint):
+            minted_doi = None
         doi = doi_override or minted_doi or self.build_doi(preprint)
         resource_url = resource_override if resource_override is not None else settings.DOMAIN + preprint._id
         doi_data = [
