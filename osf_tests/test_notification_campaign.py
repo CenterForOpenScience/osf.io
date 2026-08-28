@@ -843,7 +843,7 @@ class TestSendCampaignBatch:
         )
 
         recipient.refresh_from_db()
-        assert recipient.status == NotificationCampaignRecipientStatus.FAILED
+        assert recipient.status == NotificationCampaignRecipientStatus.QUEUED
 
     def test_send_campaign_batch_skips_cancelled_campaign(self, running_campaign):
         user = UserFactory()
@@ -862,7 +862,7 @@ class TestSendCampaignBatch:
         )
 
         recipient.refresh_from_db()
-        assert recipient.status == NotificationCampaignRecipientStatus.FAILED
+        assert recipient.status == NotificationCampaignRecipientStatus.QUEUED
 
     @mock.patch.object(NotificationType, 'emit')
     def test_send_campaign_batch_uses_fallback_email_when_username_has_no_at(self, mock_emit, running_campaign):

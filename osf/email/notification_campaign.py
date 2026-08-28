@@ -255,20 +255,19 @@ def assign_batch_id_to_recipients(campaign_id, batch_size, restart_failed=False,
     elif priority_group == 'spam':
         filters &= Q(user__spam_status=SpamStatus.SPAM)
 
-    recipient_ids = list(NotificationCampaignRecipient.objects.filter(
+    recipient_ids = NotificationCampaignRecipient.objects.filter(
         filters
-    ).values_list('id', flat=True)[:batch_size])
+    ).values_list('id', flat=True)[:batch_size]
 
-    if not recipient_ids:
+    updated = NotificationCampaignRecipient.objects.filter(id__in=recipient_ids).update(batch_id=batch_id, status=NotificationCampaignRecipientStatus.QUEUED)
+
+    if updated == 0:
         return None
-
-    NotificationCampaignRecipient.objects.filter(id__in=recipient_ids).update(batch_id=batch_id, status=NotificationCampaignRecipientStatus.QUEUED)
 
     return batch_id
 
 @celery_app.task(bind=True, name='email.dispatch_campaign')
 def dispatch_campaign(self, campaign_id, run_id, restart_failed=False, restart_stuck=False):
-    max_queued_batches = settings.MAX_QUEUED_CAMPAIGN_BATCHES
     campaign = NotificationCampaign.objects.get(id=campaign_id)
     if campaign.run_id != run_id:
         return
@@ -292,7 +291,7 @@ def dispatch_campaign(self, campaign_id, run_id, restart_failed=False, restart_s
     batch_size = execution.get('batch_size', settings.DEFAULT_CAMPAIGN_BATCH_SIZE)
     activity_threshold = execution.get('activity_threshold', settings.DEFAULT_CAMPAIGN_ACTIVITY_THRESHOLD)
     notification_type_name = campaign.notification_type.name
-    to_queue = max_queued_batches - queued_batches
+    to_queue = settings.MAX_QUEUED_CAMPAIGN_BATCHES - queued_batches
 
     priority_groups = (
         'high_activity',
@@ -362,17 +361,9 @@ def send_campaign_batch(
     recipients_qs = NotificationCampaignRecipient.objects.filter(batch_id=batch_id).select_related('user')
 
     if campaign.run_id != run_id:
-        recipients_qs.update(
-            status=NotificationCampaignRecipientStatus.FAILED,
-            error_message='Run ID mismatch: stale batch',
-        )
         return
     if campaign.status == NotificationCampaignStatus.CANCELLED:
         logger.warning(f"Campaign {campaign_id} was cancelled")
-        recipients_qs.update(
-            status=NotificationCampaignRecipientStatus.FAILED,
-            error_message='Campaign cancelled',
-        )
         return
     batch_started_at = timezone.now()
     if hasattr(NotificationTypeEnum, notification_type_name):
@@ -410,7 +401,6 @@ def send_campaign_batch(
                 logger.warning(message)
                 sentry.log_message(message)
 
-    recipients_qs = NotificationCampaignRecipient.objects.filter(batch_id=batch_id).select_related('user')
     recipient_records = []
     recipients_qs_annotated = recipients_qs.annotate(
         recipient_address=Case(
