@@ -463,6 +463,7 @@ class CeleryConfig:
         'osf.management.commands.daily_reporters_go',
         'osf.management.commands.monthly_reporters_go',
         'osf.management.commands.ingest_cedar_metadata_templates',
+        'osf.management.commands.resync_preprint_dois_v1',
         'osf.metrics.reporters',
         'scripts.remove_after_use.merge_notification_subscription_provider_ct',
     }
@@ -601,6 +602,7 @@ class CeleryConfig:
         'osf.management.commands.archive_registrations_on_IA',
         'osf.management.commands.approve_pending_schema_responses',
         'osf.management.commands.sync_doi_metadata',
+        'osf.management.commands.resync_preprint_dois_v1',
         'api.providers.tasks',
         'api.users.tasks',
         'osf.management.commands.daily_reporters_go',
