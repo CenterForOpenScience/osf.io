@@ -569,6 +569,13 @@ notification_types:
     template: 'website/templates/new_public_project.html.mako'
     tests: ['osf_tests/test_node.py']
 
+  - name: node_confirmed_spam
+    subject: 'Your OSF project has been flagged as spam'
+    __docs__: ...
+    object_content_type_model_name: abstractnode
+    template: 'website/templates/spam_resource_confirmed.html.mako'
+    tests: ['tests/test_spam_mixin.py']
+
 
   #### PREPRINT
   - name: preprint_contributor_added_preprint_node_from_osf
@@ -598,6 +605,13 @@ notification_types:
     object_content_type_model_name: preprint
     template: 'website/templates/contributor_added_preprints.html.mako'
     tests: ['api_tests/preprints/views/test_preprint_contributors_list.py']
+
+  - name: preprint_confirmed_spam
+    subject: 'Your OSF preprint has been flagged as spam'
+    __docs__: ...
+    object_content_type_model_name: preprint
+    template: 'website/templates/spam_resource_confirmed.html.mako'
+    tests: ['tests/test_spam_mixin.py']
 
   #### SUPPORT
   #### Collection Submissions

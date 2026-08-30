@@ -1475,18 +1475,30 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
 
         return True
 
-    def confirm_spam(self, domains=None, save=True, train_spam_services=False, skip_resources_spam=False):
+    def confirm_spam(self, domains=None, save=True, train_spam_services=False, skip_resources_spam=False, notify=True):
+        was_disabled = self.is_disabled
         self.deactivate_account()
         super().confirm_spam(domains=domains, save=save, train_spam_services=train_spam_services)
+
+        if notify and not was_disabled:
+            NotificationTypeEnum.USER_SPAM_BANNED.instance.emit(
+                user=self,
+                event_context={
+                    'user_fullname': self.fullname,
+                    'osf_support_email': website_settings.OSF_SUPPORT_EMAIL,
+                }
+            )
 
         if skip_resources_spam:
             return
 
-        # Don't train on resources merely associated with spam user
+        # Don't train on resources merely associated with spam user, and don't
+        # send a separate per-item notification for content caught up in the
+        # account-level ban cascade -- the single account-ban email covers it.
         for node in self.nodes.filter(is_public=True, is_deleted=False):
-            node.confirm_spam(domains=domains, train_spam_services=train_spam_services)
+            node.confirm_spam(domains=domains, train_spam_services=train_spam_services, notify=False)
         for preprint in self.preprints.filter(is_public=True, deleted__isnull=True):
-            preprint.confirm_spam(domains=domains, train_spam_services=train_spam_services)
+            preprint.confirm_spam(domains=domains, train_spam_services=train_spam_services, notify=False)
 
     def confirm_ham(self, save=False, train_spam_services=False):
         self.reactivate_account()

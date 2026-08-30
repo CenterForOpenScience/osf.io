@@ -262,7 +262,8 @@ class TestDisableSpamUser(AdminTestCase):
 
     def test_disable_spam_user(self):
         settings.ENABLE_EMAIL_SUBSCRIPTIONS = False
-        self.view().post(self.request)
+        with assert_notification(type=NotificationTypeEnum.USER_SPAM_BANNED, user=self.user):
+            self.view().post(self.request)
         self.user.reload()
         self.public_node.reload()
         assert self.user.is_disabled
