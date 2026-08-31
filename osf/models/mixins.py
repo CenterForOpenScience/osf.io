@@ -30,6 +30,7 @@ from osf.exceptions import (
 )
 from osf.models.notification_type import NotificationTypeEnum
 from osf.models.notification_subscription import NotificationSubscription
+from .base import VersionedGuidMixin
 from .node_relation import NodeRelation
 from .nodelog import NodeLog
 from .subject import Subject
@@ -1907,6 +1908,16 @@ class ContributorMixin(models.Model):
                 auth=auth,
                 save=False,
             )
+
+        if isinstance(self, VersionedGuidMixin) and not self._id:
+            # Legacy/un-migrated versioned resources can't be saved -- Preprint.save() requires a
+            # valid _id. The contributor row is already removed above; there's
+            # nothing else to persist, so skip save + downstream signals.
+            logger.info(
+                f'Skipping save on {self.__class__.__name__} (pk={self.pk}) in remove_contributor: '
+                'resource has no valid _id.'
+            )
+            return True
 
         self.save()
         # send signal to remove this user from project subscriptions

@@ -27,6 +27,7 @@ from website.views import find_bookmark_collection
 from osf.models import (
     AbstractNode,
     OSFUser,
+    Preprint,
     Tag,
     Contributor,
     NotableDomain,
@@ -2136,6 +2137,14 @@ class TestUserGdprDelete:
         return project
 
     @pytest.fixture()
+    def preprint_with_two_admins(self, user):
+        second_admin_contrib = UserFactory()
+        preprint = PreprintFactory(creator=user)
+        preprint.add_contributor(second_admin_contrib, permissions=permissions.ADMIN)
+        preprint.save()
+        return preprint
+
+    @pytest.fixture()
     def project_with_two_admins_and_addon_credentials(self, user):
         second_admin_contrib = UserFactory()
         project = ProjectFactory(creator=user)
@@ -2337,6 +2346,16 @@ class TestUserGdprDelete:
             user.gdpr_delete()
 
         assert user.nodes.all().count() == 0
+
+    def test_can_gdpr_delete_shared_preprint_without_guid(self, user, preprint_with_two_admins):
+        preprint_with_two_admins.versioned_guids.all().delete()
+        preprint = Preprint.objects.get(pk=preprint_with_two_admins.pk)
+        assert preprint._id is None
+
+        with override_flag(ENABLE_GV, active=True):
+            user.gdpr_delete()
+
+        assert user.preprints.all().count() == 0
 
     def test_cant_gdpr_delete_with_addon_credentials(self, user, project_with_two_admins_and_addon_credentials):
 
