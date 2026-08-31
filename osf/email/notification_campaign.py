@@ -395,7 +395,12 @@ def send_campaign_batch(
         # NOTE: sendgrid bulk send feature has not been fully implemented and tested
         recipient_emails = list(valid_emails_qs.values_list('recipient_address', flat=True))
         try:
-            send_email_with_send_grid(to_addr=recipient_emails, notification_type=notification_type, context=context)
+            send_email_with_send_grid(
+                to_addr=recipient_emails,
+                notification_type=notification_type,
+                context=context,
+                is_multiple=True,
+            )
             valid_emails_qs.update(status=NotificationCampaignRecipientStatus.SENT, error_message=None)
         except Exception as exc:
             message = (f'[Notification Campaign #{campaign_id}] ERROR: '
