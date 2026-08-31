@@ -198,3 +198,24 @@ def test_file_shared_purged(project, create_test_file):
     assert freed == sum(list(test_file_1.versions.values_list('size', flat=True)))
     assert test_file_1.purged is not None
     assert version_0.purged is not None
+
+
+def test_get_version_resolves_duplicate_identifiers(project, create_test_file):
+    # Simulates the historical create_version race that could attach two
+    # FileVersions with the same identifier to one file. get_version() must
+    # resolve this instead of raising MultipleObjectsReturned.
+    test_file = create_test_file(target=project)
+    first_version = test_file.versions.first()
+
+    duplicate_version = FileVersion(
+        creator=first_version.creator,
+        identifier=first_version.identifier,
+        location=dict(first_version.location, object='deadbeef'),
+    )
+    duplicate_version.save()
+    test_file.add_version(duplicate_version)
+
+    assert test_file.versions.filter(identifier=first_version.identifier).count() == 2
+
+    resolved = test_file.get_version(first_version.identifier, required=True)
+    assert resolved == first_version

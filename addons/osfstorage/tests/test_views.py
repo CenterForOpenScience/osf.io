@@ -876,7 +876,7 @@ class TestGetRevisions(StorageTestCase):
         super().setUp()
         self.path = 'tie/your/mother/down.mp3'
         self.record = recursively_create_file(self.node_settings, self.path)
-        attach_versions(self.record, [factories.FileVersionFactory() for __ in range(15)])
+        attach_versions(self.record, [factories.FileVersionFactory(identifier=str(i + 1)) for i in range(15)])
         self.record.save()
 
     def get_revisions(self, fid=None, guid=None, **kwargs):
@@ -898,9 +898,9 @@ class TestGetRevisions(StorageTestCase):
                 self.project,
                 self.record,
                 version,
-                index=self.record.versions.count() - 1 - idx
+                index=int(version.identifier) - 1
             )
-            for idx, version in enumerate(self.record.versions.all())
+            for version in self.record.versions.all()
         ]
 
         assert len(res.json['revisions']) == 15
@@ -911,6 +911,21 @@ class TestGetRevisions(StorageTestCase):
     def test_get_revisions_path_not_found(self):
         res = self.get_revisions(fid='missing')
         assert res.status_code == 404
+
+    def test_get_revisions_after_non_last_version_deleted(self):
+        first_version = self.record.versions.get(identifier='1')
+        through = first_version.get_basefilenode_version(self.record)
+        through.delete()
+
+        res = self.get_revisions()
+        remaining = self.record.versions.all()
+
+        assert len(res.json['revisions']) == 14
+        assert res.json['revisions'][0]['index'] == 15
+        assert res.json['revisions'][-1]['index'] == 2
+        assert [rev['index'] for rev in res.json['revisions']] == [
+            int(version.identifier) for version in remaining
+        ]
 
 
 @pytest.mark.django_db

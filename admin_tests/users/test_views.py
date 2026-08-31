@@ -19,6 +19,7 @@ from osf_tests.factories import (
     UserFactory,
     AuthUserFactory,
     ProjectFactory,
+    PreprintFactory,
     UnconfirmedUserFactory
 )
 from admin_tests.utilities import setup_view, setup_log_view, setup_form_view
@@ -156,6 +157,20 @@ class TestGDPRDeleteUser(AdminTestCase):
         self.view().post(self.request)
         self.user.reload()
         assert self.user.deleted
+
+    def test_gdpr_delete_blocked_by_resource_without_alternate_admin_does_not_report_success(self):
+        patch_messages(self.request)
+
+        preprint = PreprintFactory(creator=self.user)
+        other_contrib = UserFactory()
+        preprint.add_contributor(other_contrib, auth=Auth(self.user), save=True)
+
+        count = AdminLogEntry.objects.count()
+        self.view().post(self.request)
+
+        self.user.reload()
+        assert not self.user.deleted
+        assert AdminLogEntry.objects.count() == count
 
 
 class TestDisableUser(AdminTestCase):
