@@ -196,9 +196,8 @@ DEFAULT_CAMPAIGN_BATCH_SIZE = 1000
 DEFAULT_CAMPAIGN_WINDOW_TIME = 28800  # 8 hours
 DEFAULT_CAMPAIGN_MAX_RETRIES = 3
 # The following are rough estimates so we can log to sentry those batches and sendgrid quests which run longer than normal
-ESTIMATED_EIGHT_HOUR_WINDOW_USERS = 600000  # 600K Users (where the actual number is around 500K)
-ESTIMATED_BATCH_RUN_TIME_THRESHOLD = DEFAULT_CAMPAIGN_WINDOW_TIME / (ESTIMATED_EIGHT_HOUR_WINDOW_USERS / DEFAULT_CAMPAIGN_BATCH_SIZE)  # By default, 48 seconds per batch of 1000 requests
-ESTIMATED_PER_REQUEST_THRESHOLD = ESTIMATED_BATCH_RUN_TIME_THRESHOLD / DEFAULT_CAMPAIGN_BATCH_SIZE  # By default, 0.048 seconds (21 requests / second)
+ESTIMATED_PER_REQUEST_THRESHOLD = 0.3  # On production, sending one email via SendGrid takes 0.20 ~ 0.50 seconds, set default alert threshold at 0.30s
+ESTIMATED_BATCH_RUN_TIME_THRESHOLD = 300  # On production, with batch size 1000, we expect each batch to finish within 300s (5m)
 
 # Configuration for "We miss you at OSF" email (`NotificationTypeEnum.USER_NO_LOGIN`)
 # Note: 1) we can gradually increase `MAX_DAILY_NO_LOGIN_EMAILS` to 10000, 100000, etc. or set it to `None` after we
