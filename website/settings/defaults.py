@@ -477,6 +477,7 @@ class CeleryConfig:
         'osf.management.commands.daily_reporters_go',
         'osf.management.commands.monthly_reporters_go',
         'osf.management.commands.ingest_cedar_metadata_templates',
+        'osf.management.commands.resync_preprint_dois_v1',
         'osf.metrics.reporters',
         'scripts.remove_after_use.merge_notification_subscription_provider_ct',
     }
@@ -621,6 +622,7 @@ class CeleryConfig:
         'osf.management.commands.archive_registrations_on_IA',
         'osf.management.commands.approve_pending_schema_responses',
         'osf.management.commands.sync_doi_metadata',
+        'osf.management.commands.resync_preprint_dois_v1',
         'api.providers.tasks',
         'api.users.tasks',
         'osf.utils.download_telemetry',
@@ -758,6 +760,11 @@ class CeleryConfig:
         'delete_expired_djelme_indexes': {
             'task': 'osf.metrics.events.delete_expired_djelme_indexes',
             'schedule': crontab(minute=30, hour=7, day_of_month=5),     # Fifth day of month 2:30 a.m. EST
+        },
+        'resync_preprint_dois_v1': {
+            'task': 'osf.management.commands.resync_preprint_dois_v1',
+            'schedule': crontab(minute='*/5'),  # Every 5 minutes
+            'kwargs': {'dry_run': False},
         },
     }
 
