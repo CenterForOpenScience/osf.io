@@ -21,12 +21,15 @@ from website.archiver import listeners
 from website.archiver.tasks import *   # noqa: F403
 
 from osf.models import Guid, RegistrationSchema, Registration, NotificationTypeEnum
+from osf.models.schema_response import SchemaResponse
+from osf.utils.workflows import ApprovalStates
 from osf.models.archive import ArchiveTarget, ArchiveJob
 from osf.models.base import generate_object_id
 from osf.utils.migrations import map_schema_to_schemablocks
 from addons.base.models import BaseStorageAddon
 from api.base.utils import waterbutler_api_url_for
 
+from osf.management.commands import force_archive as force_archive_command
 from osf_tests import factories
 from tests.base import OsfTestCase, fake
 from tests import utils as test_utils
@@ -350,6 +353,19 @@ def generate_metadata(file_trees, selected_files, node_index):
         for i in range(5)
     }
     return dict(**uploader_types, **other_questions)
+
+def generate_file_input_metadata(node, files):
+    return {
+        ('q_' + file_info['name']): {
+            'extra': [{
+                'sha256': file_info['extra']['hashes']['sha256'],
+                'viewUrl': f"/project/{node._id}/files/osfstorage{file_info['path']}",
+                'selectedFileName': file_info['name'],
+                'nodeId': node._id
+            }]
+        }
+        for file_info in files
+    }
 
 class ArchiverTestCase(OsfTestCase):
 
@@ -773,16 +789,7 @@ class TestArchiverTasks(ArchiverTestCase):
         file_tree['children'] = [fake_file, fake_file2]
 
         node = factories.NodeFactory(creator=self.user)
-        data = {
-            ('q_' + fake_file['name']): {
-                'extra': [{
-                    'sha256': fake_file['extra']['hashes']['sha256'],
-                    'viewUrl': f"/project/{node._id}/files/osfstorage{fake_file['path']}",
-                    'selectedFileName': fake_file['name'],
-                    'nodeId': node._id
-                }]
-            }
-        }
+        data = generate_file_input_metadata(node, [fake_file])
         schema = generate_schema_from_data(data)
         draft_registration = factories.DraftRegistrationFactory(registration_schema=schema, branched_from=node, registration_metadata=data)
         with test_utils.mock_archive(node, schema=schema, draft_registration=draft_registration, autocomplete=True, autoapprove=True) as registration:
@@ -801,16 +808,7 @@ class TestArchiverTasks(ArchiverTestCase):
         file_tree['children'] = [fake_file2]
 
         node = factories.NodeFactory(creator=self.user)
-        data = {
-            ('q_' + fake_file['name']): {
-                'extra': [{
-                    'sha256': fake_file['extra']['hashes']['sha256'],
-                    'viewUrl': f"/project/{node._id}/files/osfstorage{fake_file['path']}",
-                    'selectedFileName': fake_file['name'],
-                    'nodeId': node._id
-                }]
-            }
-        }
+        data = generate_file_input_metadata(node, [fake_file])
         schema = generate_schema_from_data(data)
         draft = factories.DraftRegistrationFactory(branched_from=node, registration_schema=schema, registration_metadata=data)
         with test_utils.mock_archive(node, schema=schema, draft_registration=draft, autocomplete=True, autoapprove=True) as registration:
@@ -830,16 +828,7 @@ class TestArchiverTasks(ArchiverTestCase):
         node = factories.NodeFactory(creator=self.user)
         child = factories.NodeFactory(creator=self.user, parent=node)
 
-        data = {
-            ('q_' + selected['name']): {
-                'extra': [{
-                    'sha256': selected['extra']['hashes']['sha256'],
-                    'viewUrl': f"/project/{child._id}/files/osfstorage{selected['path']}",
-                    'selectedFileName': selected['name'],
-                    'nodeId': child._id
-                }]
-            }
-        }
+        data = generate_file_input_metadata(child, [selected])
         schema = generate_schema_from_data(data)
         draft_registration = factories.DraftRegistrationFactory(registration_schema=schema, branched_from=node, registration_metadata=data)
         with test_utils.mock_archive(node, schema=schema, draft_registration=draft_registration, autocomplete=True, autoapprove=True) as registration:
@@ -851,6 +840,103 @@ class TestArchiverTasks(ArchiverTestCase):
                 child_reg = registration.nodes[0]
                 for key, question in registration.registered_meta[schema._id].items():
                     assert child_reg._id in question['extra'][0]['viewUrl']
+
+    @pytest.mark.usefixtures('mock_gravy_valet_get_verified_links')
+    def test_archive_success_is_idempotent(self):
+        file_tree = file_tree_factory(0, 0, 0)
+        fake_file = file_factory()
+        file_tree['children'] = [fake_file]
+        node = factories.NodeFactory(creator=self.user)
+        data = generate_file_input_metadata(node, [fake_file])
+        schema = generate_schema_from_data(data)
+        draft = factories.DraftRegistrationFactory(branched_from=node, registration_schema=schema, registration_metadata=data)
+        with test_utils.mock_archive(node, schema=schema, draft_registration=draft, autocomplete=True, autoapprove=True) as registration:
+            with mock.patch.object(BaseStorageAddon, '_get_file_tree', mock.Mock(return_value=file_tree)):
+                job = factories.ArchiveJobFactory(initiator=registration.creator)
+                with capture_notifications():
+                    archive_success(registration._id, job._id)
+                registration.reload()
+                first_pass = [q['extra'][0]['viewUrl'] for q in registration.registered_meta[schema._id].values()]
+                archive_success(registration._id, job._id)
+        registration.refresh_from_db()
+        for key, question in registration.registered_meta[schema._id].items():
+            assert node._id not in question['extra'][0]['viewUrl']
+            assert registration._id in question['extra'][0]['viewUrl']
+        assert [q['extra'][0]['viewUrl'] for q in registration.registered_meta[schema._id].values()] == first_pass
+
+    @pytest.mark.usefixtures('mock_gravy_valet_get_verified_links')
+    def test_archive_success_retry_sees_files_archived_since_the_first_attempt(self):
+        copied_file = file_factory()
+        slow_file = file_factory()
+        partial_tree = file_tree_factory(0, 0, 0)
+        partial_tree['children'] = [copied_file]
+        complete_tree = file_tree_factory(0, 0, 0)
+        complete_tree['children'] = [copied_file, slow_file]
+        node = factories.NodeFactory(creator=self.user)
+        data = generate_file_input_metadata(node, (copied_file, slow_file))
+        schema = generate_schema_from_data(data)
+        draft = factories.DraftRegistrationFactory(branched_from=node, registration_schema=schema, registration_metadata=data)
+        with test_utils.mock_archive(node, schema=schema, draft_registration=draft, autocomplete=True, autoapprove=True) as registration:
+            job = factories.ArchiveJobFactory(initiator=registration.creator)
+            with mock.patch.object(BaseStorageAddon, '_get_file_tree', mock.Mock(return_value=partial_tree)):
+                with pytest.raises(ArchivedFileNotFound):
+                    archive_success(registration._id, job._id)
+            with mock.patch.object(BaseStorageAddon, '_get_file_tree', mock.Mock(return_value=complete_tree)):
+                with capture_notifications():
+                    archive_success(registration._id, job._id)
+        registration.refresh_from_db()
+        assert len(registration.registered_meta[schema._id]) == 2
+        for key, question in registration.registered_meta[schema._id].items():
+            assert node._id not in question['extra'][0]['viewUrl']
+            assert registration._id in question['extra'][0]['viewUrl']
+
+    @pytest.mark.usefixtures('mock_gravy_valet_get_verified_links')
+    def test_force_archive_rewrites_file_references(self):
+        file_tree = file_tree_factory(0, 0, 0)
+        fake_file = file_factory()
+        file_tree['children'] = [fake_file]
+        node = factories.NodeFactory(creator=self.user)
+        data = generate_file_input_metadata(node, [fake_file])
+        schema = generate_schema_from_data(data)
+        draft = factories.DraftRegistrationFactory(branched_from=node, registration_schema=schema, registration_metadata=data)
+        with test_utils.mock_archive(node, schema=schema, draft_registration=draft, autocomplete=True, autoapprove=True) as registration:
+            # The file links still point at the project here. Force-archive has to
+            # rewrite them itself, because archive_success never runs for it.
+            for key, question in registration.registered_meta[schema._id].items():
+                assert node._id in question['extra'][0]['viewUrl']
+            with mock.patch.object(BaseStorageAddon, '_get_file_tree', mock.Mock(return_value=file_tree)):
+                assert force_archive_command.verify(registration)
+                force_archive_command.archive(registration)
+        registration.refresh_from_db()
+        for key, question in registration.registered_meta[schema._id].items():
+            assert node._id not in question['extra'][0]['viewUrl']
+            assert registration._id in question['extra'][0]['viewUrl']
+
+    @pytest.mark.usefixtures('mock_gravy_valet_get_verified_links')
+    def test_force_archive_skips_migration_for_registration_with_revision(self):
+        file_tree = file_tree_factory(0, 0, 0)
+        fake_file = file_factory()
+        file_tree['children'] = [fake_file]
+        node = factories.NodeFactory(creator=self.user)
+        data = generate_file_input_metadata(node, [fake_file])
+        schema = generate_schema_from_data(data)
+        draft = factories.DraftRegistrationFactory(branched_from=node, registration_schema=schema, registration_metadata=data)
+        with test_utils.mock_archive(node, schema=schema, draft_registration=draft, autocomplete=True, autoapprove=True) as registration:
+            # An accepted and then updated registration has more than one schema response,
+            # which the rewrite cannot target. It must not fail the force-archive.
+            initial = registration.schema_responses.get()
+            initial.approvals_state_machine.set_state(ApprovalStates.APPROVED)
+            initial.save()
+            with capture_notifications():
+                SchemaResponse.create_from_previous_response(
+                    initiator=registration.creator, previous_response=initial
+                )
+            with mock.patch.object(BaseStorageAddon, '_get_file_tree', mock.Mock(return_value=file_tree)):
+                force_archive_command.archive(registration)
+        # The rewrite was skipped, so the references are left exactly as they were
+        registration.refresh_from_db()
+        for key, question in registration.registered_meta[schema._id].items():
+            assert node._id in question['extra'][0]['viewUrl']
 
 
 class TestArchiverUtils(ArchiverTestCase):
