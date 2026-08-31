@@ -106,18 +106,28 @@
                 <form method="post"
                       action="{% url 'management:monthly_reporters_go'%}">
                     {% csrf_token %}
-                    <label for="monthly_report_date">
-                        Report month:
+                    <label for="monthly_reporter_key">
+                        Monthly reporter:
                     </label>
-                    <input type="date" name="monthly_report_date" id="monthly_report_date"/>
-                    (day ignored; default: last month)
-                    <br>
-                    <select name="reporter_key">
+                    <select name="reporter_key" id="monthly_reporter_key">
                         <option value="" selected>(all monthly reporters)</option>
                         {% for reporter_key in monthly_reporter_keys %}
                             <option value="{{ reporter_key }}">{{ reporter_key }}</option>
                         {% endfor %}
                     </select>
+                    <br>
+                    <label for="monthly_report_start_date">
+                        (optional) Start month:
+                    </label>
+                    <input type="date" name="monthly_report_start_date" id="monthly_report_start_date"/>
+                    (day ignored; default last month)
+                    <br>
+                    <label for="monthly_report_end_date">
+                        (optional) End month, inclusive:
+                    </label>
+                    <input type="date" name="monthly_report_end_date" id="monthly_report_end_date"/>
+                    (day ignored; default start month)
+                    <br>
                     <nav>
                         <input class="btn btn-success" type="submit" value="Run" />
                     </nav>
@@ -195,23 +205,6 @@
                 <form method="post"
                       action="{% url 'management:remove_orcid_from_user_social'%}">
                     {% csrf_token %}
-                    <nav>
-                        <input class="btn btn-success" type="submit" value="Run" />
-                    </nav>
-                </form>
-            </section>
-            <section>
-                <h4><u>migrate osf-metrics (fix) 6to8</u></h4>
-                <p>
-                    view progress of the osf-metrics migration (fixup) from elastic6 to elastic8 (or start it)
-                </p>
-                <form method="post"
-                      action="{% url 'management:migrate_osfmetrics_fix_6to8'%}"
-                      style="display: flex; flex-direction: column;">
-                    {% csrf_token %}
-                    <label><input type="checkbox" name="no_counts"> no counts</label>
-                    <label><input type="checkbox" name="delete_es8_usage_reports"> delete es8 usage reports (caution)</label>
-                    <label><input type="checkbox" name="start"> start tasks (caution)</label>
                     <nav>
                         <input class="btn btn-success" type="submit" value="Run" />
                     </nav>

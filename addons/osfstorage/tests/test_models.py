@@ -3,6 +3,8 @@ import unittest
 
 import pytest
 import pytz
+from django.db import connection, transaction
+from django.test.utils import CaptureQueriesContext
 from django.utils import timezone
 from importlib import import_module
 from django.conf import settings as django_conf_settings
@@ -195,9 +197,43 @@ class TestOsfstorageFileNode(StorageTestCase):
         assert child.get_download_count(1) == 1
         assert child.get_download_count(2) == 1
 
-    @unittest.skip
-    def test_create_version(self):
-        pass
+    def test_create_version_locks_file_row(self):
+
+        file = self.node_settings.get_root().append_file('locked.txt')
+
+        with transaction.atomic(), CaptureQueriesContext(connection) as ctx:
+            file.create_version(
+                self.user,
+                {
+                    'service': 'cloud',
+                    settings.WATERBUTLER_RESOURCE: 'osf',
+                    'object': '06d80e',
+                }, {
+                    'size': 1234,
+                    'contentType': 'text/plain'
+                })
+
+        for_update_sql = connection.ops.for_update_sql()
+        assert any(for_update_sql in query['sql'] for query in ctx.captured_queries)
+
+    @mock.patch('osf.utils.requests.settings.SELECT_FOR_UPDATE_ENABLED', False)
+    def test_create_version_does_not_lock_file_row_when_disabled(self):
+        file = self.node_settings.get_root().append_file('unlocked.txt')
+
+        with transaction.atomic(), CaptureQueriesContext(connection) as ctx:
+            file.create_version(
+                self.user,
+                {
+                    'service': 'cloud',
+                    settings.WATERBUTLER_RESOURCE: 'osf',
+                    'object': '06d80e',
+                }, {
+                    'size': 1234,
+                    'contentType': 'text/plain'
+                })
+
+        for_update_sql = connection.ops.for_update_sql()
+        assert not any(for_update_sql in query['sql'] for query in ctx.captured_queries)
 
     def test_delete_folder(self):
         parent = self.node_settings.get_root().append_folder('Test')
