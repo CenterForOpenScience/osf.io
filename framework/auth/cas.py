@@ -8,9 +8,7 @@ from urllib.parse import quote
 from lxml import etree
 import requests
 
-import logging
 
-from framework import sentry
 from framework.auth import authenticate, external_first_login_authenticate
 from framework.auth.core import get_user, generate_verification_key
 from framework.auth.utils import print_cas_log, LogLevel
@@ -257,12 +255,6 @@ def get_profile_url():
     return get_client().get_profile_url()
 
 def save_orcid_access_token_to_user(user, orcid_id: str, access_token: str, refresh_token: str = None):
-    sentry.log_message(
-        f'CAS response ORCID attributes: user=[{user._id}], orcidId=[{orcid_id}], '
-        f'orcidAccessToken=[{"present" if access_token else "missing"}], '
-        f'orcidRefreshToken=[{"present" if refresh_token else "missing"}]',
-        level=logging.WARNING,
-    )
     if orcid_id and access_token:
         provider = settings.EXTERNAL_IDENTITY_PROFILE['OrcidProfile']
         token_entry = {'access_token': access_token}
@@ -270,12 +262,7 @@ def save_orcid_access_token_to_user(user, orcid_id: str, access_token: str, refr
         if refresh_token:
             token_entry['refresh_token'] = refresh_token
         user.external_identity_tokens.setdefault(provider, {})[orcid_id] = token_entry
-        sentry.log_message(
-            f'ORCID token stored on external_identity_tokens: user=[{user._id}], '
-            f'provider_id=[{orcid_id}], access_token=[{"present" if access_token else "missing"}], '
-            f'refresh_token=[{"present" if refresh_token else "missing"}]',
-            level=logging.INFO,
-        )
+    return
 
 def make_response_from_ticket(ticket, service_url):
     """
