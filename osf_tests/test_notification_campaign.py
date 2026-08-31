@@ -135,6 +135,61 @@ class TestBuildQuery:
         assert plain_user.id in user_ids
         assert other_email.id not in user_ids
 
+    def test_isnull_false_excludes_unconfirmed_accounts(self):
+        confirmed = UserFactory()
+        unconfirmed = UserFactory(date_confirmed=None, is_registered=False)
+
+        query = build_query({
+            'operator': 'AND',
+            'children': [
+                {
+                    'field': 'id',
+                    'lookup': 'in',
+                    'value': f'{confirmed.id},{unconfirmed.id}',
+                },
+                {
+                    'field': 'date_confirmed',
+                    'lookup': 'isnull',
+                    'value': False,
+                },
+            ],
+        })
+        user_ids = set(OSFUser.objects.filter(query).values_list('id', flat=True))
+
+        assert user_ids == {confirmed.id}
+
+    def test_build_campaign_filter_query_ands_predefined_and_manual(self):
+        from osf.email.notification_campaign import build_campaign_filter_query
+
+        confirmed = UserFactory()
+        unconfirmed = UserFactory(date_confirmed=None, is_registered=False)
+        inactive = UserFactory()
+        inactive.is_disabled = True
+        inactive.save()
+        assert inactive.is_active is False
+
+        query = build_campaign_filter_query({
+            'predefined': 'active',
+            'manual': {
+                'operator': 'AND',
+                'children': [
+                    {
+                        'field': 'id',
+                        'lookup': 'in',
+                        'value': f'{confirmed.id},{unconfirmed.id},{inactive.id}',
+                    },
+                    {
+                        'field': 'date_confirmed',
+                        'lookup': 'isnull',
+                        'value': False,
+                    },
+                ],
+            },
+        })
+        user_ids = set(OSFUser.objects.filter(query).values_list('id', flat=True))
+
+        assert user_ids == {confirmed.id}
+
 
 class TestCreateCampaignRecipients:
 
@@ -441,6 +496,44 @@ class TestNotificationCampaignStart:
         assert campaign.recipient_count == 3
         mock_chain.assert_called_once()
         mock_chain.return_value.apply_async.assert_called_once()
+
+    @mock.patch('osf.email.notification_campaign.chain')
+    def test_start_excludes_unconfirmed_accounts_when_enabled(self, mock_chain, campaign):
+        confirmed = UserFactory()
+        unconfirmed = UserFactory(date_confirmed=None, is_registered=False)
+        _set_activity(confirmed, 100)
+        _set_activity(unconfirmed, 100)
+
+        campaign.metadata['filters'] = {
+            'predefined': 'active',
+            'manual': {
+                'operator': 'AND',
+                'children': [
+                    {
+                        'field': 'id',
+                        'lookup': 'in',
+                        'value': f'{confirmed.id},{unconfirmed.id}',
+                    },
+                    {
+                        'field': 'date_confirmed',
+                        'lookup': 'isnull',
+                        'value': False,
+                    },
+                ],
+            },
+        }
+        campaign.run_id = uuid.uuid4()
+        campaign.save()
+        mock_chain.return_value.apply_async = mock.Mock()
+
+        start_notification_campaign(campaign.id)
+
+        recipient_ids = set(
+            NotificationCampaignRecipient.objects.filter(campaign=campaign).values_list(
+                'user_id', flat=True
+            )
+        )
+        assert recipient_ids == {confirmed.id}
 
     @mock.patch('osf.email.notification_campaign.chain')
     def test_start_restart_failed_does_not_recreate_recipients(self, mock_chain, campaign):

@@ -19,7 +19,7 @@ from mako.lexer import Lexer
 from mako.parsetree import ControlLine
 from string import Formatter
 from osf.email import _render_email_html
-from osf.email.notification_campaign import FILTER_PRESETS, counter_subquery, build_query
+from osf.email.notification_campaign import FILTER_PRESETS, counter_subquery, build_campaign_filter_query
 from website import settings
 from urllib.parse import urlencode
 
@@ -642,10 +642,7 @@ class NotificationCampaignsRecipientsPreview(PermissionRequiredMixin, ListView):
         raw_filters = self.request.GET.get('filters', None)
         if raw_filters:
             json_filters = json.loads(raw_filters)
-            if predefined := json_filters.get('predefined'):
-                query = Q(**FILTER_PRESETS.get(predefined, {}))
-            else:
-                query = build_query(json_filters.get('manual'))
+            query = build_campaign_filter_query(json_filters)
 
         qs = OSFUser.objects.filter(query)
         qs = qs.annotate(
