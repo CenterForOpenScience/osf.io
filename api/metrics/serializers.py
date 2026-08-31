@@ -89,7 +89,7 @@ class CyclicReportSerializer(ser.BaseSerializer):
             del _report_attrs['timeseries_timeparts']
         for _extra_attr in ('report_date', 'report_yearmonth'):
             if (_extra_attr not in _report_attrs) and hasattr(instance, _extra_attr):
-                _report_attrs[_extra_attr] = getattr(instance, _extra_attr)
+                _report_attrs[_extra_attr] = str(getattr(instance, _extra_attr))
                 del _report_attrs['cycle_coverage']
         _report_name = self.context['report_name']
         return {

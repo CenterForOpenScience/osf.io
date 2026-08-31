@@ -56,7 +56,11 @@ from osf.models import (
     DownloadEvent,
 )
 from osf.utils import permissions
-from osf.utils.download_telemetry import never_breaks_downloads, record_download
+from osf.utils.download_telemetry import (
+    classify_download_channel,
+    never_breaks_downloads,
+    record_download,
+)
 from osf.external.gravy_valet import request_helpers
 from website.profile.utils import get_profile_image_url
 from website.project import decorators
@@ -205,6 +209,11 @@ def _record_file_download(target, file_node, query_params, auth, version=None):
     if _download_request_is_from_mfr(query_params):
         return
 
+    source_area = query_params.get('source', '')
+    # a browser navigating a download link never sends an Authorization header; an
+    # API/OAuth client does, so a bearer token is a reliable "this is programmatic" signal
+    is_api_token = 'bearer' in request.headers.get('Authorization', '').lower()
+
     record_download(
         download_type=DownloadEvent.FILE,
         resource_guid=getattr(target, '_id', '') or '',
@@ -213,7 +222,9 @@ def _record_file_download(target, file_node, query_params, auth, version=None):
         storage_provider=getattr(file_node, 'provider', '') or '',
         user_guid=getattr(getattr(auth, 'user', None), '_id', None),
         ip=request.remote_addr,
-        source_area=query_params.get('source', ''),
+        user_agent=request.headers.get('User-Agent', ''),
+        source_area=source_area,
+        download_channel=classify_download_channel(source_area, is_api_token=is_api_token),
         tz=query_params.get('tz', ''),
     )
 
@@ -236,6 +247,11 @@ def _record_zip_download(payload):
     # The provider root is the whole project; anything below it is one folder.
     is_whole_project = not materialized.strip('/')
 
+    source_area = action_meta.get('source', '')
+    # The WaterButler callback doesn't carry the original request's auth, so we can't tell
+    # an API zip from a crawler here — is_api_token stays False and those fold into OTHER.
+    # The source tag still tells frontend zips apart from the rest.
+
     record_download(
         download_type=DownloadEvent.PROJECT if is_whole_project else DownloadEvent.FOLDER_ZIP,
         resource_guid=metadata.get('nid') or '',
@@ -246,7 +262,9 @@ def _record_zip_download(payload):
         status_code=action_meta.get('status_code'),
         user_guid=(payload.get('auth') or {}).get('id'),
         ip=action_meta.get('ip'),
-        source_area=action_meta.get('source', ''),
+        user_agent=(payload.get('request_meta') or {}).get('user_agent', ''),
+        source_area=source_area,
+        download_channel=classify_download_channel(source_area),
         tz=action_meta.get('tz', ''),
     )
 
@@ -484,7 +502,7 @@ def _get_osfstorage_file_version_and_node(
     try:
         file_version = FileVersion.objects.select_related('region').get(
             basefilenode=file_node,
-            identifier=file_version_id or str(file_node.versions.count())
+            identifier=file_version_id or str(file_node.current_version_number)
         )
     except FileVersion.DoesNotExist:
         raise HTTPError(http_status.HTTP_400_BAD_REQUEST, 'Requested File Version unavailable')

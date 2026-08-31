@@ -127,18 +127,17 @@ def osfstorage_get_revisions(file_node, payload, target, **kwargs):
 
     counter_prefix = f'download:{file_node.target._id}:{file_node._id}:'
 
-    version_count = file_node.versions.count()
     counts = dict(PageCounter.objects.filter(resource=file_node.target.guids.first().id, file=file_node, action='download').values_list('_id', 'total'))
     qs = FileVersion.objects.filter(basefilenode__id=file_node.id).prefetch_related('creator__guids').order_by('-created')
 
-    for i, version in enumerate(qs):
-        version._download_count = counts.get(f'{counter_prefix}{version_count - i - 1}', 0)
+    for version in qs:
+        version._download_count = counts.get(f'{counter_prefix}{int(version.identifier) - 1}', 0)
 
     # Return revisions in descending order
     return {
         'revisions': [
-            utils.serialize_revision(target, file_node, version, index=version_count - idx - 1, anon=is_anon)
-            for idx, version in enumerate(qs)
+            utils.serialize_revision(target, file_node, version, index=int(version.identifier) - 1, anon=is_anon)
+            for version in qs
         ]
     }
 
@@ -261,7 +260,7 @@ def _osfstorage_full_metadata(file_node, user_id):
                         , 'kind', 'file'
                         , 'size', LATEST_VERSION.size
                         , 'downloads',  COALESCE(DOWNLOAD_COUNT, 0)
-                        , 'version', (SELECT COUNT(*) FROM osf_basefileversionsthrough WHERE osf_basefileversionsthrough.basefilenode_id = F.id)
+                        , 'version', COALESCE(LATEST_VERSION.identifier::int, 0)
                         , 'contentType', LATEST_VERSION.content_type
                         , 'modified', LATEST_VERSION.created
                         , 'created', EARLIEST_VERSION.created
@@ -284,7 +283,9 @@ def _osfstorage_full_metadata(file_node, user_id):
                 SELECT * FROM osf_fileversion
                 JOIN osf_basefileversionsthrough ON osf_fileversion.id = osf_basefileversionsthrough.fileversion_id
                 WHERE osf_basefileversionsthrough.basefilenode_id = F.id
-                ORDER BY created DESC
+                -- osf_fileversion.id as a tiebreak for versions created within the same instant,
+                -- matching FileVersion.Meta.ordering = ('-created', '-id')
+                ORDER BY created DESC, osf_fileversion.id DESC
                 LIMIT 1
             ) LATEST_VERSION ON TRUE
             LEFT JOIN LATERAL (

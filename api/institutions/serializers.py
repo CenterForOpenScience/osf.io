@@ -1,3 +1,5 @@
+from urllib.parse import urljoin
+
 from django.db.models import Count, F
 
 from rest_framework import serializers as ser
@@ -21,6 +23,7 @@ from api.base.serializers import (
 from api.base.serializers import YearmonthField
 from api.nodes.serializers import CompoundIDField
 from api.base.exceptions import RelationshipPostMakesNoChanges
+from website import settings
 
 
 class InstitutionSerializer(JSONAPISerializer):
@@ -258,6 +261,7 @@ class InstitutionUserMetricsSerializer(JSONAPISerializer):
     month_last_login = YearmonthField(read_only=True)
     month_last_active = YearmonthField(read_only=True)
     account_creation_date = YearmonthField(read_only=True)
+    link = ser.SerializerMethodField()
 
     public_projects = ser.IntegerField(read_only=True, source='public_project_count')
     private_projects = ser.IntegerField(read_only=True, source='private_project_count')
@@ -276,6 +280,9 @@ class InstitutionUserMetricsSerializer(JSONAPISerializer):
         related_view_kwargs={'institution_id': '<institution_id>'},
     )
     contacts = ser.SerializerMethodField()
+
+    def get_link(self, obj):
+        return urljoin(settings.DOMAIN, f'{obj.user_id}/')
 
     def get_contacts(self, obj):
         user = OSFUser.load(obj._d_['user_id'])
