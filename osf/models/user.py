@@ -21,7 +21,7 @@ from django.contrib.auth.hashers import check_password
 from django.contrib.auth.models import PermissionsMixin
 from django.core.exceptions import FieldDoesNotExist
 from django.dispatch import receiver
-from django.db import models
+from django.db import models, transaction
 from django.db.models import Count, Exists, OuterRef
 from django.db.models.signals import post_save
 from django.utils import timezone
@@ -2080,21 +2080,22 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         """
         Complies with GDPR guidelines by disabling the account and removing identifying information.
         """
-        self._validate_and_remove_resource_for_gdpr_delete(
-            self.nodes.all(),
-            hard_delete=False
-        )
-        self._validate_and_remove_resource_for_gdpr_delete(
-            self.preprints.all(),
-            hard_delete=False
-        )
-        self._validate_and_remove_resource_for_gdpr_delete(
-            self.draft_registrations.all(),
-            hard_delete=True
-        )
+        with transaction.atomic():
+            self._validate_and_remove_resource_for_gdpr_delete(
+                self.nodes.all(),
+                hard_delete=False
+            )
+            self._validate_and_remove_resource_for_gdpr_delete(
+                self.preprints.all(),
+                hard_delete=False
+            )
+            self._validate_and_remove_resource_for_gdpr_delete(
+                self.draft_registrations.all(),
+                hard_delete=True
+            )
 
-        # Finally delete the user's info.
-        self._clear_identifying_information()
+            # Finally delete the user's info.
+            self._clear_identifying_information()
 
     def _validate_and_remove_resource_for_gdpr_delete(self, resources, hard_delete):
         """
