@@ -256,20 +256,24 @@ def get_profile_url():
 
     return get_client().get_profile_url()
 
-def save_orcid_access_token_to_user(user, orcid_id: str, access_token: str):
+def save_orcid_access_token_to_user(user, orcid_id: str, access_token: str, refresh_token: str = None):
     sentry.log_message(
         f'CAS response ORCID attributes: user=[{user._id}], orcidId=[{orcid_id}], '
-        f'orcidAccessToken=[{"present" if access_token else "missing"}]',
+        f'orcidAccessToken=[{"present" if access_token else "missing"}], '
+        f'orcidRefreshToken=[{"present" if refresh_token else "missing"}]',
         level=logging.WARNING,
     )
     if orcid_id and access_token:
         provider = settings.EXTERNAL_IDENTITY_PROFILE['OrcidProfile']
-        user.external_identity_tokens.setdefault(provider, {})[orcid_id] = {
-            'access_token': access_token,
-        }
+        token_entry = {'access_token': access_token}
+        # Refresh token is optional: not all providers/users release one, depending on ORCID privacy settings.
+        if refresh_token:
+            token_entry['refresh_token'] = refresh_token
+        user.external_identity_tokens.setdefault(provider, {})[orcid_id] = token_entry
         sentry.log_message(
             f'ORCID token stored on external_identity_tokens: user=[{user._id}], '
-            f'provider_id=[{orcid_id}], access_token=[{"present" if access_token else "missing"}]',
+            f'provider_id=[{orcid_id}], access_token=[{"present" if access_token else "missing"}], '
+            f'refresh_token=[{"present" if refresh_token else "missing"}]',
             level=logging.INFO,
         )
 
@@ -317,11 +321,13 @@ def make_response_from_ticket(ticket, service_url):
             # current CAS session created by external login must be cleared first before authentication
             if external_credential:
                 access_token = cas_resp.attributes.get('orcidAccessToken', None)
+                refresh_token = cas_resp.attributes.get('orcidRefreshToken', None)
                 user.verification_key = generate_verification_key()
                 save_orcid_access_token_to_user(
                     user,
                     external_credential['id'],
                     access_token,
+                    refresh_token,
                 )
                 user.save()
                 print_cas_log(
@@ -351,6 +357,7 @@ def make_response_from_ticket(ticket, service_url):
                 'external_id_provider': external_credential['provider'],
                 'external_id': external_credential['id'],
                 'external_id_access_token': cas_resp.attributes.get('orcidAccessToken', None),
+                'external_id_refresh_token': cas_resp.attributes.get('orcidRefreshToken', None),
                 'fullname': fullname,
                 'service_url': service_furl.url,
             }

@@ -1050,6 +1050,8 @@ def external_login_email_post():
 
     external_id_provider = session.get('auth_user_external_id_provider', None)
     external_id = session.get('auth_user_external_id', None)
+    external_id_access_token = session.get('auth_user_external_id_access_token', None)
+    external_id_refresh_token = session.get('auth_user_external_id_refresh_token', None)
     fullname = session.get('auth_user_fullname', None) or form.name.data
     service_url = session.get('service_url', None)
 
@@ -1103,6 +1105,7 @@ def external_login_email_post():
                 user.accepted_terms_of_service = timezone.now()
             # 2. add unconfirmed email and send confirmation email
             user.add_unconfirmed_email(clean_email, external_identity=external_identity)
+            cas.save_orcid_access_token_to_user(user, external_id, external_id_access_token, external_id_refresh_token)
             user.save()
             send_confirm_email_async(
                 user,
@@ -1131,6 +1134,7 @@ def external_login_email_post():
                 campaign=None,
                 accepted_terms_of_service=accepted_terms_of_service
             )
+            cas.save_orcid_access_token_to_user(user, external_id, external_id_access_token, external_id_refresh_token)
             user.save()
             # 3. send confirmation email
             send_confirm_email_async(
