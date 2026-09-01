@@ -93,6 +93,7 @@ def generate_external_user_with_resp(service_url, user=True, release=True):
             'external_id_provider': validated_credentials['provider'],
             'external_id': validated_credentials['id'],
             'external_id_access_token': cas_resp.attributes.get('orcidAccessToken', None),
+            'external_id_refresh_token': cas_resp.attributes.get('orcidRefreshToken', None),
             'fullname': '',
             'service_url': service_url,
         }
