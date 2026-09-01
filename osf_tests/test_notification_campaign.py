@@ -355,32 +355,33 @@ class TestGetCampaignRecipientBatches:
         data = users_and_recipients
         user_ids = _recipient_user_ids(
             campaign.id,
-            activity_threshold=data['threshold'],
-            priority_group='high_activity',
+            min_activity=data['threshold'],
+            spam=False,
         )
+
         assert set(user_ids) == {data['high'].id, data['flagged'].id}
 
     def test_low_activity_non_spam_includes_zero(self, campaign, users_and_recipients):
         data = users_and_recipients
         user_ids = _recipient_user_ids(
             campaign.id,
-            activity_threshold=data['threshold'],
-            priority_group='low_activity',
+            max_activity=data['threshold'],
+            spam=False,
         )
         assert set(user_ids) == {data['low'].id, data['zero'].id}
 
     def test_spam_only(self, campaign, users_and_recipients):
         data = users_and_recipients
-        user_ids = _recipient_user_ids(campaign.id, priority_group='spam')
+        user_ids = _recipient_user_ids(campaign.id, spam=True)
         assert user_ids == [data['spam'].id]
 
     def test_phases_cover_all_pending_recipients(self, campaign, users_and_recipients):
         data = users_and_recipients
         threshold = data['threshold']
         all_ids = (
-            set(_recipient_user_ids(campaign.id, activity_threshold=threshold, priority_group='high_activity'))
-            | set(_recipient_user_ids(campaign.id, activity_threshold=threshold, priority_group='low_activity'))
-            | set(_recipient_user_ids(campaign.id, priority_group='spam'))
+            set(_recipient_user_ids(campaign.id, min_activity=threshold, spam=False))
+            | set(_recipient_user_ids(campaign.id, max_activity=threshold, spam=False))
+            | set(_recipient_user_ids(campaign.id, spam=True))
         )
         expected = {data['high'].id, data['low'].id, data['zero'].id, data['flagged'].id, data['spam'].id}
         assert all_ids == expected
@@ -412,10 +413,10 @@ class TestGetCampaignRecipientBatches:
         failed.status = NotificationCampaignRecipientStatus.FAILED
         failed.save(update_fields=['status'])
 
-        pending_ids = _recipient_user_ids(campaign.id, activity_threshold=data['threshold'])
+        pending_ids = _recipient_user_ids(campaign.id, min_activity=data['threshold'], spam=False)
         assert data['high'].id not in pending_ids
 
-        failed_ids = _recipient_user_ids(campaign.id, restart_failed=True)
+        failed_ids = _recipient_user_ids(campaign.id, restart_failed=True, min_activity=data['threshold'], spam=False)
         assert failed_ids == [data['high'].id]
 
     def test_ignore_conflicts_on_duplicate_create(self, campaign):
