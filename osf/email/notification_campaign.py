@@ -228,32 +228,34 @@ def start_notification_campaign(campaign_id, restart_failed=False, restart_stuck
     )
 
 
-def assign_batch_id_to_recipients(campaign_id, batch_size, restart_failed=False, priority_group=None, activity_threshold=None):
+def assign_batch_id_to_recipients(
+    campaign_id,
+    batch_size,
+    restart_failed=False,
+    min_activity=None,
+    max_activity=None,
+    spam=None,
+):
     batch_id = uuid.uuid4()
     filters = Q(campaign_id=campaign_id)
 
-    if not restart_failed:
+    if restart_failed:
+        filters &= Q(
+            status=NotificationCampaignRecipientStatus.FAILED,
+        )
+    else:
         filters &= Q(
             status=NotificationCampaignRecipientStatus.PENDING,
             batch_id__isnull=True,
         )
-    else:
-        filters &= Q(
-            status=NotificationCampaignRecipientStatus.FAILED,
-        )
 
-    if priority_group == 'high_activity':
-        filters &= (
-            Q(activity_score__gte=activity_threshold)
-            & ~Q(user__spam_status=SpamStatus.SPAM)
-        )
-    elif priority_group == 'low_activity':
-        filters &= (
-            Q(activity_score__lt=activity_threshold)
-            & ~Q(user__spam_status=SpamStatus.SPAM)
-        )
-    elif priority_group == 'spam':
-        filters &= Q(user__spam_status=SpamStatus.SPAM)
+    if min_activity is not None:
+        filters &= Q(activity_score__gte=min_activity)
+    if max_activity is not None:
+        filters &= Q(activity_score__lt=max_activity)
+
+    if spam is not None:
+        filters &= Q(user__spam_status=SpamStatus.SPAM) if spam else ~Q(user__spam_status=SpamStatus.SPAM)
 
     recipient_ids = NotificationCampaignRecipient.objects.filter(
         filters
@@ -281,7 +283,7 @@ def dispatch_campaign(self, campaign_id, run_id, restart_failed=False, restart_s
         sentry.log_message(message)
         return
 
-    queued_batches = NotificationCampaignRecipient.objects.filter(
+    queued_batches_count = NotificationCampaignRecipient.objects.filter(
         campaign=campaign,
         batch_id__isnull=False,
         status=NotificationCampaignRecipientStatus.QUEUED
@@ -291,12 +293,20 @@ def dispatch_campaign(self, campaign_id, run_id, restart_failed=False, restart_s
     batch_size = execution.get('batch_size', settings.DEFAULT_CAMPAIGN_BATCH_SIZE)
     activity_threshold = execution.get('activity_threshold', settings.DEFAULT_CAMPAIGN_ACTIVITY_THRESHOLD)
     notification_type_name = campaign.notification_type.name
-    to_queue = settings.MAX_QUEUED_CAMPAIGN_BATCHES - queued_batches
+    to_queue = settings.MAX_QUEUED_CAMPAIGN_BATCHES - queued_batches_count
 
     priority_groups = (
-        'high_activity',
-        'low_activity',
-        'spam',
+        {
+            'min_activity': activity_threshold,
+            'spam': False,
+        },
+        {
+            'max_activity': activity_threshold,
+            'spam': False,
+        },
+        {
+            'spam': True,
+        },
     )
     total_new_queued_batches = 0
     new_queued_batches = 0
@@ -307,8 +317,7 @@ def dispatch_campaign(self, campaign_id, run_id, restart_failed=False, restart_s
                 campaign_id,
                 batch_size=batch_size,
                 restart_failed=restart_failed,
-                priority_group=priority_group,
-                activity_threshold=activity_threshold,
+                **priority_group,
             )
 
             if batch_id is None:
@@ -333,7 +342,11 @@ def dispatch_campaign(self, campaign_id, run_id, restart_failed=False, restart_s
 
     logger.info(f'[Notification Campaign #{campaign_id}] INFO: Dispatched {total_new_queued_batches} new batches for campaign {campaign.name}.')
 
-    if not no_more_recipients:
+    if no_more_recipients:
+        process_campaign_retry.delay(
+            campaign_id=campaign_id, run_id=campaign.run_id
+        )
+    else:
         self.apply_async(
             args=[campaign_id, run_id],
             kwargs={
@@ -341,10 +354,6 @@ def dispatch_campaign(self, campaign_id, run_id, restart_failed=False, restart_s
                 'restart_stuck': restart_stuck,
             },
             countdown=settings.CAMPAIGN_DISPATCH_INTERVAL.total_seconds(),
-        )
-    else:
-        process_campaign_retry.delay(
-            campaign_id=campaign_id, run_id=campaign.run_id
         )
 
 
