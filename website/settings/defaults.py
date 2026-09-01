@@ -198,6 +198,8 @@ DEFAULT_CAMPAIGN_ACTIVITY_THRESHOLD = 3  # Users at/above this activity total ar
 DEFAULT_CAMPAIGN_BATCH_SIZE = 1000
 DEFAULT_CAMPAIGN_WINDOW_TIME = 28800  # 8 hours
 DEFAULT_CAMPAIGN_MAX_RETRIES = 3
+MAX_QUEUED_CAMPAIGN_BATCHES = 100  # Maximum number of queued campaign batches allowed before new batches are rejected. This is to prevent runaway campaigns from overwhelming the system.
+CAMPAIGN_DISPATCH_INTERVAL = timedelta(minutes=5)  # Minimum time between dispatching campaign batches.
 # The following are rough estimates so we can log to sentry those batches and sendgrid quests which run longer than normal
 ESTIMATED_PER_REQUEST_THRESHOLD = 0.3  # On production, sending one email via SendGrid takes 0.20 ~ 0.50 seconds, set default alert threshold at 0.30s
 ESTIMATED_BATCH_RUN_TIME_THRESHOLD = 300  # On production, with batch size 1000, we expect each batch to finish within 300s (5m)
@@ -508,6 +510,7 @@ class CeleryConfig:
         'scripts.check_manual_restart_approval',
         'scripts.enhanced_stuck_registration_audit',
         'email.start_notification_campaign',
+        'email.dispatch_campaign',
     }
 
     background_migration_modules = {

@@ -13,6 +13,7 @@ class NotificationCampaignStatus(models.TextChoices):
     ENDED = 'ended', 'Ended'
 
 class NotificationCampaignRecipientStatus(models.TextChoices):
+    QUEUED = 'queued', 'Queued'
     PENDING = 'pending', 'Pending'
     SENT = 'sent', 'Sent'
     FAILED = 'failed', 'Failed'
@@ -120,6 +121,7 @@ class NotificationCampaignRecipient(models.Model):
     error_message = models.TextField(null=True, blank=True)
 
     activity_score = models.IntegerField(default=0)
+    batch_id = models.UUIDField(null=True, blank=True, db_index=True)
 
     class Meta:
         unique_together = ('campaign', 'user')
