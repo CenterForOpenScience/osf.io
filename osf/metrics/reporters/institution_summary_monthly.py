@@ -1,11 +1,13 @@
-from django.contrib.contenttypes.models import ContentType
-from django.db.models import Q, F, Sum, OuterRef, Exists
+from django.db.models import F, Sum, OuterRef, Exists
 
-from osf.models import Institution, Preprint, AbstractNode, FileVersion, NodeLog, PreprintLog
+from osf.models import Institution, Preprint, FileVersion, NodeLog, PreprintLog
 from osf.models.spam import SpamStatus
-from addons.osfstorage.models import OsfStorageFile
 from osf.metrics.monthly_reports import MonthlyInstitutionSummaryReport
 from ._base import MonthlyReporter
+from .osfstorage_file_count import (
+    osfstorage_file_qs,
+    sum_osfstorage_bytes,
+)
 
 class InstitutionalSummaryMonthlyReporter(MonthlyReporter):
     """Generate a MonthlyInstitutionSummaryReport for each institution."""
@@ -35,8 +37,20 @@ class InstitutionalSummaryMonthlyReporter(MonthlyReporter):
             public_registration_count=self._get_count(node_queryset, 'osf.registration', is_public=True),
             embargoed_registration_count=self._get_count(node_queryset, 'osf.registration', is_public=False),
             published_preprint_count=preprint_queryset.count(),
-            storage_byte_count=self.get_storage_size(node_queryset, preprint_queryset),
-            public_file_count=self.get_files(node_queryset, preprint_queryset, is_public=True).count(),
+            storage_byte_count=sum_osfstorage_bytes(
+                osfstorage_file_qs(
+                    node_queryset,
+                    preprint_queryset,
+                    created_before=self.yearmonth.month_end(),
+                ),
+                created_before=self.yearmonth.month_end(),
+            ),
+            public_file_count=osfstorage_file_qs(
+                node_queryset,
+                preprint_queryset,
+                created_before=self.yearmonth.month_end(),
+                only_public=True,
+            ).count(),
             monthly_logged_in_user_count=self.get_monthly_logged_in_user_count(institution, self.yearmonth),
             monthly_active_user_count=self.get_monthly_active_user_count(institution, self.yearmonth),
         )
@@ -54,25 +68,8 @@ class InstitutionalSummaryMonthlyReporter(MonthlyReporter):
 
         return queryset
 
-    def get_files(self, node_queryset, preprint_queryset, is_public=None):
-        public_kwargs = {}
-        if is_public:
-            public_kwargs = {'is_public': is_public}
-
-        target_node_q = Q(
-            target_object_id__in=node_queryset.filter(**public_kwargs).values('pk'),
-            target_content_type=ContentType.objects.get_for_model(AbstractNode),
-        )
-        target_preprint_q = Q(
-            target_object_id__in=preprint_queryset.values('pk'),
-            target_content_type=ContentType.objects.get_for_model(Preprint),
-        )
-        return OsfStorageFile.objects.filter(
-            deleted__isnull=True, purged__isnull=True
-        ).filter(target_node_q | target_preprint_q)
-
     def get_storage_size(self, node_queryset, preprint_queryset):
-        files = self.get_files(node_queryset, preprint_queryset)
+        files = osfstorage_file_qs(node_queryset, preprint_queryset)
         return FileVersion.objects.filter(
             size__gt=0,
             purged__isnull=True,

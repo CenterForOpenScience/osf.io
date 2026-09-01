@@ -5,6 +5,10 @@ from api.base.exceptions import InvalidQueryStringError
 from osf import features
 from osf.metrics.events import OsfCountedUsageEvent
 from osf.metrics.monthly_reports import MonthlyPublicItemUsageReport
+from osf.metrics.utils import (
+    YearMonth,
+    cycle_coverage_yearmonth,
+)
 from osf.models.base import osfid_iri
 
 
@@ -103,6 +107,12 @@ class UsageMetricsViewMixin(abc.ABC):
         _search = (
             MonthlyPublicItemUsageReport.search()
             .filter('term', item_iri=item_iri)
+            .filter(
+                'range', cycle_coverage={
+                    # only past months (sometimes the current month's report is created early)
+                    'lt': cycle_coverage_yearmonth(YearMonth.from_today()),
+                },
+            )
             .sort('-cycle_coverage')
         )
         _response = _search[0].execute()

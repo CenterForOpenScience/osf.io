@@ -536,6 +536,11 @@ class AddonModelMixin(models.Model):
                 lambda x: x is not None,
                 (self.get_addon(addon) for addon in self.OSF_HOSTED_ADDONS)
             )
+            if not self._id:
+                # Resources without a guid (e.g. legacy nodes without guids) can't be
+                # associated with addons in GravyValet, which needs a guid to build
+                # the resource's semantic IRI.
+                return osf_addons
             return itertools.chain(osf_addons, self._get_addons_from_gv(requesting_user_id=user_id, service_type=service_type, auth=auth))
 
         return [_f for _f in [

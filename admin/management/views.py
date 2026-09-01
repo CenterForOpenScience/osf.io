@@ -1,6 +1,6 @@
+import datetime
 from io import StringIO
 
-from dateutil.parser import isoparse
 from django.views.generic import TemplateView, View
 from django.contrib import messages
 from django.http import HttpResponse
@@ -119,7 +119,7 @@ class DailyReportersGo(ManagementCommandPermissionView):
     def post(self, request, *args, **kwargs):
         report_date = request.POST.get('report_date', None)
         if report_date:
-            report_date = isoparse(report_date).date()
+            report_date = datetime.date.fromisoformat(report_date)
         else:
             report_date = None
 
@@ -135,26 +135,27 @@ class DailyReportersGo(ManagementCommandPermissionView):
 class MonthlyReportersGo(ManagementCommandPermissionView):
 
     def post(self, request, *args, **kwargs):
-        monthly_report_date = request.POST.get('monthly_report_date', None)
-        if monthly_report_date:
-            report_date = isoparse(monthly_report_date).date()
-        else:
-            report_date = None
-
+        start_date = request.POST.get('monthly_report_start_date', None)
+        end_date = request.POST.get('monthly_report_end_date', None)
         reporter_key = request.POST.get('reporter_key', '')
-        call_command(
-            'monthly_reporters_go',
-            yearmonth=(
-                str(YearMonth.from_date(report_date))
-                if report_date is not None
-                else ''
-            ),
-            reporter=reporter_key,
+        _start_ym = (
+            YearMonth.from_date(datetime.date.fromisoformat(start_date))
+            if start_date
+            else YearMonth.from_today().prior()
         )
-        if reporter_key:
-            messages.success(request, f'Monthly reporter {reporter_key!r} going!')
+        _inclusive_end_ym = (
+            YearMonth.from_date(datetime.date.fromisoformat(end_date))
+            if end_date
+            else _start_ym
+        )
+        _reporter_display = reporter_key or 'all monthly reporters'
+        _each_ym = list(YearMonth.range(_start_ym, _inclusive_end_ym.next()))
+        if _each_ym:
+            for _ym in _each_ym:
+                call_command('monthly_reporters_go', yearmonth=str(_ym), reporter=reporter_key)
+                messages.success(request, f'Scheduled {_reporter_display} for {_ym}')
         else:
-            messages.success(request, 'Monthly reporters going!')
+            messages.error(f'nothing doing between {_start_ym} and {_inclusive_end_ym}')
         return redirect(reverse('management:commands'))
 
 
@@ -214,21 +215,6 @@ class RemoveOrcidFromUserSocial(ManagementCommandPermissionView):
     def post(self, request):
         remove_orcid_from_user_social()
         messages.success(request, 'Orcid from user social have been successfully removed.')
-        return redirect(reverse('management:commands'))
-
-
-class MigrateOsfmetricsFix6to8(ManagementCommandPermissionView):
-    def post(self, request):
-        _command_kwargs = {
-            'no_color': True,
-            'no_counts': request.POST.get('no_counts'),
-            'delete_es8_usage_reports': request.POST.get('delete_es8_usage_reports'),
-            'start': request.POST.get('start'),
-        }
-        _out_io = StringIO()
-        call_command('migrate_osfmetrics_fix_6to8', **_command_kwargs, stdout=_out_io)
-        for _line in _out_io.getvalue().split('\n'):
-            messages.info(request, _line)
         return redirect(reverse('management:commands'))
 
 
