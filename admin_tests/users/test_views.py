@@ -180,6 +180,124 @@ class TestGDPRDeleteUser(AdminTestCase):
         assert AdminLogEntry.objects.count() == count
 
 
+class TestUserExternalIdentitiesPanel(AdminTestCase):
+    def setUp(self):
+        super().setUp()
+        self.user = UserFactory()
+        self.user.external_identity = {'ORCID': {'0000-0000-0000-0001': 'VERIFIED'}}
+        self.user.external_identity_tokens = {
+            'ORCID': {'0000-0000-0000-0001': {'access_token': 'fake-token'}},
+        }
+        self.user.save()
+
+        view_permission = Permission.objects.get(codename='view_osfuser')
+        self.user.user_permissions.add(view_permission)
+        self.user.save()
+
+    def test_panel_lists_connected_identity(self):
+        request = RequestFactory().get(reverse('users:user', kwargs={'guid': self.user._id}))
+        request.user = self.user
+
+        response = views.UserView.as_view()(request, guid=self.user._id)
+
+        identities = response.context_data['external_identities']
+        assert len(identities) == 1
+        assert identities[0]['provider'] == 'ORCID'
+        assert identities[0]['external_id'] == '0000-0000-0000-0001'
+        assert identities[0]['profile_url'] == 'https://orcid.org/0000-0000-0000-0001'
+
+    def test_panel_shows_unknown_for_legacy_identity_with_no_recorded_date(self):
+        # Identities linked before this feature shipped have no `connected_at` recorded.
+        request = RequestFactory().get(reverse('users:user', kwargs={'guid': self.user._id}))
+        request.user = self.user
+
+        response = views.UserView.as_view()(request, guid=self.user._id)
+
+        identities = response.context_data['external_identities']
+        assert identities[0]['connected_at'] is None
+
+    def test_panel_flags_only_login_method(self):
+        self.user.set_unusable_password()
+        self.user.save()
+
+        request = RequestFactory().get(reverse('users:user', kwargs={'guid': self.user._id}))
+        request.user = self.user
+
+        response = views.UserView.as_view()(request, guid=self.user._id)
+
+        identities = response.context_data['external_identities']
+        assert identities[0]['only_login_method'] is True
+
+
+class TestRemoveExternalIdentity(AdminTestCase):
+    def setUp(self):
+        super().setUp()
+        self.user = UserFactory()
+        self.user.external_identity = {'ORCID': {'0000-0000-0000-0001': 'VERIFIED'}}
+        self.user.external_identity_tokens = {
+            'ORCID': {'0000-0000-0000-0001': {'access_token': 'fake-token'}},
+        }
+        self.user.save()
+        post_patcher = mock.patch('osf.models.user.requests.post', return_value=mock.Mock(status_code=200))
+        self.mock_post = post_patcher.start()
+        self.addCleanup(post_patcher.stop)
+
+        self.request = RequestFactory().post('/fake_path')
+        self.view = views.UserRemoveExternalIdentityView
+        self.setup_view = setup_log_view(
+            self.view(), self.request, guid=self.user._id, provider='ORCID', external_id='0000-0000-0000-0001'
+        )
+
+        self.url = reverse(
+            'users:remove-external-identity',
+            kwargs={'guid': self.user._id, 'provider': 'ORCID', 'external_id': '0000-0000-0000-0001'},
+        )
+
+    def test_removes_identity_and_revokes_token(self):
+        patch_messages(self.request)
+        count = AdminLogEntry.objects.count()
+
+        self.setup_view.post(self.request)
+
+        self.user.reload()
+        assert self.user.external_identity == {}
+        assert self.user.external_identity_tokens == {}
+        self.mock_post.assert_called_once()
+        assert AdminLogEntry.objects.count() == count + 1
+
+    def test_unknown_identity_is_a_no_op(self):
+        patch_messages(self.request)
+        setup_view = setup_log_view(
+            self.view(), self.request, guid=self.user._id, provider='ORCID', external_id='not-a-real-id'
+        )
+        count = AdminLogEntry.objects.count()
+
+        setup_view.post(self.request)
+
+        self.user.reload()
+        assert self.user.external_identity == {'ORCID': {'0000-0000-0000-0001': 'VERIFIED'}}
+        assert AdminLogEntry.objects.count() == count
+
+    def test_no_user_permissions_raises_error(self):
+        request = RequestFactory().post(self.url)
+        request.user = self.user
+
+        with self.assertRaises(PermissionDenied):
+            self.view.as_view()(request, guid=self.user._id, provider='ORCID', external_id='0000-0000-0000-0001')
+
+    def test_correct_view_permissions(self):
+        change_permission = Permission.objects.get(codename='change_osfuser')
+        self.user.user_permissions.add(change_permission)
+        self.user.save()
+
+        request = RequestFactory().post(self.url)
+        patch_messages(request)
+        request.user = self.user
+
+        response = self.view.as_view()(request, guid=self.user._id, provider='ORCID', external_id='0000-0000-0000-0001')
+        self.assertEqual(response.status_code, 302)
+
+
 class TestDisableUser(AdminTestCase):
     def setUp(self):
         self.user = UserFactory()

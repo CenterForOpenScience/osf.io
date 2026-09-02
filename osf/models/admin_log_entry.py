@@ -43,6 +43,14 @@ MANUAL_ARCHIVE_RESTART = 90
 FILE_REMOVED = 100
 FILE_VERSION_REMOVED = 101
 
+USER_EXTERNAL_IDENTITY_REMOVED = 102
+EXTERNAL_IDENTITY_CONNECTED = 103
+
+
+def external_identity_connected_log_message(provider, external_id):
+    return f'{provider} identity {external_id} connected'
+
+
 def update_admin_log(user_id, object_id, object_repr, message, action_flag=UNKNOWN):
     AdminLogEntry.objects.log_action(
         user_id=user_id,

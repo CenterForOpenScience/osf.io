@@ -29,12 +29,16 @@ from website.search import search
 from website.settings import EXTERNAL_IDENTITY_PROFILE
 
 from osf.models.admin_log_entry import (
+    AdminLogEntry,
     update_admin_log,
     USER_2_FACTOR,
     USER_EMAILED,
     USER_REMOVED,
     USER_RESTORED,
     USER_GDPR_DELETED,
+    USER_EXTERNAL_IDENTITY_REMOVED,
+    EXTERNAL_IDENTITY_CONNECTED,
+    external_identity_connected_log_message,
     CONFIRM_SPAM,
     CONFIRM_HAM,
     UNFLAG_SPAM,
@@ -109,6 +113,7 @@ class UserView(UserMixin, GuidView):
         context.update({
             'user': user,
             'twofactor': user.get_addon('twofactor'),
+            'external_identities': self.get_external_identities(user),
             'form': EmailResetForm(
                 initial={
                     'emails': [(r, r) for r in user.emails.values_list('address', flat=True)],
@@ -116,6 +121,32 @@ class UserView(UserMixin, GuidView):
             )
         })
         return context
+
+    def get_external_identities(self, user):
+        connected_at_by_message = dict(
+            AdminLogEntry.objects.filter(
+                object_id=str(user.pk),
+                action_flag=EXTERNAL_IDENTITY_CONNECTED,
+            ).order_by('action_time').values_list('change_message', 'action_time')
+        )
+
+        identities = []
+        for provider, ids in user.external_identity.items():
+            for external_id, status in ids.items():
+                message = external_identity_connected_log_message(provider, external_id)
+                identities.append({
+                    'provider': provider,
+                    'external_id': external_id,
+                    'status': status,
+                    'connected_at': connected_at_by_message.get(message),
+                    'profile_url': f'https://orcid.org/{external_id}' if provider == 'ORCID' else external_id,
+                })
+
+        only_login_method = len(identities) == 1 and not user.has_usable_password()
+        for identity in identities:
+            identity['only_login_method'] = only_login_method
+
+        return identities
 
 
 class UserSearchView(PermissionRequiredMixin, FormView):
@@ -405,6 +436,33 @@ class User2FactorDeleteView(UserMixin, View):
             message=f'Removed 2 factor auth for user {user.pk}',
             action_flag=USER_2_FACTOR
         )
+        return redirect(self.get_success_url())
+
+
+class UserRemoveExternalIdentityView(UserMixin, View):
+    permission_required = 'osf.change_osfuser'
+
+    def post(self, request, *args, **kwargs):
+        user = self.get_object()
+        provider = self.kwargs['provider']
+        external_id = self.kwargs['external_id']
+
+        if external_id not in user.external_identity.get(provider, {}):
+            messages.warning(request, f'{provider} identity {external_id} is not linked to this user.')
+            return redirect(self.get_success_url())
+
+        user.remove_external_identity(provider, external_id)
+        user.save()
+
+        update_admin_log(
+            user_id=self.request.user.id,
+            object_id=user.pk,
+            object_repr='User',
+            message=f'Removed {provider} identity {external_id} from user {user.pk}',
+            action_flag=USER_EXTERNAL_IDENTITY_REMOVED
+        )
+        messages.success(request, f'{provider} identity {external_id} was removed from user {user._id}')
+
         return redirect(self.get_success_url())
 
 
