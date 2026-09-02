@@ -6,8 +6,11 @@ import re
 import urllib
 from typing import TYPE_CHECKING
 from django.utils import timezone
+import waffle
 
+from osf import features
 from osf.utils import permissions as osf_permissions
+from osf.utils.requests import get_current_request
 from website import settings
 
 if TYPE_CHECKING:
@@ -21,6 +24,15 @@ CONTENT_HASH_HEADER = 'X-Content-SHA256'
 USER_HEADER = 'X-Requesting-User-URI'
 RESOURCE_HEADER = 'X-Requested-Resource-URI'
 PERMISSIONS_HEADER = 'X-Requested-Resource-Permissions'
+
+
+def _is_new_addon_connection(request_method: str, endpoint_url: str) -> bool:
+    """
+    A POST to a `configured-<type>-addons` collection connects a new addon.
+    Requests that carry an addon id configure (PATCH) or disconnect (DELETE) one
+    that is already connected, and stay available while PROJECT_READ_ONLY is active.
+    """
+    return request_method == 'POST' and endpoint_url.rstrip('/').endswith('-addons')
 
 
 def _sign_message(message: str, hmac_key: str = None) -> str:
@@ -61,6 +73,8 @@ def make_permissions_headers(
     requesting_user: OSFUser | None = None,
     requested_resource: AbstractNode | None = None,
     auth=None,
+    request_method: str = 'GET',
+    endpoint_url: str = '',
 ) -> dict:
     osf_permissions_headers = {}
     if requesting_user:
@@ -72,6 +86,14 @@ def make_permissions_headers(
             user_permissions = ';'.join(requested_resource.get_permissions(requesting_user))
         if (not requesting_user or not user_permissions) and requested_resource.is_public:
             user_permissions = osf_permissions.READ
+        if _is_new_addon_connection(request_method, endpoint_url) and waffle.flag_is_active(
+            get_current_request(), features.PROJECT_READ_ONLY
+        ):
+            # strip write/admin to prevent addon connections
+            user_permissions = ';'.join(
+                p for p in user_permissions.split(';')
+                if p not in (osf_permissions.WRITE, osf_permissions.ADMIN)
+            )
         osf_permissions_headers[PERMISSIONS_HEADER] = user_permissions
     if auth and auth.private_link and auth.private_link.nodes.contains(requested_resource):
         user_permissions = osf_permissions.READ

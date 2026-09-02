@@ -1,7 +1,9 @@
-from rest_framework import permissions
+from rest_framework import exceptions, permissions
 
 from api.base.utils import get_user_auth
 from addons.wiki.models import WikiPage, WikiVersion
+from osf import features
+import waffle
 
 
 class ContributorOrPublic(permissions.BasePermission):
@@ -43,4 +45,11 @@ class ExcludeWithdrawalsWikiVersion(permissions.BasePermission):
         node = obj.wiki_page.node
         if node and node.is_retracted:
             return False
+        return True
+
+class WikisEditingNotAllowed(permissions.BasePermission):
+
+    def has_permission(self, request, view):
+        if request.method not in permissions.SAFE_METHODS and waffle.flag_is_active(request, features.PROJECT_READ_ONLY):
+            raise exceptions.MethodNotAllowed(request.method, detail='This action is no longer available. Contact support if you have any questions.')
         return True

@@ -2,12 +2,16 @@ import logging
 import pytest
 import requests
 from http import HTTPStatus
+from unittest import mock
+from waffle.testutils import override_flag
 
+from osf import features
 from osf.external.gravy_valet import (
     auth_helpers as gv_auth,
     translations,
     request_helpers as gv_requests
 )
+from osf.utils import permissions as osf_permissions
 from osf_tests import factories
 from osf_tests.external.gravy_valet import gv_fakes
 from website.settings import GRAVYVALET_URL
@@ -550,3 +554,105 @@ class TestEphemeralSettings:
                 'folder': fake_box_addon.root_folder.split(':')[1],
                 'service': 'box'
             }
+
+
+@pytest.mark.django_db
+class TestMakePermissionsHeadersProjectReadOnly:
+
+    @pytest.fixture
+    def contributor(self):
+        return factories.AuthUserFactory()
+
+    @pytest.fixture
+    def project(self, contributor):
+        return factories.ProjectFactory(creator=contributor)
+
+    @pytest.fixture
+    def connect_addon_url(self):
+        return gv_requests.GENERIC_ADDONS_ENDPOINT.format(addon_type='configured-storage-addons')
+
+    def test_write_permissions_stripped_when_project_read_only_active(self, contributor, project, connect_addon_url):
+        with override_flag(features.PROJECT_READ_ONLY, active=True):
+            headers = gv_auth.make_permissions_headers(
+                requesting_user=contributor,
+                requested_resource=project,
+                request_method='POST',
+                endpoint_url=connect_addon_url,
+            )
+        permissions = headers[gv_auth.PERMISSIONS_HEADER].split(';')
+        assert osf_permissions.WRITE not in permissions
+        assert osf_permissions.ADMIN not in permissions
+        assert osf_permissions.READ in permissions
+
+    def test_admin_permissions_stripped_when_project_read_only_active(self, contributor, project, connect_addon_url):
+        with override_flag(features.PROJECT_READ_ONLY, active=True):
+            headers = gv_auth.make_permissions_headers(
+                requesting_user=contributor,
+                requested_resource=project,
+                request_method='POST',
+                endpoint_url=connect_addon_url,
+            )
+        permissions = headers[gv_auth.PERMISSIONS_HEADER].split(';')
+        assert osf_permissions.ADMIN not in permissions
+
+    def test_permissions_not_stripped_when_project_read_only_inactive(self, contributor, project, connect_addon_url):
+        with override_flag(features.PROJECT_READ_ONLY, active=False):
+            headers = gv_auth.make_permissions_headers(
+                requesting_user=contributor,
+                requested_resource=project,
+                request_method='POST',
+                endpoint_url=connect_addon_url,
+            )
+        permissions = headers[gv_auth.PERMISSIONS_HEADER].split(';')
+        assert osf_permissions.WRITE in permissions
+        assert osf_permissions.ADMIN in permissions
+        assert osf_permissions.READ in permissions
+
+
+@pytest.mark.django_db
+class TestGravyValetAddonWritesProjectReadOnly:
+    """
+    While PROJECT_READ_ONLY is active only connecting a *new* addon is meant
+    to be blocked. Disconnecting an addon that is already connected need to keep
+    working, so the DELETE sent to GravyValet must still have write permission.
+    """
+
+    @pytest.fixture
+    def contributor(self):
+        return factories.AuthUserFactory()
+
+    @pytest.fixture
+    def project(self, contributor):
+        return factories.ProjectFactory(creator=contributor)
+
+    def _permissions_sent_by(self, gv_call):
+        with mock.patch('osf.external.gravy_valet.request_helpers.requests.request') as mock_request:
+            gv_call()
+        assert mock_request.called, 'no request was sent to GravyValet'
+        sent_headers = mock_request.call_args.kwargs['headers']
+        return sent_headers[gv_auth.PERMISSIONS_HEADER].split(';')
+
+    def test_disconnecting_addon_keeps_write_permission(self, contributor, project):
+        with override_flag(features.PROJECT_READ_ONLY, active=True):
+            permissions = self._permissions_sent_by(
+                lambda: gv_requests.delete_addon(
+                    pk='123',
+                    requesting_user=contributor,
+                    requested_resource=project,
+                    addon_type='configured-storage-addons',
+                )
+            )
+        assert osf_permissions.WRITE in permissions
+
+    def test_connecting_addon_drops_write_permission(self, contributor, project):
+        with override_flag(features.PROJECT_READ_ONLY, active=True):
+            permissions = self._permissions_sent_by(
+                lambda: gv_requests.create_addon(
+                    requested_resource=project,
+                    requesting_user=contributor,
+                    attributes={},
+                    relationships={},
+                    addon_type='configured-storage-addons',
+                )
+            )
+        assert osf_permissions.WRITE not in permissions

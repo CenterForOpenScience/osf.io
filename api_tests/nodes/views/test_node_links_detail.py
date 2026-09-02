@@ -1,7 +1,9 @@
 import pytest
+from waffle.testutils import override_flag
 
 from api.base.settings.defaults import API_BASE
 from framework.auth.core import Auth
+from osf import features
 from osf.models import NodeLog
 from osf_tests.factories import (
     ProjectFactory,
@@ -325,3 +327,40 @@ class TestDeleteNodeLink:
         errors = res.json['errors']
         assert len(errors) == 1
         assert errors[0]['detail'] == exceptions.NotFound.default_detail
+
+
+@pytest.mark.django_db
+class TestNodeLinkDetailProjectReadOnly:
+
+    @pytest.fixture()
+    def user(self):
+        return AuthUserFactory()
+
+    @pytest.fixture()
+    def pointer_project(self, user):
+        return ProjectFactory(creator=user)
+
+    @pytest.fixture()
+    def project(self, user, pointer_project):
+        return ProjectFactory(creator=user)
+
+    @pytest.fixture()
+    def pointer(self, user, project, pointer_project):
+        return project.add_pointer(pointer_project, auth=Auth(user), save=True)
+
+    @pytest.fixture()
+    def url(self, project, pointer):
+        return f'/{API_BASE}nodes/{project._id}/node_links/{pointer._id}/'
+
+    def test_delete_blocked_when_project_read_only_flag_active(self, app, user, url):
+        with override_flag(features.PROJECT_READ_ONLY, active=True):
+            res = app.delete(url, auth=user.auth, expect_errors=True)
+        assert res.status_code == 405
+        assert res.json['errors'][0]['detail'] == 'This action is no longer available. Contact support if you have any questions.'
+
+    def test_delete_allowed_when_project_read_only_flag_inactive(self, app, user, project, url):
+        node_count_before = len(project.nodes_pointer)
+        res = app.delete(url, auth=user.auth)
+        project.reload()
+        assert res.status_code == 204
+        assert node_count_before - 1 == len(project.nodes_pointer)

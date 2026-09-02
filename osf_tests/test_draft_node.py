@@ -1,7 +1,9 @@
 import pytest
 from framework.auth.core import Auth
+from waffle.testutils import override_flag
 
 from api_tests.utils import disconnected_from_listeners
+from osf import features
 from osf.models import (
     DraftNode,
     Registration,
@@ -202,3 +204,21 @@ class TestDraftNode:
     def test_cannot_make_draft_node_public(self, draft_node):
         with pytest.raises(NodeStateError):
             draft_node.set_privacy('public', save=True)
+
+    def test_draft_node_stays_draft_node_when_prevent_project_creation_flag_active(self, user):
+        with capture_notifications():
+            draft_reg = DraftRegistration.create_from_node(
+                user=user,
+                schema=get_default_metaschema(),
+            )
+        draft_node = draft_reg.branched_from
+        with override_flag(features.PREVENT_PROJECT_CREATION, active=True):
+            with disconnected_from_listeners(after_create_registration):
+                registration = draft_node.register_node(
+                    get_default_metaschema(), Auth(user), draft_reg
+                )
+
+        draft_node.reload()
+        assert draft_node.type == 'osf.draftnode'
+        assert isinstance(registration, Registration)
+        assert registration.branched_from_node is False

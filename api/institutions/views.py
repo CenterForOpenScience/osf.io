@@ -44,7 +44,7 @@ from api.institutions.serializers import (
     InstitutionUserMetricsSerializer,
     InstitutionSummaryMetricsSerializer,
 )
-from api.institutions.permissions import UserIsAffiliated
+from api.institutions.permissions import UserIsAffiliated, InstitutionNodesDeleteNotAllowed
 
 
 class InstitutionMixin:
@@ -348,6 +348,7 @@ class InstitutionNodesRelationship(JSONAPIBaseView, generics.RetrieveDestroyAPIV
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
         UserIsAffiliated,
+        InstitutionNodesDeleteNotAllowed,
     )
     required_read_scopes = [CoreScopes.NODE_BASE_READ, CoreScopes.INSTITUTION_READ]
     required_write_scopes = [CoreScopes.NODE_BASE_WRITE]

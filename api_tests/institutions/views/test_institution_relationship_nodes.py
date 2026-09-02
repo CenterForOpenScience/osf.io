@@ -1,6 +1,8 @@
 import pytest
+from waffle.testutils import override_flag
 
 from api.base.settings.defaults import API_BASE
+from osf import features
 from osf.models import NotificationTypeEnum
 from osf_tests.factories import (
     RegistrationFactory,
@@ -452,3 +454,46 @@ class TestInstitutionRelationshipNodes:
         assert notifications['emits'][0]['kwargs']['user'] == node_public.creator
         assert notifications['emits'][1]['type'] == NotificationTypeEnum.NODE_AFFILIATION_CHANGED
         assert notifications['emits'][1]['kwargs']['user'] == admin
+
+
+@pytest.mark.django_db
+class TestInstitutionNodesRelationshipProjectReadOnly:
+
+    @pytest.fixture()
+    def institution(self):
+        return InstitutionFactory()
+
+    @pytest.fixture()
+    def user(self, institution):
+        user_auth = AuthUserFactory()
+        user_auth.add_or_update_affiliated_institution(institution)
+        user_auth.save()
+        return user_auth
+
+    @pytest.fixture()
+    def node(self, user, institution):
+        project = NodeFactory(creator=user)
+        project.affiliated_institutions.add(institution)
+        project.save()
+        return project
+
+    @pytest.fixture()
+    def url(self, institution):
+        return f'/{API_BASE}institutions/{institution._id}/relationships/nodes/'
+
+    @pytest.fixture()
+    def payload(self, node):
+        return {'data': [{'type': 'nodes', 'id': node._id}]}
+
+    def test_delete_blocked_when_project_read_only_flag_active(self, app, user, url, payload):
+        with override_flag(features.PROJECT_READ_ONLY, active=True):
+            res = app.delete_json_api(url, payload, auth=user.auth, expect_errors=True)
+        assert res.status_code == 405
+        assert res.json['errors'][0]['detail'] == 'This action is no longer available. Contact support if you have any questions.'
+
+    def test_delete_allowed_when_project_read_only_flag_inactive(self, app, user, node, institution, url, payload):
+        with capture_notifications():
+            res = app.delete_json_api(url, payload, auth=user.auth)
+        assert res.status_code == 204
+        node.reload()
+        assert institution not in node.affiliated_institutions.all()

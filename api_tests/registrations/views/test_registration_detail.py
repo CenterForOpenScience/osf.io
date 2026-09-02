@@ -5,12 +5,15 @@ from urllib.parse import urlparse
 
 from rest_framework import exceptions
 from django.utils import timezone
+from waffle.testutils import override_flag
+
 from api.base.settings.defaults import API_BASE
 from api.taxonomies.serializers import subjects_as_relationships_version
 from api_tests.subjects.mixins import UpdateSubjectsMixin
+from osf import features
 from osf.utils import permissions
 from osf.utils.workflows import ApprovalStates
-from osf.models import Registration, NodeLog, NodeLicense, SchemaResponse
+from osf.models import DraftRegistration, Registration, NodeLog, NodeLicense, SchemaResponse
 from framework.auth import Auth
 from api.registrations.serializers import RegistrationSerializer, RegistrationDetailSerializer
 from addons.wiki.tests.factories import WikiFactory, WikiVersionFactory
@@ -26,12 +29,14 @@ from osf_tests.factories import (
     WithdrawnRegistrationFactory,
     CommentFactory,
     InstitutionFactory,
+    get_default_metaschema,
 )
 from osf_tests.utils import get_default_test_schema
 
 from api_tests.nodes.views.test_node_detail_license import TestNodeUpdateLicense
 from tests.utils import assert_latest_log, capture_notifications
-from api_tests.utils import create_test_file
+from api_tests.utils import create_test_file, disconnected_from_listeners
+from website.project.signals import after_create_registration
 
 
 @pytest.mark.django_db
@@ -255,6 +260,79 @@ class TestRegistrationDetail:
             assert error['detail'] == 'The requested registration is no longer available.'
             assert 'meta' in error
             assert not error['meta'].get('flagged_content', False)
+
+
+@pytest.mark.django_db
+class TestRegistrationDetailRegisteredFrom:
+
+    @pytest.fixture()
+    def user(self):
+        return AuthUserFactory()
+
+    @pytest.fixture()
+    def draft_registration(self, user):
+        with capture_notifications():
+            return DraftRegistration.create_from_node(
+                user=user,
+                schema=get_default_metaschema(),
+            )
+
+    @pytest.fixture()
+    def draft_node(self, draft_registration):
+        return draft_registration.branched_from
+
+    @pytest.fixture()
+    def registration(self, user, draft_registration, draft_node):
+        """
+        A registration created through the "no existing project" workflow, where the DraftNode
+        is never promoted to a Node.
+        """
+        with override_flag(features.PREVENT_PROJECT_CREATION, active=True):
+            with disconnected_from_listeners(after_create_registration):
+                registration = draft_node.register_node(
+                    get_default_metaschema(), Auth(user), draft_registration,
+                )
+        draft_node.reload()
+        assert draft_node.type == 'osf.draftnode'
+        return registration
+
+    @pytest.fixture()
+    def url(self, registration):
+        return f'/{API_BASE}registrations/{registration._id}/'
+
+    def test_registered_from_draft_node_is_not_serialized(self, app, user, url):
+        res = app.get(f'{url}?version=2.9', auth=user.auth)
+        assert res.status_code == 200
+        # No link to a node that cannot be fetched from /v2/nodes/
+        assert res.json['data']['relationships']['registered_from'] == {'data': None}
+        assert res.json['data']['attributes']['has_project'] is False
+
+    def test_registered_from_draft_node_is_hidden_in_old_versions(self, app, user, url):
+        res = app.get(url, auth=user.auth)
+        assert res.status_code == 200
+        assert 'registered_from' not in res.json['data']['relationships']
+
+    def test_registered_from_draft_node_is_not_embeddable(self, app, user, url):
+        res = app.get(f'{url}?version=2.9&embed=registered_from', auth=user.auth)
+        assert res.status_code == 200
+        assert res.json['data']['relationships']['registered_from'] == {'data': None}
+        assert res.json['data']['embeds']['registered_from'] == {
+            'error': 'This field is not embeddable.',
+        }
+
+    def test_registered_from_node_is_still_serialized(self, app, user):
+        project = ProjectFactory(creator=user)
+        registration = RegistrationFactory(project=project, creator=user)
+        res = app.get(
+            f'/{API_BASE}registrations/{registration._id}/?version=2.9',
+            auth=user.auth,
+        )
+        assert res.status_code == 200
+        registered_from = res.json['data']['relationships']['registered_from']
+        assert registered_from['data'] == {'id': project._id, 'type': 'nodes'}
+        assert urlparse(registered_from['links']['related']['href']).path == '/{}nodes/{}/'.format(
+            API_BASE, project._id,
+        )
 
 
 class TestRegistrationUpdateTestCase:

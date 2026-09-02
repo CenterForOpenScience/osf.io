@@ -394,6 +394,11 @@ def collect_node_config_js(addons):
 @must_have_permission(WRITE)
 @must_not_be_registration
 def node_choose_addons(auth, node, **kwargs):
+    if waffle.flag_is_active(request, features.PROJECT_READ_ONLY):
+        raise HTTPError(http_status.HTTP_405_METHOD_NOT_ALLOWED, data={
+            'message_short': 'Method not allowed',
+            'message_long': 'This action is no longer available. Contact support if you have any questions.',
+        })
     node.config_addons(request.json, auth)
 
 
