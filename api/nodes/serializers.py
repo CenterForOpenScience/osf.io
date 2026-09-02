@@ -45,8 +45,6 @@ from osf.models import (
 from website.project import new_private_link
 from website.project.model import NodeUpdateError
 from osf.utils import permissions as osf_permissions
-import waffle
-from osf import features
 
 
 class RegistrationProviderRelationshipField(RelationshipField):
@@ -570,8 +568,6 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
         user_perms = user_perms or default_perm
         if not user_perms and user in getattr(obj, 'parent_admin_users', []):
             user_perms = [osf_permissions.READ]
-        if waffle.flag_is_active(self.context['request'], features.PROJECT_READ_ONLY):
-            user_perms = [p for p in user_perms if p == osf_permissions.READ]
         return user_perms
 
     def get_current_user_can_comment(self, obj):
