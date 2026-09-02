@@ -1216,8 +1216,15 @@ class TestDeactivatedUser:
             res.json['errors'][0]['meta']['profile_image']).netloc == 'secure.gravatar.com'
         assert res.json['errors'][0]['detail'] == 'The requested user is no longer available.'
 
+    @mock.patch('osf.models.user.requests.post')
     def test_gdpr_deleted_user_returns_404_and_no_meta_info(
-            self, app, user_one, user_two):
+            self, mock_post, app, user_one, user_two):
+        mock_post.return_value = mock.Mock(status_code=200)
+        user_one.external_identity_tokens = {
+            'ORCID': {'fake-orcid-id': {'access_token': 'fake-orcid-token'}},
+        }
+        user_one.save()
+
         url = f'/{API_BASE}users/{user_one._id}/'
         res = app.get(url, auth=user_two.auth, expect_errors=False)
         assert res.status_code == 200

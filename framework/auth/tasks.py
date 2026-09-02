@@ -54,6 +54,7 @@ def update_affiliation_for_orcid_sso_users(user_id, orcid_id):
         logger.error(error_message)
         sentry.log_message(error_message)
         return
+
     institution = check_institution_affiliation(orcid_id)
     if institution:
         logger.info(f'Eligible institution affiliation has been found for ORCiD SSO user: '
