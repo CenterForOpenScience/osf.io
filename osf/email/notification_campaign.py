@@ -292,8 +292,9 @@ def dispatch_campaign(self, campaign_id, run_id, restart_failed=False, restart_s
     execution = campaign.metadata.get('execution', {})
     batch_size = execution.get('batch_size', settings.DEFAULT_CAMPAIGN_BATCH_SIZE)
     activity_threshold = execution.get('activity_threshold', settings.DEFAULT_CAMPAIGN_ACTIVITY_THRESHOLD)
+    max_queued_batches = execution.get('max_queued_batches', settings.MAX_QUEUED_CAMPAIGN_BATCHES)
     notification_type_name = campaign.notification_type.name
-    to_queue = settings.MAX_QUEUED_CAMPAIGN_BATCHES - queued_batches_count
+    to_queue = max_queued_batches - queued_batches_count
 
     priority_groups = (
         {
@@ -353,7 +354,7 @@ def dispatch_campaign(self, campaign_id, run_id, restart_failed=False, restart_s
                 'restart_failed': restart_failed,
                 'restart_stuck': restart_stuck,
             },
-            countdown=settings.CAMPAIGN_DISPATCH_INTERVAL.total_seconds(),
+            countdown=execution.get('dispatch_interval', settings.CAMPAIGN_DISPATCH_INTERVAL),
         )
 
 
