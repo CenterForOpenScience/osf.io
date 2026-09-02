@@ -2,9 +2,11 @@ import pytest
 
 from api.base.settings.defaults import API_BASE
 from framework.auth.core import Auth
-from osf_tests.factories import RegistrationFactory, NodeRelationFactory
+from osf import features
+from osf_tests.factories import RegistrationFactory, NodeFactory, NodeRelationFactory, AuthUserFactory
 from osf.utils.permissions import READ
 from rest_framework import exceptions
+from waffle.testutils import override_flag
 from .utils import LinkedRegistrationsTestCase
 
 
@@ -239,3 +241,63 @@ class TestNodeLinkedRegistrationsRelationshipCreate(LinkedRegistrationsTestCase)
         assert res.status_code == 201
         linked_registrations = [r['id'] for r in res.json['data']]
         assert registration._id in linked_registrations
+
+
+@pytest.mark.django_db
+class TestNodeLinkedRegistrationsRelationshipProjectReadOnly:
+
+    @pytest.fixture()
+    def user(self):
+        return AuthUserFactory()
+
+    @pytest.fixture()
+    def registration(self):
+        return RegistrationFactory(is_public=True)
+
+    @pytest.fixture()
+    def node(self, user, registration):
+        project = NodeFactory(creator=user)
+        project.add_pointer(registration, auth=Auth(user))
+        return project
+
+    @pytest.fixture()
+    def url(self, node):
+        return f'/{API_BASE}nodes/{node._id}/relationships/linked_registrations/'
+
+    @pytest.fixture()
+    def payload(self, registration):
+        return {'data': [{'type': 'linked_registrations', 'id': registration._id}]}
+
+    def test_post_blocked_when_project_read_only_flag_active(self, app, user, url, payload):
+        with override_flag(features.PROJECT_READ_ONLY, active=True):
+            res = app.post_json_api(url, payload, auth=user.auth, expect_errors=True)
+        assert res.status_code == 405
+        assert res.json['errors'][0]['detail'] == 'This action is no longer available. Contact support if you have any questions.'
+
+    def test_put_blocked_when_project_read_only_flag_active(self, app, user, url, payload):
+        with override_flag(features.PROJECT_READ_ONLY, active=True):
+            res = app.put_json_api(url, payload, auth=user.auth, expect_errors=True)
+        assert res.status_code == 405
+        assert res.json['errors'][0]['detail'] == 'This action is no longer available. Contact support if you have any questions.'
+
+    def test_patch_blocked_when_project_read_only_flag_active(self, app, user, url, payload):
+        with override_flag(features.PROJECT_READ_ONLY, active=True):
+            res = app.patch_json_api(url, payload, auth=user.auth, expect_errors=True)
+        assert res.status_code == 405
+        assert res.json['errors'][0]['detail'] == 'This action is no longer available. Contact support if you have any questions.'
+
+    def test_delete_blocked_when_project_read_only_flag_active(self, app, user, url, payload):
+        with override_flag(features.PROJECT_READ_ONLY, active=True):
+            res = app.delete_json_api(url, payload, auth=user.auth, expect_errors=True)
+        assert res.status_code == 405
+        assert res.json['errors'][0]['detail'] == 'This action is no longer available. Contact support if you have any questions.'
+
+    def test_post_allowed_when_project_read_only_flag_inactive(self, app, user, node, url):
+        new_registration = RegistrationFactory(is_public=True)
+        payload = {'data': [{'type': 'linked_registrations', 'id': new_registration._id}]}
+        res = app.post_json_api(url, payload, auth=user.auth)
+        assert res.status_code == 201
+
+    def test_delete_allowed_when_project_read_only_flag_inactive(self, app, user, node, url, payload):
+        res = app.delete_json_api(url, payload, auth=user.auth)
+        assert res.status_code == 204

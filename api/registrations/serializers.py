@@ -38,9 +38,36 @@ from api.base.utils import update_contributors_permissions_and_bibliographic_sta
 from api.institutions.utils import update_institutions
 from framework.auth.core import Auth
 from osf.exceptions import NodeStateError
-from osf.models import Node
+from osf.models import DraftNode, Node
 from osf.utils.registrations import strip_registered_meta_comments
 from osf.utils.workflows import ApprovalStates
+
+
+class RegisteredFromRelationshipField(RelationshipField):
+    """
+    A registration created from the "No existing project" workflow is registered_from a draft_node
+    that is never promoted to a full node. Serializing it mis-types the draft_node as a
+    node, so the front-end links to a page that is not found. Serialize no information instead
+    {"data": null}.
+    """
+
+    def _is_registered_from_draft_node(self, registration):
+        return isinstance(getattr(registration, 'registered_from', None), DraftNode)
+
+    def get_url(self, obj, view_name, request, format):
+        if self._is_registered_from_draft_node(obj):
+            # None makes to_representation serialize this as an empty to-one
+            return None
+        return super().get_url(obj, view_name, request, format)
+
+    def resolve(self, resource, field_name, request):
+        """
+        Overrides RelationshipField: there is nothing to embed for a DraftNode.
+        """
+        if self._is_registered_from_draft_node(resource):
+            return None, None, None
+        return super().resolve(resource, field_name, request)
+
 
 class RegistrationSerializer(NodeSerializer):
     admin_only_editable_fields = [
@@ -206,7 +233,7 @@ class RegistrationSerializer(NodeSerializer):
         ),
     )
 
-    registered_from = RelationshipField(
+    registered_from = RegisteredFromRelationshipField(
         related_view='nodes:node-detail',
         related_view_kwargs={'node_id': '<registered_from._id>'},
     )

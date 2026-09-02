@@ -64,6 +64,16 @@ flags:
     note: This flag controls whether users can create or interact with meetings via BE or FE.
     everyone: false
 
+  - flag_name: PREVENT_PROJECT_CREATION
+    name: prevent_project_creation
+    note: When active, disables all project/node creation on OSF (POST to node endpoints is blocked).
+    everyone: false
+
+  - flag_name: PROJECT_READ_ONLY
+    name: project_read_only
+    note: When active, disables all project/node editing on OSF (PATCH and PUT to node endpoints is blocked).
+    everyone: false
+
 switches:
   - flag_name: DISABLE_ENGAGEMENT_EMAILS
     name: disable_engagement_emails

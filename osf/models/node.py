@@ -68,6 +68,7 @@ from website.project import tasks as node_tasks
 from website.project.model import NodeUpdateError
 from website.identifiers.tasks import update_doi_metadata_on_change
 from website.identifiers.clients import DataCiteClient
+from osf import features
 from osf.utils.permissions import (
     ADMIN,
     ADMIN_NODE,
@@ -78,6 +79,7 @@ from osf.utils.permissions import (
     READ_NODE,
     WRITE
 )
+import waffle
 from website.util.metrics import OsfSourceTags, CampaignSourceTags
 from website.util import api_url_for, api_v2_url, web_url_for
 from .base import BaseModel, GuidMixin, GuidMixinQuerySet, check_manually_assigned_guid
@@ -1388,6 +1390,18 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
                 self.add_permission(contrib.user, permission, save=True)
         Contributor.objects.bulk_create(contribs)
 
+    def is_draft_node_prevented_to_be_changed_to_node(self):
+        request = get_current_request()
+        if request:
+            return waffle.flag_is_active(request, features.PREVENT_PROJECT_CREATION)
+        try:
+            flag = waffle.get_waffle_flag_model().objects.get(
+                name=features.PREVENT_PROJECT_CREATION
+            )
+            return flag.everyone
+        except waffle.get_waffle_flag_model().DoesNotExist:
+            return False
+
     def register_node(self, schema, auth, draft_registration, parent=None, child_ids=None, provider=None, manual_guid=None):
         """Make a frozen copy of a node.
 
@@ -1499,7 +1513,11 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
 
         registered.root = None  # Recompute root on save
 
-        if not self.logs.filter(action=NodeLog.PROJECT_CREATED_FROM_DRAFT_REG).exists():
+        from osf.models import DraftNode
+        if isinstance(self, DraftNode) and self.is_draft_node_prevented_to_be_changed_to_node():
+            # New approach: DraftNode stays as DraftNode
+            registered.branched_from_node = False
+        elif not self.logs.filter(action=NodeLog.PROJECT_CREATED_FROM_DRAFT_REG).exists():
             registered.branched_from_node = True
         elif self.registrations.count() == 1:
             # First registration on a converted  DratNode is *the* "No-Project registration"
