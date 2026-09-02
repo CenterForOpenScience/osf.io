@@ -12,6 +12,7 @@ from guardian.shortcuts import get_perms
 # OSF imports
 import itsdangerous
 import pytz
+import requests
 from dirtyfields import DirtyFieldsMixin
 
 from django.conf import settings
@@ -20,7 +21,7 @@ from django.contrib.auth.hashers import check_password
 from django.contrib.auth.models import PermissionsMixin
 from django.core.exceptions import FieldDoesNotExist
 from django.dispatch import receiver
-from django.db import models
+from django.db import models, transaction
 from django.db.models import Count, Exists, OuterRef
 from django.db.models.signals import post_save
 from django.utils import timezone
@@ -36,6 +37,11 @@ from framework.auth.exceptions import (
 )
 from framework.exceptions import PermissionsError
 from framework.sessions.utils import remove_sessions_for_user
+from osf.models.admin_log_entry import (
+    update_admin_log,
+    EXTERNAL_IDENTITY_CONNECTED,
+    external_identity_connected_log_message,
+)
 from osf.external.gravy_valet import (
     request_helpers as gv_requests,
     translations as gv_translations,
@@ -315,6 +321,17 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
     # Format: {
     #   <external_id_provider>: {
     #       <external_id>: <status from ('VERIFIED, 'CREATE', 'LINK')>,
+    #       ...
+    #   },
+    #   ...
+    # }
+    external_identity_tokens = DateTimeAwareJSONField(default=dict, blank=True)
+    # Format: {
+    #   <external_id_provider>: {
+    #       <external_id>: {
+    #           "access_token" : <token>,
+    #           "refresh_token": <token>,  # optional: not all providers/users release a refresh token
+    #       }
     #       ...
     #   },
     #   ...
@@ -817,7 +834,12 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
                         self.external_identity[service] = {
                             service_id: status
                         }
+
+                token_entry = user.external_identity_tokens.get(service, {}).get(service_id)
+                if token_entry:
+                    self.external_identity_tokens.setdefault(service, {})[service_id] = token_entry
         user.external_identity = {}
+        user.external_identity_tokens = {}
 
         # FOREIGN FIELDS
         self.external_accounts.add(*user.external_accounts.values_list('pk', flat=True))
@@ -2063,21 +2085,22 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         """
         Complies with GDPR guidelines by disabling the account and removing identifying information.
         """
-        self._validate_and_remove_resource_for_gdpr_delete(
-            self.nodes.all(),
-            hard_delete=False
-        )
-        self._validate_and_remove_resource_for_gdpr_delete(
-            self.preprints.all(),
-            hard_delete=False
-        )
-        self._validate_and_remove_resource_for_gdpr_delete(
-            self.draft_registrations.all(),
-            hard_delete=True
-        )
+        with transaction.atomic():
+            self._validate_and_remove_resource_for_gdpr_delete(
+                self.nodes.all(),
+                hard_delete=False
+            )
+            self._validate_and_remove_resource_for_gdpr_delete(
+                self.preprints.all(),
+                hard_delete=False
+            )
+            self._validate_and_remove_resource_for_gdpr_delete(
+                self.draft_registrations.all(),
+                hard_delete=True
+            )
 
-        # Finally delete the user's info.
-        self._clear_identifying_information()
+            # Finally delete the user's info.
+            self._clear_identifying_information()
 
     def _validate_and_remove_resource_for_gdpr_delete(self, resources, hard_delete):
         """
@@ -2133,10 +2156,70 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
                     entity.is_deleted = True
                     entity.save()
 
+    def _revoke_orcid_access_token(self, orcid_id, orcid_token):
+        try:
+            response = requests.post(
+                website_settings.ORCID_OAUTH_REVOKE_URL,
+                data={
+                    'client_id': website_settings.ORCID_OAUTH_CLIENT_ID,
+                    'client_secret': website_settings.ORCID_OAUTH_CLIENT_SECRET,
+                    'token': orcid_token,
+                },
+                timeout=website_settings.ORCID_OAUTH_REVOKE_REQUEST_TIMEOUT,
+            )
+            response.raise_for_status()
+            return True
+        except requests.exceptions.RequestException as e:
+            sentry.log_message(
+                f'[_revoke_orcid_access_token] Failed to revoke ORCID token for user {self._id} ORCID id {orcid_id}: {e}',
+                level=logging.ERROR,
+            )
+            sentry.log_exception(e)
+            return False
+
+    def record_external_identity_connected(self, provider, external_id):
+        update_admin_log(
+            user_id=self.id,
+            object_id=self.pk,
+            object_repr='User',
+            message=external_identity_connected_log_message(provider, external_id),
+            action_flag=EXTERNAL_IDENTITY_CONNECTED,
+        )
+
+    def remove_external_identity(self, provider, external_id):
+        self.external_identity[provider].pop(external_id)
+        if not self.external_identity[provider]:
+            self.external_identity.pop(provider)
+
+        token_entry = self.external_identity_tokens.get(provider, {}).pop(external_id, None)
+        if provider in self.external_identity_tokens and not self.external_identity_tokens[provider]:
+            self.external_identity_tokens.pop(provider)
+
+        if provider == 'ORCID' and token_entry:
+            orcid_token = token_entry.get('access_token') or token_entry.get('refresh_token')
+            if orcid_token:
+                self._revoke_orcid_access_token(external_id, orcid_token)
+
+        remove_sessions_for_user(self)
+
     def _clear_identifying_information(self):
-        '''
-        This method ensures a user's info is deleted during a GDPR delete
-        '''
+        orcid_id, token_entry = next(iter(self.external_identity_tokens.get('ORCID', {}).items()), (None, None))
+        orcid_access_token = token_entry.get('access_token') if token_entry else None
+        orcid_refresh_token = token_entry.get('refresh_token') if token_entry else None
+
+        orcid_token = orcid_access_token or orcid_refresh_token
+        sentry.log_message(
+            f'[GDPR delete; _clear_identifying_information] user={self._id}: '
+            f'{"found" if orcid_token else "no"} ORCID token to revoke',
+            level=logging.INFO,
+        )
+        if not (orcid_id and orcid_token):
+            raise UserStateError('User do not have connected ORCID')
+        elif not self._revoke_orcid_access_token(orcid_id, orcid_token):
+            raise UserStateError(
+                'Fail to revoke ORCID\'s service could not be reached'
+            )
+
         # This doesn't remove identifying info, but ensures other users can't see the deleted user's profile etc.
         self.deactivate_account()
 
@@ -2172,7 +2255,9 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
                 account.profile_url = None
                 account.save()
             self.external_accounts.clear()
+
         self.external_identity = {}
+        self.external_identity_tokens = {}
         self.deleted = timezone.now()
 
     @property

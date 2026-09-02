@@ -1,0 +1,22 @@
+<tr>
+    <td>Authenticated IDs</td>
+    <td>
+        {% if external_identities %}
+            {% for identity in external_identities %}
+                <div style="margin-bottom: 8px;">
+                    <a href="{{ identity.profile_url }}" target="_blank" rel="noopener noreferrer">{{ identity.profile_url }}</a>
+                    &nbsp;&nbsp;Connected {{ identity.connected_at|date:"N j, Y"|default:"Unknown" }}
+                    {% if identity.only_login_method %}
+                        <span class="text-danger">(only login method &mdash; removing will lock this user out)</span>
+                    {% endif %}
+                    <form method="post" action="{% url 'users:remove-external-identity' guid=user.guid provider=identity.provider external_id=identity.external_id %}" style="display:inline;">
+                        {% csrf_token %}
+                        <input class="btn btn-danger" type="submit" value="Remove" />
+                    </form>
+                </div>
+            {% endfor %}
+        {% else %}
+            None
+        {% endif %}
+    </td>
+</tr>

@@ -20,6 +20,7 @@ urlpatterns = [
     re_path(r'^(?P<guid>[a-z0-9]+)/disable/$', views.UserDisableView.as_view(), name='disable'),
     re_path(r'^(?P<guid>[a-z0-9]+)/get_claim_urls/$', views.GetUserClaimLinks.as_view(), name='get-claim-urls'),
     re_path(r'^(?P<guid>[a-z0-9]+)/two-factor/disable/$', views.User2FactorDeleteView.as_view(), name='remove2factor'),
+    re_path(r'^(?P<guid>[a-z0-9]+)/external-identity/(?P<provider>[\w-]+)/(?P<external_id>[\w.:-]+)/remove/$', views.UserRemoveExternalIdentityView.as_view(), name='remove-external-identity'),
     re_path(r'^(?P<guid>[a-z0-9]+)/system_tags/add/$', views.UserAddSystemTag.as_view(), name='add-system-tag'),
     re_path(r'^(?P<guid>[a-z0-9]+)/system_tags/(?P<tag_id>[a-z0-9]+)/remove/$', views.UserRemoveSystemTag.as_view(), name='remove-system-tag'),
     re_path(r'^(?P<guid>[a-z0-9]+)/get_confirmation/$', views.GetUserConfirmationLink.as_view(), name='get-confirmation'),
