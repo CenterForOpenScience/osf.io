@@ -582,6 +582,8 @@ class NotificationCampaignCreateView(CreateView):
                 'max_retries': form.cleaned_data['max_retries'],
                 'activity_threshold': form.cleaned_data['activity_threshold'],
                 'time_window': form.cleaned_data['time_window'],
+                'max_queued_batches': form.cleaned_data['max_queued_batches'],
+                'dispatch_interval': form.cleaned_data['dispatch_interval'],
             },
             'sendgrid_bulk': form.cleaned_data.get('sendgrid_bulk', False),
         }

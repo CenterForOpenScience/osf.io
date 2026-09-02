@@ -50,6 +50,18 @@ class NotificationCampaignCreateForm(forms.ModelForm):
         initial=False,
     )
 
+    max_queued_batches = forms.IntegerField(
+        min_value=1,
+        initial=settings.MAX_QUEUED_CAMPAIGN_BATCHES,
+        help_text='Maximum number of queued campaign batches allowed before new batches are rejected.',
+    )
+
+    dispatch_interval = forms.IntegerField(
+        min_value=1,
+        initial=settings.CAMPAIGN_DISPATCH_INTERVAL,
+        help_text='The time in seconds between dispatches of campaign batches.',
+    )
+
     class Meta:
         model = NotificationCampaign
         fields = (
