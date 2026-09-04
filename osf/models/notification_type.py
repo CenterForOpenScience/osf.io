@@ -21,6 +21,7 @@ class NotificationTypeEnum(str, Enum):
     ADDONS_BOA_JOB_COMPLETE = 'addon_boa_job_complete'
 
     DESK_ARCHIVE_REGISTRATION_STUCK = 'desk_archive_registration_stuck'
+    DESK_ARCHIVE_RESTART_REPORT = 'desk_archive_restart_report'
     DESK_REQUEST_EXPORT = 'desk_request_export'
     DESK_REQUEST_DEACTIVATION = 'desk_request_deactivation'
     DESK_REGISTRATION_BULK_UPLOAD_PRODUCT_OWNER = 'desk_registration_bulk_upload_product_owner'
