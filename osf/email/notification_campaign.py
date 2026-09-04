@@ -37,6 +37,30 @@ counter_subquery = (
 )
 
 
+class NotificationCampaignTask(celery_app.Task):
+    """Shared guards for notification campaign Celery tasks."""
+
+    abstract = True
+
+    def get_campaign(self, campaign_id, run_id=None, *, abort_if_cancelled=True):
+        """Load a campaign, or return None if the task should no-op.
+        """
+        campaign = NotificationCampaign.objects.get(id=campaign_id)
+        if run_id is not None and campaign.run_id != run_id:
+            return None
+        if abort_if_cancelled and campaign.status == NotificationCampaignStatus.CANCELLED:
+            logger.warning(f"Campaign {campaign_id} was cancelled")
+            return None
+        return campaign
+
+    def sync_campaign_stats(self, campaign):
+        stats = get_campaign_recipient_stats(campaign.id)
+        campaign.recipient_count = stats['recipient_count']
+        campaign.sent_count = stats['sent_count']
+        campaign.failed_count = stats['failed_count']
+        return stats
+
+
 def build_query(node):
     """
     Convert a filter tree into a Django Q object.
@@ -160,65 +184,97 @@ def get_campaign_recipient_stats(campaign_id):
         ),
     )
 
-@celery_app.task(name='email.process_campaign_retry')
-def process_campaign_retry(*args, **kwargs):
-    campaign_id = kwargs.get('campaign_id')
-    campaign = NotificationCampaign.objects.get(id=campaign_id)
-    if kwargs.get('run_id') != campaign.run_id:
+@celery_app.task(bind=True, base=NotificationCampaignTask, name='email.process_campaign_retry')
+def process_campaign_retry(self, campaign_id, run_id):
+    campaign = self.get_campaign(campaign_id, run_id, abort_if_cancelled=False)
+    if campaign is None:
         return
 
-    final_status = NotificationCampaignStatus.COMPLETED
+    campaign.refresh_from_db()
+    execution = campaign.metadata.get('execution', {})
 
-    if campaign.status != NotificationCampaignStatus.CANCELLED:
-        failed_recipients = NotificationCampaignRecipient.objects.filter(campaign=campaign, status=NotificationCampaignRecipientStatus.FAILED)
-        max_retries = campaign.metadata.get('execution', {}).get('max_retries', settings.DEFAULT_CAMPAIGN_MAX_RETRIES)
-        failed_recipients_count = failed_recipients.count()
-        if failed_recipients_count:
-            if campaign.retries < max_retries:
-                message = (f'[Notification Campaign #{campaign_id}] WARNING: '
-                           f'Retrying {failed_recipients_count} failed recipients, '
-                           f'previous retry attempts: {campaign.retries}/{max_retries}')
-                logger.info(message)
-                sentry.log_message(message)
-                campaign.retries += 1
-                campaign.save(update_fields=['retries', 'updated_at'])
-
-                dispatch_campaign.apply_async(
-                    args=[campaign_id, campaign.run_id],
-                    kwargs={
-                        'restart_failed': True,
-                    },
-                )
-                return
-
-            final_status = NotificationCampaignStatus.PARTIALLY_COMPLETED
-    else:
+    if campaign.status == NotificationCampaignStatus.CANCELLED:
         message = f'[Notification Campaign #{campaign_id}] WARNING: Campaign {campaign.name} was cancelled.'
         logger.info(message)
         sentry.log_message(message)
+        self.sync_campaign_stats(campaign)
+        if campaign.completed_at is None:
+            campaign.completed_at = timezone.now()
+        campaign.save()
+        return
 
-    # Refresh in case the campaign was cancelled while we were running.
-    campaign.refresh_from_db(fields=['status', 'completed_at'])
+    queued_qs = NotificationCampaignRecipient.objects.filter(
+        campaign=campaign,
+        status=NotificationCampaignRecipientStatus.QUEUED,
+    )
+    if queued_qs.exists():
+        delivery_timeout = execution.get('delivery_timeout', settings.DEFAULT_CAMPAIGN_DELIVERY_TIMEOUT)
+        reference_time = campaign.started_at or campaign.created_at
+        if timezone.now() - reference_time < timedelta(seconds=delivery_timeout):
+            # Still waiting for in-flight sends / SendGrid delivery webhooks.
+            self.sync_campaign_stats(campaign)
+            campaign.save()
+            process_campaign_retry.apply_async(
+                kwargs={'campaign_id': campaign_id, 'run_id': campaign.run_id},
+                countdown=settings.CAMPAIGN_DISPATCH_INTERVAL,
+            )
+            return
 
-    # Sync statistics regardless of status.
-    stats = get_campaign_recipient_stats(campaign_id)
-    campaign.recipient_count = stats['recipient_count']
-    campaign.sent_count = stats['sent_count']
-    campaign.failed_count = stats['failed_count']
+        timed_out = queued_qs.update(
+            status=NotificationCampaignRecipientStatus.FAILED,
+            error_message='SendGrid delivery timeout',
+        )
+        self.sync_campaign_stats(campaign)
+        campaign.save()
+        message = (
+            f'[Notification Campaign #{campaign_id}] WARNING: '
+            f'Marked {timed_out} queued recipients as FAILED after delivery timeout '
+            f'({delivery_timeout}s) for campaign {campaign.name}.'
+        )
+        logger.warning(message)
+        sentry.log_message(message)
+        return
 
+    failed_recipients_count = NotificationCampaignRecipient.objects.filter(
+        campaign=campaign,
+        status=NotificationCampaignRecipientStatus.FAILED,
+    ).count()
+    max_retries = execution.get('max_retries', settings.DEFAULT_CAMPAIGN_MAX_RETRIES)
+
+    if failed_recipients_count:
+        if campaign.retries < max_retries:
+            message = (f'[Notification Campaign #{campaign_id}] WARNING: '
+                       f'Retrying {failed_recipients_count} failed recipients, '
+                       f'previous retry attempts: {campaign.retries}/{max_retries}')
+            logger.info(message)
+            sentry.log_message(message)
+            campaign.retries += 1
+            campaign.save()
+
+            dispatch_campaign.apply_async(
+                args=[campaign_id, campaign.run_id],
+                kwargs={
+                    'restart_failed': True,
+                },
+            )
+            return
+
+        final_status = NotificationCampaignStatus.PARTIALLY_COMPLETED
+    else:
+        final_status = NotificationCampaignStatus.COMPLETED
+
+    self.sync_campaign_stats(campaign)
     if campaign.completed_at is None:
         campaign.completed_at = timezone.now()
-
-    # Don't overwrite CANCELLED.
-    if campaign.status != NotificationCampaignStatus.CANCELLED:
-        campaign.status = final_status
-
+    campaign.status = final_status
     campaign.save()
 
 
-@celery_app.task(name='email.start_notification_campaign')
-def start_notification_campaign(campaign_id, restart_failed=False, restart_stuck=False):
-    campaign = NotificationCampaign.objects.get(id=campaign_id)
+@celery_app.task(bind=True, base=NotificationCampaignTask, name='email.start_notification_campaign')
+def start_notification_campaign(self, campaign_id, restart_failed=False, restart_stuck=False):
+    campaign = self.get_campaign(campaign_id)
+    if campaign is None:
+        return
     notification_type_name = campaign.notification_type.name
 
     if hasattr(NotificationTypeEnum, notification_type_name):
@@ -278,15 +334,12 @@ def assign_batch_id_to_recipients(
 
     return batch_id
 
-@celery_app.task(bind=True, name='email.dispatch_campaign')
-def dispatch_campaign(self, campaign_id, run_id, restart_failed=False):
-    campaign = NotificationCampaign.objects.get(id=campaign_id)
-    if campaign.run_id != run_id:
+@celery_app.task(bind=True, base=NotificationCampaignTask, name='email.dispatch_campaign')
+def dispatch_campaign(self, campaign_id, run_id, restart_failed=False, restart_stuck=False):
+    campaign = self.get_campaign(campaign_id, run_id)
+    if campaign is None:
         return
 
-    if campaign.status == NotificationCampaignStatus.CANCELLED:
-        logger.warning(f"Campaign {campaign_id} was cancelled")
-        return
     if campaign.status != NotificationCampaignStatus.RUNNING:
         message = f'[Notification Campaign #{campaign_id}] ERROR: Campaign {campaign.name} is not in RUNNING status.'
         logger.error(message)
@@ -324,6 +377,7 @@ def dispatch_campaign(self, campaign_id, run_id, restart_failed=False):
     )
     total_new_queued_batches = 0
     new_queued_batches = 0
+    no_more_recipients = False
     for priority_group in priority_groups:
         no_more_recipients = False
         developer_reminder = priority_group.pop('developer_reminder', False)
@@ -371,8 +425,9 @@ def dispatch_campaign(self, campaign_id, run_id, restart_failed=False):
         )
 
 
-@celery_app.task(name='email.send_campaign_batch', ignore_result=False)
+@celery_app.task(bind=True, base=NotificationCampaignTask, name='email.send_campaign_batch', ignore_result=False)
 def send_campaign_batch(
+    self,
     context,
     batch_id=None,
     notification_type_name='blank',
@@ -380,14 +435,12 @@ def send_campaign_batch(
     run_id=None,
     developer_reminder=False,
 ):
-    campaign = NotificationCampaign.objects.get(id=campaign_id)
+    campaign = self.get_campaign(campaign_id, run_id)
+    if campaign is None:
+        return
+
     recipients_qs = NotificationCampaignRecipient.objects.filter(batch_id=batch_id).select_related('user')
 
-    if campaign.run_id != run_id:
-        return
-    if campaign.status == NotificationCampaignStatus.CANCELLED:
-        logger.warning(f"Campaign {campaign_id} was cancelled")
-        return
     batch_started_at = timezone.now()
     if hasattr(NotificationTypeEnum, notification_type_name):
         notification_type = getattr(NotificationTypeEnum, notification_type_name).instance
@@ -438,15 +491,25 @@ def send_campaign_batch(
 
     if campaign.metadata.get('sendgrid_bulk', False):
         # NOTE: sendgrid bulk send feature has not been fully implemented and tested
-        recipient_emails = list(valid_emails_qs.values_list('recipient_address', flat=True))
+        recipients = list(valid_emails_qs)
+        recipient_emails = [recipient.recipient_address for recipient in recipients]
+        custom_args_list = [
+            {
+                'campaign_recipient_id': str(recipient.id),
+                'campaign_id': str(campaign_id),
+                'run_id': str(run_id),
+            }
+            for recipient in recipients
+        ]
         try:
             send_email_with_send_grid(
                 to_addr=recipient_emails,
                 notification_type=notification_type,
                 context=context,
+                email_context={'custom_args_list': custom_args_list},
                 is_multiple=True,
             )
-            valid_emails_qs.update(status=NotificationCampaignRecipientStatus.SENT, error_message=None)
+            # Leave QUEUED until SendGrid Event Webhook confirms delivery.
         except Exception as exc:
             message = (f'[Notification Campaign #{campaign_id}] ERROR: '
                        f'Campaign {campaign.name} sendgrid bulk request failed, error={str(exc)}')
@@ -462,12 +525,16 @@ def send_campaign_batch(
                     recipient_address=recipient.recipient_address,
                     notification_type=notification_type,
                     event_context=context,
-                    email_context=context,
-                    rendered_html=rendered_html
+                    email_context={
+                        'custom_args': {
+                            'campaign_recipient_id': str(recipient.id),
+                            'campaign_id': str(campaign_id),
+                            'run_id': str(run_id),
+                        },
+                    },
+                    rendered_html=rendered_html,  # Too many write operations
                 )
-                recipient.status = NotificationCampaignRecipientStatus.SENT
-                recipient.error_message = None
-                recipient_records.append(recipient)
+                # Leave QUEUED until SendGrid Event Webhook confirms delivery.
             except Exception as exc:
                 message = (f'[Notification Campaign #{campaign_id}] ERROR:'
                            f'SendGrid request failed for user {recipient.user.username} ({recipient.user._id}),'
@@ -486,15 +553,14 @@ def send_campaign_batch(
                            f'campaign_name={campaign.name}')
                 logger.warning(message)
                 sentry.log_message(message)
-        NotificationCampaignRecipient.objects.bulk_update(recipient_records, ['status', 'error_message'])
+        if recipient_records:
+            NotificationCampaignRecipient.objects.bulk_update(recipient_records, ['status', 'error_message'])
 
     # Lock the campaign row so concurrent batches cannot overwrite counters with a stale aggregate snapshot
     with transaction.atomic():
         notification_campaign = NotificationCampaign.objects.select_for_update().get(pk=campaign_id)
-        stats = get_campaign_recipient_stats(campaign_id)
-        notification_campaign.sent_count = stats['sent_count']
-        notification_campaign.failed_count = stats['failed_count']
-        notification_campaign.save(update_fields=['sent_count', 'failed_count', 'updated_at'])
+        self.sync_campaign_stats(notification_campaign)
+        notification_campaign.save(update_fields=['sent_count', 'failed_count', 'recipient_count', 'updated_at'])
 
     batch_finished_at = timezone.now()
     batch_run_time = (batch_finished_at - batch_started_at).total_seconds()
