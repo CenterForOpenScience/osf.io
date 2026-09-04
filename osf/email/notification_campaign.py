@@ -93,11 +93,13 @@ def build_campaign_filter_query(filters):
     return query
 
 @celery_app.task(name='email.create_campaign_recipients')
-def create_campaign_recipients(campaign_id):
+def create_campaign_recipients(filters=None, campaign_id=None):
     recipients_creation_started_at = timezone.now()
     campaign = NotificationCampaign.objects.get(id=campaign_id)
-    raw_filters = campaign.metadata.get('filters', {})
-    filters = build_campaign_filter_query(raw_filters)
+    if not filters:
+
+        raw_filters = campaign.metadata.get('filters', {})
+        filters = build_campaign_filter_query(raw_filters)
 
     qs = (
         OSFUser.objects

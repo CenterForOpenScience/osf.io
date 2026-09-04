@@ -474,7 +474,7 @@ class TestNotificationCampaignStart:
         )
 
     @mock.patch('osf.email.notification_campaign.dispatch_campaign.apply_async')
-    def test_start_creates_recipients_and_schedules_workflow(self, mock_dispatch_campaign, campaign):
+    def test_start_schedules_workflow(self, mock_dispatch_campaign, campaign):
         high = UserFactory()
         low = UserFactory()
         spam = UserFactory()
@@ -488,6 +488,7 @@ class TestNotificationCampaignStart:
         }
         campaign.run_id = uuid.uuid4()
         campaign.save()
+        create_campaign_recipients(campaign_id=campaign.id)
 
         start_notification_campaign(campaign.id)
 
@@ -527,6 +528,7 @@ class TestNotificationCampaignStart:
         }
         campaign.run_id = uuid.uuid4()
         campaign.save()
+        create_campaign_recipients(campaign_id=campaign.id)
         mock_dispatch_campaign.return_value.apply_async = mock.Mock()
 
         start_notification_campaign(campaign.id)
@@ -735,6 +737,7 @@ class TestSendCampaignBatch:
         running_campaign.save()
         create_campaign_recipients(Q(**{'id__in': [user.id]}), campaign_id=running_campaign.id)
         batch_id = assign_batch_id_to_recipients(campaign_id=running_campaign.id, batch_size=1)
+        mock_sentry.reset_mock()
 
         with mock.patch.object(NotificationType, 'emit'):
             send_campaign_batch(
@@ -760,6 +763,7 @@ class TestSendCampaignBatch:
         running_campaign.save()
         create_campaign_recipients(Q(**{'id__in': [user.id]}), campaign_id=running_campaign.id)
         batch_id = assign_batch_id_to_recipients(campaign_id=running_campaign.id, batch_size=1)
+        mock_sentry.reset_mock()
 
         with mock.patch.object(NotificationType, 'emit'):
             send_campaign_batch(
@@ -787,6 +791,7 @@ class TestSendCampaignBatch:
         )
         batch_id_1 = assign_batch_id_to_recipients(campaign_id=running_campaign.id, batch_size=1)
         batch_id_2 = assign_batch_id_to_recipients(campaign_id=running_campaign.id, batch_size=1)
+        mock_sentry.reset_mock()
 
         with mock.patch.object(NotificationType, 'emit'):
             send_campaign_batch(
@@ -977,6 +982,7 @@ class TestProcessCampaignRetry:
         campaign.run_id = uuid.uuid4()
         campaign.status = NotificationCampaignStatus.CANCELLED
         campaign.save()
+        mock_sentry.reset_mock()
 
         process_campaign_retry(campaign_id=campaign.id, run_id=campaign.run_id)
 
