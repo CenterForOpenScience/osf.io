@@ -92,8 +92,15 @@ def build_campaign_filter_query(filters):
         query &= build_query(manual)
     return query
 
+@celery_app.task(name='email.create_campaign_recipients')
+def create_campaign_recipients(filters=None, campaign_id=None):
+    recipients_creation_started_at = timezone.now()
+    campaign = NotificationCampaign.objects.get(id=campaign_id)
+    if not filters:
 
-def create_campaign_recipients(filters, campaign_id):
+        raw_filters = campaign.metadata.get('filters', {})
+        filters = build_campaign_filter_query(raw_filters)
+
     qs = (
         OSFUser.objects
         .filter(filters)
@@ -114,8 +121,23 @@ def create_campaign_recipients(filters, campaign_id):
                 )
                 for user_id, activity_score in rows
             ],
-            ignore_conflicts=True
+            update_conflicts=True,
+            update_fields=['activity_score'],
+            unique_fields=['campaign', 'user'],
         )
+
+    campaign.recipient_count = NotificationCampaignRecipient.objects.filter(campaign_id=campaign_id).count()
+    campaign.metadata['recipients_creation_finished'] = True
+    campaign.save(update_fields=['recipient_count', 'metadata'])
+
+    recipients_creation_finished_at = timezone.now()
+    recipients_creation_run_time = (recipients_creation_finished_at - recipients_creation_started_at)
+    message = (f'[Notification Campaign #{campaign_id}] INFO: '
+                f'Recipients creation finished in {recipients_creation_run_time} seconds '
+                f'(start={recipients_creation_started_at}, finish={recipients_creation_finished_at}) '
+                f'for Campaign {campaign.name} (start={campaign.started_at}).')
+    logger.info(message)
+    sentry.log_message(message)
 
 
 def get_campaign_recipient_stats(campaign_id):
@@ -197,33 +219,21 @@ def process_campaign_retry(*args, **kwargs):
 @celery_app.task(name='email.start_notification_campaign')
 def start_notification_campaign(campaign_id, restart_failed=False, restart_stuck=False):
     campaign = NotificationCampaign.objects.get(id=campaign_id)
-    filters = campaign.metadata.get('filters', {})
     notification_type_name = campaign.notification_type.name
 
     if hasattr(NotificationTypeEnum, notification_type_name):
         del getattr(NotificationTypeEnum, notification_type_name).instance
 
-    recipient_filters = build_campaign_filter_query(filters)
-
-    if not restart_failed and not restart_stuck:
-        recipients_creation_started_at = timezone.now()
-        create_campaign_recipients(filters=recipient_filters, campaign_id=campaign_id)
-        campaign.recipient_count = NotificationCampaignRecipient.objects.filter(campaign_id=campaign_id).count()
-        campaign.save()
-        recipients_creation_finished_at = timezone.now()
-        recipients_creation_run_time = (recipients_creation_finished_at - recipients_creation_started_at).total_seconds()
-        message = (f'[Notification Campaign #{campaign_id}] INFO: '
-                   f'Recipients creation finished in {recipients_creation_run_time} seconds '
-                   f'(start={recipients_creation_started_at}, finish={recipients_creation_finished_at}) '
-                   f'for Campaign {campaign.name} (start={campaign.started_at}).')
-        logger.info(message)
-        sentry.log_message(message)
+    if restart_stuck:
+        NotificationCampaignRecipient.objects.filter(
+            campaign_id=campaign_id,
+            status=NotificationCampaignRecipientStatus.QUEUED
+        ).update(status=NotificationCampaignRecipientStatus.PENDING, batch_id=None)
 
     dispatch_campaign.apply_async(
         args=[campaign_id, campaign.run_id],
         kwargs={
             'restart_failed': restart_failed,
-            'restart_stuck': restart_stuck,
         },
     )
 
@@ -269,7 +279,7 @@ def assign_batch_id_to_recipients(
     return batch_id
 
 @celery_app.task(bind=True, name='email.dispatch_campaign')
-def dispatch_campaign(self, campaign_id, run_id, restart_failed=False, restart_stuck=False):
+def dispatch_campaign(self, campaign_id, run_id, restart_failed=False):
     campaign = NotificationCampaign.objects.get(id=campaign_id)
     if campaign.run_id != run_id:
         return
@@ -300,19 +310,23 @@ def dispatch_campaign(self, campaign_id, run_id, restart_failed=False, restart_s
         {
             'min_activity': activity_threshold,
             'spam': False,
+            'developer_reminder': True,
         },
         {
             'max_activity': activity_threshold,
             'spam': False,
+            'developer_reminder': False,
         },
         {
             'spam': True,
+            'developer_reminder': False,
         },
     )
     total_new_queued_batches = 0
     new_queued_batches = 0
     for priority_group in priority_groups:
         no_more_recipients = False
+        developer_reminder = priority_group.pop('developer_reminder', False)
         for _ in range(to_queue):
             batch_id = assign_batch_id_to_recipients(
                 campaign_id,
@@ -331,7 +345,7 @@ def dispatch_campaign(self, campaign_id, run_id, restart_failed=False, restart_s
                 campaign_id=campaign_id,
                 notification_type_name=notification_type_name,
                 run_id=run_id,
-                developer_reminder=True if priority_group == 'high_activity' else False,
+                developer_reminder=developer_reminder,
             )
             new_queued_batches += 1
 
@@ -352,7 +366,6 @@ def dispatch_campaign(self, campaign_id, run_id, restart_failed=False, restart_s
             args=[campaign_id, run_id],
             kwargs={
                 'restart_failed': restart_failed,
-                'restart_stuck': restart_stuck,
             },
             countdown=execution.get('dispatch_interval', settings.CAMPAIGN_DISPATCH_INTERVAL),
         )
