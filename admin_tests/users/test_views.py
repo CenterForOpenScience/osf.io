@@ -113,6 +113,7 @@ class TestResetPasswordView(AdminTestCase):
 class TestGDPRDeleteUser(AdminTestCase):
     def setUp(self):
         self.user = UserFactory()
+        self.user.external_identity = {'ORCID': {'fake-orcid-id': 'VERIFIED'}}
         self.user.external_identity_tokens = {
             'ORCID': {'fake-orcid-id': {'access_token': 'fake-orcid-token'}},
         }

@@ -1220,6 +1220,7 @@ class TestDeactivatedUser:
     def test_gdpr_deleted_user_returns_404_and_no_meta_info(
             self, mock_post, app, user_one, user_two):
         mock_post.return_value = mock.Mock(status_code=200)
+        user_one.external_identity = {'ORCID': {'fake-orcid-id': 'VERIFIED'}}
         user_one.external_identity_tokens = {
             'ORCID': {'fake-orcid-id': {'access_token': 'fake-orcid-token'}},
         }
