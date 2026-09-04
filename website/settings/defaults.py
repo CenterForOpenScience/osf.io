@@ -464,6 +464,7 @@ class CeleryConfig:
         'website.search.elastic_search',
         'scripts.generate_sitemap',
         'osf.management.commands.clear_expired_sessions',
+        'osf.management.commands.restart_stuck_registrations',
         'osf.management.commands.delete_withdrawn_or_failed_registration_files',
         'osf.management.commands.migrate_pagecounter_data',
         'osf.management.commands.migrate_deleted_date',
@@ -631,6 +632,7 @@ class CeleryConfig:
         'scripts.remove_after_use.merge_notification_subscription_provider_ct',
         'scripts.disable_removed_beat_tasks',
         'osf.management.commands.delete_withdrawn_or_failed_registration_files',
+        'osf.management.commands.restart_stuck_registrations',
         'osf.email.notification_campaign',
     )
 
@@ -753,6 +755,11 @@ class CeleryConfig:
         'approve_registration_updates': {
             'task': 'osf.management.commands.approve_pending_schema_responses',
             'schedule': crontab(minute=0, hour=5),  # Daily 12 a.m
+            'kwargs': {'dry_run': False},
+        },
+        'restart_stuck_registrations': {
+            'task': 'osf.management.commands.restart_stuck_registrations',
+            'schedule': crontab(minute=30, hour=5),  # Daily 12:30 a.m
             'kwargs': {'dry_run': False},
         },
         'delete_expired_djelme_indexes': {

@@ -211,6 +211,31 @@
                 </form>
             </section>
             <section>
+                <h4><u>Set email for stuck registration report</u></h4>
+                <p>
+                    Registrations stuck archiving are restarted automatically every day. Enter up to
+                    three addresses to send the report of what is still stuck to.
+                </p>
+                <form method="post"
+                      action="{% url 'management:stuck_registration_report'%}">
+                    {% csrf_token %}
+                    <label>Emails (up to 3, comma separated):</label>
+                    <input type="text" name="report_emails" size="60"
+                           value="{{ stuck_registration_report.emails|join:', ' }}"/><br>
+
+                    <label for="report_cadence">Report notification:</label>
+                    <select id="report_cadence" name="report_cadence">
+                        {% for value, label in stuck_registration_report_cadences %}
+                            <option value="{{ value }}" {% if value == stuck_registration_report.cadence %}selected{% endif %}>{{ label }}</option>
+                        {% endfor %}
+                    </select><br>
+
+                    <nav>
+                        <input class="btn btn-success" type="submit" value="Save" />
+                    </nav>
+                </form>
+            </section>
+            <section>
                 <h4><u>Update ROR funder names to be consistent and proper.</u></h4>
                 <p>
                     Take a csv file of <code>ROR ID</code>, <code>ROR

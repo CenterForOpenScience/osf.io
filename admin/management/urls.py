@@ -24,4 +24,6 @@ urlpatterns = [
             name='remove_orcid_from_user_social'),
     re_path(r'^migrate_funder_names_to_ror', views.MigrateFunderNamesToRor.as_view(),
             name='migrate_funder_names_to_ror'),
+    re_path(r'^stuck_registration_report', views.StuckRegistrationReport.as_view(),
+            name='stuck_registration_report'),
 ]
