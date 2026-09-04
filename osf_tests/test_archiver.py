@@ -13,7 +13,9 @@ from framework.auth import Auth
 from framework.celery_tasks import handlers
 
 from website.archiver import (
+    ARCHIVER_FAILURE,
     ARCHIVER_INITIATED,
+    ARCHIVER_SUCCESS,
 )
 from website.archiver import utils as archiver_utils
 from website.app import *  # noqa: F403
@@ -1219,6 +1221,75 @@ class TestArchiverScripts(ArchiverTestCase):
         assert failed == failures
         for pk in legacy:
             assert pk not in failed
+
+    def test_find_failed_registrations_excludes_archived_registrations(self):
+        delta = settings.ARCHIVE_TIMEOUT_TIMEDELTA + datetime.timedelta(hours=1)
+        reg = factories.RegistrationFactory()
+        archive_job = reg.archive_job
+        archive_job.datetime_initiated = timezone.now() - delta
+        archive_job.status = ARCHIVER_INITIATED
+        archive_job.sent = False
+        archive_job.save()
+        archive_job._set_target('osfstorage')
+        target = archive_job.get_target('osfstorage')
+        target.status = ARCHIVER_SUCCESS
+        target.save()
+        failed = [f._id for f in Registration.find_failed_registrations()]
+        assert reg.archive_job.status == ARCHIVER_INITIATED
+        assert reg.archive_job.archive_tree_finished()
+        assert reg._id not in failed
+        assert not reg.is_stuck_registration
+
+    def test_find_failed_registrations_excludes_registrations_whose_archive_failed(self):
+        delta = settings.ARCHIVE_TIMEOUT_TIMEDELTA + datetime.timedelta(hours=1)
+        reg = factories.RegistrationFactory()
+        archive_job = reg.archive_job
+        archive_job.datetime_initiated = timezone.now() - delta
+        archive_job.status = ARCHIVER_INITIATED
+        archive_job.sent = False
+        archive_job.save()
+        archive_job._set_target('osfstorage')
+        target = archive_job.get_target('osfstorage')
+        target.status = ARCHIVER_FAILURE
+        target.save()
+        failed = [f._id for f in Registration.find_failed_registrations()]
+        assert reg._id not in failed
+
+    def test_find_failed_registrations_includes_registrations_still_archiving(self):
+        delta = settings.ARCHIVE_TIMEOUT_TIMEDELTA + datetime.timedelta(hours=1)
+        reg = factories.RegistrationFactory()
+        archive_job = reg.archive_job
+        archive_job.datetime_initiated = timezone.now() - delta
+        archive_job.status = ARCHIVER_INITIATED
+        archive_job.sent = False
+        archive_job.save()
+        archive_job._set_target('osfstorage')
+        archive_job.update_target('osfstorage', ARCHIVER_INITIATED)
+        failed = [f._id for f in Registration.find_failed_registrations()]
+        assert reg._id in failed
+        assert reg.is_stuck_registration
+
+    def test_find_failed_registrations_includes_root_of_stuck_component(self):
+        delta = settings.ARCHIVE_TIMEOUT_TIMEDELTA + datetime.timedelta(hours=1)
+        proj = factories.NodeFactory()
+        factories.NodeFactory(parent=proj)
+        reg = factories.RegistrationFactory(project=proj)
+        rchild = reg._nodes.first()
+        root_job = reg.archive_job
+        root_job.datetime_initiated = timezone.now() - delta
+        root_job.sent = True
+        root_job.save()
+        root_job._set_target('osfstorage')
+        root_job.update_target('osfstorage', ARCHIVER_SUCCESS)
+        child_job = rchild.archive_job
+        child_job.datetime_initiated = timezone.now() - delta
+        child_job.status = ARCHIVER_INITIATED
+        child_job.sent = False
+        child_job.save()
+        child_job._set_target('osfstorage')
+        child_job.update_target('osfstorage', ARCHIVER_INITIATED)
+        failed = [f._id for f in Registration.find_failed_registrations()]
+        assert reg._id in failed
 
 
 class TestArchiverBehavior(OsfTestCase):
