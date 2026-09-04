@@ -19,7 +19,7 @@ from mako.lexer import Lexer
 from mako.parsetree import ControlLine
 from string import Formatter
 from osf.email import _render_email_html
-from osf.email.notification_campaign import FILTER_PRESETS, counter_subquery, build_query
+from osf.email.notification_campaign import FILTER_PRESETS, counter_subquery, build_campaign_filter_query
 from website import settings
 from urllib.parse import urlencode
 
@@ -431,6 +431,8 @@ class NotificationCampaignDetail(PermissionRequiredMixin, DetailView):
                 if k not in {'filters', 'context', 'execution', 'template'}
             },
             'allow_restart_stuck': True if timezone.now() - notification_campaign.updated_at > timedelta(minutes=15) else False,
+            'delete_allowed': notification_campaign.status != NotificationCampaignStatus.RUNNING,
+            'start_allowed': notification_campaign.status == NotificationCampaignStatus.CREATED and metadata.get('recipients_creation_finished', False),
         }
 
         if notification_campaign.status != NotificationCampaignStatus.CREATED:
@@ -581,8 +583,11 @@ class NotificationCampaignCreateView(CreateView):
                 'max_retries': form.cleaned_data['max_retries'],
                 'activity_threshold': form.cleaned_data['activity_threshold'],
                 'time_window': form.cleaned_data['time_window'],
+                'max_queued_batches': form.cleaned_data['max_queued_batches'],
+                'dispatch_interval': form.cleaned_data['dispatch_interval'],
             },
             'sendgrid_bulk': form.cleaned_data.get('sendgrid_bulk', False),
+            'recipients_creation_finished': False,
         }
         try:
             _render_email_html(form.instance.notification_type, form.cleaned_data['context'])
@@ -641,10 +646,7 @@ class NotificationCampaignsRecipientsPreview(PermissionRequiredMixin, ListView):
         raw_filters = self.request.GET.get('filters', None)
         if raw_filters:
             json_filters = json.loads(raw_filters)
-            if predefined := json_filters.get('predefined'):
-                query = Q(**FILTER_PRESETS.get(predefined, {}))
-            else:
-                query = build_query(json_filters.get('manual'))
+            query = build_campaign_filter_query(json_filters)
 
         qs = OSFUser.objects.filter(query)
         qs = qs.annotate(
@@ -748,3 +750,41 @@ class StartNotificationCampaign(PermissionRequiredMixin, View):
             'notifications:notification_campaigns_detail',
             pk=notification_campaign.pk,
         )
+
+class CreateNotificationCampaignRecipients(PermissionRequiredMixin, View):
+    permission_required = 'osf.change_notificationcampaign'
+
+    def post(self, request, *args, **kwargs):
+        notification_campaign = get_object_or_404(
+            NotificationCampaign,
+            pk=kwargs['pk'],
+        )
+
+        if notification_campaign.status != NotificationCampaignStatus.CREATED:
+            messages.error(request, 'Recipients can only be created for campaigns in CREATED status.')
+            return redirect(
+                'notifications:notification_campaigns_detail',
+                pk=notification_campaign.pk,
+            )
+
+        notification_campaign.create_recipients()
+
+        return redirect(
+            'notifications:notification_campaigns_detail',
+            pk=notification_campaign.pk,
+        )
+
+class DeleteNotificationCampaign(PermissionRequiredMixin, View):
+    permission_required = 'osf.delete_notificationcampaign'
+
+    def post(self, request, *args, **kwargs):
+        notification_campaign = get_object_or_404(
+            NotificationCampaign,
+            pk=kwargs['pk'],
+        )
+        if notification_campaign.status == NotificationCampaignStatus.RUNNING:
+            messages.error(request, 'Cannot delete a running campaign.')
+            return redirect('notifications:notification_campaigns_detail', pk=notification_campaign.pk)
+        notification_campaign.delete()
+        messages.success(request, f'Notification campaign {notification_campaign.name} deleted successfully.')
+        return redirect('notifications:notification_campaigns_list')

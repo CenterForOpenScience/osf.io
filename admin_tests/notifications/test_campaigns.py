@@ -16,6 +16,7 @@ from admin.notifications.views import (
     NotificationCampaignDetail,
     NotificationCampaignsList,
     StartNotificationCampaign,
+    DeleteNotificationCampaign,
 )
 from admin_tests.utilities import setup_form_view
 from osf.models import NotificationType
@@ -60,6 +61,8 @@ def _valid_form_data(notification_type, **overrides):
         'activity_threshold': settings.DEFAULT_CAMPAIGN_ACTIVITY_THRESHOLD,
         'sendgrid_bulk': False,
         'time_window': 8 * 60 * 60,
+        'max_queued_batches': settings.MAX_QUEUED_CAMPAIGN_BATCHES,
+        'dispatch_interval': settings.CAMPAIGN_DISPATCH_INTERVAL,
     }
     data.update(overrides)
     return data
@@ -260,7 +263,9 @@ class TestNotificationCampaignCreateView(AdminTestCase):
                 max_retries=4,
                 activity_threshold=77,
                 sendgrid_bulk=True,
-                time_window=28800
+                time_window=28800,
+                max_queued_batches=10,
+                dispatch_interval=60,
             ),
         )
         request.user = self.user
@@ -282,7 +287,9 @@ class TestNotificationCampaignCreateView(AdminTestCase):
             'batch_size': 25,
             'max_retries': 4,
             'activity_threshold': 77,
-            'time_window': 28800
+            'time_window': 28800,
+            'max_queued_batches': 10,
+            'dispatch_interval': 60,
         }
         assert campaign.metadata['sendgrid_bulk'] is True
         assert campaign.metadata['filters'] == {'predefined': 'active'}
@@ -419,3 +426,33 @@ class TestNotificationCampaignAdminPermissions(AdminTestCase):
         mock_start.assert_not_called()
         self.campaign.refresh_from_db()
         assert self.campaign.status == NotificationCampaignStatus.CREATED
+
+class TestNotificationCampaignDeleteView(AdminTestCase):
+
+    def setUp(self):
+        super().setUp()
+        self.user = AuthUserFactory()
+        self.notification_type, _ = NotificationType.objects.get_or_create(
+            name='blank',
+            defaults={'subject': 'Test', 'template': 'Hello'},
+        )
+        self.campaign = NotificationCampaign.objects.create(
+            name='Campaign',
+            notification_type=self.notification_type,
+            metadata={'filters': {}, 'context': {}, 'execution': {}},
+        )
+
+    def test_delete_requires_change_notificationcampaign_permission(self):
+        request = RequestFactory().post(
+            reverse('notifications:notification_campaigns_delete', kwargs={'pk': self.campaign.pk})
+        )
+        request.user = self.user
+        patch_messages(request)
+
+        with self.assertRaises(PermissionDenied):
+            DeleteNotificationCampaign.as_view()(request, pk=self.campaign.pk)
+
+        grant_permission(self.user, 'delete_notificationcampaign')
+        response = DeleteNotificationCampaign.as_view()(request, pk=self.campaign.pk)
+        assert response.status_code == 302
+        assert not NotificationCampaign.objects.filter(pk=self.campaign.pk).exists()
