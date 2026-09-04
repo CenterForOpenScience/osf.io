@@ -253,7 +253,6 @@ def get_profile_url():
 
     return get_client().get_profile_url()
 
-
 def make_response_from_ticket(ticket, service_url):
     """
     Given a CAS ticket and service URL, attempt to validate the user and return a proper redirect response.
@@ -297,7 +296,14 @@ def make_response_from_ticket(ticket, service_url):
             # this extra step will guarantee that 2FA are enforced
             # current CAS session created by external login must be cleared first before authentication
             if external_credential:
+                access_token = cas_resp.attributes.get('orcidAccessToken', None)
+                refresh_token = cas_resp.attributes.get('orcidRefreshToken', None)
                 user.verification_key = generate_verification_key()
+                user.save_orcid_access_token_to_user(
+                    external_credential['id'],
+                    access_token,
+                    refresh_token,
+                )
                 user.save()
                 print_cas_log(
                     f'CAS response - redirect existing external IdP login to verification key login: user=[{user._id}]',
@@ -325,6 +331,8 @@ def make_response_from_ticket(ticket, service_url):
             user = {
                 'external_id_provider': external_credential['provider'],
                 'external_id': external_credential['id'],
+                'external_id_access_token': cas_resp.attributes.get('orcidAccessToken', None),
+                'external_id_refresh_token': cas_resp.attributes.get('orcidRefreshToken', None),
                 'fullname': fullname,
                 'service_url': service_furl.url,
             }

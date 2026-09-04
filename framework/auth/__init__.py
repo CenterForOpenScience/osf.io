@@ -60,6 +60,8 @@ def external_first_login_authenticate(user_dict, response):
     data = {
         'auth_user_external_id_provider': user_dict['external_id_provider'],
         'auth_user_external_id': user_dict['external_id'],
+        'auth_user_external_id_access_token': user_dict.get('external_id_access_token'),
+        'auth_user_external_id_refresh_token': user_dict.get('external_id_refresh_token'),
         'auth_user_fullname': user_dict['fullname'],
         'auth_user_external_first_login': True,
         'service_url': user_dict['service_url'],
