@@ -431,7 +431,8 @@ class NotificationCampaignDetail(PermissionRequiredMixin, DetailView):
                 if k not in {'filters', 'context', 'execution', 'template'}
             },
             'allow_restart_stuck': True if timezone.now() - notification_campaign.updated_at > timedelta(minutes=15) else False,
-            'delete_allowed': notification_campaign.status != NotificationCampaignStatus.RUNNING
+            'delete_allowed': notification_campaign.status != NotificationCampaignStatus.RUNNING,
+            'start_allowed': notification_campaign.status == NotificationCampaignStatus.CREATED and metadata.get('recipients_creation_finished', False),
         }
 
         if notification_campaign.status != NotificationCampaignStatus.CREATED:
@@ -586,6 +587,7 @@ class NotificationCampaignCreateView(CreateView):
                 'dispatch_interval': form.cleaned_data['dispatch_interval'],
             },
             'sendgrid_bulk': form.cleaned_data.get('sendgrid_bulk', False),
+            'recipients_creation_finished': False,
         }
         try:
             _render_email_html(form.instance.notification_type, form.cleaned_data['context'])
@@ -743,6 +745,29 @@ class StartNotificationCampaign(PermissionRequiredMixin, View):
         restart_stuck = request.GET.get('restart_stuck') == 'true'
 
         notification_campaign.start(restart_failed=restart_failed, restart_stuck=restart_stuck)
+
+        return redirect(
+            'notifications:notification_campaigns_detail',
+            pk=notification_campaign.pk,
+        )
+
+class CreateNotificationCampaignRecipients(PermissionRequiredMixin, View):
+    permission_required = 'osf.change_notificationcampaign'
+
+    def post(self, request, *args, **kwargs):
+        notification_campaign = get_object_or_404(
+            NotificationCampaign,
+            pk=kwargs['pk'],
+        )
+
+        if notification_campaign.status != NotificationCampaignStatus.CREATED:
+            messages.error(request, 'Recipients can only be created for campaigns in CREATED status.')
+            return redirect(
+                'notifications:notification_campaigns_detail',
+                pk=notification_campaign.pk,
+            )
+
+        notification_campaign.create_recipients()
 
         return redirect(
             'notifications:notification_campaigns_detail',

@@ -100,6 +100,16 @@ class NotificationCampaign(models.Model):
             )
         )
 
+    def create_recipients(self):
+        from osf.email.notification_campaign import create_campaign_recipients
+
+        self.metadata.update({'recipients_creation_finished': False})
+        self.save()
+
+        transaction.on_commit(
+            lambda: create_campaign_recipients.delay(campaign_id=self.id)
+        )
+
 
 class NotificationCampaignRecipient(models.Model):
     campaign = models.ForeignKey(

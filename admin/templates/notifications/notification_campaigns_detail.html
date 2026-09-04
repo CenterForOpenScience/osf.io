@@ -169,8 +169,19 @@
         style="display:inline;"
     >
         {% csrf_token %}
-        <button type="submit" class="btn btn-primary" {% if notification_campaign.status != "created" %}disabled{% endif %}>
+        <button type="submit" class="btn btn-primary" {% if not start_allowed %}disabled{% endif %}>
             Start Campaign
+        </button>
+    </form>
+    <form
+        id="create-campaign-recipients-form"
+        method="post"
+        action="{% url 'notifications:notification_campaigns_create_recipients' notification_campaign.id %}"
+        style="display:inline;"
+    >
+        {% csrf_token %}
+        <button type="submit" class="btn btn-primary" {% if notification_campaign.status != "created" %}disabled{% endif %}>
+            Create Campaign Recipients
         </button>
     </form>
     <form
