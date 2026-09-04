@@ -2126,6 +2126,7 @@ class TestUserGdprDelete:
     @pytest.fixture()
     def user(self):
         user = AuthUserFactory()
+        user.external_identity = {'ORCID': {'fake-orcid-id': 'VERIFIED'}}
         user.external_identity_tokens = {
             'ORCID': {'fake-orcid-id': {'access_token': 'fake-orcid-token'}},
         }
@@ -2262,17 +2263,32 @@ class TestUserGdprDelete:
         assert mock_post.call_args.kwargs['data']['token'] == 'fake-orcid-token'
 
     @mock.patch('osf.models.user.requests.post')
-    def test_gdpr_delete_no_orcid_token_no_revoke_call(self, mock_post, user):
-        mock_post.return_value = mock.Mock(status_code=200)
-        user.external_identity_tokens = {
-            'ORCID': {'fake-orcid-id': {'access_token': 'fake-orcid-token'}},
-        }
+    def test_gdpr_delete_orcid_identity_without_token_blocks_delete(self, mock_post, user):
+        user.external_identity_tokens = {}
         user.save()
 
-        user.gdpr_delete()
+        with pytest.raises(UserStateError):
+            user.gdpr_delete()
 
-        mock_post.assert_called_once()
-        assert mock_post.call_args.kwargs['data']['token'] == 'fake-orcid-token'
+        mock_post.assert_not_called()
+        assert user.deleted is None
+        assert not user.is_disabled
+        assert user.external_identity == {'ORCID': {'fake-orcid-id': 'VERIFIED'}}
+
+    @mock.patch('osf.models.user.requests.post')
+    def test_gdpr_delete_orcid_token_without_identity_blocks_delete(self, mock_post, user):
+        user.external_identity = {}
+        user.save()
+
+        with pytest.raises(UserStateError):
+            user.gdpr_delete()
+
+        mock_post.assert_not_called()
+        assert user.deleted is None
+        assert not user.is_disabled
+        assert user.external_identity_tokens == {
+            'ORCID': {'fake-orcid-id': {'access_token': 'fake-orcid-token'}},
+        }
 
     @mock.patch('osf.models.user.requests.post')
     def test_gdpr_delete_orcid_revoke_failure_blocks_delete(self, mock_post, user):
@@ -2335,16 +2351,14 @@ class TestUserGdprDelete:
         }
 
     @mock.patch('osf.models.user.requests.post')
-    def test_gdpr_delete_orcid_empty_token_no_revoke_call(self, mock_post, user):
-        mock_post.return_value = mock.Mock(status_code=200)
-        user.external_identity_tokens = {
-            'ORCID': {'fake-orcid-id': {'access_token': 'fake-orcid-token'}},
-        }
+    def test_gdpr_delete_no_orcid_skips_revoke_call(self, mock_post, user):
+        user.external_identity = {}
+        user.external_identity_tokens = {}
         user.save()
 
         user.gdpr_delete()
 
-        mock_post.assert_called_once()
+        mock_post.assert_not_called()
         assert user.deleted is not None
         assert user.is_disabled
 
