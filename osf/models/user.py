@@ -2259,11 +2259,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
                 )
                 sentry.log_exception(e)
                 raise UserStateError(f'Fail to revoke ORCID access. Error: {e}')
-
-            with transaction.atomic():
-                self.external_identity.get('ORCID', {}).pop(orcid_id, None)
-                self.external_identity_tokens.get('ORCID', {}).pop(orcid_id, None)
-                self.save(update_fields=['external_identity', 'external_identity_tokens'])
+            # NOTE: The actual identities/tokens removal is postponed/delegated to _clear_identifying_information.
 
     def _clear_identifying_information(self):
         # This doesn't remove identifying info, but ensures other users can't see the deleted user's profile etc.
