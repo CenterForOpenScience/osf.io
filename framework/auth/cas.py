@@ -332,10 +332,8 @@ def make_response_from_ticket(ticket, service_url):
                 level=LogLevel.INFO,
             )
             from website.util import web_url_for
-            # Note: ORCID attributes can be marked private and not shared, default to orcid otherwise
+            # Note: ORCID attributes can be marked private and not shared, thus `fullname` below can be empty
             fullname = '{} {}'.format(cas_resp.attributes.get('given-names', ''), cas_resp.attributes.get('family-name', '')).strip()
-            if not fullname:
-                fullname = external_credential['id']
             user = {
                 'external_id_provider': external_credential['provider'],
                 'external_id': external_credential['id'],
