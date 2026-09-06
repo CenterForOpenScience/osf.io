@@ -21,7 +21,7 @@ from django.contrib.auth.hashers import check_password
 from django.contrib.auth.models import PermissionsMixin
 from django.core.exceptions import FieldDoesNotExist
 from django.dispatch import receiver
-from django.db import models
+from django.db import models, transaction
 from django.db.models import Count, Exists, OuterRef
 from django.db.models.signals import post_save
 from django.utils import timezone
@@ -315,7 +315,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
     external_identity = DateTimeAwareJSONField(default=dict, blank=True)
     # Format: {
     #   <external_id_provider>: {
-    #       <external_id>: <status from ('VERIFIED, 'CREATE', 'LINK')>,
+    #       <external_id>: <status from ('VERIFIE'D, 'CREATE', 'LINK')>,
     #       ...
     #   },
     #   ...
@@ -2080,21 +2080,24 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         """
         Complies with GDPR guidelines by disabling the account and removing identifying information.
         """
-        self._validate_and_remove_resource_for_gdpr_delete(
-            self.nodes.all(),
-            hard_delete=False
-        )
-        self._validate_and_remove_resource_for_gdpr_delete(
-            self.preprints.all(),
-            hard_delete=False
-        )
-        self._validate_and_remove_resource_for_gdpr_delete(
-            self.draft_registrations.all(),
-            hard_delete=True
-        )
+        self._revoke_orcid_tokens()
 
-        # Finally delete the user's info.
-        self._clear_identifying_information()
+        with transaction.atomic():
+            self._validate_and_remove_resource_for_gdpr_delete(
+                self.nodes.all(),
+                hard_delete=False
+            )
+            self._validate_and_remove_resource_for_gdpr_delete(
+                self.preprints.all(),
+                hard_delete=False
+            )
+            self._validate_and_remove_resource_for_gdpr_delete(
+                self.draft_registrations.all(),
+                hard_delete=True
+            )
+
+            # Finally delete the user's info.
+            self._clear_identifying_information()
 
     def _validate_and_remove_resource_for_gdpr_delete(self, resources, hard_delete):
         """
@@ -2174,13 +2177,9 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
                 level=logging.INFO,
             )
 
-    def _clear_identifying_information(self):
-        '''
-        This method ensures a user's info is deleted during a GDPR delete
-        '''
-        # A user is expected to have at most one ORCID identity, but merging users with different verified
-        # ORCID ids can leave more than one behind (see `merge_user`), so revoke all of them rather than
-        # assuming there is only one.
+    def _revoke_orcid_tokens(self):
+        """Revokes all ORCID tokens associated with this user via the ORCID API.
+        """
         identity_ids = set(self.external_identity.get('ORCID', {}))
         orcid_tokens = self.external_identity_tokens.get('ORCID', {})
 
@@ -2203,9 +2202,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
                 f'but no token to revoke',
                 level=logging.ERROR,
             )
-            raise UserStateError(
-                'User has a connected ORCID identity but no token to revoke'
-            )
+            raise UserStateError('User has a connected ORCID identity but no token to revoke')
 
         token_only_ids = tokenable_ids - identity_ids
         if token_only_ids:
@@ -2214,51 +2211,54 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
                 f'but no connected identity',
                 level=logging.ERROR,
             )
-            raise UserStateError(
-                'User has an ORCID token but no connected identity'
-            )
+            raise UserStateError('User has an ORCID token but no connected identity')
 
         revocable_ids = identity_ids & tokenable_ids
-        if revocable_ids:
-            for orcid_id in sorted(revocable_ids):
-                token_entry = orcid_tokens[orcid_id]
-                orcid_token = token_entry.get('access_token') or token_entry.get('refresh_token')
-                sentry.log_message(
-                    f'[GDPR delete] user={self._id}: revoking ORCID id={orcid_id} '
-                    f'via {website_settings.ORCID_OAUTH_REVOKE_URL}',
-                    level=logging.INFO,
-                )
-                try:
-                    response = requests.post(
-                        website_settings.ORCID_OAUTH_REVOKE_URL,
-                        data={
-                            'client_id': website_settings.ORCID_OAUTH_CLIENT_ID,
-                            'client_secret': website_settings.ORCID_OAUTH_CLIENT_SECRET,
-                            'token': orcid_token,
-                        },
-                        timeout=website_settings.ORCID_OAUTH_REVOKE_REQUEST_TIMEOUT,
-                    )
-                    sentry.log_message(
-                        f'[GDPR delete] user={self._id}: ORCID id={orcid_id} revoked, '
-                        f'status_code={response.status_code}, response_text={response.text}',
-                        level=logging.INFO,
-                    )
-                    response.raise_for_status()
-                except requests.exceptions.RequestException as e:
-                    sentry.log_message(
-                        f'[GDPR delete] Failed to revoke ORCID token for user {self._id} ORCID id {orcid_id}: {e}',
-                        level=logging.ERROR,
-                    )
-                    sentry.log_exception(e)
-                    raise UserStateError(
-                        'Fail to revoke ORCID\'s service could not be reached'
-                    )
-        else:
+        if not revocable_ids:
             sentry.log_message(
-                f'[GDPR delete; _clear_identifying_information] user={self._id}: no ORCID connected, nothing to revoke',
+                f'[GDPR delete; _revoke_orcid_tokens] user={self._id}: no ORCID connected, nothing to revoke',
                 level=logging.INFO,
             )
+            return
 
+        for orcid_id in sorted(revocable_ids):
+            token_entry = orcid_tokens[orcid_id]
+            orcid_token = token_entry.get('access_token') or token_entry.get('refresh_token')
+            sentry.log_message(
+                f'[GDPR delete] user={self._id}: revoking ORCID id={orcid_id} '
+                f'via {website_settings.ORCID_OAUTH_REVOKE_URL}',
+                level=logging.INFO,
+            )
+            try:
+                response = requests.post(
+                    website_settings.ORCID_OAUTH_REVOKE_URL,
+                    data={
+                        'client_id': website_settings.ORCID_OAUTH_CLIENT_ID,
+                        'client_secret': website_settings.ORCID_OAUTH_CLIENT_SECRET,
+                        'token': orcid_token,
+                    },
+                    timeout=website_settings.ORCID_OAUTH_REVOKE_REQUEST_TIMEOUT,
+                )
+                sentry.log_message(
+                    f'[GDPR delete] user={self._id}: ORCID id={orcid_id} revoked, '
+                    f'status_code={response.status_code}, response_text={response.text}',
+                    level=logging.INFO,
+                )
+                response.raise_for_status()
+            except requests.exceptions.RequestException as e:
+                sentry.log_message(
+                    f'[GDPR delete] Failed to revoke ORCID token for user {self._id} ORCID id {orcid_id}: {e}',
+                    level=logging.ERROR,
+                )
+                sentry.log_exception(e)
+                raise UserStateError("Fail to revoke ORCID's service could not be reached")
+
+            with transaction.atomic():
+                self.external_identity.get('ORCID', {}).pop(orcid_id, None)
+                self.external_identity_tokens.get('ORCID', {}).pop(orcid_id, None)
+                self.save(update_fields=['external_identity', 'external_identity_tokens'])
+
+    def _clear_identifying_information(self):
         # This doesn't remove identifying info, but ensures other users can't see the deleted user's profile etc.
         self.deactivate_account()
 
