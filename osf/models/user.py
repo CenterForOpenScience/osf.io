@@ -2153,29 +2153,31 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
                     entity.is_deleted = True
                     entity.save()
 
-    def save_orcid_access_token_to_user(self, orcid_id: str, access_token: str, refresh_token: str = None):
+    def save_external_identity_tokens(self, orcid_id, access_token, refresh_token):
+        # TODO: should we fail ORCiD SSO if no access token provided?
         if not access_token:
-            sentry.log_message(
-                f'CAS response missing ORCID access token: user=[{self._id}], orcidId=[{orcid_id}]',
-                level=logging.ERROR,
-            )
+            msg = f'[ORCiD SSO] CAS response missing ORCID access token: user=[{self._id}], orcidId=[{orcid_id}]'
+            logger.error(msg)
+            sentry.log_message(msg, level=logging.ERROR)
+        # NOTE: refresh token is optional
         if not refresh_token:
-            sentry.log_message(
-                f'CAS response missing ORCID refresh token: user=[{self._id}], orcidId=[{orcid_id}]',
-                level=logging.WARNING,
-            )
+            msg = f'[ORCiD SSO] CAS response missing ORCID refresh token: user=[{self._id}], orcidId=[{orcid_id}]'
+            logger.warning(msg)
+            # TODO: remove this debugging sentry log
+            sentry.log_message(msg, level=logging.WARNING)
         if orcid_id and access_token:
-            provider = website_settings.EXTERNAL_IDENTITY_PROFILE['OrcidProfile']
+            orcid_provider = website_settings.EXTERNAL_IDENTITY_PROFILE['OrcidProfile']
             token_entry = {'access_token': access_token}
             if refresh_token:
                 token_entry['refresh_token'] = refresh_token
-            self.external_identity_tokens.setdefault(provider, {})[orcid_id] = token_entry
-            sentry.log_message(
-                f'ORCID token stored on external_identity_tokens: user=[{self._id}], '
-                f'provider_id=[{orcid_id}], access_token=[{"present" if access_token else "missing"}], '
-                f'refresh_token=[{"present" if refresh_token else "missing"}]',
-                level=logging.INFO,
-            )
+            self.external_identity_tokens.setdefault(orcid_provider, {})[orcid_id] = token_entry
+            msg = (f'[ORCiD SSO] ORCID token stored on external_identity_tokens: '
+                   f'ser=[{self._id}], provider_id=[{orcid_id}], '
+                   f'access_token=[{"present" if access_token else "missing"}], '
+                   f'refresh_token=[{"present" if refresh_token else "missing"}]'),
+            logger.info(msg)
+            # TODO: remove this debugging sentry log
+            sentry.log_message(msg, level=logging.INFO)
 
     def _revoke_orcid_tokens(self):
         """Revokes all ORCID tokens associated with this user via the ORCID API.

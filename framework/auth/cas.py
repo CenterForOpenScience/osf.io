@@ -296,7 +296,7 @@ def make_response_from_ticket(ticket, service_url):
             # automatically with verification key for a second time. This extra step will guarantee that 2FA & TOS
             # are enforced. It also clears the osf-cas session created by external SSO.
             if external_credential:
-                user.save_orcid_access_token_to_user(
+                user.save_external_identity_tokens(
                     external_credential['id'],
                     cas_resp.attributes.get('orcidAccessToken', None),
                     cas_resp.attributes.get('orcidRefreshToken', None),
