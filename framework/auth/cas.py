@@ -332,7 +332,7 @@ def make_response_from_ticket(ticket, service_url):
                 level=LogLevel.INFO,
             )
             from website.util import web_url_for
-            # Note: ORCID attributes can be marked private and not shared, thus `fullname` below can be empty
+            # Note: ORCiD attributes can be marked private and not shared, thus `fullname` below can be empty
             fullname = '{} {}'.format(cas_resp.attributes.get('given-names', ''), cas_resp.attributes.get('family-name', '')).strip()
             user = {
                 'external_id_provider': external_credential['provider'],
@@ -378,7 +378,7 @@ def get_user_from_cas_resp(cas_resp):
         return user, None, 'authenticate'
     # CASE 3: osf-cas returns external credential as authenticated user
     # Note: with https://github.com/CenterForOpenScience/osf-cas/pull/119, osf-cas fully controls the CAS response
-    #       and the format of `cas_resp.user` during ORCID SSO. However, in order to minimize the changes to CAS
+    #       and the format of `cas_resp.user` during ORCiD SSO. However, in order to minimize the changes to CAS
     #       client in osf.io, osf-cas purposefully crafted the `cas_resp.user` the same way as before.
     external_credential = validate_external_credential(cas_resp.user)
     # CASE 3.1: osf-cas invalid external credential
