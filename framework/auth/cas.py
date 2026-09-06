@@ -356,32 +356,36 @@ def get_user_from_cas_resp(cas_resp):
     :return: the user, the external_credential, and the next action
     """
     from osf.models import OSFUser
-    if cas_resp.user:
-        user = OSFUser.load(cas_resp.user)
-        # cas returns a valid OSF user id
-        if user:
-            return user, None, 'authenticate'
-        # cas does not return a valid OSF user id
-        else:
-            external_credential = validate_external_credential(cas_resp.user)
-            # invalid cas response
-            if not external_credential:
-                print_cas_log('CAS response error - missing user or external identity', LogLevel.ERROR)
-                return None, None, None
-            # cas returns a valid external credential
-            user = get_user(external_id_provider=external_credential['provider'],
-                            external_id=external_credential['id'])
-            # existing user found
-            if user:
-                # Send to celery the following async task to affiliate the user with eligible institutions if verified
-                from framework.auth.tasks import update_affiliation_for_orcid_sso_users
-                enqueue_task(update_affiliation_for_orcid_sso_users.s(user._id, external_credential['id']))
-                return user, external_credential, 'authenticate'
-            # user first time login through external identity provider
-            else:
-                return None, external_credential, 'external_first_login'
-    print_cas_log('CAS response error - `cas_resp.user` is empty', LogLevel.ERROR)
-    return None, None, None
+    # CASE 1: osf-cas doesn't return an authenticated user at all
+    if not cas_resp.user:
+        print_cas_log('CAS response error - `cas_resp.user` is empty', LogLevel.ERROR)
+        return None, None, None
+    user = OSFUser.load(cas_resp.user)
+    # CASE 2: osf-cas returns a valid OSF user guid as authenticated user
+    if user:
+        return user, None, 'authenticate'
+    # CASE 3: osf-cas returns external credential as authenticated user
+    # Note: with https://github.com/CenterForOpenScience/osf-cas/pull/119, osf-cas fully controls the CAS response
+    #       and the format of `cas_resp.user` during ORCID SSO. However, in order to minimize the changes to CAS
+    #       client in osf.io, osf-cas purposefully crafted the `cas_resp.user` the same way as before.
+    external_credential = validate_external_credential(cas_resp.user)
+    # CASE 3.1: osf-cas invalid external credential
+    if not external_credential:
+        print_cas_log('CAS response error - missing user or external identity', LogLevel.ERROR)
+        return None, None, None
+    # CASE 3.2: osf-case returns a valid external credential
+    user = get_user(
+        external_id_provider=external_credential['provider'],
+        external_id=external_credential['id']
+    )
+    # CASE 3.2.1: existing user found with valid external credential -> already connected/verfied
+    if user:
+        # Send to celery the following async task to affiliate the user with eligible institutions if verified
+        from framework.auth.tasks import update_affiliation_for_orcid_sso_users
+        enqueue_task(update_affiliation_for_orcid_sso_users.s(user._id, external_credential['id']))
+        return user, external_credential, 'authenticate'
+    # CASE 3.2.2: no user found with valid external credential -> first time login through external identity provider
+    return None, external_credential, 'external_first_login'
 
 
 def validate_external_credential(external_credential):
