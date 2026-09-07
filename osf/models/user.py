@@ -2154,30 +2154,25 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
                     entity.save()
 
     def save_external_identity_tokens(self, orcid_id, access_token, refresh_token):
-        # TODO: should we fail ORCiD SSO if no access token provided?
+        # Note: osf-cas will fail first before flow reaches osf.io, if there is no access token during ORCiD SSO
         if not access_token:
             msg = f'[ORCiD SSO] CAS response missing ORCiD access token: user=[{self._id}], orcidId=[{orcid_id}]'
             logger.error(msg)
             sentry.log_message(msg, level=logging.ERROR)
         # NOTE: refresh token is optional
         if not refresh_token:
-            msg = f'[ORCiD SSO] CAS response missing ORCiD refresh token: user=[{self._id}], orcidId=[{orcid_id}]'
-            logger.warning(msg)
-            # TODO: remove this debugging sentry log
-            sentry.log_message(msg, level=logging.WARNING)
+            logger.warning(f'[ORCiD SSO] CAS response missing optional ORCiD refresh token: '
+                           f'user=[{self._id}], orcidId=[{orcid_id}]')
         if orcid_id and access_token:
             orcid_provider = website_settings.EXTERNAL_IDENTITY_PROFILE['OrcidProfile']
             token_entry = {'access_token': access_token}
             if refresh_token:
                 token_entry['refresh_token'] = refresh_token
             self.external_identity_tokens.setdefault(orcid_provider, {})[orcid_id] = token_entry
-            msg = (f'[ORCiD SSO] ORCiD token stored on external_identity_tokens: '
-                   f'ser=[{self._id}], provider_id=[{orcid_id}], '
-                   f'access_token=[{"present" if access_token else "missing"}], '
-                   f'refresh_token=[{"present" if refresh_token else "missing"}]')
-            logger.info(msg)
-            # TODO: remove this debugging sentry log
-            sentry.log_message(msg, level=logging.INFO)
+            logger.info(f'[ORCiD SSO] ORCiD token stored on external_identity_tokens: '
+                        f'user=[{self._id}], provider_id=[{orcid_id}], '
+                        f'access_token=[{"present" if access_token else "missing"}], '
+                        f'refresh_token=[{"present" if refresh_token else "missing"}]')
 
     def _revoke_orcid_tokens(self):
         """Revokes all ORCiD tokens associated with this user via the ORCiD API.
@@ -2215,21 +2210,16 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
 
         revocable_ids = identity_ids & identity_ids_with_tokens
         if not revocable_ids:
-            msg = f'[GDPR delete] No ORCiD Connected: user={self._id}'
-            logger.info(msg)
-            # TODO: remove this debugging sentry log
-            sentry.log_message(msg, level=logging.INFO)
+            logger.info(f'[GDPR delete] No ORCiD Connected: user={self._id}')
             return
 
         for orcid_id in sorted(revocable_ids):
             token_entry = tokens_identity_ids[orcid_id]
             # We only need to revoke with either access token or refresh token
             orcid_token = token_entry.get('access_token') or token_entry.get('refresh_token')
-            msg = f'[GDPR delete] Revoking ORCiD Access: user={self._id}, orcid_id={orcid_id}'
-            logger.info(msg)
-            # TODO: remove this debugging sentry log
-            sentry.log_message(msg, level=logging.INFO)
-            # TODO: (optional) add retry
+            logger.info(f'[GDPR delete] Revoking ORCiD Access: user={self._id}, orcid_id={orcid_id}')
+            # Note: no need to retry as for now since this is only triggered manually by OSF admin
+            # TODO: however, need to add retry when we add revocation when user disconnect ORCiD
             try:
                 response = requests.post(
                     website_settings.ORCID_OAUTH_REVOKE_URL,
@@ -2240,11 +2230,8 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
                     },
                     timeout=website_settings.ORCID_OAUTH_REVOKE_REQUEST_TIMEOUT,
                 )
-                msg = (f'[GDPR delete] ORCiD Revocation Response: user={self._id}, orcid_id={orcid_id}, '
-                       f'status_code={response.status_code}, response_text={response.text}')
-                logger.info(msg)
-                # TODO: remove this debugging sentry log
-                sentry.log_message(msg, level=logging.INFO)
+                logger.info(f'[GDPR delete] ORCiD Revocation Response: user={self._id}, orcid_id={orcid_id}, '
+                            f'status_code={response.status_code}, response_text={response.text}')
                 response.raise_for_status()
             except requests.exceptions.RequestException as e:
                 msg = f'[GDPR delete] ORCiD Revocation Failed: user={self._id}, orcid_id={orcid_id}, error={e}'
@@ -2252,7 +2239,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
                 sentry.log_message(msg, level=logging.ERROR)
                 sentry.log_exception(e)
                 raise UserStateError(f'Fail to revoke ORCiD access: {e}')
-            # NOTE: The actual identities/tokens removal is postponed/delegated to `_clear_identifying_information()`.
+            # NOTE: The actual identities/tokens removal happens in `_clear_identifying_information()`.
 
     def _clear_identifying_information(self):
         # This doesn't remove identifying info, but ensures other users can't see the deleted user's profile etc.
