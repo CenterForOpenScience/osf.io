@@ -2161,8 +2161,8 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
             sentry.log_message(msg, level=logging.ERROR)
         # NOTE: refresh token is optional
         if not refresh_token:
-            msg = f'[ORCiD SSO] CAS response missing ORCiD refresh token: user=[{self._id}], orcidId=[{orcid_id}]'
-            logger.warning(msg)
+            logger.warning(f'[ORCiD SSO] CAS response missing optional ORCiD refresh token: '
+                           f'user=[{self._id}], orcidId=[{orcid_id}]')
         if orcid_id and access_token:
             orcid_provider = website_settings.EXTERNAL_IDENTITY_PROFILE['OrcidProfile']
             token_entry = {'access_token': access_token}
