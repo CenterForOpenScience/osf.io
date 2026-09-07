@@ -1060,7 +1060,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         it depends on.
         """
         # The user can log in if they have set a password OR
-        # have a verified external ID, e.g an ORCID
+        # have a verified external ID, e.g an ORCiD
         can_login = self.has_usable_password() or (
             'VERIFIED' in sum([list(each.values()) for each in self.external_identity.values()], [])
         )
@@ -2153,42 +2153,44 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
                     entity.is_deleted = True
                     entity.save()
 
-    def save_orcid_access_token_to_user(self, orcid_id: str, access_token: str, refresh_token: str = None):
+    def save_external_identity_tokens(self, orcid_id, access_token, refresh_token):
+        # TODO: should we fail ORCiD SSO if no access token provided?
         if not access_token:
-            sentry.log_message(
-                f'CAS response missing ORCID access token: user=[{self._id}], orcidId=[{orcid_id}]',
-                level=logging.ERROR,
-            )
+            msg = f'[ORCiD SSO] CAS response missing ORCiD access token: user=[{self._id}], orcidId=[{orcid_id}]'
+            logger.error(msg)
+            sentry.log_message(msg, level=logging.ERROR)
+        # NOTE: refresh token is optional
         if not refresh_token:
-            sentry.log_message(
-                f'CAS response missing ORCID refresh token: user=[{self._id}], orcidId=[{orcid_id}]',
-                level=logging.WARNING,
-            )
+            msg = f'[ORCiD SSO] CAS response missing ORCiD refresh token: user=[{self._id}], orcidId=[{orcid_id}]'
+            logger.warning(msg)
+            # TODO: remove this debugging sentry log
+            sentry.log_message(msg, level=logging.WARNING)
         if orcid_id and access_token:
-            provider = website_settings.EXTERNAL_IDENTITY_PROFILE['OrcidProfile']
+            orcid_provider = website_settings.EXTERNAL_IDENTITY_PROFILE['OrcidProfile']
             token_entry = {'access_token': access_token}
             if refresh_token:
                 token_entry['refresh_token'] = refresh_token
-            self.external_identity_tokens.setdefault(provider, {})[orcid_id] = token_entry
-            sentry.log_message(
-                f'ORCID token stored on external_identity_tokens: user=[{self._id}], '
-                f'provider_id=[{orcid_id}], access_token=[{"present" if access_token else "missing"}], '
-                f'refresh_token=[{"present" if refresh_token else "missing"}]',
-                level=logging.INFO,
-            )
+            self.external_identity_tokens.setdefault(orcid_provider, {})[orcid_id] = token_entry
+            msg = (f'[ORCiD SSO] ORCiD token stored on external_identity_tokens: '
+                   f'ser=[{self._id}], provider_id=[{orcid_id}], '
+                   f'access_token=[{"present" if access_token else "missing"}], '
+                   f'refresh_token=[{"present" if refresh_token else "missing"}]')
+            logger.info(msg)
+            # TODO: remove this debugging sentry log
+            sentry.log_message(msg, level=logging.INFO)
 
     def _revoke_orcid_tokens(self):
-        """Revokes all ORCID tokens associated with this user via the ORCID API.
+        """Revokes all ORCiD tokens associated with this user via the ORCiD API.
         """
         identity_ids = set(self.external_identity.get('ORCID', {}))
         tokens_identity_ids = self.external_identity_tokens.get('ORCID', {})
 
+        # If there are multiple identities, inform sentry and continue with revocation
         if len(identity_ids) > 1 or len(tokens_identity_ids) > 1:
-            sentry.log_message(
-                f'[GDPR Delete] Multiple ORCID entries found: user={self._id}, '
-                f'identities={sorted(identity_ids)}, tokens={sorted(tokens_identity_ids)}',
-                level=logging.WARNING,
-            )
+            msg = (f'[GDPR Delete] Multiple ORCiD entries found: user={self._id}, '
+                   f'identities={sorted(identity_ids)}, tokens={sorted(tokens_identity_ids)}')
+            logger.warning(msg)
+            sentry.log_message(msg, level=logging.WARNING)
 
         identity_ids_with_tokens = {
             orcid_id for orcid_id, token_entry in tokens_identity_ids.items()
@@ -2197,44 +2199,37 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
 
         identity_only_ids = identity_ids - identity_ids_with_tokens
         if identity_only_ids:
-            sentry.log_message(
-                f'[GDPR Delete] Missing ORCID tokens: user={self._id}, '
-                f'ids_without_token={sorted(identity_only_ids)}',
-                level=logging.ERROR,
-            )
-            raise UserStateError('User has connected ORCID identity but no token to revoke.')
+            msg = (f'[GDPR Delete] Missing ORCiD tokens: '
+                   f'user={self._id}, ids_without_token={sorted(identity_only_ids)}')
+            logger.error(msg)
+            sentry.log_message(msg, level=logging.ERROR)
+            raise UserStateError('User has connected ORCiD identity but no token to revoke.')
 
         token_only_ids = identity_ids_with_tokens - identity_ids
         if token_only_ids:
-            sentry.log_message(
-                f'[GDPR delete] Orphaned ORCID tokens: user={self._id}, '
-                f'ids_with_orphaned_tokens={sorted(token_only_ids)})',
-                level=logging.ERROR,
-            )
-            raise UserStateError('User has orphaned ORCID tokens without matching connected identity')
+            msg = (f'[GDPR delete] Orphaned ORCiD tokens: '
+                   f'user={self._id}, ids_with_orphaned_tokens={sorted(token_only_ids)})')
+            sentry.log_message(msg, level=logging.ERROR)
+            logger.error(msg)
+            raise UserStateError('User has orphaned ORCiD tokens without matching connected identity.')
 
         revocable_ids = identity_ids & identity_ids_with_tokens
-
         if not revocable_ids:
-            # TODO: remove this sentry log before release
-            sentry.log_message(
-                f'[GDPR delete] No ORCID Connected: user={self._id}',
-                level=logging.INFO,
-            )
+            msg = f'[GDPR delete] No ORCiD Connected: user={self._id}'
+            logger.info(msg)
+            # TODO: remove this debugging sentry log
+            sentry.log_message(msg, level=logging.INFO)
             return
 
         for orcid_id in sorted(revocable_ids):
             token_entry = tokens_identity_ids[orcid_id]
             # We only need to revoke with either access token or refresh token
             orcid_token = token_entry.get('access_token') or token_entry.get('refresh_token')
-            # TODO: remove this sentry log before release
-            sentry.log_message(
-                f'[GDPR delete] Revoking ORCiD Access: user={self._id}, orcid_id={orcid_id}, '
-                f'revoke_url={website_settings.ORCID_OAUTH_REVOKE_URL}',
-                level=logging.INFO,
-            )
-
-            # TODO: optionally, add retry
+            msg = f'[GDPR delete] Revoking ORCiD Access: user={self._id}, orcid_id={orcid_id}'
+            logger.info(msg)
+            # TODO: remove this debugging sentry log
+            sentry.log_message(msg, level=logging.INFO)
+            # TODO: (optional) add retry
             try:
                 response = requests.post(
                     website_settings.ORCID_OAUTH_REVOKE_URL,
@@ -2245,21 +2240,19 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
                     },
                     timeout=website_settings.ORCID_OAUTH_REVOKE_REQUEST_TIMEOUT,
                 )
-                # TODO: remove this sentry log before release
-                sentry.log_message(
-                    f'[GDPR delete] ORCID Revocation Response: user={self._id}, orcid_id={orcid_id}, '
-                    f'status_code={response.status_code}, response_text={response.text}',
-                    level=logging.INFO,
-                )
+                msg = (f'[GDPR delete] ORCiD Revocation Response: user={self._id}, orcid_id={orcid_id}, '
+                       f'status_code={response.status_code}, response_text={response.text}')
+                logger.info(msg)
+                # TODO: remove this debugging sentry log
+                sentry.log_message(msg, level=logging.INFO)
                 response.raise_for_status()
             except requests.exceptions.RequestException as e:
-                sentry.log_message(
-                    f'[GDPR delete] ORCID Revocation Failed: user={self._id}, orcid_id={orcid_id}, error={e}',
-                    level=logging.ERROR,
-                )
+                msg = f'[GDPR delete] ORCiD Revocation Failed: user={self._id}, orcid_id={orcid_id}, error={e}'
+                logger.error(msg)
+                sentry.log_message(msg, level=logging.ERROR)
                 sentry.log_exception(e)
-                raise UserStateError(f'Fail to revoke ORCID access. Error: {e}')
-            # NOTE: The actual identities/tokens removal is postponed/delegated to _clear_identifying_information.
+                raise UserStateError(f'Fail to revoke ORCiD access: {e}')
+            # NOTE: The actual identities/tokens removal is postponed/delegated to `_clear_identifying_information()`.
 
     def _clear_identifying_information(self):
         # This doesn't remove identifying info, but ensures other users can't see the deleted user's profile etc.

@@ -275,9 +275,9 @@ def make_response_from_ticket(ticket, service_url):
         # user found and authenticated
         if user and action == 'authenticate':
             print_cas_log(
-                f'CAS response - authenticating user: user=[{user._id}], '
+                msg=f'CAS response - authenticating user: user=[{user._id}], '
                 f'external=[{external_credential}], action=[{action}]',
-                LogLevel.INFO,
+                level=LogLevel.INFO,
             )
             # If users check the TOS consent checkbox via CAS, CAS sets the attribute `termsOfServiceChecked` to `true`
             # and then release it to OSF among other authentication attributes. When OSF receives it, it trusts CAS and
@@ -292,41 +292,47 @@ def make_response_from_ticket(ticket, service_url):
             if user.verification_key:
                 user_updates['verification_key'] = None
 
-            # if user is authenticated by external IDP, ask CAS to authenticate user for a second time
-            # this extra step will guarantee that 2FA are enforced
-            # current CAS session created by external login must be cleared first before authentication
+            # CASE 1: If existing user is authenticated by external SSO, ask osf-cas to log user out, and authenticate user
+            # automatically with verification key for a second time. This extra step will guarantee that 2FA & TOS
+            # are enforced. It also clears the osf-cas session created by external SSO.
             if external_credential:
-                access_token = cas_resp.attributes.get('orcidAccessToken', None)
-                refresh_token = cas_resp.attributes.get('orcidRefreshToken', None)
-                user.verification_key = generate_verification_key()
-                user.save_orcid_access_token_to_user(
+                user.save_external_identity_tokens(
                     external_credential['id'],
-                    access_token,
-                    refresh_token,
+                    cas_resp.attributes.get('orcidAccessToken', None),
+                    cas_resp.attributes.get('orcidRefreshToken', None),
                 )
+                user.verification_key = generate_verification_key()
                 user.save()
-                print_cas_log(
-                    f'CAS response - redirect existing external IdP login to verification key login: user=[{user._id}]',
-                    LogLevel.INFO
-                )
-                return redirect(get_logout_url(get_login_url(
+                auto_login_url = get_login_url(
                     service_url,
                     username=user.username,
                     verification_key=user.verification_key
-                )))
+                )
+                # Must go to osf-cas logout endpoint first to clear the current osf-cas session
+                redirect_url = get_logout_url(auto_login_url)
+                print_cas_log(
+                    msg=f'CAS response - redirect existing external SSO login '
+                        f'to verification key login: user=[{user._id}]',
+                    level=LogLevel.INFO,
+                )
+                return redirect(redirect_url)
 
-            # if user is authenticated by CAS
-            print_cas_log(f'CAS response - finalizing authentication: user=[{user._id}]', LogLevel.INFO)
+            # CASE 2: If existing user is authenticated by osf-cas, call `authenticate()` to finish authentication
+            print_cas_log(
+                msg=f'CAS response - finalizing authentication: user=[{user._id}]',
+                level=LogLevel.INFO
+            )
             return authenticate(user, redirect(service_furl.url), user_updates)
-        # first time login from external identity provider
+        # CASE 3: If it is a user's first time login via external SSO, send them to the form submission with anonymous
+        # session, and then go through the email confirmation flow to create a new or link an existing OSF account.
         if not user and external_credential and action == 'external_first_login':
             print_cas_log(
-                f'CAS response - first login from external IdP: '
-                f'external=[{external_credential}], action=[{action}]',
-                LogLevel.INFO,
+                msg=f'CAS response - first login from external IdP: '
+                    f'external=[{external_credential}], action=[{action}]',
+                level=LogLevel.INFO,
             )
             from website.util import web_url_for
-            # orcid attributes can be marked private and not shared, default to orcid otherwise
+            # Note: ORCiD attributes can be marked private and not shared, thus `fullname` below can be empty
             fullname = '{} {}'.format(cas_resp.attributes.get('given-names', ''), cas_resp.attributes.get('family-name', '')).strip()
             user = {
                 'external_id_provider': external_credential['provider'],
@@ -336,13 +342,19 @@ def make_response_from_ticket(ticket, service_url):
                 'fullname': fullname,
                 'service_url': service_furl.url,
             }
-            print_cas_log(f'CAS response - creating anonymous session: external=[{external_credential}]', LogLevel.INFO)
+            print_cas_log(
+                msg=f'CAS response - creating anonymous session: external=[{external_credential}]',
+                level=LogLevel.INFO,
+            )
             return external_first_login_authenticate(
                 user,
                 redirect(web_url_for('external_login_email_get'))
             )
-    # Unauthorized: ticket could not be validated, or user does not exist.
-    print_cas_log('Ticket validation failed or user does not exist. Redirect back to service URL (logged out).', LogLevel.ERROR)
+    # CASE 4: All other cases. Either ticket could not be validated, or valid user and external_credential don't exist.
+    print_cas_log(
+        msg='Ticket validation failed or user does not exist. Redirect back to service URL (logged out).',
+        level=LogLevel.ERROR,
+    )
     return redirect(service_furl.url)
 
 
@@ -356,32 +368,36 @@ def get_user_from_cas_resp(cas_resp):
     :return: the user, the external_credential, and the next action
     """
     from osf.models import OSFUser
-    if cas_resp.user:
-        user = OSFUser.load(cas_resp.user)
-        # cas returns a valid OSF user id
-        if user:
-            return user, None, 'authenticate'
-        # cas does not return a valid OSF user id
-        else:
-            external_credential = validate_external_credential(cas_resp.user)
-            # invalid cas response
-            if not external_credential:
-                print_cas_log('CAS response error - missing user or external identity', LogLevel.ERROR)
-                return None, None, None
-            # cas returns a valid external credential
-            user = get_user(external_id_provider=external_credential['provider'],
-                            external_id=external_credential['id'])
-            # existing user found
-            if user:
-                # Send to celery the following async task to affiliate the user with eligible institutions if verified
-                from framework.auth.tasks import update_affiliation_for_orcid_sso_users
-                enqueue_task(update_affiliation_for_orcid_sso_users.s(user._id, external_credential['id']))
-                return user, external_credential, 'authenticate'
-            # user first time login through external identity provider
-            else:
-                return None, external_credential, 'external_first_login'
-    print_cas_log('CAS response error - `cas_resp.user` is empty', LogLevel.ERROR)
-    return None, None, None
+    # CASE 1: osf-cas doesn't return an authenticated user at all
+    if not cas_resp.user:
+        print_cas_log('CAS response error - `cas_resp.user` is empty', LogLevel.ERROR)
+        return None, None, None
+    user = OSFUser.load(cas_resp.user)
+    # CASE 2: osf-cas returns a valid OSF user guid as authenticated user
+    if user:
+        return user, None, 'authenticate'
+    # CASE 3: osf-cas returns external credential as authenticated user
+    # Note: with https://github.com/CenterForOpenScience/osf-cas/pull/119, osf-cas fully controls the CAS response
+    #       and the format of `cas_resp.user` during ORCiD SSO. However, in order to minimize the changes to CAS
+    #       client in osf.io, osf-cas purposefully crafted the `cas_resp.user` the same way as before.
+    external_credential = validate_external_credential(cas_resp.user)
+    # CASE 3.1: osf-cas invalid external credential
+    if not external_credential:
+        print_cas_log('CAS response error - missing user or external identity', LogLevel.ERROR)
+        return None, None, None
+    # CASE 3.2: osf-case returns a valid external credential
+    user = get_user(
+        external_id_provider=external_credential['provider'],
+        external_id=external_credential['id']
+    )
+    # CASE 3.2.1: existing user found with valid external credential -> already connected/verfied
+    if user:
+        # Send to celery the following async task to affiliate the user with eligible institutions if verified
+        from framework.auth.tasks import update_affiliation_for_orcid_sso_users
+        enqueue_task(update_affiliation_for_orcid_sso_users.s(user._id, external_credential['id']))
+        return user, external_credential, 'authenticate'
+    # CASE 3.2.2: no user found with valid external credential -> first time login through external identity provider
+    return None, external_credential, 'external_first_login'
 
 
 def validate_external_credential(external_credential):
