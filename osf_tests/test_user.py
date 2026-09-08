@@ -12,6 +12,7 @@ from django.conf import settings as django_conf_settings
 from unittest import mock
 import itsdangerous
 import pytest
+import requests
 from importlib import import_module
 from waffle.testutils import override_flag
 
@@ -2124,7 +2125,14 @@ class TestUserGdprDelete:
 
     @pytest.fixture()
     def user(self):
-        return AuthUserFactory()
+        user = AuthUserFactory()
+        user.external_identity = {'ORCID': {'fake-orcid-id': 'VERIFIED'}}
+        user.external_identity_tokens = {
+            'ORCID': {'fake-orcid-id': {'access_token': 'fake-orcid-token'}},
+        }
+        user.save()
+        with mock.patch('osf.models.user.requests.post', return_value=mock.Mock(status_code=200)):
+            yield user
 
     @pytest.fixture()
     def project_with_two_admins(self, user):
@@ -2224,11 +2232,18 @@ class TestUserGdprDelete:
 
         assert mock_update_search.called
 
-    def test_can_gdpr_delete(self, user):
+    @mock.patch('osf.models.user.requests.post')
+    def test_can_gdpr_delete(self, mock_post, user):
+        mock_post.return_value = mock.Mock(status_code=200)
+        user.external_identity = {'ORCID': {'fake-orcid-id': 'VERIFIED'}}
+        user.external_identity_tokens = {
+            'ORCID': {'fake-orcid-id': {'access_token': 'fake-orcid-token'}},
+        }
+        user.save()
+
         user.social = ['fake social']
         user.schools = ['fake schools']
         user.jobs = ['fake jobs']
-        user.external_identity = ['fake external identity']
         user.external_accounts.add(ExternalAccountFactory())
 
         user.gdpr_delete()
@@ -2239,10 +2254,113 @@ class TestUserGdprDelete:
         assert user.schools == []
         assert user.jobs == []
         assert user.external_identity == {}
+        assert user.external_identity_tokens == {}
         assert not user.emails.exists()
         assert not user.external_accounts.exists()
         assert user.is_disabled
         assert user.deleted is not None
+        mock_post.assert_called_once()
+        assert mock_post.call_args.kwargs['data']['token'] == 'fake-orcid-token'
+
+    @mock.patch('osf.models.user.requests.post')
+    def test_gdpr_delete_orcid_identity_without_token_blocks_delete(self, mock_post, user):
+        user.external_identity_tokens = {}
+        user.save()
+
+        with pytest.raises(UserStateError):
+            user.gdpr_delete()
+
+        mock_post.assert_not_called()
+        assert user.deleted is None
+        assert not user.is_disabled
+        assert user.external_identity == {'ORCID': {'fake-orcid-id': 'VERIFIED'}}
+
+    @mock.patch('osf.models.user.requests.post')
+    def test_gdpr_delete_orcid_token_without_identity_blocks_delete(self, mock_post, user):
+        user.external_identity = {}
+        user.save()
+
+        with pytest.raises(UserStateError):
+            user.gdpr_delete()
+
+        mock_post.assert_not_called()
+        assert user.deleted is None
+        assert not user.is_disabled
+        assert user.external_identity_tokens == {
+            'ORCID': {'fake-orcid-id': {'access_token': 'fake-orcid-token'}},
+        }
+
+    @mock.patch('osf.models.user.requests.post')
+    def test_gdpr_delete_orcid_revoke_failure_blocks_delete(self, mock_post, user):
+        mock_post.side_effect = requests.exceptions.ConnectionError('boom')
+        user.external_identity_tokens = {
+            'ORCID': {'fake-orcid-id': {'access_token': 'fake-orcid-token'}},
+        }
+        user.save()
+
+        with pytest.raises(UserStateError):
+            user.gdpr_delete()
+
+        mock_post.assert_called_once()
+        assert user.deleted is None
+        assert not user.is_disabled
+        assert user.external_identity_tokens == {
+            'ORCID': {'fake-orcid-id': {'access_token': 'fake-orcid-token'}},
+        }
+
+    @mock.patch('osf.models.user.requests.post')
+    def test_gdpr_delete_orcid_revoke_invalid_client_credentials_blocks_delete(self, mock_post, user):
+        mock_response = mock.Mock(status_code=401, text='invalid_client')
+        mock_response.raise_for_status.side_effect = requests.exceptions.HTTPError('401 Client Error')
+        mock_post.return_value = mock_response
+        user.external_identity_tokens = {
+            'ORCID': {'fake-orcid-id': {'access_token': 'fake-orcid-token'}},
+        }
+        user.save()
+
+        with pytest.raises(UserStateError):
+            user.gdpr_delete()
+
+        mock_post.assert_called_once()
+        assert mock_post.call_args.kwargs['data']['token'] == 'fake-orcid-token'
+        assert user.deleted is None
+        assert not user.is_disabled
+        assert user.external_identity_tokens == {
+            'ORCID': {'fake-orcid-id': {'access_token': 'fake-orcid-token'}},
+        }
+
+    @mock.patch('osf.models.user.requests.post')
+    def test_gdpr_delete_orcid_revoke_invalid_token_blocks_delete(self, mock_post, user):
+        mock_response = mock.Mock(status_code=400, text='invalid_token')
+        mock_response.raise_for_status.side_effect = requests.exceptions.HTTPError('400 Client Error')
+        mock_post.return_value = mock_response
+        user.external_identity_tokens = {
+            'ORCID': {'fake-orcid-id': {'access_token': 'bad-orcid-token'}},
+        }
+        user.save()
+
+        with pytest.raises(UserStateError):
+            user.gdpr_delete()
+
+        mock_post.assert_called_once()
+        assert mock_post.call_args.kwargs['data']['token'] == 'bad-orcid-token'
+        assert user.deleted is None
+        assert not user.is_disabled
+        assert user.external_identity_tokens == {
+            'ORCID': {'fake-orcid-id': {'access_token': 'bad-orcid-token'}},
+        }
+
+    @mock.patch('osf.models.user.requests.post')
+    def test_gdpr_delete_no_orcid_skips_revoke_call(self, mock_post, user):
+        user.external_identity = {}
+        user.external_identity_tokens = {}
+        user.save()
+
+        user.gdpr_delete()
+
+        mock_post.assert_not_called()
+        assert user.deleted is not None
+        assert user.is_disabled
 
     def test_can_gdpr_delete_personal_nodes(self, user):
 
