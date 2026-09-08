@@ -27,7 +27,6 @@ from osf.models.notification_campaign import (
 from osf.models.notification_type import NotificationType
 from osf.models.spam import SpamStatus
 from osf_tests.factories import UserFactory
-from website import settings
 
 pytestmark = pytest.mark.django_db
 
@@ -1113,6 +1112,7 @@ class TestProcessCampaignRetry:
         campaign.run_id = uuid.uuid4()
         campaign.status = NotificationCampaignStatus.RUNNING
         campaign.started_at = timezone.now()
+        campaign.metadata['execution']['dispatch_interval'] = 60
         campaign.save()
 
         process_campaign_retry(campaign_id=campaign.id, run_id=campaign.run_id)
@@ -1125,7 +1125,7 @@ class TestProcessCampaignRetry:
         assert campaign.failed_count == 0
         mock_apply_async.assert_called_once_with(
             kwargs={'campaign_id': campaign.id, 'run_id': campaign.run_id},
-            countdown=settings.CAMPAIGN_DISPATCH_INTERVAL,
+            countdown=60,
         )
 
     def test_process_campaign_retry_times_out_queued_marks_partial_after_max_retries(self, campaign):

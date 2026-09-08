@@ -21,6 +21,7 @@ urlpatterns = [
                 re_path(r'^ia/', include('api.ia.urls', namespace='ia')),
                 re_path(r'^banners/', include('api.banners.urls', namespace='banners')),
                 re_path(r'^crossref/', include('api.crossref.urls', namespace='crossref')),
+                re_path(r'^sendgrid/', include('api.sendgrid.urls', namespace='sendgrid')),
                 re_path(r'^chronos/', include('api.chronos.urls', namespace='chronos')),
                 re_path(r'^cedar_metadata_templates/', include('api.cedar_metadata_templates.urls', namespace='cedar-metadata-templates')),
                 re_path(r'^cedar_metadata_records/', include('api.cedar_metadata_records.urls', namespace='cedar-metadata-records')),

@@ -238,30 +238,48 @@ def send_email_over_smtp(to_email, notification_type, context, email_context, re
             email.attach(attachment_name, attachment_content)
     email.send()
 
+def _email_objects(addrs):
+    if not addrs:
+        return None
+    if isinstance(addrs, str):
+        addrs = [addrs]
+    return [{'email': a} for a in addrs]
+
+
 def _build_sendgrid_personalizations(to_list, email_context=None, is_multiple=False):
-    """Build SendGrid personalizations for one shared message or one message per recipient.
+    """Build SendGrid personalizations.
 
     When ``is_multiple`` is True, each address gets its own personalization (separate
-    delivery; recipients do not see each other). CC/BCC are omitted in that mode to
-    avoid duplicating copies per recipient.
+    delivery; recipients do not see each other).
+
+    Optional ``email_context`` keys:
+    - ``custom_args``: dict applied to every personalization
+    - ``custom_args_list``: list of dicts parallel to ``to_list`` (used when
+      ``is_multiple`` is True; each entry is attached to that recipient only)
     """
     email_context = email_context or {}
+    cc = _email_objects(email_context.get('cc_addr'))
+    bcc = _email_objects(email_context.get('bcc_addr'))
+    shared_custom_args = email_context.get('custom_args')
+    custom_args_list = email_context.get('custom_args_list') or []
 
-    if is_multiple:
-        # If we attached the same CC/BCC to every personalization in is_multiple mode,
-        # a batch of N recipients would produce N separate emails each including that CC
-        # so the CC address would get N copies of the same message
-        # TODO: decide if it's safe to add the CC/BCC to each personalization
-        return [{'to': [{'email': addr}]} for addr in to_list]
+    def personalization(recipients, custom_args=None):
+        item = {'to': [{'email': a} for a in recipients]}
+        if cc:
+            item['cc'] = cc
+        if bcc:
+            item['bcc'] = bcc
+        if custom_args:
+            item['custom_args'] = {str(k): str(v) for k, v in custom_args.items()}
+        return item
 
-    personalization = {'to': [{'email': addr} for addr in to_list]}
-    cc_addr = email_context.get('cc_addr')
-    if cc_addr:
-        personalization['cc'] = [{'email': a} for a in ([cc_addr] if isinstance(cc_addr, str) else cc_addr)]
-    bcc_addr = email_context.get('bcc_addr')
-    if bcc_addr:
-        personalization['bcc'] = [{'email': a} for a in ([bcc_addr] if isinstance(bcc_addr, str) else bcc_addr)]
-    return [personalization]
+    if not is_multiple:
+        return [personalization(to_list, shared_custom_args)]
+
+    return [
+        personalization([addr], custom_args_list[i])
+        for i, addr in enumerate(to_list)
+    ]
 
 
 def send_email_with_send_grid(to_addr, notification_type, context, email_context=None, *, is_multiple=False, rendered_html=None):

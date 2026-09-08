@@ -3,7 +3,7 @@ import uuid
 from osf.models import NotificationType, NotificationTypeEnum, OSFUser, UserActivityCounter, Email
 from osf.models.spam import SpamStatus
 from django.db import transaction
-from django.db.models import OuterRef, Subquery, Case, When, CharField, Count, Q, BooleanField
+from django.db.models import OuterRef, Subquery, Case, When, Value, CharField, Count, Q, BooleanField, TextField
 from django.db.models.functions import Coalesce
 from framework.celery_tasks import app as celery_app
 from django.utils import timezone
@@ -22,6 +22,11 @@ FILTER_PRESETS = {
     'active': {'is_active': True},
     'internal': {'is_active': True, 'is_staff': True, 'username__endswith': '@cos.io'},
 }
+
+# Flattened onto SendGrid Event Webhook payloads via personalization custom_args.
+CAMPAIGN_CUSTOM_ARG_KEYS = ('campaign_id', 'campaign_recipient_id', 'run_id')
+SENDGRID_SUCCESS_EVENTS = frozenset({'delivered'})
+SENDGRID_FAILURE_EVENTS = frozenset({'bounce', 'dropped'})
 
 first_email_subquery = (
     Email.objects
@@ -184,6 +189,88 @@ def get_campaign_recipient_stats(campaign_id):
         ),
     )
 
+
+@celery_app.task(name='email.process_sendgrid_campaign_events')
+def process_sendgrid_campaign_events(events):
+    """Update campaign recipients from filtered SendGrid Event Webhook events.
+
+    Expects events that already include campaign ``custom_args``
+    (``campaign_id``, ``campaign_recipient_id``, ``run_id``). Only ``QUEUED``
+    recipients whose event ``run_id`` matches the campaign's current run are
+    updated; delayed webhooks from a prior run are ignored.
+
+    A ``delivered`` event wins over failure events for the same recipient so a
+    confirmed delivery is never marked failed (and retried).
+    """
+    campaign_ids = {
+        event.get('campaign_id')
+        for event in events
+        if event.get('campaign_id', False)
+    }
+    if not campaign_ids:
+        return
+
+    current_run_ids = {
+        str(campaign.id): str(campaign.run_id)
+        for campaign in NotificationCampaign.objects.filter(
+            id__in=campaign_ids,
+            run_id__isnull=False,
+        )
+    }
+    if not current_run_ids:
+        return
+
+    success_ids = set()
+    failed = dict()
+
+    for event in events:
+        campaign_id = event.get('campaign_id', '')
+        current_run_id = current_run_ids.get(str(campaign_id), None)
+        if current_run_id is None or event.get('run_id') != current_run_id:
+            continue
+
+        event_type = event.get('event')
+        recipient_id = event.get('campaign_recipient_id')
+        if not recipient_id:
+            continue
+        try:
+            recipient_pk = int(recipient_id)
+        except (TypeError, ValueError):
+            continue
+
+        if event_type in SENDGRID_SUCCESS_EVENTS:
+            success_ids.add(recipient_pk)
+            failed.pop(recipient_pk, None)
+        elif event_type in SENDGRID_FAILURE_EVENTS:
+            if recipient_pk in success_ids:
+                continue
+            error_message = event.get('reason') or event.get('type') or event_type
+            failed[recipient_pk] = error_message
+
+    if success_ids:
+        NotificationCampaignRecipient.objects.filter(
+            id__in=success_ids,
+            status=NotificationCampaignRecipientStatus.QUEUED,
+        ).update(status=NotificationCampaignRecipientStatus.SENT, error_message=None)
+
+    if failed:
+        failed_errors = [
+            When(id=recipient_pk, then=Value(error_message))
+            for recipient_pk, error_message in failed.items()
+        ]
+        NotificationCampaignRecipient.objects.filter(
+            id__in=failed.keys(),
+            status=NotificationCampaignRecipientStatus.QUEUED,
+        ).update(
+            status=NotificationCampaignRecipientStatus.FAILED,
+            error_message=Case(
+                *failed_errors,
+                default=Value('SendGrid delivery failed'),
+                output_field=TextField(),
+            ),
+        )
+
+
 @celery_app.task(bind=True, base=NotificationCampaignTask, name='email.process_campaign_retry')
 def process_campaign_retry(self, campaign_id, run_id):
     campaign = self.get_campaign(campaign_id, run_id, abort_if_cancelled=False)
@@ -216,7 +303,7 @@ def process_campaign_retry(self, campaign_id, run_id):
             campaign.save()
             process_campaign_retry.apply_async(
                 kwargs={'campaign_id': campaign_id, 'run_id': campaign.run_id},
-                countdown=settings.CAMPAIGN_DISPATCH_INTERVAL,
+                countdown=execution.get('dispatch_interval', settings.CAMPAIGN_DISPATCH_INTERVAL),
             )
             return
 
@@ -492,15 +579,17 @@ def send_campaign_batch(
     if campaign.metadata.get('sendgrid_bulk', False):
         # NOTE: sendgrid bulk send feature has not been fully implemented and tested
         recipients = list(valid_emails_qs)
-        recipient_emails = [recipient.recipient_address for recipient in recipients]
-        custom_args_list = [
-            {
-                'campaign_recipient_id': str(recipient.id),
-                'campaign_id': str(campaign_id),
-                'run_id': str(run_id),
-            }
-            for recipient in recipients
-        ]
+        recipient_emails = []
+        custom_args_list = []
+        for recipient in recipients:
+            recipient_emails.append(recipient.recipient_address)
+            custom_args_list.append(
+                {
+                    'campaign_recipient_id': str(recipient.id),
+                    'campaign_id': str(campaign_id),
+                    'run_id': str(run_id),
+                }
+            )
         try:
             send_email_with_send_grid(
                 to_addr=recipient_emails,
