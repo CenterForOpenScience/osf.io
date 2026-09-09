@@ -623,7 +623,7 @@ def send_campaign_batch(
                             'run_id': str(run_id),
                         },
                     },
-                    rendered_html=rendered_html,  # Too many write operations
+                    rendered_html=rendered_html,
                 )
                 recipient.status = NotificationCampaignRecipientStatus.SENT
                 recipient.error_message = None
