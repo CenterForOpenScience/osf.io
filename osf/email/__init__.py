@@ -199,7 +199,7 @@ def _safe_categories(cats):
                 out.append(c)
     return out[:10]
 
-def send_email_over_smtp(to_email, notification_type, context, email_context):
+def send_email_over_smtp(to_email, notification_type, context, email_context, rendered_html=None):
     if waffle.switch_is_active(features.ENABLE_MAILHOG):
         host = settings.MAILHOG_HOST
         port = settings.MAILHOG_PORT
@@ -212,7 +212,7 @@ def send_email_over_smtp(to_email, notification_type, context, email_context):
         raise NotImplementedError('MAIL_SERVER or MAIL_PORT is not set')
 
     subject = None if not notification_type.subject else notification_type.subject.format(**context)
-    body_html = _render_email_html(notification_type, context)
+    body_html = rendered_html or _render_email_html(notification_type, context) or '<p>(no content)</p>'
 
     email = EmailMessage(
         subject=subject,
@@ -264,7 +264,7 @@ def _build_sendgrid_personalizations(to_list, email_context=None, is_multiple=Fa
     return [personalization]
 
 
-def send_email_with_send_grid(to_addr, notification_type, context, email_context=None, *, is_multiple=False):
+def send_email_with_send_grid(to_addr, notification_type, context, email_context=None, *, is_multiple=False, rendered_html=None):
 
     email_context = email_context or {}
     to_list = [to_addr] if isinstance(to_addr, str) else [a for a in (to_addr or []) if a]
@@ -277,7 +277,7 @@ def send_email_with_send_grid(to_addr, notification_type, context, email_context
         logging.error('SendGrid: missing SENDGRID_FROM_EMAIL/FROM_EMAIL')
         return False
 
-    html = _render_email_html(notification_type, context) or '<p>(no content)</p>'
+    html = rendered_html or _render_email_html(notification_type, context) or '<p>(no content)</p>'
 
     subject_tpl = getattr(notification_type, 'subject', None)
     subject = subject_tpl.format(**context) if subject_tpl else f'Notification: {getattr(notification_type, "name", "OSF")}'
@@ -358,3 +358,31 @@ def send_email_with_send_grid(to_addr, notification_type, context, email_context
         else:
             logging.error('SendGrid hit a blocked socket error: %r | payload=%s', exc, payload)
         raise
+
+def send_email(recipient_address, notification_type, event_context=None, email_context=None, rendered_html=None):
+    """
+    Send an email using either SMTP or SendGrid based on settings and feature flags.
+    """
+    if waffle.switch_is_active(features.ENABLE_MAILHOG):
+        send_email_over_smtp(
+            recipient_address,
+            notification_type,
+            event_context,
+            email_context,
+            rendered_html=rendered_html,
+        )
+
+    if not settings.LOCAL_MODE:
+        send_email_with_send_grid(
+            recipient_address,
+            notification_type,
+            event_context,
+            email_context,
+            rendered_html=rendered_html,
+        )
+
+    if settings.LOCAL_MODE and not waffle.switch_is_active(features.ENABLE_MAILHOG):
+        logging.warning(
+            'Both ENABLE_MAILHOG and LOCAL_MODE are disabled. Emails will not be sent to MailHog or real email addresses. '
+            'Turn on ENABLE_MAILHOG to send emails to MailHog for testing, or turn on LOCAL_MODE to send emails with SendGrid.'
+        )

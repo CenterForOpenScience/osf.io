@@ -9,7 +9,7 @@ from framework.celery_tasks import app as celery_app
 from django.utils import timezone
 from datetime import timedelta
 from osf.models.notification_campaign import NotificationCampaign, NotificationCampaignRecipient, NotificationCampaignStatus, NotificationCampaignRecipientStatus
-from osf.email import send_email_with_send_grid
+from osf.email import send_email_with_send_grid, _render_email_html, send_email
 from framework import sentry
 from website import settings
 from itertools import batched
@@ -454,13 +454,16 @@ def send_campaign_batch(
             sentry.log_message(message)
             valid_emails_qs.update(status=NotificationCampaignRecipientStatus.FAILED, error_message=str(exc))
     else:
+        rendered_html = _render_email_html(notification_type, context)
         for recipient in valid_emails_qs:
             notification_started_at = timezone.now()
             try:
-                notification_type.emit(
-                    user=recipient.user,
+                send_email(
+                    recipient_address=recipient.recipient_address,
+                    notification_type=notification_type,
                     event_context=context,
-                    save=False,  # Too many write operations
+                    email_context=context,
+                    rendered_html=rendered_html
                 )
                 recipient.status = NotificationCampaignRecipientStatus.SENT
                 recipient.error_message = None
