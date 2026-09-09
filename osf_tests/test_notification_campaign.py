@@ -587,8 +587,8 @@ class TestSendCampaignBatch:
         campaign.save()
         return campaign
 
-    @mock.patch.object(NotificationType, 'emit')
-    def test_send_campaign_batch_marks_recipients_sent(self, mock_emit, running_campaign):
+    @mock.patch('osf.email.notification_campaign.send_email')
+    def test_send_campaign_batch_marks_recipients_sent(self, mock_send_email, running_campaign):
         user = UserFactory()
         create_campaign_recipients(Q(**{'id__in': [user.id]}), campaign_id=running_campaign.id)
         batch_id = assign_batch_id_to_recipients(campaign_id=running_campaign.id, batch_size=1)
@@ -606,11 +606,11 @@ class TestSendCampaignBatch:
         running_campaign.refresh_from_db()
         assert recipient.status == NotificationCampaignRecipientStatus.SENT
         assert running_campaign.sent_count == 1
-        mock_emit.assert_called_once()
+        mock_send_email.assert_called_once()
 
-    @mock.patch.object(NotificationType, 'emit', side_effect=Exception('send failed'))
+    @mock.patch('osf.email.notification_campaign.send_email', side_effect=Exception('send failed'))
     @mock.patch('osf.email.notification_campaign.sentry.log_exception')
-    def test_send_campaign_batch_marks_recipients_failed(self, mock_sentry, mock_emit, running_campaign):
+    def test_send_campaign_batch_marks_recipients_failed(self, mock_sentry, mock_send_email, running_campaign):
         user = UserFactory()
         create_campaign_recipients(Q(**{'id__in': [user.id]}), campaign_id=running_campaign.id)
         batch_id = assign_batch_id_to_recipients(campaign_id=running_campaign.id, batch_size=1)
@@ -739,7 +739,7 @@ class TestSendCampaignBatch:
         batch_id = assign_batch_id_to_recipients(campaign_id=running_campaign.id, batch_size=1)
         mock_sentry.reset_mock()
 
-        with mock.patch.object(NotificationType, 'emit'):
+        with mock.patch('osf.email.notification_campaign.send_email'):
             send_campaign_batch(
                 context={},
                 batch_id=batch_id,
@@ -765,7 +765,7 @@ class TestSendCampaignBatch:
         batch_id = assign_batch_id_to_recipients(campaign_id=running_campaign.id, batch_size=1)
         mock_sentry.reset_mock()
 
-        with mock.patch.object(NotificationType, 'emit'):
+        with mock.patch('osf.email.notification_campaign.send_email'):
             send_campaign_batch(
                 context={},
                 batch_id=batch_id,
@@ -793,7 +793,7 @@ class TestSendCampaignBatch:
         batch_id_2 = assign_batch_id_to_recipients(campaign_id=running_campaign.id, batch_size=1)
         mock_sentry.reset_mock()
 
-        with mock.patch.object(NotificationType, 'emit'):
+        with mock.patch('osf.email.notification_campaign.send_email'):
             send_campaign_batch(
                 context={},
                 batch_id=batch_id_1,
@@ -870,8 +870,8 @@ class TestSendCampaignBatch:
         recipient.refresh_from_db()
         assert recipient.status == NotificationCampaignRecipientStatus.QUEUED
 
-    @mock.patch.object(NotificationType, 'emit')
-    def test_send_campaign_batch_uses_fallback_email_when_username_has_no_at(self, mock_emit, running_campaign):
+    @mock.patch('osf.email.notification_campaign.send_email')
+    def test_send_campaign_batch_uses_fallback_email_when_username_has_no_at(self, mock_send_email, running_campaign):
         user = UserFactory()
         user.username = 'invalid'
         user.save(update_fields=['username'])
@@ -895,7 +895,7 @@ class TestSendCampaignBatch:
         assert recipient.status == NotificationCampaignRecipientStatus.SENT
         assert running_campaign.sent_count == 1
         assert running_campaign.failed_count == 0
-        mock_emit.assert_called_once()
+        mock_send_email.assert_called_once()
 
 
 class TestNotificationCampaignCancel:
