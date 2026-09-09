@@ -41,7 +41,7 @@ from osf.external.gravy_valet import (
     request_helpers as gv_requests,
     translations as gv_translations,
 )
-from osf.utils.requests import get_current_request
+from osf.utils.requests import get_current_request, requests_retry_session
 from osf.exceptions import (
     reraise_django_validation_errors,
     UserStateError,
@@ -2219,27 +2219,65 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
             orcid_token = token_entry.get('access_token') or token_entry.get('refresh_token')
             logger.info(f'[GDPR delete] Revoking ORCiD Access: user={self._id}, orcid_id={orcid_id}')
             # Note: no need to retry as for now since this is only triggered manually by OSF admin
-            # TODO: however, need to add retry when we add revocation when user disconnect ORCiD
             try:
-                response = requests.post(
-                    website_settings.ORCID_OAUTH_REVOKE_URL,
-                    data={
-                        'client_id': website_settings.ORCID_OAUTH_CLIENT_ID,
-                        'client_secret': website_settings.ORCID_OAUTH_CLIENT_SECRET,
-                        'token': orcid_token,
-                    },
-                    timeout=website_settings.ORCID_OAUTH_REVOKE_REQUEST_TIMEOUT,
-                )
-                logger.info(f'[GDPR delete] ORCiD Revocation Response: user={self._id}, orcid_id={orcid_id}, '
-                            f'status_code={response.status_code}, response_text={response.text}')
-                response.raise_for_status()
+                self._send_orcid_revoke_request(orcid_id, orcid_token, context='GDPR delete')
             except requests.exceptions.RequestException as e:
                 msg = f'[GDPR delete] ORCiD Revocation Failed: user={self._id}, orcid_id={orcid_id}, error={e}'
                 logger.error(msg)
                 sentry.log_message(msg, level=logging.ERROR)
                 sentry.log_exception(e)
                 raise UserStateError(f'Fail to revoke ORCiD access: {e}')
-            # NOTE: The actual identities/tokens removal happens in `_clear_identifying_information()`.
+
+    def _send_orcid_revoke_request(self, orcid_id, orcid_token, context, session=None):
+        session = session or requests
+        response = session.post(
+            website_settings.ORCID_OAUTH_REVOKE_URL,
+            data={
+                'client_id': website_settings.ORCID_OAUTH_CLIENT_ID,
+                'client_secret': website_settings.ORCID_OAUTH_CLIENT_SECRET,
+                'token': orcid_token,
+            },
+            timeout=website_settings.ORCID_OAUTH_REVOKE_REQUEST_TIMEOUT,
+        )
+        logger.info(f'[{context}] ORCiD Revocation Response: user={self._id}, orcid_id={orcid_id}, '
+                    f'status_code={response.status_code}, response_text={response.text}')
+        response.raise_for_status()
+        return response
+
+    def disconnect_external_identity(self, provider, identity_id):
+        if provider == website_settings.EXTERNAL_IDENTITY_PROFILE.get('OrcidProfile'):
+            self._revoke_and_forget_orcid_token(identity_id)
+
+        identity = self.external_identity.get(provider)
+        if identity:
+            identity.pop(identity_id, None)
+            if not identity:
+                self.external_identity.pop(provider, None)
+
+    def _revoke_and_forget_orcid_token(self, orcid_id):
+        remaining_tokens = self.external_identity_tokens.get('ORCID', {})
+        token_entry = remaining_tokens.pop(orcid_id, None)
+        if not remaining_tokens:
+            self.external_identity_tokens.pop('ORCID', None)
+        if not token_entry:
+            return
+
+        orcid_token = token_entry.get('access_token') or token_entry.get('refresh_token')
+        if not orcid_token:
+            return
+
+        logger.info(f'[ORCiD disconnect] Revoking ORCiD Access: user={self._id}, orcid_id={orcid_id}')
+        try:
+            self._send_orcid_revoke_request(
+                orcid_id, orcid_token, context='ORCiD disconnect',
+                session=requests_retry_session(retries=website_settings.ORCID_OAUTH_REVOKE_MAX_RETRIES),
+            )
+        except requests.exceptions.RequestException as e:
+            # Best-effort: an unreachable ORCiD API shouldn't block a user from disconnecting locally.
+            msg = f'[ORCiD disconnect] ORCiD Revocation Failed: user={self._id}, orcid_id={orcid_id}, error={e}'
+            logger.error(msg)
+            sentry.log_message(msg, level=logging.ERROR)
+            sentry.log_exception(e)
 
     def _clear_identifying_information(self):
         # This doesn't remove identifying info, but ensures other users can't see the deleted user's profile etc.
