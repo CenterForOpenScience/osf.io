@@ -962,8 +962,8 @@ class TestSendCampaignBatch:
 
         recipient.refresh_from_db()
         running_campaign.refresh_from_db()
-        assert recipient.status == NotificationCampaignRecipientStatus.QUEUED
-        assert running_campaign.sent_count == 0
+        assert recipient.status == NotificationCampaignRecipientStatus.SENT
+        assert running_campaign.sent_count == 1
         assert running_campaign.failed_count == 0
         mock_send_email.assert_called_once()
 
