@@ -1128,14 +1128,14 @@ class TestProcessCampaignRetry:
             countdown=60,
         )
 
-    def test_process_campaign_retry_times_out_queued_marks_partial_after_max_retries(self, campaign):
+    def test_process_campaign_retry_times_out_queued_marks_partial_without_retry(self, campaign):
         user = UserFactory()
         create_campaign_recipients(Q(**{'id__in': [user.id]}), campaign_id=campaign.id)
         NotificationCampaignRecipient.objects.filter(campaign=campaign).update(
             status=NotificationCampaignRecipientStatus.QUEUED
         )
         campaign.run_id = uuid.uuid4()
-        campaign.retries = 2
+        campaign.retries = 0
         campaign.status = NotificationCampaignStatus.RUNNING
         campaign.started_at = timezone.now() - timedelta(seconds=10)
         campaign.metadata['execution']['delivery_timeout'] = 1
@@ -1148,6 +1148,7 @@ class TestProcessCampaignRetry:
         assert recipient.error_message == 'SendGrid delivery timeout'
         campaign.refresh_from_db()
         assert campaign.status == NotificationCampaignStatus.PARTIALLY_COMPLETED
+        assert campaign.retries == 0
         assert campaign.failed_count == 1
         assert campaign.completed_at is not None
 

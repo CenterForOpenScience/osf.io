@@ -65,6 +65,15 @@ class NotificationCampaignTask(celery_app.Task):
         campaign.failed_count = stats['failed_count']
         return stats
 
+    def finish_campaign(self, campaign, status=None):
+        """Sync recipient counters, set completed_at once, optionally update status, and save."""
+        self.sync_campaign_stats(campaign)
+        if campaign.completed_at is None:
+            campaign.completed_at = timezone.now()
+        if status is not None:
+            campaign.status = status
+        campaign.save()
+
 
 def build_query(node):
     """
@@ -284,10 +293,7 @@ def process_campaign_retry(self, campaign_id, run_id):
         message = f'[Notification Campaign #{campaign_id}] WARNING: Campaign {campaign.name} was cancelled.'
         logger.info(message)
         sentry.log_message(message)
-        self.sync_campaign_stats(campaign)
-        if campaign.completed_at is None:
-            campaign.completed_at = timezone.now()
-        campaign.save()
+        self.finish_campaign(campaign)
         return
 
     queued_qs = NotificationCampaignRecipient.objects.filter(
@@ -311,8 +317,6 @@ def process_campaign_retry(self, campaign_id, run_id):
             status=NotificationCampaignRecipientStatus.FAILED,
             error_message='SendGrid delivery timeout',
         )
-        self.sync_campaign_stats(campaign)
-        campaign.save()
         message = (
             f'[Notification Campaign #{campaign_id}] WARNING: '
             f'Marked {timed_out} queued recipients as FAILED after delivery timeout '
@@ -320,6 +324,9 @@ def process_campaign_retry(self, campaign_id, run_id):
         )
         logger.warning(message)
         sentry.log_message(message)
+
+        # Do not retry timed-out deliveries; close the run as partially completed.
+        self.finish_campaign(campaign, NotificationCampaignStatus.PARTIALLY_COMPLETED)
         return
 
     failed_recipients_count = NotificationCampaignRecipient.objects.filter(
@@ -350,12 +357,7 @@ def process_campaign_retry(self, campaign_id, run_id):
     else:
         final_status = NotificationCampaignStatus.COMPLETED
 
-    self.sync_campaign_stats(campaign)
-    if campaign.completed_at is None:
-        campaign.completed_at = timezone.now()
-    campaign.status = final_status
-    campaign.save()
-
+    self.finish_campaign(campaign, final_status)
 
 @celery_app.task(bind=True, base=NotificationCampaignTask, name='email.start_notification_campaign')
 def start_notification_campaign(self, campaign_id, restart_failed=False, restart_stuck=False):
@@ -623,7 +625,9 @@ def send_campaign_batch(
                     },
                     rendered_html=rendered_html,  # Too many write operations
                 )
-                # Leave QUEUED until SendGrid Event Webhook confirms delivery.
+                recipient.status = NotificationCampaignRecipientStatus.SENT
+                recipient.error_message = None
+                recipient_records.append(recipient)
             except Exception as exc:
                 message = (f'[Notification Campaign #{campaign_id}] ERROR:'
                            f'SendGrid request failed for user {recipient.user.username} ({recipient.user._id}),'

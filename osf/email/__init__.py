@@ -277,7 +277,10 @@ def _build_sendgrid_personalizations(to_list, email_context=None, is_multiple=Fa
         return [personalization(to_list, shared_custom_args)]
 
     return [
-        personalization([addr], custom_args_list[i])
+        personalization(
+            [addr],
+            custom_args_list[i] if i < len(custom_args_list) else shared_custom_args,
+        )
         for i, addr in enumerate(to_list)
     ]
 

@@ -26,6 +26,28 @@ class SendGridEventWebhook(APIView):
 
     Mounted under the ``_/`` namespace (no user auth). Non-campaign events are
     ignored; campaign-tagged events are processed asynchronously.
+
+    Local testing
+    -------------
+    Requests must be ECDSA-signed by SendGrid (see ``RequestComesFromSendGrid``),
+    so plain ``curl`` posts are rejected unless you forge a valid signature or
+    disable the signature check. Use a public tunnel and a real SendGrid Event Webhook
+    instead:
+
+    1. Run the API (``localhost:8000``) and a Celery worker (events are enqueued
+       to ``email.process_sendgrid_campaign_events``).
+    2. Expose the API, e.g. ``ngrok http 8000``. Add ``*.ngrok-free.dev`` in
+       ``ALLOWED_HOSTS`` in the settings. See https://ngrok.com/docs/share-localhost/overview
+        for more details.
+    3. In SendGrid → Mail Settings → Event Webhook:
+       - POST URL: ``https://<ngrok-host>/_/sendgrid/events/``
+       - Enable Signed Event Webhook; copy the verification key into
+         ``SENDGRID_EVENT_WEBHOOK_PUBLIC_KEY`` (``website/settings/local.py``).
+       - Subscribe at least to ``delivered``, ``bounce``, and ``dropped``.
+    4. Send a notification campaign email (personalization ``custom_args`` must
+       include ``campaign_id``, ``campaign_recipient_id``, and ``run_id``).
+       SendGrid's "Test Your Integration" payload lacks those keys, so this view
+       accepts it with 200 but does not update campaign recipients.
     """
 
     view_name = 'sendgrid_event_webhook'
