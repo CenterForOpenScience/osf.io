@@ -1,0 +1,40 @@
+version: 0.1
+component: build
+timeoutInSeconds: 3600
+shell: bash
+failImmediatelyOnError: true
+env:
+  variables:
+    GENERIC_BUILD_PIPELINE_OCID: "ocid1.devopsbuildpipeline.oc1.iad.amaaaaaa2jd6obqazeiqmcdnextophmsh2n5a5zt5aoty5hrddd5n6b5rmhq"
+    HELM_CHART_NAME: "osf"
+    GIT_REPO_URL: "https://github.com/CenterForOpenScience/osf.io.git"
+steps:
+  - type: Command
+    name: "Install jq"
+    command: |
+      VERSION=1.8.2
+      PLATFORM=linux-amd64
+      wget https://github.com/jqlang/jq/releases/download/jq-${VERSION}/jq-${PLATFORM} -O /usr/local/bin/jq &&\
+      chmod +x /usr/local/bin/jq
+  - type: Command
+    name: "Trigger Generic CICD Pipes"
+    command: |
+      GIT_BRANCH="${OCI_PRIMARY_SOURCE_BRANCH_NAME}"
+      GIT_COMMIT="${OCI_PRIMARY_SOURCE_COMMIT_HASH}"
+      # Trigger generic pipes with vars/params
+      build_run_arguments=$(jq -cn \
+        --arg helm_chart_name "${HELM_CHART_NAME}" \
+        --arg git_repo_url "${GIT_REPO_URL}" \
+        --arg git_branch "${GIT_BRANCH}" \
+        --arg git_commit "${GIT_COMMIT}" \
+        '{"items": [
+          {"name": "HELM_CHART_NAME", "value": $helm_chart_name},
+          {"name": "GIT_REPO_URL", "value": $git_repo_url},
+          {"name": "GIT_BRANCH", "value": $git_branch},
+          {"name": "GIT_COMMIT", "value": $git_commit}
+        ]}')
+
+      oci devops build-run create \
+        --build-pipeline-id "${GENERIC_BUILD_PIPELINE_OCID}" \
+        --display-name "build-${HELM_CHART_NAME}-${GIT_BRANCH}-${GIT_COMMIT}" \
+        --build-run-arguments "${build_run_arguments}"
