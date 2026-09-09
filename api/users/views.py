@@ -616,11 +616,14 @@ class UserIdentitiesDetail(JSONAPIBaseView, generics.RetrieveDestroyAPIView, Use
 
     def perform_destroy(self, instance):
         user = self.get_user()
-        identity_id = self.kwargs['identity_id']
+        provider = self.kwargs['identity_id']
         try:
-            user.external_identity.pop(identity_id)
+            identity_ids = list(user.external_identity[provider].keys())
         except KeyError:
             raise NotFound('Requested external identity could not be found.')
+
+        for identity_id in identity_ids:
+            user.disconnect_external_identity(provider, identity_id)
 
         user.save()
 
