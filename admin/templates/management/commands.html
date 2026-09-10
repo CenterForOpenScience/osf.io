@@ -226,7 +226,7 @@
                     </nav>
                 </form>
             </section>
-                        <section>
+            <section>
                 <h4><u>Reject pending collection submissions</u></h4>
                 <p>
                     Use this management command to reject all collection submissions currently in the pending state.
@@ -252,6 +252,19 @@
                     {% csrf_token %}
                     Comment: <input type="text" name="comment" style="width: 550px;"
                                     placeholder="Leave blank for default rejection message 'This project is now read-only, so this access request has been automatically rejected.'" />
+                    <nav>
+                        <input class="btn btn-success" type="submit" value="Run" />
+                    </nav>
+                </form>
+            </section>
+            <section>
+                <h4><u>Fix restored files</u></h4>
+                <p>
+                    Use this management command to fix restored files that were previously trashed.
+                </p>
+                <form method="post"
+                      action="{% url 'management:fix_restored_trashed_files'%}">
+                    {% csrf_token %}
                     <nav>
                         <input class="btn btn-success" type="submit" value="Run" />
                     </nav>

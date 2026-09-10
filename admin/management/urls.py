@@ -28,4 +28,6 @@ urlpatterns = [
             name='reject_pending_collection_submissions'),
     re_path(r'^reject_pending_node_requests', views.RejectPendingNodeRequests.as_view(),
             name='reject_pending_node_requests'),
+    re_path(r'^fix_restored_trashed_files', views.FixRestoredTrashedFiles.as_view(),
+            name='fix_restored_trashed_files'),
 ]

@@ -266,6 +266,22 @@ class TestOsfstorageFileNode(StorageTestCase):
         assert BaseFileNode.objects.get(_id=folder._id).type == 'osf.trashedfolder'
         assert BaseFileNode.objects.get(_id=file._id).type == 'osf.trashedfile'
 
+    def test_restore_deleted_file_without_deleted_field(self):
+        assert models.TrashedFileNode.objects.exists() is False
+
+        child = self.node_settings.get_root().append_file('Test')
+        child.delete()
+
+        trashed_file = models.TrashedFileNode.objects.first()
+        restored_file = trashed_file.restore()
+
+        assert restored_file.deleted is None
+        assert restored_file.deleted_on is None
+        # None because we do not set deleted_by when delete the child
+        assert restored_file.deleted_by is None
+
+        assert models.TrashedFileNode.objects.exists() is False
+
     def test_delete_file(self):
         child = self.node_settings.get_root().append_file('Test')
         field_names = [f.name for f in child._meta.get_fields() if not f.is_relation and f.name not in ['id', 'content_type_pk']]
