@@ -52,7 +52,7 @@ def update_institutions_if_user_associated(resource, desired_institutions_data, 
             raise exceptions.PermissionDenied(detail=f'User needs to be affiliated with {inst.name}')
 
     # If a user doesn't include an affiliation they have, then remove it.
-    resource_institutions = resource.affiliated_institutions.all()
+    resource_institutions = resource.get_affiliated_institutions()
     for inst in user.get_affiliated_institutions():
         if inst in resource_institutions and inst not in desired_institutions:
             resource.remove_affiliated_institution(inst, user)
