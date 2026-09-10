@@ -279,6 +279,8 @@ def _make_gv_request(
             requesting_user=requesting_user,
             requested_resource=requested_resource,
             auth=auth,
+            request_method=request_method,
+            endpoint_url=endpoint_url,
         ) | {'content-type': 'application/vnd.api+json'}
     )
     assert not (request_method == 'GET' and json_data is not None)

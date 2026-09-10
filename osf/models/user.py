@@ -12,6 +12,7 @@ from guardian.shortcuts import get_perms
 # OSF imports
 import itsdangerous
 import pytz
+import requests
 from dirtyfields import DirtyFieldsMixin
 
 from django.conf import settings
@@ -20,7 +21,7 @@ from django.contrib.auth.hashers import check_password
 from django.contrib.auth.models import PermissionsMixin
 from django.core.exceptions import FieldDoesNotExist
 from django.dispatch import receiver
-from django.db import models
+from django.db import models, transaction
 from django.db.models import Count, Exists, OuterRef
 from django.db.models.signals import post_save
 from django.utils import timezone
@@ -314,7 +315,18 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
     external_identity = DateTimeAwareJSONField(default=dict, blank=True)
     # Format: {
     #   <external_id_provider>: {
-    #       <external_id>: <status from ('VERIFIED, 'CREATE', 'LINK')>,
+    #       <external_id>: <status from ('VERIFIE'D, 'CREATE', 'LINK')>,
+    #       ...
+    #   },
+    #   ...
+    # }
+    external_identity_tokens = DateTimeAwareJSONField(default=dict, blank=True)
+    # Format: {
+    #   <external_id_provider>: {
+    #       <external_id>: {
+    #           "access_token" : <token>,
+    #           "refresh_token": <token>,  # optional: not all providers/users release a refresh token
+    #       }
     #       ...
     #   },
     #   ...
@@ -817,7 +829,12 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
                         self.external_identity[service] = {
                             service_id: status
                         }
+
+                token_entry = user.external_identity_tokens.get(service, {}).get(service_id)
+                if token_entry:
+                    self.external_identity_tokens.setdefault(service, {})[service_id] = token_entry
         user.external_identity = {}
+        user.external_identity_tokens = {}
 
         # FOREIGN FIELDS
         self.external_accounts.add(*user.external_accounts.values_list('pk', flat=True))
@@ -1043,7 +1060,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         it depends on.
         """
         # The user can log in if they have set a password OR
-        # have a verified external ID, e.g an ORCID
+        # have a verified external ID, e.g an ORCiD
         can_login = self.has_usable_password() or (
             'VERIFIED' in sum([list(each.values()) for each in self.external_identity.values()], [])
         )
@@ -1475,18 +1492,30 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
 
         return True
 
-    def confirm_spam(self, domains=None, save=True, train_spam_services=False, skip_resources_spam=False):
+    def confirm_spam(self, domains=None, save=True, train_spam_services=False, skip_resources_spam=False, notify=True):
+        was_disabled = self.is_disabled
         self.deactivate_account()
         super().confirm_spam(domains=domains, save=save, train_spam_services=train_spam_services)
+
+        if notify and not was_disabled:
+            NotificationTypeEnum.USER_SPAM_BANNED.instance.emit(
+                user=self,
+                event_context={
+                    'user_fullname': self.fullname,
+                    'osf_support_email': website_settings.OSF_SUPPORT_EMAIL,
+                }
+            )
 
         if skip_resources_spam:
             return
 
-        # Don't train on resources merely associated with spam user
+        # Don't train on resources merely associated with spam user, and don't
+        # send a separate per-item notification for content caught up in the
+        # account-level ban cascade -- the single account-ban email covers it.
         for node in self.nodes.filter(is_public=True, is_deleted=False):
-            node.confirm_spam(domains=domains, train_spam_services=train_spam_services)
+            node.confirm_spam(domains=domains, train_spam_services=train_spam_services, notify=False)
         for preprint in self.preprints.filter(is_public=True, deleted__isnull=True):
-            preprint.confirm_spam(domains=domains, train_spam_services=train_spam_services)
+            preprint.confirm_spam(domains=domains, train_spam_services=train_spam_services, notify=False)
 
     def confirm_ham(self, save=False, train_spam_services=False):
         self.reactivate_account()
@@ -2063,21 +2092,24 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         """
         Complies with GDPR guidelines by disabling the account and removing identifying information.
         """
-        self._validate_and_remove_resource_for_gdpr_delete(
-            self.nodes.all(),
-            hard_delete=False
-        )
-        self._validate_and_remove_resource_for_gdpr_delete(
-            self.preprints.all(),
-            hard_delete=False
-        )
-        self._validate_and_remove_resource_for_gdpr_delete(
-            self.draft_registrations.all(),
-            hard_delete=True
-        )
+        self._revoke_orcid_tokens()
 
-        # Finally delete the user's info.
-        self._clear_identifying_information()
+        with transaction.atomic():
+            self._validate_and_remove_resource_for_gdpr_delete(
+                self.nodes.all(),
+                hard_delete=False
+            )
+            self._validate_and_remove_resource_for_gdpr_delete(
+                self.preprints.all(),
+                hard_delete=False
+            )
+            self._validate_and_remove_resource_for_gdpr_delete(
+                self.draft_registrations.all(),
+                hard_delete=True
+            )
+
+            # Finally delete the user's info.
+            self._clear_identifying_information()
 
     def _validate_and_remove_resource_for_gdpr_delete(self, resources, hard_delete):
         """
@@ -2133,10 +2165,95 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
                     entity.is_deleted = True
                     entity.save()
 
+    def save_external_identity_tokens(self, orcid_id, access_token, refresh_token):
+        # Note: osf-cas will fail first before flow reaches osf.io, if there is no access token during ORCiD SSO
+        if not access_token:
+            msg = f'[ORCiD SSO] CAS response missing ORCiD access token: user=[{self._id}], orcidId=[{orcid_id}]'
+            logger.error(msg)
+            sentry.log_message(msg, level=logging.ERROR)
+        # NOTE: refresh token is optional
+        if not refresh_token:
+            logger.warning(f'[ORCiD SSO] CAS response missing optional ORCiD refresh token: '
+                           f'user=[{self._id}], orcidId=[{orcid_id}]')
+        if orcid_id and access_token:
+            orcid_provider = website_settings.EXTERNAL_IDENTITY_PROFILE['OrcidProfile']
+            token_entry = {'access_token': access_token}
+            if refresh_token:
+                token_entry['refresh_token'] = refresh_token
+            self.external_identity_tokens.setdefault(orcid_provider, {})[orcid_id] = token_entry
+            logger.info(f'[ORCiD SSO] ORCiD token stored on external_identity_tokens: '
+                        f'user=[{self._id}], provider_id=[{orcid_id}], '
+                        f'access_token=[{"present" if access_token else "missing"}], '
+                        f'refresh_token=[{"present" if refresh_token else "missing"}]')
+
+    def _revoke_orcid_tokens(self):
+        """Revokes all ORCiD tokens associated with this user via the ORCiD API.
+        """
+        identity_ids = set(self.external_identity.get('ORCID', {}))
+        tokens_identity_ids = self.external_identity_tokens.get('ORCID', {})
+
+        # If there are multiple identities, inform sentry and continue with revocation
+        if len(identity_ids) > 1 or len(tokens_identity_ids) > 1:
+            msg = (f'[GDPR Delete] Multiple ORCiD entries found: user={self._id}, '
+                   f'identities={sorted(identity_ids)}, tokens={sorted(tokens_identity_ids)}')
+            logger.warning(msg)
+            sentry.log_message(msg, level=logging.WARNING)
+
+        identity_ids_with_tokens = {
+            orcid_id for orcid_id, token_entry in tokens_identity_ids.items()
+            if token_entry.get('access_token') or token_entry.get('refresh_token')
+        }
+
+        identity_only_ids = identity_ids - identity_ids_with_tokens
+        if identity_only_ids:
+            msg = (f'[GDPR Delete] Missing ORCiD tokens: '
+                   f'user={self._id}, ids_without_token={sorted(identity_only_ids)}')
+            logger.error(msg)
+            sentry.log_message(msg, level=logging.ERROR)
+            raise UserStateError('User has connected ORCiD identity but no token to revoke.')
+
+        token_only_ids = identity_ids_with_tokens - identity_ids
+        if token_only_ids:
+            msg = (f'[GDPR delete] Orphaned ORCiD tokens: '
+                   f'user={self._id}, ids_with_orphaned_tokens={sorted(token_only_ids)})')
+            sentry.log_message(msg, level=logging.ERROR)
+            logger.error(msg)
+            raise UserStateError('User has orphaned ORCiD tokens without matching connected identity.')
+
+        revocable_ids = identity_ids & identity_ids_with_tokens
+        if not revocable_ids:
+            logger.info(f'[GDPR delete] No ORCiD Connected: user={self._id}')
+            return
+
+        for orcid_id in sorted(revocable_ids):
+            token_entry = tokens_identity_ids[orcid_id]
+            # We only need to revoke with either access token or refresh token
+            orcid_token = token_entry.get('access_token') or token_entry.get('refresh_token')
+            logger.info(f'[GDPR delete] Revoking ORCiD Access: user={self._id}, orcid_id={orcid_id}')
+            # Note: no need to retry as for now since this is only triggered manually by OSF admin
+            # TODO: however, need to add retry when we add revocation when user disconnect ORCiD
+            try:
+                response = requests.post(
+                    website_settings.ORCID_OAUTH_REVOKE_URL,
+                    data={
+                        'client_id': website_settings.ORCID_OAUTH_CLIENT_ID,
+                        'client_secret': website_settings.ORCID_OAUTH_CLIENT_SECRET,
+                        'token': orcid_token,
+                    },
+                    timeout=website_settings.ORCID_OAUTH_REVOKE_REQUEST_TIMEOUT,
+                )
+                logger.info(f'[GDPR delete] ORCiD Revocation Response: user={self._id}, orcid_id={orcid_id}, '
+                            f'status_code={response.status_code}, response_text={response.text}')
+                response.raise_for_status()
+            except requests.exceptions.RequestException as e:
+                msg = f'[GDPR delete] ORCiD Revocation Failed: user={self._id}, orcid_id={orcid_id}, error={e}'
+                logger.error(msg)
+                sentry.log_message(msg, level=logging.ERROR)
+                sentry.log_exception(e)
+                raise UserStateError(f'Fail to revoke ORCiD access: {e}')
+            # NOTE: The actual identities/tokens removal happens in `_clear_identifying_information()`.
+
     def _clear_identifying_information(self):
-        '''
-        This method ensures a user's info is deleted during a GDPR delete
-        '''
         # This doesn't remove identifying info, but ensures other users can't see the deleted user's profile etc.
         self.deactivate_account()
 
@@ -2172,7 +2289,9 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
                 account.profile_url = None
                 account.save()
             self.external_accounts.clear()
+
         self.external_identity = {}
+        self.external_identity_tokens = {}
         self.deleted = timezone.now()
 
     @property

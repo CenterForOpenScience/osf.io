@@ -1,6 +1,8 @@
 import pytest
+from waffle.testutils import override_flag
 
 from .test_record import TestCedarMetadataRecord
+from osf import features
 from osf.utils.permissions import READ, WRITE
 from osf_tests.factories import AuthUserFactory
 
@@ -164,3 +166,22 @@ class TestCedarMetadataRecordDetailUpdateForFiles(TestCedarMetadataRecord):
     def test_record_detail_update_for_file_with_no_auth(self, app, payload_record_update, cedar_record_for_file):
         resp = app.patch_json(f'/_/cedar_metadata_records/{cedar_record_for_file._id}/', payload_record_update, auth=None, expect_errors=True)
         assert resp.status_code == 401
+
+
+@pytest.mark.django_db
+class TestCedarMetadataRecordDetailUpdateProjectReadOnly(TestCedarMetadataRecord):
+
+    def test_record_detail_update_blocked_when_project_read_only_flag_active(self, app, user, payload_record_update, cedar_record_for_node, cedar_record_metadata_json):
+        with override_flag(features.PROJECT_READ_ONLY, active=True):
+            resp = app.patch_json(f'/_/cedar_metadata_records/{cedar_record_for_node._id}/', payload_record_update, auth=user.auth, expect_errors=True)
+        assert resp.status_code == 405
+        assert resp.json['errors'][0]['detail'] == 'This action is no longer available. Contact support if you have any questions.'
+        cedar_record_for_node.reload()
+        assert cedar_record_for_node.metadata == cedar_record_metadata_json
+
+    def test_record_detail_update_allowed_when_project_read_only_flag_inactive(self, app, user, payload_record_update, cedar_record_for_node, cedar_record_metadata_alt_json):
+        with override_flag(features.PROJECT_READ_ONLY, active=False):
+            resp = app.patch_json(f'/_/cedar_metadata_records/{cedar_record_for_node._id}/', payload_record_update, auth=user.auth)
+        assert resp.status_code == 200
+        cedar_record_for_node.reload()
+        assert cedar_record_for_node.metadata == cedar_record_metadata_alt_json
