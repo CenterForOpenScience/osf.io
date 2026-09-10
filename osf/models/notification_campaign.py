@@ -84,7 +84,6 @@ class NotificationCampaign(models.Model):
         self.started_at = timezone.now()
         self.run_id = uuid.uuid4()
         if not restart_failed and not restart_stuck:
-            self.recipient_count = 0
             self.sent_count = 0
         self.failed_count = 0
         self.retries = 0
