@@ -29,7 +29,9 @@ def reclassify_domain_references(notable_domain_id, current_note, previous_note)
         for item in references:
             item.is_triaged = current_note != NotableDomain.Note.UNKNOWN
             if current_note == NotableDomain.Note.EXCLUDE_FROM_ACCOUNT_CREATION_AND_CONTENT:
-                item.referrer.confirm_spam(save=False, domains=[domain.domain])
+                # Retroactive/bulk reclassification of a domain already flagged in the past --
+                # don't send a fresh "flagged as spam" email long after the fact.
+                item.referrer.confirm_spam(save=False, domains=[domain.domain], notify=False)
             elif previous_note == NotableDomain.Note.EXCLUDE_FROM_ACCOUNT_CREATION_AND_CONTENT:
                 try:
                     item.referrer.spam_data['domains'].remove(domain.domain)
