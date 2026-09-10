@@ -22,6 +22,7 @@ from website.project.views.node import serialize_collections
 from website.views import find_bookmark_collection
 
 from osf.utils.permissions import READ, WRITE, ADMIN, DEFAULT_CONTRIBUTOR_PERMISSIONS
+from osf.utils.workflows import RegistrationModerationStates
 
 from osf.models import (
     AbstractNode,
@@ -2452,7 +2453,7 @@ class TestCheckResourceForSpamPostcommit:
             oops_spam_data - spam data returned by oopsystem
             objects_to_be_spammed - objects to be spammed instead of flagged. Example:
                 spam_object = Node
-                spam objects is flagged, its creator is flagged and the others user's public nodes/preprints must be spammed
+                spam object is flagged, its creator is flagged and the others user's public nodes/preprints must be spammed
         """
         project.set_privacy('public')
         project2.set_privacy('public')
@@ -2553,6 +2554,38 @@ class TestCheckResourceForSpamPostcommit:
             assert project.spam_status == SpamStatus.SPAM
             assert project.spam_data['domains'] == ['spam.com']
             mock_check_services.assert_not_called()
+
+    @mock.patch.object(settings, 'SPAM_SERVICES_ENABLED', False)
+    @mock.patch('osf.external.spam.tasks._check_resource_for_domains')
+    def test_check_resource_for_spam_postcommit_does_not_reset_approved_registration_moderation_state(self, mock_check_domains, user):
+        registration = RegistrationFactory(creator=user, is_public=True)
+        registration.require_approval(user)
+
+        stale_registration = Registration.objects.get(id=registration.id)
+        stale_registration.moderation_state = RegistrationModerationStates.INITIAL.db_name
+        stale_registration.description = 'stale description'
+
+        registration.registration_approval.accept()
+
+        registration.refresh_from_db()
+        assert registration.moderation_state == RegistrationModerationStates.ACCEPTED.db_name
+
+        mock_check_domains.return_value = []
+        # make load_referent return the stale state of an accepted registration to simulate a race condition
+        with mock.patch('osf.models.Guid.load_referent', return_value=(stale_registration, None)):
+            with mock.patch.object(Registration, 'check_spam_user') as mock_check_user:
+                spam_tasks.check_resource_for_spam_postcommit(
+                    guid=registration._id,
+                    content='Check me for spam',
+                    author=user.fullname,
+                    author_email=user.username,
+                    request_headers={}
+                )
+
+        registration.refresh_from_db()
+        # spam_postcommit does not override moderation state with a stale value
+        assert registration.moderation_state == RegistrationModerationStates.ACCEPTED.db_name
+        mock_check_user.assert_called_once()
 
     @mock.patch.object(settings, 'SPAM_SERVICES_ENABLED', True)
     @mock.patch('osf.external.spam.tasks._check_resource_for_domains')
