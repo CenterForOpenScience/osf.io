@@ -539,8 +539,9 @@ class Preprint(DirtyFieldsMixin, VersionedGuidMixin, IdentifierMixin, Reviewable
                 sentry.log_message(f'Unregistered contributor was not added to new preprint version due to error: '
                                    f'[preprint={preprint._id}, user={contributor.user._id}]')
 
-        # Add affiliated institutions
-        for institution in latest_version.affiliated_institutions.all():
+        # Add affiliated institutions. Deactivated institutions are carried over on purpose so a
+        # new version does not silently drop an affiliation and its ROR id the previous one had
+        for institution in latest_version.get_affiliated_institutions(include_deactivated=True):
             preprint.add_affiliated_institution(institution, auth.user, ignore_user_affiliation=True)
 
         # Update Guid obj to point to the new version if there is no moderation and new version is bigger

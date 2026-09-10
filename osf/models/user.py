@@ -1811,10 +1811,15 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         """Return if the current user is affiliated with any institutions."""
         return InstitutionAffiliation.objects.filter(user__id=self.id).exists()
 
-    def get_affiliated_institutions(self):
-        """Return a queryset of all affiliated institutions for the current user."""
+    def get_affiliated_institutions(self, *, include_deactivated: bool = False):
+        """
+        Return a queryset of all affiliated institutions for the current user. Deactivated
+        are hidden by the default Institution manager; pass include_deactivated to keep them, so
+        that metadata and DOIs do not lose ROR ids they already have
+        """
         qs = InstitutionAffiliation.objects.filter(user__id=self.id).values_list('institution', flat=True)
-        return Institution.objects.filter(pk__in=qs)
+        institutions = Institution.objects.get_all_institutions() if include_deactivated else Institution.objects.all()
+        return institutions.filter(pk__in=qs)
 
     def get_institution_affiliations(self):
         """Return a queryset of all institution affiliations for the current user."""

@@ -1649,7 +1649,7 @@ def sync_internet_archive_institutions(sender, instance, action, **kwargs):
     update_ia_metadata(
         instance,
         {
-            'affiliated_institutions': list(instance.affiliated_institutions.all().values_list('name', flat=True))
+            'affiliated_institutions': list(instance.get_affiliated_institutions().values_list('name', flat=True))
         }
     )
 

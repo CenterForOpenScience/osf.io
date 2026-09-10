@@ -1678,7 +1678,7 @@ class NodeInstitutionsList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixi
 
     def get_queryset(self):
         resource = self.get_resource()
-        return resource.affiliated_institutions.all() or []
+        return resource.get_affiliated_institutions() or []
 
 
 class NodeInstitutionsRelationship(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, generics.CreateAPIView, NodeMixin):
@@ -1757,7 +1757,7 @@ class NodeInstitutionsRelationship(JSONAPIBaseView, generics.RetrieveUpdateDestr
     def get_object(self):
         node = self.get_resource()
         obj = {
-            'data': node.affiliated_institutions.all(),
+            'data': node.get_affiliated_institutions(),
             'self': node,
         }
         self.check_object_permissions(self.request, obj)
