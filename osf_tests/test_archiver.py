@@ -13,7 +13,9 @@ from framework.auth import Auth
 from framework.celery_tasks import handlers
 
 from website.archiver import (
+    ARCHIVER_FAILURE,
     ARCHIVER_INITIATED,
+    ARCHIVER_SUCCESS,
 )
 from website.archiver import utils as archiver_utils
 from website.app import *  # noqa: F403
@@ -628,6 +630,9 @@ class TestArchiverTasks(ArchiverTestCase):
             'rename': 'Archive of OSF Storage',
             'resource': self.archive_job.info()[1]._id,
             'provider': 'osfstorage',
+            # 'replace' keeps the copy idempotent so a retried copy request doesn't fail
+            # the archive with WaterButler's "already exists" naming conflict.
+            'conflict': 'replace',
         }
 
     @mock.patch('website.archiver.tasks.archive_callback.delay')
@@ -635,6 +640,30 @@ class TestArchiverTasks(ArchiverTestCase):
         archive_addon('osfstorage', self.archive_job._id)
 
         mock_archive_callback.assert_not_called()
+
+    @mock.patch('website.archiver.tasks.requests.post')
+    def test_copy_request_is_idempotent_and_uses_archive_timeout(self, mock_post):
+        # The copy must be retry-safe: WaterButler defaults to conflict='warn' and raises
+        # "already exists" on a retried copy, which fails the whole archive.
+        payload = make_waterbutler_payload(self.dst._id, 'Archive of OSF Storage')
+        assert payload['conflict'] == 'replace'
+        # WaterButler's copy is synchronous; large trees need more than the general 30s timeout.
+        assert settings.ARCHIVE_COPY_REQUEST_TIMEOUT[1] > settings.EXTERNAL_REQUEST_TIMEOUT[1]
+        mock_post.return_value = mock.Mock(status_code=200)
+        params = archive_addon('osfstorage', self.archive_job._id)
+        make_copy_request(params, self.archive_job._id)
+        assert mock_post.call_args.kwargs['timeout'] == settings.ARCHIVE_COPY_REQUEST_TIMEOUT
+
+    @mock.patch('website.archiver.tasks.requests.post')
+    def test_copy_request_skipped_once_waterbutler_reported_success(self, mock_post):
+        # A SUCCESS target means the callback already reported the copy as done, even if we
+        # never saw the response. Running the task again must not copy a second time: that
+        # would replace the files the registration already uses.
+        params = archive_addon('osfstorage', self.archive_job._id)
+        self.archive_job.update_target('osfstorage', ARCHIVER_SUCCESS)
+        make_copy_request(params, self.archive_job._id)
+        mock_post.assert_not_called()
+        assert self.archive_job.get_target('osfstorage').status == ARCHIVER_SUCCESS
 
     @mock.patch.object(archive_node, 'replace')
     @mock.patch('website.archiver.tasks.archive_callback.si')
@@ -1305,6 +1334,75 @@ class TestArchiverScripts(ArchiverTestCase):
         assert failed == failures
         for pk in legacy:
             assert pk not in failed
+
+    def test_find_failed_registrations_excludes_archived_registrations(self):
+        delta = settings.ARCHIVE_TIMEOUT_TIMEDELTA + datetime.timedelta(hours=1)
+        reg = factories.RegistrationFactory()
+        archive_job = reg.archive_job
+        archive_job.datetime_initiated = timezone.now() - delta
+        archive_job.status = ARCHIVER_INITIATED
+        archive_job.sent = False
+        archive_job.save()
+        archive_job._set_target('osfstorage')
+        target = archive_job.get_target('osfstorage')
+        target.status = ARCHIVER_SUCCESS
+        target.save()
+        failed = [f._id for f in Registration.find_failed_registrations()]
+        assert reg.archive_job.status == ARCHIVER_INITIATED
+        assert reg.archive_job.archive_tree_finished()
+        assert reg._id not in failed
+        assert not reg.is_stuck_registration
+
+    def test_find_failed_registrations_excludes_registrations_whose_archive_failed(self):
+        delta = settings.ARCHIVE_TIMEOUT_TIMEDELTA + datetime.timedelta(hours=1)
+        reg = factories.RegistrationFactory()
+        archive_job = reg.archive_job
+        archive_job.datetime_initiated = timezone.now() - delta
+        archive_job.status = ARCHIVER_INITIATED
+        archive_job.sent = False
+        archive_job.save()
+        archive_job._set_target('osfstorage')
+        target = archive_job.get_target('osfstorage')
+        target.status = ARCHIVER_FAILURE
+        target.save()
+        failed = [f._id for f in Registration.find_failed_registrations()]
+        assert reg._id not in failed
+
+    def test_find_failed_registrations_includes_registrations_still_archiving(self):
+        delta = settings.ARCHIVE_TIMEOUT_TIMEDELTA + datetime.timedelta(hours=1)
+        reg = factories.RegistrationFactory()
+        archive_job = reg.archive_job
+        archive_job.datetime_initiated = timezone.now() - delta
+        archive_job.status = ARCHIVER_INITIATED
+        archive_job.sent = False
+        archive_job.save()
+        archive_job._set_target('osfstorage')
+        archive_job.update_target('osfstorage', ARCHIVER_INITIATED)
+        failed = [f._id for f in Registration.find_failed_registrations()]
+        assert reg._id in failed
+        assert reg.is_stuck_registration
+
+    def test_find_failed_registrations_includes_root_of_stuck_component(self):
+        delta = settings.ARCHIVE_TIMEOUT_TIMEDELTA + datetime.timedelta(hours=1)
+        proj = factories.NodeFactory()
+        factories.NodeFactory(parent=proj)
+        reg = factories.RegistrationFactory(project=proj)
+        rchild = reg._nodes.first()
+        root_job = reg.archive_job
+        root_job.datetime_initiated = timezone.now() - delta
+        root_job.sent = True
+        root_job.save()
+        root_job._set_target('osfstorage')
+        root_job.update_target('osfstorage', ARCHIVER_SUCCESS)
+        child_job = rchild.archive_job
+        child_job.datetime_initiated = timezone.now() - delta
+        child_job.status = ARCHIVER_INITIATED
+        child_job.sent = False
+        child_job.save()
+        child_job._set_target('osfstorage')
+        child_job.update_target('osfstorage', ARCHIVER_INITIATED)
+        failed = [f._id for f in Registration.find_failed_registrations()]
+        assert reg._id in failed
 
 
 class TestArchiverBehavior(OsfTestCase):

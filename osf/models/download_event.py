@@ -19,6 +19,20 @@ class DownloadEvent(models.Model):
         (PROJECT, 'Whole-project zip'),
     )
 
+    # Where the download came from, decided server-side at capture (not from the
+    # User-Agent, which browsers and bots alike can set). FRONTEND = an OSF UI download
+    # link; API = an authenticated API/OAuth client; OTHER = a direct link or crawler.
+    # Blank for rows recorded before this field, and for zip downloads whose channel we
+    # can't fully resolve (see the capture code).
+    FRONTEND = 'frontend'
+    API = 'api'
+    OTHER = 'other'
+    DOWNLOAD_CHANNELS = (
+        (FRONTEND, 'Frontend (website)'),
+        (API, 'API client'),
+        (OTHER, 'Other / direct'),
+    )
+
     created = models.DateTimeField(auto_now_add=True, db_index=True)
 
     # what was downloaded
@@ -47,6 +61,11 @@ class DownloadEvent(models.Model):
     # the client's User-Agent, to tell frontend downloads apart from API clients and
     # crawlers. Blank when we couldn't read one (and for rows recorded before this field).
     user_agent = models.TextField(blank=True, default='')
+    # explicit frontend/api/other classification, set server-side at capture time. See the
+    # DOWNLOAD_CHANNELS constants above.
+    download_channel = models.CharField(
+        max_length=16, blank=True, default='', choices=DOWNLOAD_CHANNELS,
+    )
 
     # nullable: anonymous downloads of public files
     user = models.ForeignKey(

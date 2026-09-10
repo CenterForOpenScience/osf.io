@@ -196,9 +196,8 @@ DEFAULT_CAMPAIGN_BATCH_SIZE = 1000
 DEFAULT_CAMPAIGN_WINDOW_TIME = 28800  # 8 hours
 DEFAULT_CAMPAIGN_MAX_RETRIES = 3
 # The following are rough estimates so we can log to sentry those batches and sendgrid quests which run longer than normal
-ESTIMATED_EIGHT_HOUR_WINDOW_USERS = 600000  # 600K Users (where the actual number is around 500K)
-ESTIMATED_BATCH_RUN_TIME_THRESHOLD = DEFAULT_CAMPAIGN_WINDOW_TIME / (ESTIMATED_EIGHT_HOUR_WINDOW_USERS / DEFAULT_CAMPAIGN_BATCH_SIZE)  # By default, 48 seconds per batch of 1000 requests
-ESTIMATED_PER_REQUEST_THRESHOLD = ESTIMATED_BATCH_RUN_TIME_THRESHOLD / DEFAULT_CAMPAIGN_BATCH_SIZE  # By default, 0.048 seconds (21 requests / second)
+ESTIMATED_PER_REQUEST_THRESHOLD = 0.3  # On production, sending one email via SendGrid takes 0.20 ~ 0.50 seconds, set default alert threshold at 0.30s
+ESTIMATED_BATCH_RUN_TIME_THRESHOLD = 300  # On production, with batch size 1000, we expect each batch to finish within 300s (5m)
 
 # Configuration for "We miss you at OSF" email (`NotificationTypeEnum.USER_NO_LOGIN`)
 # Note: 1) we can gradually increase `MAX_DAILY_NO_LOGIN_EMAILS` to 10000, 100000, etc. or set it to `None` after we
@@ -386,6 +385,10 @@ SHARE_URL = 'https://share.osf.io/'
 SHARE_API_TOKEN = None  # Required to send project updates to SHARE
 
 EXTERNAL_REQUEST_TIMEOUT = (10, 30)  # (connect, read) timeout for outbound requests to external services
+# The archive copy request is synchronous on WaterButler's side: it holds the connection open until
+# the whole osfstorage tree has been copied. Large registrations exceed the 30s general read timeout,
+# so give this specific request a longer read timeout while keeping the connect timeout short.
+ARCHIVE_COPY_REQUEST_TIMEOUT = (10, 600)
 
 SHARE_UPDATE_TASK_SOFT_TIME_LIMIT = 90
 SHARE_UPDATE_TASK_HARD_TIME_LIMIT = 120
@@ -393,6 +396,11 @@ SPAM_SUBMIT_TASK_SOFT_TIME_LIMIT = 60
 SPAM_SUBMIT_TASK_HARD_TIME_LIMIT = 90
 
 CAS_SERVER_URL = 'http://localhost:8080'
+ORCID_OAUTH_CLIENT_ID = os.environ.get('ORCID_OAUTH_CLIENT_ID', 'changeme')
+ORCID_OAUTH_CLIENT_SECRET = os.environ.get('ORCID_OAUTH_CLIENT_SECRET', 'changeme')
+ORCID_OAUTH_REVOKE_URL = os.environ.get('ORCID_OAUTH_REVOKE_URL', 'https://orcid.org/oauth/revoke')
+ORCID_OAUTH_REVOKE_REQUEST_TIMEOUT = os.environ.get('ORCID_OAUTH_REVOKE_REQUEST_TIMEOUT', 15)
+
 MFR_SERVER_URL = 'http://localhost:7778'
 
 ###### ARCHIVER ###########

@@ -113,6 +113,14 @@ class TestResetPasswordView(AdminTestCase):
 class TestGDPRDeleteUser(AdminTestCase):
     def setUp(self):
         self.user = UserFactory()
+        self.user.external_identity = {'ORCID': {'fake-orcid-id': 'VERIFIED'}}
+        self.user.external_identity_tokens = {
+            'ORCID': {'fake-orcid-id': {'access_token': 'fake-orcid-token'}},
+        }
+        self.user.save()
+        post_patcher = mock.patch('osf.models.user.requests.post', return_value=mock.Mock(status_code=200))
+        self.mock_post = post_patcher.start()
+        self.addCleanup(post_patcher.stop)
         self.request = RequestFactory().post('/fake_path')
         self.view = views.UserGDPRDeleteView
         self.view = setup_log_view(self.view, self.request, guid=self.user._id)
@@ -262,7 +270,8 @@ class TestDisableSpamUser(AdminTestCase):
 
     def test_disable_spam_user(self):
         settings.ENABLE_EMAIL_SUBSCRIPTIONS = False
-        self.view().post(self.request)
+        with assert_notification(type=NotificationTypeEnum.USER_SPAM_BANNED, user=self.user):
+            self.view().post(self.request)
         self.user.reload()
         self.public_node.reload()
         assert self.user.is_disabled

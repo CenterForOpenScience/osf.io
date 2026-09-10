@@ -52,6 +52,7 @@ from admin_tests.utilities import setup_log_view, setup_view, handle_post_view_r
 from api_tests.share._utils import mock_update_share
 from osf.models.files import Folder
 from tests.utils import capture_notifications
+from osf.models.notification_type import NotificationTypeEnum
 from website import settings
 from framework.auth.core import Auth
 
@@ -180,8 +181,11 @@ class TestNodeView(AdminTestCase):
         guid = node._id
         request = RequestFactory().post('/fake_path')
         request.user = superuser
-        node = handle_post_view_request(request, NodeConfirmSpamView(), node, guid)
+        with capture_notifications() as notifications:
+            node = handle_post_view_request(request, NodeConfirmSpamView(), node, guid)
         assert not node.is_public
+        assert len(notifications['emits']) == 1
+        assert notifications['emits'][0]['type'] == NotificationTypeEnum.NODE_CONFIRMED_SPAM
         node = handle_post_view_request(request, NodeConfirmHamView(), node, guid)
         assert node.is_public
 

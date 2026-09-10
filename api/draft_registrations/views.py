@@ -9,6 +9,7 @@ from api.draft_registrations.permissions import (
     DraftRegistrationPermission,
     IsAdminContributor,
     CanSubmitDraftRegistrationToProvider,
+    ProjectBasedDraftRegistrationNotAllowed,
 )
 from api.draft_registrations.serializers import (
     DraftRegistrationSerializer,
@@ -54,6 +55,7 @@ class DraftRegistrationList(NodeDraftRegistrationsList):
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
         DraftRegistrationPermission,
+        ProjectBasedDraftRegistrationNotAllowed,
         CanSubmitDraftRegistrationToProvider,
     )
 

@@ -26,6 +26,8 @@ class DraftNode(AbstractNode):
         raise NodeStateError('You may not set privacy for a DraftNode.')
 
     def clone(self):
+        if self.is_draft_node_prevented_to_be_changed_to_node():
+            return super().clone()
         raise NodeStateError('A DraftNode may not be forked, used as a template, or registered.')
 
     # Overrides AbstractNode.update_search
@@ -68,9 +70,15 @@ class DraftNode(AbstractNode):
         :param parent Node: parent registration of registration to be created
         :param provider RegistrationProvider: provider to submit the registration to
         """
-        self.convert_draft_node_to_node(auth)
+        is_draft_node_prevented_to_be_changed_to_node = self.is_draft_node_prevented_to_be_changed_to_node()
+        if not is_draft_node_prevented_to_be_changed_to_node:
+            self.convert_draft_node_to_node(auth)
         # Copies editable fields from the DraftRegistration back to the Node
         self.copy_editable_fields(draft_registration, save=True)
 
         # Calls super on Node, since self is no longer a DraftNode
-        return super(Node, self).register_node(schema, auth, draft_registration, parent=parent, child_ids=child_ids, provider=provider, manual_guid=manual_guid)
+        if not is_draft_node_prevented_to_be_changed_to_node:
+            return super(Node, self).register_node(schema, auth, draft_registration, parent=parent, child_ids=child_ids, provider=provider, manual_guid=manual_guid)
+        else:
+            return AbstractNode.register_node(self, schema, auth, draft_registration, parent=parent, child_ids=child_ids,
+                                           provider=provider, manual_guid=manual_guid)

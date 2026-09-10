@@ -6,7 +6,12 @@ from django.contrib.auth.models import Group, Permission
 from django.test import RequestFactory
 from django.utils import timezone
 
-from osf.admin import DASHBOARD_GROUP_NAME, DownloadEventsView
+from osf.admin import (
+    DASHBOARD_GROUP_NAME,
+    DownloadEventsView,
+    ProjectGuidFilter,
+    DownloadUserFilter,
+)
 from osf.models import DownloadEvent
 from osf_tests.factories import AuthUserFactory, ProjectFactory, PreprintFactory
 from tests.base import OsfTestCase
@@ -201,9 +206,12 @@ class TestDashboardData(OsfTestCase):
     def test_blank_storage_provider_folds_into_unknown(self):
         make_event(storage_provider='')
 
-        providers = self.admin.get_dashboard_data(DownloadEvent.objects.all())['storage_providers']
+        data = self.admin.get_dashboard_data(DownloadEvent.objects.all())
 
-        assert [row['name'] for row in providers] == ['Unknown']
+        # Unknown is pulled out of the ranked list and reported on its own
+        assert data['storage_providers'] == []
+        assert data['storage_providers_unknown']['name'] == 'Unknown'
+        assert data['storage_providers_unknown']['downloads'] == 1
 
     def test_region_breakdown_splits_requests_by_type(self):
         # Germany: 2 files + 1 folder zip + 1 project zip = 4 total, 3 zips
@@ -245,8 +253,82 @@ class TestDashboardData(OsfTestCase):
 
         data = self.admin.get_dashboard_data(DownloadEvent.objects.all())
 
-        assert [row['name'] for row in data['storage_regions']] == ['Unknown']
-        assert data['storage_regions'][0]['downloads'] == 2
+        # blank and whitespace-only both mean "we couldn't tell" and fold into the
+        # separate Unknown bucket, out of the ranked region list
+        assert data['storage_regions'] == []
+        assert data['storage_regions_unknown']['name'] == 'Unknown'
+        assert data['storage_regions_unknown']['downloads'] == 2
+
+    def test_unknown_is_separated_from_known_regions(self):
+        """ENG: a large Unknown bucket must not crowd real regions off the chart. The
+        ranked list holds only known regions; Unknown is reported on its own and the
+        bars scale to the largest known region."""
+        make_event(storage_region='Germany', size_bytes=5 * 1024 ** 3)
+        make_event(storage_region='', size_bytes=1024 ** 3)
+        make_event(storage_region='', size_bytes=1024 ** 3)
+
+        data = self.admin.get_dashboard_data(DownloadEvent.objects.all())
+
+        assert [r['name'] for r in data['storage_regions']] == ['Germany']
+        # scales to itself now that Unknown is out of the ranking
+        assert data['storage_regions'][0]['gb_percent'] == 100
+        assert data['storage_regions_unknown']['downloads'] == 2
+        assert data['storage_regions_unknown']['gb'] == 2
+
+    def test_no_unknown_bucket_when_every_region_resolves(self):
+        make_event(storage_region='Germany', size_bytes=1024 ** 3)
+
+        data = self.admin.get_dashboard_data(DownloadEvent.objects.all())
+
+        assert data['storage_regions_unknown'] is None
+
+    def test_tb_suffix_only_appears_at_terabyte_scale(self):
+        assert self.admin._tb_suffix(0) == ''
+        assert self.admin._tb_suffix(500) == ''
+        assert self.admin._tb_suffix(1023.9) == ''
+        assert self.admin._tb_suffix(1024) == ' (1.0 TB)'
+        assert self.admin._tb_suffix(2560) == ' (2.5 TB)'
+
+    def test_total_gb_gets_a_tb_reading_when_terabyte_scale(self):
+        make_event(size_bytes=2 * 1024 ** 4)  # 2 TB
+
+        data = self.admin.get_dashboard_data(DownloadEvent.objects.all())
+
+        assert data['summary']['total_gb'] == 2048
+        assert data['summary']['total_gb_tb_suffix'] == ' (2.0 TB)'
+
+    def test_sub_terabyte_total_has_no_tb_reading(self):
+        make_event(size_bytes=3 * 1024 ** 3)  # 3 GB
+
+        data = self.admin.get_dashboard_data(DownloadEvent.objects.all())
+
+        assert data['summary']['total_gb_tb_suffix'] == ''
+
+    def test_channel_breakdown_groups_by_channel(self):
+        make_event(download_channel=DownloadEvent.FRONTEND, size_bytes=2 * 1024 ** 3)
+        make_event(download_channel=DownloadEvent.FRONTEND, size_bytes=1024 ** 3)
+        make_event(download_channel=DownloadEvent.API, size_bytes=1024 ** 3)
+        make_event(download_channel='')  # recorded before the field / unresolved
+
+        channels = self.admin.get_dashboard_data(DownloadEvent.objects.all())['channels']
+        by_name = {c['name']: c for c in channels}
+
+        assert by_name['Frontend (website)']['downloads'] == 2
+        assert by_name['Frontend (website)']['gb'] == 3
+        assert by_name['API client']['downloads'] == 1
+        assert by_name['Unknown']['downloads'] == 1
+
+    def test_channel_breakdown_orders_frontend_api_other_then_unknown(self):
+        make_event(download_channel=DownloadEvent.OTHER)
+        make_event(download_channel='')
+        make_event(download_channel=DownloadEvent.FRONTEND)
+        make_event(download_channel=DownloadEvent.API)
+
+        channels = self.admin.get_dashboard_data(DownloadEvent.objects.all())['channels']
+
+        assert [c['name'] for c in channels] == [
+            'Frontend (website)', 'API client', 'Other / direct', 'Unknown',
+        ]
 
     def test_top_projects_shows_title_and_guid(self):
         user = AuthUserFactory()
@@ -388,6 +470,16 @@ class TestSortableColumns(OsfTestCase):
     def test_user_agent_display_falls_back_when_blank(self):
         assert self.admin.user_agent_display(make_event(user_agent='')) == '—'
 
+    def test_channel_column_declares_a_sort_field(self):
+        assert self.admin.channel_display.admin_order_field == 'download_channel'
+
+    def test_channel_display_shows_the_human_label(self):
+        event = make_event(download_channel=DownloadEvent.API)
+        assert self.admin.channel_display(event) == 'API client'
+
+    def test_channel_display_falls_back_when_blank(self):
+        assert self.admin.channel_display(make_event(download_channel='')) == '—'
+
     def test_outcome_annotation_does_not_change_dashboard_numbers(self):
         """Production feeds get_queryset() (annotated with _outcome_rank for sorting) into
         get_dashboard_data. The annotation must not alter any aggregate — guards against a
@@ -400,6 +492,108 @@ class TestSortableColumns(OsfTestCase):
         plain = self.admin.get_dashboard_data(DownloadEvent.objects.all())
 
         assert annotated == plain
+
+
+class TestDashboardFilters(OsfTestCase):
+    """Project and user input filters (they also drive the charts, since the dashboard
+    reads the same filtered changelist queryset)."""
+
+    def setUp(self):
+        super().setUp()
+        self.admin = DownloadEventsView(DownloadEvent, AdminSite())
+
+    def _make(self, filter_cls, params):
+        request = RequestFactory().get('/admin/osf/downloadevent/', params)
+        return filter_cls(request, dict(params), DownloadEvent, self.admin)
+
+    def test_project_filter_scopes_to_one_guid(self):
+        node = ProjectFactory()
+        make_event(resource_guid=node._id)
+        make_event(resource_guid='someotherguid')
+
+        f = self._make(ProjectGuidFilter, {'project_guid': node._id})
+        result = f.queryset(None, DownloadEvent.objects.all())
+
+        assert list(result.values_list('resource_guid', flat=True)) == [node._id]
+
+    def test_project_filter_ignores_surrounding_whitespace(self):
+        node = ProjectFactory()
+        make_event(resource_guid=node._id)
+
+        f = self._make(ProjectGuidFilter, {'project_guid': f'  {node._id}  '})
+        result = f.queryset(None, DownloadEvent.objects.all())
+
+        assert result.count() == 1
+
+    def test_user_filter_matches_by_email(self):
+        user = AuthUserFactory()
+        make_event(user=user)
+        make_event(user=AuthUserFactory())
+
+        f = self._make(DownloadUserFilter, {'download_user': user.username})
+        result = f.queryset(None, DownloadEvent.objects.all())
+
+        assert list(result.values_list('user_id', flat=True)) == [user.id]
+
+    def test_user_filter_matches_by_guid(self):
+        user = AuthUserFactory()
+        make_event(user=user)
+        make_event(user=AuthUserFactory())
+
+        f = self._make(DownloadUserFilter, {'download_user': user._id})
+        result = f.queryset(None, DownloadEvent.objects.all())
+
+        assert list(result.values_list('user_id', flat=True)) == [user.id]
+
+    def test_blank_filter_value_is_a_noop(self):
+        make_event(resource_guid='a')
+        make_event(resource_guid='b')
+
+        f = self._make(ProjectGuidFilter, {})
+        result = f.queryset(None, DownloadEvent.objects.all())
+
+        assert result.count() == 2
+
+
+class TestActiveFiltersBanner(OsfTestCase):
+    """The read-only summary of what the dashboard is currently scoped to."""
+
+    def setUp(self):
+        super().setUp()
+        self.admin = DownloadEventsView(DownloadEvent, AdminSite())
+
+    def test_lists_applied_filters_with_labels(self):
+        request = RequestFactory().get('/', {
+            'project_guid': 'abcde',
+            'download_user': 'a@b.com',
+            'download_type': 'file',
+            'q': 'chrome',
+        })
+
+        active = {f['label']: f['value'] for f in self.admin._active_filters(request)}
+
+        assert active['Project'] == 'abcde'
+        assert active['User'] == 'a@b.com'
+        assert active['Download type'] == 'file'
+        assert active['Search'] == 'chrome'
+
+    def test_combines_the_date_range_halves(self):
+        request = RequestFactory().get('/', {
+            'created__range__gte_0': '2026-01-01',
+            'created__range__gte_1': '00:00:00',
+            'created__range__lte_0': '2026-01-02',
+            'created__range__lte_1': '12:00:00',
+        })
+
+        active = self.admin._active_filters(request)
+        date = next(f for f in active if f['label'] == 'Date (UTC)')
+
+        assert date['value'] == '2026-01-01 00:00:00 → 2026-01-02 12:00:00'
+
+    def test_empty_when_no_filters_applied(self):
+        request = RequestFactory().get('/')
+
+        assert self.admin._active_filters(request) == []
 
 
 class TestStaffAccessMigration(OsfTestCase):
