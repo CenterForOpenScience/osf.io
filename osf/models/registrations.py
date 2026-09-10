@@ -5,6 +5,7 @@ from urllib.parse import urljoin
 
 from django.core.exceptions import ValidationError
 from django.db import models
+from django.db.models import Exists, OuterRef
 from django.db.models.signals import post_save
 from django.contrib.contenttypes.models import ContentType
 from django.dispatch import receiver
@@ -27,7 +28,7 @@ from osf.external.internet_archive.tasks import archive_to_ia, update_ia_metadat
 from osf.metrics.events import RegistriesModerationEvent
 from osf.models.notification_type import NotificationTypeEnum
 from .action import RegistrationAction
-from .archive import ArchiveJob
+from .archive import ArchiveJob, ArchiveTarget
 from .contributor import DraftRegistrationContributor
 from .metaschema import RegistrationSchema
 from .node import Node
@@ -65,7 +66,7 @@ from api.caching import settings as cache_settings
 from api.caching.utils import storage_usage_cache
 from api.providers.workflows import Workflows as ModerationWorkflows
 from website import settings
-from website.archiver import ARCHIVER_INITIATED
+from website.archiver import ARCHIVER_FAILURE, ARCHIVER_INITIATED, ARCHIVER_SUCCESS
 from website.identifiers.tasks import update_doi_metadata_on_change
 from website.project import signals
 from website.util import api_v2_url
@@ -167,8 +168,11 @@ class Registration(AbstractNode):
         node_id_list = ArchiveJob.objects.filter(sent=False, datetime_initiated__lt=expired_if_before, status=ARCHIVER_INITIATED).values_list('dst_node', flat=True)
         root_nodes_id = AbstractNode.objects.filter(id__in=node_id_list).values_list('root', flat=True).distinct()
         stuck_regs = AbstractNode.objects.filter(id__in=root_nodes_id, is_deleted=False)
-
-        return stuck_regs
+        # return only registrations that still have an unfinished job what 'Check archive status' does
+        unresolved_targets = ArchiveTarget.objects.filter(
+            archivejob__dst_node__root=OuterRef('pk'),
+        ).exclude(status__in=(ARCHIVER_SUCCESS, ARCHIVER_FAILURE))
+        return stuck_regs.filter(Exists(unresolved_targets))
 
     @staticmethod
     def find_ia_backlog():
@@ -227,7 +231,7 @@ class Registration(AbstractNode):
 
     @property
     def is_stuck_registration(self):
-        return self in self.find_failed_registrations()
+        return self.find_failed_registrations().filter(id=self.id).exists()
 
     @property
     def is_collection(self):
