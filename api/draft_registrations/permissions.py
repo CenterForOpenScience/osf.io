@@ -1,7 +1,10 @@
+import waffle
 from rest_framework import permissions
+from rest_framework.exceptions import MethodNotAllowed
 
 from api.base.exceptions import Conflict
 from api.base.utils import get_user_auth, assert_resource_type
+from osf import features
 from osf.models import (
     DraftRegistration,
     AbstractNode,
@@ -120,4 +123,16 @@ class CanSubmitDraftRegistrationToProvider(permissions.BasePermission):
         if not provider.allow_submissions:
             raise Conflict(f"Registry {provider.name} is closed for new submissions. Please start a new registration with a different registry.")
 
+        return True
+
+
+class ProjectBasedDraftRegistrationNotAllowed(permissions.BasePermission):
+    """
+    Prevent creating draft registrations branched from a project (or other node) when the
+    PROJECT_READ_ONLY waffle flag is active. No-project draft registrations are still allowed.
+    """
+
+    def has_permission(self, request, view):
+        if request.method == 'POST' and request.data.get('branched_from') and waffle.flag_is_active(request, features.PROJECT_READ_ONLY):
+            raise MethodNotAllowed(request.method, detail='This action is no longer available. Contact support if you have any questions.')
         return True

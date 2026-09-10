@@ -109,7 +109,6 @@ ALLOW_LOGIN = True
 
 SEARCH_ENGINE = 'elastic'  # Can be 'elastic', or None
 ELASTIC_URI = '127.0.0.1:9200'
-ELASTIC6_URI = os.environ.get('ELASTIC6_URI', '127.0.0.1:9201')
 ELASTIC8_URI = os.environ.get('ELASTIC8_URI')
 ELASTIC8_CERT_PATH = os.environ.get('ELASTIC8_CERT_PATH')
 ELASTIC8_ASSERT_HOSTNAME = os.environ.get('ELASTIC8_ASSERT_HOSTNAME')
@@ -393,6 +392,11 @@ SPAM_SUBMIT_TASK_SOFT_TIME_LIMIT = 60
 SPAM_SUBMIT_TASK_HARD_TIME_LIMIT = 90
 
 CAS_SERVER_URL = 'http://localhost:8080'
+ORCID_OAUTH_CLIENT_ID = os.environ.get('ORCID_OAUTH_CLIENT_ID', 'changeme')
+ORCID_OAUTH_CLIENT_SECRET = os.environ.get('ORCID_OAUTH_CLIENT_SECRET', 'changeme')
+ORCID_OAUTH_REVOKE_URL = os.environ.get('ORCID_OAUTH_REVOKE_URL', 'https://orcid.org/oauth/revoke')
+ORCID_OAUTH_REVOKE_REQUEST_TIMEOUT = os.environ.get('ORCID_OAUTH_REVOKE_REQUEST_TIMEOUT', 15)
+
 MFR_SERVER_URL = 'http://localhost:7778'
 
 ###### ARCHIVER ###########
@@ -509,7 +513,6 @@ class CeleryConfig:
     }
 
     background_migration_modules = {
-        'osf.management.commands.migrate_osfmetrics_fix_6to8',
     }
 
     try:
@@ -633,7 +636,6 @@ class CeleryConfig:
         'scripts.remove_after_use.merge_notification_subscription_provider_ct',
         'scripts.disable_removed_beat_tasks',
         'osf.management.commands.delete_withdrawn_or_failed_registration_files',
-        'osf.management.commands.migrate_osfmetrics_fix_6to8',
         'osf.email.notification_campaign',
     )
 
@@ -716,11 +718,6 @@ class CeleryConfig:
             'task': 'osf.management.commands.clear_expired_sessions',
             'schedule': crontab(minute=0, hour=5),  # Daily 12 a.m
             'kwargs': {'dry_run': False},
-        },
-        'new-and-noteworthy': {
-            'task': 'scripts.populate_new_and_noteworthy_projects',
-            'schedule': crontab(minute=0, hour=7, day_of_week=6),  # Saturday 2:00 a.m.
-            'kwargs': {'dry_run': False}
         },
         'registration_schema_metrics': {
             'task': 'management.commands.registration_schema_metrics',

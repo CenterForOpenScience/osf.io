@@ -39,15 +39,15 @@ class TestPublicItemUsageReporter(RealElasticTestCase, TestCase):
 
     @cached_property
     def ym_empty(self) -> YearMonth:
-        return YearMonth(2012, 7)
+        return YearMonth(2026, 7)
 
     @cached_property
     def ym_sparse(self) -> YearMonth:
-        return YearMonth(2017, 7)
+        return YearMonth(2026, 8)
 
     @cached_property
     def ym_busy(self) -> YearMonth:
-        return YearMonth(2023, 7)
+        return YearMonth(2026, 9)
 
     def _setup_sparse_month_usage(self):
         # "sparse" month:

@@ -19,6 +19,7 @@ from osf_tests.factories import (
     UserFactory,
     AuthUserFactory,
     ProjectFactory,
+    PreprintFactory,
     UnconfirmedUserFactory
 )
 from admin_tests.utilities import setup_view, setup_log_view, setup_form_view
@@ -112,6 +113,14 @@ class TestResetPasswordView(AdminTestCase):
 class TestGDPRDeleteUser(AdminTestCase):
     def setUp(self):
         self.user = UserFactory()
+        self.user.external_identity = {'ORCID': {'fake-orcid-id': 'VERIFIED'}}
+        self.user.external_identity_tokens = {
+            'ORCID': {'fake-orcid-id': {'access_token': 'fake-orcid-token'}},
+        }
+        self.user.save()
+        post_patcher = mock.patch('osf.models.user.requests.post', return_value=mock.Mock(status_code=200))
+        self.mock_post = post_patcher.start()
+        self.addCleanup(post_patcher.stop)
         self.request = RequestFactory().post('/fake_path')
         self.view = views.UserGDPRDeleteView
         self.view = setup_log_view(self.view, self.request, guid=self.user._id)
@@ -156,6 +165,20 @@ class TestGDPRDeleteUser(AdminTestCase):
         self.view().post(self.request)
         self.user.reload()
         assert self.user.deleted
+
+    def test_gdpr_delete_blocked_by_resource_without_alternate_admin_does_not_report_success(self):
+        patch_messages(self.request)
+
+        preprint = PreprintFactory(creator=self.user)
+        other_contrib = UserFactory()
+        preprint.add_contributor(other_contrib, auth=Auth(self.user), save=True)
+
+        count = AdminLogEntry.objects.count()
+        self.view().post(self.request)
+
+        self.user.reload()
+        assert not self.user.deleted
+        assert AdminLogEntry.objects.count() == count
 
 
 class TestDisableUser(AdminTestCase):

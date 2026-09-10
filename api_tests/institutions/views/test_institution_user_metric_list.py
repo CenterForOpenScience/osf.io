@@ -7,6 +7,7 @@ from urllib.parse import urlencode
 import pytest
 
 from api.base.settings.defaults import API_BASE, REPORT_FILENAME_FORMAT
+from website import settings
 from osf_tests.factories import (
     InstitutionFactory,
     AuthUserFactory,
@@ -204,6 +205,7 @@ class TestInstitutionUserMetricList:
                 'contacts',
                 'department',
                 'embargoed_registration_count',
+                'link',
                 'month_last_active',
                 'month_last_login',
                 'orcid_id',
@@ -213,7 +215,7 @@ class TestInstitutionUserMetricList:
                 'public_registration_count',
                 'published_preprint_count',
                 'storage_byte_count',
-                'user_name'
+                'user_name',
             ],
             [
                 '2024-08',
@@ -221,6 +223,7 @@ class TestInstitutionUserMetricList:
                 '[]',
                 'Center, \t Greatest Ever',
                 '1',
+                settings.DOMAIN + 'u_orcomma/',
                 '2018-02',
                 '2018-02',
                 '4444-3333-2222-1111',
@@ -230,7 +233,7 @@ class TestInstitutionUserMetricList:
                 '2',
                 '1',
                 '736662999298',
-                'Jason Kelce'
+                'Jason Kelce',
             ]
         ]
 
@@ -275,6 +278,7 @@ class TestInstitutionUserMetricList:
                 '[]',
                 'QBatman',
                 '1',
+                settings.DOMAIN + f'u_orcomma_{i}/',
                 '2018-02',
                 '2018-02',
                 f'4444-3333-2222-111{i}',
@@ -318,6 +322,7 @@ class TestInstitutionUserMetricList:
                     'contacts',
                     'department',
                     'embargoed_registration_count',
+                    'link',
                     'month_last_active',
                     'month_last_login',
                     'orcid_id',
@@ -375,6 +380,7 @@ class TestInstitutionUserMetricList:
                 'contacts': [],
                 'department': 'Safety "The Wolverine" Weapon X',
                 'embargoed_registration_count': 1,
+                'link': settings.DOMAIN + 'u_orcomma/',
                 'month_last_active': '2018-02',
                 'month_last_login': '2018-02',
                 'orcid_id': '4444-3333-2222-1111',

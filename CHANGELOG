@@ -2,6 +2,26 @@
 
 We follow the CalVer (https://calver.org/) versioning scheme: YY.MINOR.MICRO.
 
+26.21.0 (2026-09-10)
+====================
+
+- Project Creation and Project Read-only
+
+26.20.0 (2026-09-08)
+====================
+
+- PB&S Release: GDPR Delete / ORCiD Revoke
+
+26.19.1 (2026-09-01)
+====================
+
+- Add build_spec.yaml for OCI CI/CD
+
+26.19.0 (2026-08-31)
+====================
+
+- PB&S 26-15 Release
+
 26.18.1 (2026-08-07)
 ====================
 

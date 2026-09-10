@@ -2,7 +2,7 @@ from __future__ import annotations
 import re
 from urllib.parse import urlsplit
 
-from datetime import timedelta, datetime
+import datetime
 from django.utils import timezone
 from rest_framework.exceptions import ValidationError
 
@@ -17,28 +17,35 @@ DEFAULT_DAYS_BACK = 13
 DEFAULT_MONTHS_BACK = 5 * 30  # days
 
 
-def parse_date_param(param_value, is_monthly=False):
-    if is_monthly:
-        date = datetime.strptime(param_value, DATE_FORMAT).date()
-        return f'{date.year}-{date.month:>02}'
-    return datetime.strptime(param_value, DATE_FORMAT).date()
+def parse_date_param(param_value) -> datetime.date:
+    try:
+        _parsed_dt = datetime.datetime.strptime(param_value, DATE_FORMAT)
+    except ValueError:
+        try:
+            _parsed_dt = datetime.datetime.strptime(param_value, YEARMONTH_FORMAT)
+        except ValueError:
+            raise ValidationError(f'invalid date value {param_value!r} (expected YYYY-MM or YYYY-MM-DD)')
+    return _parsed_dt.date()
 
 
-def parse_dates(query_params, is_monthly=False):
+def parse_dates(query_params, is_monthly=False) -> tuple[datetime.date, datetime.date]:
     default_time_back = DEFAULT_MONTHS_BACK if is_monthly else DEFAULT_DAYS_BACK
-    start_date_param = query_params.get('start_date', None)
-    end_date_param = query_params.get('end_date', None)
+    start_date_param = query_params.get('timeframeStart') or query_params.get('start_date')
+    end_date_param = query_params.get('timeframeEnd') or query_params.get('end_date')
 
     if end_date_param and not start_date_param:
         raise ValidationError('You cannot provide a specific end_date with no start_date')
 
-    if not start_date_param:
-        start_date_param = (timezone.now() - timedelta(days=default_time_back)).date()
-    if not end_date_param:
-        end_date_param = timezone.now().date()
-
-    start_date = parse_date_param(str(start_date_param), is_monthly)
-    end_date = parse_date_param(str(end_date_param), is_monthly)
+    start_date = (
+        parse_date_param(start_date_param)
+        if start_date_param
+        else (timezone.now() - datetime.timedelta(days=default_time_back)).date()
+    )
+    end_date = (
+        parse_date_param(end_date_param)
+        if end_date_param
+        else timezone.now().date()
+    )
 
     if start_date > end_date:
         raise ValidationError('The end_date must be after the start_date')
@@ -46,25 +53,24 @@ def parse_dates(query_params, is_monthly=False):
     return start_date, end_date
 
 
-def parse_date_range(
-    query_params, is_monthly=False,
-) -> tuple[datetime.date | str, datetime.date | str]:
-    _from: datetime.date | str | None = None
-    _until: datetime.date | str = timezone.now()
+def parse_date_range(query_params, is_monthly=False):
+    _from: datetime.date | None = None
+    _until: datetime.date = timezone.now()
     if _days_back := query_params.get('days_back'):
-        _from = _until.date() - timedelta(days=int(_days_back))
+        _from = _until.date() - datetime.timedelta(days=int(_days_back))
     elif _timeframe := query_params.get('timeframe'):
         if _match := re.match(r'previous_(\d+)_days?', _timeframe):
             _days_back = int(_match.group(1))
         else:
             raise Exception(f'Unsupported timeframe format: "{_timeframe}"')
-        _from = _until - timedelta(days=_days_back)
-    elif query_params.get('timeframeStart'):
-        _from = query_params.get('timeframeStart')
-        _until = query_params.get('timeframeEnd', _until)
+        _from = _until - datetime.timedelta(days=_days_back)
     else:
         _from, _until = parse_dates(query_params, is_monthly=is_monthly)
-    return (_from, _until)
+    return (
+        ((_from.year, _from.month), (_until.year, _until.month))
+        if is_monthly
+        else (_from, _until)
+    )
 
 
 def _user_has_read_on_resolved_node(user, guid_referent):

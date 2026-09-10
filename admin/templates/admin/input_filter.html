@@ -1,0 +1,16 @@
+{% load i18n %}
+<h3>{% blocktranslate with filter_title=title %}By {{ filter_title }}{% endblocktranslate %}</h3>
+<ul class="admin-filter-{{ spec.parameter_name }}">
+    <li>
+        <form method="get" action="">
+            {% for key, value in choices.0.query_parts %}
+                <input type="hidden" name="{{ key }}" value="{{ value }}">
+            {% endfor %}
+            <input type="text"
+                   name="{{ spec.parameter_name }}"
+                   value="{{ spec.value|default_if_none:'' }}"
+                   placeholder="{{ spec.title }}"
+                   style="width: 95%; margin: 4px 0;">
+        </form>
+    </li>
+</ul>

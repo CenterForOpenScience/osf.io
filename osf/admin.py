@@ -6,7 +6,7 @@ from django.urls import re_path, reverse, path
 from django.template.response import TemplateResponse
 from django_extensions.admin import ForeignKeyAutocompleteAdmin
 from django.contrib.auth.models import Group
-from django.db.models import Q, Count, Sum, F, Min, Max
+from django.db.models import Q, Count, Sum, F, Min, Max, Case, When, Value, IntegerField
 from django.db.models.functions import Trunc
 from django.http import HttpResponseRedirect, HttpResponse, JsonResponse
 from django.utils import timezone
@@ -31,7 +31,7 @@ from osf.models import (
     Notification,
     DownloadEvent
 )
-from osf.models import AbstractNode
+from osf.models import AbstractNode, Preprint, Guid
 from osf.models.notification_type import get_default_frequency_choices
 from osf.models.notable_domain import DomainReference
 
@@ -445,12 +445,68 @@ class DownloadOutcomeFilter(SimpleListFilter):
         return queryset
 
 
+class InputFilter(SimpleListFilter):
+    """A sidebar filter that takes a free-text value instead of a fixed list of choices.
+
+    Django's list filters render a set of links; project and user are far too
+    high-cardinality for that. This renders a text box (see ``admin/input_filter.html``)
+    and hands the typed value to :meth:`queryset`. Subclasses set ``parameter_name`` /
+    ``title`` and implement ``queryset``.
+    """
+    template = 'admin/input_filter.html'
+
+    def lookups(self, request, model_admin):
+        # SimpleListFilter hides itself unless lookups() is non-empty; the value is
+        # unused because choices() is overridden below.
+        return ((),)
+
+    def choices(self, changelist):
+        # keep every other active filter/search param when this box is submitted, so
+        # typing a project doesn't wipe the date range or an existing user filter
+        all_choice = next(super().choices(changelist))
+        all_choice['query_parts'] = [
+            (key, value)
+            for key, value in changelist.get_filters_params().items()
+            if key != self.parameter_name
+        ]
+        yield all_choice
+
+
+class ProjectGuidFilter(InputFilter):
+    """Scope the dashboard to a single project/preprint by its guid."""
+
+    parameter_name = 'project_guid'
+    title = 'project guid'
+
+    def queryset(self, request, queryset):
+        value = self.value()
+        if value:
+            return queryset.filter(resource_guid=value.strip())
+        return queryset
+
+
+class DownloadUserFilter(InputFilter):
+    """Scope the dashboard to a single user, matched by email (username) or user guid."""
+
+    parameter_name = 'download_user'
+    title = 'user (email or guid)'
+
+    def queryset(self, request, queryset):
+        value = self.value()
+        if value:
+            term = value.strip()
+            return queryset.filter(
+                Q(user__username__iexact=term) | Q(user__guids___id=term)
+            )
+        return queryset
+
+
 @admin.register(DownloadEvent)
 class DownloadEventsView(admin.ModelAdmin):
     change_list_template = 'download_events/download_events.html'
     list_display = (
         'resource_guid',
-        'user',
+        'user_display',
         'download_type',
         'outcome',
         'zip_completed',
@@ -462,6 +518,8 @@ class DownloadEventsView(admin.ModelAdmin):
         'storage_region',
         'ip',
         'source_area',
+        'channel_display',
+        'user_agent_display',
         'created'
     )
     list_filter = (
@@ -471,7 +529,10 @@ class DownloadEventsView(admin.ModelAdmin):
                 title='date and time (UTC)',
             ),
         ),
+        ProjectGuidFilter,
+        DownloadUserFilter,
         'download_type',
+        'download_channel',
         DownloadOutcomeFilter,
         'zip_completed',
         'storage_provider',
@@ -487,11 +548,52 @@ class DownloadEventsView(admin.ModelAdmin):
         'storage_provider',
         'user_region',
         'storage_region',
-        'source_area'
+        'source_area',
+        'user_agent'
     )
-    search_help_text = 'Search by username, full name, user or node guid, ip, path, storage provider, user or storage region, source area.'
+    search_help_text = 'Search by username, full name, user or node guid, ip, path, storage provider, user or storage region, source area, user agent.'
 
-    @admin.display(description='Outcome')
+    def get_queryset(self, request):
+        """Annotate an outcome rank so the computed Outcome column is sortable.
+
+        The rank mirrors :meth:`outcome` exactly. It's just an ordering key — it doesn't
+        change what rows are returned, so the table and the dashboard aggregates are
+        unaffected.
+        """
+        return super().get_queryset(request).annotate(
+            _outcome_rank=Case(
+                When(zip_completed=True, then=Value(0)),  # Completed
+                When(
+                    zip_completed=False,
+                    status_code__gte=DOWNLOAD_FAILURE_MIN_STATUS,
+                    then=Value(2),  # Failed
+                ),
+                When(zip_completed=False, then=Value(1)),  # Cancelled
+                default=Value(3),  # single files have no outcome ('—')
+                output_field=IntegerField(),
+            )
+        )
+
+    @admin.display(description='User', ordering='user__username')
+    def user_display(self, obj):
+        """Sort the User column by the username (email) rather than the raw FK id."""
+        return obj.user or '—'
+
+    @admin.display(description='Channel', ordering='download_channel')
+    def channel_display(self, obj):
+        """Human-readable frontend/api/other. Blank ('—') for rows recorded before the
+        field existed and for zip downloads whose channel couldn't be resolved."""
+        return obj.get_download_channel_display() if obj.download_channel else '—'
+
+    @admin.display(description='User agent', ordering='user_agent')
+    def user_agent_display(self, obj):
+        """Truncated in the table so it doesn't dominate the row; the full value is still
+        searchable and shows on the record's detail view."""
+        if not obj.user_agent:
+            return '—'
+        return obj.user_agent if len(obj.user_agent) <= 80 else obj.user_agent[:79] + '…'
+
+    @admin.display(description='Outcome', ordering='_outcome_rank')
     def outcome(self, obj):
         """Human-readable end state. Single files have no outcome — they're recorded at the
         redirect before any bytes move, so they never report completion."""
@@ -530,7 +632,45 @@ class DownloadEventsView(admin.ModelAdmin):
             extra_context = {}
         changelist = self.get_changelist_instance(request)
         extra_context['download_events_dashboard'] = self.get_dashboard_data(changelist.get_queryset(request))
+        extra_context['download_events_active_filters'] = self._active_filters(request)
         return super().changelist_view(request, extra_context=extra_context)
+
+    # query-string param -> human label, for the "applied filters" banner above the charts
+    FILTER_LABELS = (
+        ('q', 'Search'),
+        ('project_guid', 'Project'),
+        ('download_user', 'User'),
+        ('download_type', 'Download type'),
+        ('outcome', 'Outcome'),
+        ('zip_completed__exact', 'Zip completed'),
+        ('storage_provider', 'Storage provider'),
+    )
+
+    def _active_filters(self, request):
+        """The filters/search currently in effect, as ``[{'label', 'value'}]``, so the
+        dashboard can show at a glance what its numbers are scoped to.
+
+        Purely presentational — it reads the same query string the changelist already
+        filtered on; it never changes what's queried.
+        """
+        params = request.GET
+        active = []
+
+        # the date range arrives in date+time halves; recombine them into one readable line
+        date_from = ' '.join(
+            part for part in (params.get('created__range__gte_0'), params.get('created__range__gte_1')) if part
+        )
+        date_to = ' '.join(
+            part for part in (params.get('created__range__lte_0'), params.get('created__range__lte_1')) if part
+        )
+        if date_from or date_to:
+            active.append({'label': 'Date (UTC)', 'value': f"{date_from or '…'} → {date_to or 'now'}"})
+
+        for param, label in self.FILTER_LABELS:
+            value = params.get(param)
+            if value:
+                active.append({'label': label, 'value': value})
+        return active
 
     def _in_dashboard_group(self, request):
         """Membership in the allow-list group is the only key to this page.
@@ -567,11 +707,27 @@ class DownloadEventsView(admin.ModelAdmin):
     def has_delete_permission(self, request, obj=None):
         return False
 
+    # blank/null region, provider or user region all mean "we could not tell"
+    UNKNOWN_REGION_LABEL = 'Unknown'
+    # 1 TB = 1024 GB. GB stays the primary unit; TB is only shown once a figure is
+    # genuinely terabyte-scale, so small numbers aren't cluttered with "(0.0 TB)".
+    GB_PER_TB = 1024
+
     def _sum_bytes(self, queryset):
         return queryset.aggregate(total_bytes=Sum('size_bytes'))['total_bytes'] or 0
 
     def _to_gb(self, total_bytes):
         return round((total_bytes or 0) / (1024**3), 2)
+
+    def _tb_suffix(self, gb):
+        """A parenthetical TB reading for terabyte-scale figures, e.g. ' (1.21 TB)'.
+
+        Empty below 1 TB — GB is the primary unit and we don't want '(0.0 TB)' hanging
+        off every small number.
+        """
+        if not gb or gb < self.GB_PER_TB:
+            return ''
+        return f' ({round(gb / self.GB_PER_TB, 2)} TB)'
 
     def _percent(self, part, whole):
         """Empty ranges are normal — the default window is the last hour."""
@@ -590,10 +746,12 @@ class DownloadEventsView(admin.ModelAdmin):
         total_file_gb = self._to_gb(self._sum_bytes(file_queryset))
         total_zip_gb = self._to_gb(self._sum_bytes(zip_queryset))
         time_series = self._build_time_series(queryset)
-        storage_regions = self._build_region_breakdown(queryset, 'storage_region')
-        user_regions = self._build_region_breakdown(queryset, 'user_region')
+        # each breakdown returns the ranked *known* regions plus, separately, the
+        # "Unknown" bucket — so a large Unknown doesn't crowd real regions off the chart
+        storage_regions, storage_regions_unknown = self._build_region_breakdown(queryset, 'storage_region')
+        user_regions, user_regions_unknown = self._build_region_breakdown(queryset, 'user_region')
         # downloads and GB grouped by where the bytes came from (osfstorage vs addons)
-        storage_providers = self._build_region_breakdown(queryset, 'storage_provider')
+        storage_providers, storage_providers_unknown = self._build_region_breakdown(queryset, 'storage_provider')
 
         # Zip outcomes. Single files are recorded before any bytes move, so they have no
         # outcome and are left out of this breakdown entirely.
@@ -613,12 +771,14 @@ class DownloadEventsView(admin.ModelAdmin):
             'file': {
                 'count': total_file_downloads,
                 'gb': total_file_gb,
+                'gb_tb_suffix': self._tb_suffix(total_file_gb),
                 'count_percent': self._percent(total_file_downloads, total_downloads),
                 'gb_percent': self._percent(total_file_gb, total_gb),
             },
             'zip': {
                 'count': total_zip_downloads,
                 'gb': total_zip_gb,
+                'gb_tb_suffix': self._tb_suffix(total_zip_gb),
                 'count_percent': self._percent(total_zip_downloads, total_downloads),
                 'gb_percent': self._percent(total_zip_gb, total_gb),
             },
@@ -628,6 +788,7 @@ class DownloadEventsView(admin.ModelAdmin):
             'summary': {
                 'total_downloads': total_downloads,
                 'total_gb': total_gb,
+                'total_gb_tb_suffix': self._tb_suffix(total_gb),
                 'unique_users': queryset.exclude(user_id__isnull=True).values('user_id').distinct().count(),
                 'failed_zips': failed_zips,
             },
@@ -635,8 +796,12 @@ class DownloadEventsView(admin.ModelAdmin):
             'zip_outcomes': zip_outcomes,
             'time_series': time_series,
             'storage_regions': storage_regions,
+            'storage_regions_unknown': storage_regions_unknown,
             'storage_providers': storage_providers,
+            'storage_providers_unknown': storage_providers_unknown,
             'user_regions': user_regions,
+            'user_regions_unknown': user_regions_unknown,
+            'channels': self._build_channel_breakdown(queryset),
             'top_projects': self._build_top_resource_breakdown(queryset),
             'top_users': self._build_top_user_breakdown(queryset),
         }
@@ -743,6 +908,12 @@ class DownloadEventsView(admin.ModelAdmin):
         `downloads` is the total request count; `file_count` and `zip_count` split it by
         request type (a zip is either a folder or a whole-project zip), so file + zip always
         equals the total.
+
+        Returns ``(known_regions, unknown)``. "Unknown" (blank/null — we couldn't tell) is
+        pulled out of the ranked list and returned on its own, so a large Unknown bucket
+        doesn't crowd the real regions off the chart. The percentages scale to the largest
+        *known* region, so the country bars stay readable no matter how big Unknown is.
+        ``unknown`` is ``None`` when every row resolved to a real region.
         """
         rows = queryset.values(field_name).annotate(
             downloads=Count('id'),
@@ -754,16 +925,20 @@ class DownloadEventsView(admin.ModelAdmin):
         breakdown = defaultdict(lambda: {'downloads': 0, 'gb': 0.0, 'file_count': 0, 'zip_count': 0})
         for row in rows:
             # blank and null both mean "we could not tell", so they fold together
-            region_name = (row[field_name] or 'Unknown').strip() or 'Unknown'
+            region_name = (row[field_name] or self.UNKNOWN_REGION_LABEL).strip() or self.UNKNOWN_REGION_LABEL
             breakdown[region_name]['downloads'] += row['downloads']
             breakdown[region_name]['gb'] += (row['total_bytes'] or 0) / (1024**3)
             breakdown[region_name]['file_count'] += row['file_count']
             breakdown[region_name]['zip_count'] += row['zip_count']
 
-        ordered = sorted(breakdown.items(), key=lambda item: item[1]['gb'], reverse=True)[:10]
+        unknown_data = breakdown.pop(self.UNKNOWN_REGION_LABEL, None)
+
+        # gb descending, then name ascending so the order is deterministic when GB ties
+        # (and never depends on the incoming queryset's row order)
+        ordered = sorted(breakdown.items(), key=lambda item: (-item[1]['gb'], item[0]))[:10]
         max_gb = max((data['gb'] for _, data in ordered), default=0)
         max_downloads = max((data['downloads'] for _, data in ordered), default=0)
-        return [
+        known_regions = [
             {
                 'name': name,
                 'downloads': data['downloads'],
@@ -775,6 +950,48 @@ class DownloadEventsView(admin.ModelAdmin):
             }
             for name, data in ordered
         ]
+        unknown = None
+        if unknown_data:
+            unknown = {
+                'name': self.UNKNOWN_REGION_LABEL,
+                'downloads': unknown_data['downloads'],
+                'file_count': unknown_data['file_count'],
+                'zip_count': unknown_data['zip_count'],
+                'gb': round(unknown_data['gb'], 2),
+            }
+        return known_regions, unknown
+
+    def _build_channel_breakdown(self, queryset):
+        """Downloads + GB grouped by channel (frontend / api / other) — the explicit split
+        the User-Agent alone could never give us. Rows with no channel (recorded before the
+        field, or zips whose channel couldn't be resolved) are reported as 'Unknown'."""
+        rows = queryset.values('download_channel').annotate(
+            downloads=Count('id'),
+            total_bytes=Sum('size_bytes'),
+        )
+        labels = dict(DownloadEvent.DOWNLOAD_CHANNELS)
+        # Fold by channel in Python: a pre-existing annotation on the queryset (e.g. the
+        # sort's _outcome_rank) can leak into the GROUP BY and split a channel across rows,
+        # so sum them back together — same reason _build_region_breakdown folds.
+        folded = defaultdict(lambda: {'downloads': 0, 'bytes': 0})
+        for row in rows:
+            channel = row['download_channel'] or ''
+            folded[channel]['downloads'] += row['downloads']
+            folded[channel]['bytes'] += (row['total_bytes'] or 0)
+
+        # frontend, api, other, then unknown last — a stable, meaningful order
+        rank = {DownloadEvent.FRONTEND: 0, DownloadEvent.API: 1, DownloadEvent.OTHER: 2, '': 3}
+        breakdown = [
+            {
+                'name': labels.get(channel, 'Unknown') if channel else 'Unknown',
+                'channel': channel,
+                'downloads': data['downloads'],
+                'gb': self._to_gb(data['bytes']),
+            }
+            for channel, data in folded.items()
+        ]
+        breakdown.sort(key=lambda item: (rank.get(item['channel'], 4), item['name']))
+        return breakdown
 
     def _build_top_resource_breakdown(self, queryset):
         rows = queryset.exclude(resource_guid='').values('resource_guid').annotate(
@@ -788,6 +1005,14 @@ class DownloadEventsView(admin.ModelAdmin):
         titles = dict(
             AbstractNode.objects.filter(guids___id__in=guids).values_list('guids___id', 'title')
         )
+        # preprints aren't nodes, and a preprint guid can be versioned (e.g. abcde_v1), which
+        # the node query above never matches. Resolve whatever's left through the guid — at
+        # most ten lookups, since this is a top-ten table.
+        for guid in guids:
+            if guid not in titles:
+                referent, _ = Guid.load_referent(guid)
+                if isinstance(referent, Preprint) and referent.title:
+                    titles[guid] = referent.title
         return [
             {
                 # a deleted project keeps its title, but fall back to the bare guid so

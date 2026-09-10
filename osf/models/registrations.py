@@ -605,6 +605,9 @@ class Registration(AbstractNode):
         self.refresh_from_db()
         if self.is_pending_embargo_termination:
             self.embargo_termination_approval.accept()
+            # accept() above updates moderation_state through a different in-memory
+            # Registration; refresh again or set_privacy() below will overwrite it
+            self.refresh_from_db()
 
         for node in self.node_and_primary_descendants():
             node.set_privacy(

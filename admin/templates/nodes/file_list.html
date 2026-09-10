@@ -1,0 +1,35 @@
+<tr>
+    <td colspan="2">
+        <h3>Files</h3>
+        {% if node_files %}
+            <table class="table table-striped table-hover table-responsive">
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Provider</th>
+                        <th>Guid</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for file in node_files %}
+                        <tr>
+                            <td>{{ file.name }}</td>
+                            <td>{{ file.provider }}</td>
+                            <td>{{ file.guid }}</td>
+                            <td>
+                                {% if file.guid %}
+                                    <a href="{% url 'files:file' guid=file.guid %}" class="btn btn-primary btn-xs">
+                                        Manage
+                                    </a>
+                                {% endif %}
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% else %}
+            <p>No files found.</p>
+        {% endif %}
+    </td>
+</tr>

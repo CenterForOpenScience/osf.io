@@ -1,5 +1,8 @@
 import pytest
 from framework.auth import Auth
+from waffle.testutils import override_flag
+
+from osf import features
 from api.base.settings.defaults import API_BASE
 from osf_tests.factories import (
     AuthUserFactory,
@@ -394,3 +397,31 @@ class TestNodeSettingsUpdate:
         res = app.patch_json_api(url, payload, auth=admin_contrib.auth, expect_errors=True)
         assert res.status_code == 400
         assert res.json['errors'][0]['detail'] == 'Ensure this field has no more than 50 characters.'
+
+@pytest.mark.django_db
+class TestNodeSettingsProjectReadOnly:
+
+    @pytest.fixture()
+    def payload(self, project):
+        return {
+            'data': {
+                'id': project._id,
+                'type': 'node-settings',
+                'attributes': {
+                    'redirect_link_enabled': True,
+                    'redirect_link_url': 'https://cos.io'
+                }
+            }
+        }
+
+    def test_patch_permissions(self, app, payload, admin_contrib, url):
+        with override_flag(features.PROJECT_READ_ONLY, active=True):
+            res = app.patch_json_api(url, payload, auth=admin_contrib.auth, expect_errors=True)
+        assert res.status_code == 405
+        assert res.json['errors'][0]['detail'] == 'This action is no longer available. Contact support if you have any questions.'
+
+    def test_put_permissions(self, app, payload, admin_contrib, url):
+        with override_flag(features.PROJECT_READ_ONLY, active=True):
+            res = app.put_json_api(url, payload, auth=admin_contrib.auth, expect_errors=True)
+        assert res.status_code == 405
+        assert res.json['errors'][0]['detail'] == 'This action is no longer available. Contact support if you have any questions.'

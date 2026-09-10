@@ -10,7 +10,11 @@ from addons.osfstorage.settings import DEFAULT_REGION_NAME
 from api_tests.utils import create_test_file
 from framework.auth import signing
 from osf.models import DownloadEvent, OSFUser
-from osf.utils.download_telemetry import derive_user_region, record_download
+from osf.utils.download_telemetry import (
+    classify_download_channel,
+    derive_user_region,
+    record_download,
+)
 from osf_tests.factories import AuthUserFactory, ProjectFactory
 from tests.base import OsfTestCase
 
@@ -108,6 +112,7 @@ class TestZipDownloadTelemetry(OsfTestCase):
                 'provider': 'osfstorage',
             },
             'action_meta': meta,
+            'request_meta': {'user_agent': 'TestZipAgent/1.0'},
         }
         message, signature = signing.default_signer.sign_payload(options)
         return {'payload': message, 'signature': signature}
@@ -215,6 +220,42 @@ class TestZipDownloadTelemetry(OsfTestCase):
 
         assert DownloadEvent.objects.get().storage_provider == 'osfstorage'
 
+    def test_user_agent_comes_from_the_callback(self):
+        self.app.put(self.url, json=self.build_payload())
+
+        assert DownloadEvent.objects.get().user_agent == 'TestZipAgent/1.0'
+
+    def test_missing_request_meta_leaves_user_agent_blank(self):
+        """A callback from a WaterButler build that predates request_meta records an empty
+        user agent rather than failing."""
+        options = {
+            'auth': {'id': self.user._id},
+            'action': 'download_zip',
+            'provider': 'osfstorage',
+            'time': time.time() + 1000,
+            'metadata': {'nid': self.node._id, 'materialized': '/', 'path': '/',
+                         'kind': 'folder', 'provider': 'osfstorage'},
+            'action_meta': {},
+        }
+        message, signature = signing.default_signer.sign_payload(options)
+        res = self.app.put(self.url, json={'payload': message, 'signature': signature})
+
+        assert res.status_code == 200
+        assert DownloadEvent.objects.get().user_agent == ''
+
+    def test_zip_with_a_source_tag_is_a_frontend_download(self):
+        # build_payload sends source='files' by default, i.e. from a UI link
+        self.app.put(self.url, json=self.build_payload())
+
+        assert DownloadEvent.objects.get().download_channel == DownloadEvent.FRONTEND
+
+    def test_zip_without_a_source_tag_is_other(self):
+        """No source tag on a zip means it didn't come from a UI link. The callback can't
+        see the auth, so API vs crawler folds into 'other'."""
+        self.app.put(self.url, json=self.build_payload(source=''))
+
+        assert DownloadEvent.objects.get().download_channel == DownloadEvent.OTHER
+
     def test_callback_still_succeeds_when_recording_fails(self, ):
         with pytest.MonkeyPatch.context() as patch:
             patch.setattr(
@@ -262,11 +303,64 @@ class TestSingleFileDownloadTelemetry(OsfTestCase):
 
         assert DownloadEvent.objects.get().storage_provider == 'osfstorage'
 
+    def test_user_agent_comes_from_the_request(self):
+        self.app.get(
+            f'/download/{self.guid}/', auth=self.user.auth,
+            headers={'User-Agent': 'PytestClient/9.9'},
+        )
+
+        assert DownloadEvent.objects.get().user_agent == 'PytestClient/9.9'
+
+    def test_long_user_agent_is_capped(self):
+        """The User-Agent is client-controlled, so the write caps it to the column width."""
+        self.app.get(
+            f'/download/{self.guid}/', auth=self.user.auth,
+            headers={'User-Agent': 'x' * 900},
+        )
+
+        assert len(DownloadEvent.objects.get().user_agent) == 512
+
     def test_zip_completed_is_unset_for_single_files(self):
         """Only zips stream through WaterButler, so nothing reports completion here."""
         self.app.get(f'/download/{self.guid}/', auth=self.user.auth)
 
         assert DownloadEvent.objects.get().zip_completed is None
+
+    def test_source_tag_marks_a_frontend_download(self):
+        self.app.get(f'/download/{self.guid}/?source=file-detail', auth=self.user.auth)
+
+        assert DownloadEvent.objects.get().download_channel == DownloadEvent.FRONTEND
+
+    def test_no_source_or_token_is_other(self):
+        """A raw download URL with no UI source tag and no API token — a direct link."""
+        self.app.get(f'/download/{self.guid}/', auth=self.user.auth)
+
+        assert DownloadEvent.objects.get().download_channel == DownloadEvent.OTHER
+
+    def test_bearer_token_marks_an_api_download(self):
+        """An API/OAuth client sends an Authorization: Bearer header; a browser navigating
+        a download link never does, so it's a reliable 'programmatic' signal."""
+        self.node.is_public = True
+        self.node.save()
+
+        class _UnauthenticatedCasResponse:
+            authenticated = False
+            user = None
+
+        class _FakeCasClient:
+            def profile(self, token):
+                return _UnauthenticatedCasResponse()
+
+        with pytest.MonkeyPatch.context() as patch:
+            # a bearer header makes OSF validate the token against CAS; stub it so the test
+            # doesn't reach the network (the token is fake, the download is public anyway)
+            patch.setattr('framework.auth.cas.get_client', lambda: _FakeCasClient())
+            self.app.get(
+                f'/download/{self.guid}/',
+                headers={'Authorization': 'Bearer notarealtoken'},
+            )
+
+        assert DownloadEvent.objects.get().download_channel == DownloadEvent.API
 
     def test_anonymous_download_is_recorded_without_a_user(self):
         self.node.is_public = True
@@ -321,6 +415,22 @@ class TestUserRegionDerivation:
 
     def test_unknown_is_empty(self):
         assert derive_user_region('', None, '') == ''
+
+
+class TestChannelClassification:
+    """The server-side frontend/api/other decision — deliberately not UA-based."""
+
+    def test_a_bearer_token_is_an_api_client(self):
+        assert classify_download_channel('files', is_api_token=True) == DownloadEvent.API
+        # a token wins even if a source tag is also present
+        assert classify_download_channel('', is_api_token=True) == DownloadEvent.API
+
+    def test_a_source_tag_without_a_token_is_frontend(self):
+        assert classify_download_channel('file-detail') == DownloadEvent.FRONTEND
+
+    def test_no_token_and_no_source_is_other(self):
+        assert classify_download_channel('') == DownloadEvent.OTHER
+        assert classify_download_channel('', is_api_token=False) == DownloadEvent.OTHER
 
 
 @pytest.mark.django_db

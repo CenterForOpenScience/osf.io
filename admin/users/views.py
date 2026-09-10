@@ -213,12 +213,13 @@ class UserGDPRDeleteView(UserMixin, View):
     permission_required = 'osf.change_osfuser'
 
     def post(self, request, *args, **kwargs):
+        user = self.get_object()
         try:
-            user = self.get_object()
             user.gdpr_delete()
             user.save()
         except UserStateError as e:
             messages.warning(request, str(e))
+            return redirect(self.get_success_url())
 
         messages.success(request, f'User {user._id} was successfully GDPR deleted')
 

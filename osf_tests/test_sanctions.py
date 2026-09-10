@@ -6,7 +6,7 @@ import datetime
 from django.utils import timezone
 from transitions import MachineError
 
-from osf.models import NodeLog
+from osf.models import NodeLog, Registration
 from osf.exceptions import NodeStateError
 from osf_tests import factories
 from osf_tests.utils import mock_archive
@@ -73,6 +73,16 @@ class TestNodeEmbargoTerminations:
         last_log = node.logs.first()
         assert last_log.action == NodeLog.EMBARGO_TERMINATED
         assert last_log.user is None
+
+    def test_terminate_embargo_on_fresh_object_with_pending_termination_sets_correct_state(self, registration, user):
+        with capture_notifications():
+            registration.request_embargo_termination(user)
+        assert registration.is_pending_embargo_termination is True
+        fresh_registration = Registration.objects.get(pk=registration.pk)
+        fresh_registration.terminate_embargo()
+        assert fresh_registration.is_public is True
+        assert fresh_registration.is_embargoed is False
+        assert fresh_registration.moderation_state == 'accepted'
 
 
 @pytest.mark.django_db

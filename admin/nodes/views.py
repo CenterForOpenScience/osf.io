@@ -148,6 +148,8 @@ class NodeView(NodeMixin, GuidView):
         children = AbstractNode.objects.filter(
             id__in=[child.id for child in children]
         ).prefetch_related('guids').annotate(guid=F('guids___id'))
+        node_files = node.files.filter(deleted__isnull=True).prefetch_related('guids').annotate(
+            guid=F('guids___id')).order_by('name')[:200]
         context.update({
             'SPAM_STATUS': SpamStatus,
             'STORAGE_LIMITS': settings.StorageLimits,
@@ -156,6 +158,7 @@ class NodeView(NodeMixin, GuidView):
             'annotated_contributors': node.contributor_set.prefetch_related('user__guids').annotate(
                 guid=F('user__guids___id')),
             'children': children,
+            'node_files': node_files,
             'permissions': API_CONTRIBUTOR_PERMISSIONS,
             'has_update_permission': self.request.user.has_perm('osf.change_node'),
         })
