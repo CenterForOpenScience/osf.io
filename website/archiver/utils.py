@@ -1,4 +1,5 @@
 import functools
+import logging
 import unicodedata
 
 from collections import defaultdict
@@ -15,6 +16,8 @@ from website.archiver import (
     ARCHIVER_FORCED_FAILURE,
 )
 from website.settings import MAX_ARCHIVE_SIZE
+
+logger = logging.getLogger(__name__)
 
 FILE_HTML_LINK_TEMPLATE = settings.DOMAIN + 'project/{registration_guid}/files/osfstorage/{file_id}'
 FILE_DOWNLOAD_LINK_TEMPLATE = settings.DOMAIN + 'download/{file_id}'
@@ -234,6 +237,9 @@ def _memoize_get_file_map(func):
             file_tree = osf_storage._get_file_tree(user=OSFUser.load(list(node.admin_contributor_or_group_member_ids)[0]))
             cache[node._id] = _do_get_file_map(file_tree)
         return func(node, cache[node._id])
+    # cache is created once at import, so every task in the worker shares it.
+    # it must not be seen a previous task's file tree reset it through clear_cache.
+    wrapper.clear_cache = cache.clear
     return wrapper
 
 @_memoize_get_file_map
@@ -267,6 +273,15 @@ def get_title_for_question(schema, qid):
 
 
 def migrate_file_metadata(dst):
+    '''
+    Point the registration's file responses at its own archived copies.
+    Registration copies the project's files in the background, so those responses are
+    firstly saved pointing at the originals on registered_from, usually a private
+    project. Moderators can open the registration but not that project, so until this
+    runs they get a 403 on every file. Called by the archive_success task,
+    and by force-archive, where that task never runs. Safe to run twice:
+    a reference that was already rewritten resolves to the same value.
+    '''
     if dst.root_id != dst.id:
         return
 
@@ -276,7 +291,15 @@ def migrate_file_metadata(dst):
     ).values_list('registration_response_key', flat=True)
     if not file_input_qids:
         return
-
+    # The rewrite below calls schema_responses.get(), which raises MultipleObjectsReturned
+    # for several objects. Skip it to not fail the archive.
+    response_count = dst.schema_responses.count()
+    if response_count != 1:
+        logger.warning(f'{dst._id}: skipping file metadata migration, {response_count} schema responses')
+        return
+    # get_file_map caches per worker process, not per task, so a retry would reuse the
+    # possible incomplete file tree and the failed run produced and fail the same way.
+    get_file_map.clear_cache()
     file_response_keys_by_hash = _get_file_response_hashes(dst, file_input_qids)
     updated_file_responses = _get_updated_file_references(dst, file_response_keys_by_hash)
 
@@ -330,8 +353,12 @@ def _get_updated_file_references(registration, file_response_keys_by_hash):
                 # Handle the case where the same file exists in multiple components
                 original_response = _get_response_entry_for_hash(original_responses, qid, file_sha)
                 normalized_original_file_name = normalize_unicode_filenames(original_response['file_name'])[0]
+                original_html_url = original_response['file_urls']['html']
+                # On the first run this url holds source_project_id. On a second run it
+                # already holds archived_node_id. Match both, so the file is found both times.
                 if (
-                    source_project_id in original_response['file_urls']['html']
+                    (source_project_id in original_html_url
+                     or archived_node_id in original_html_url)
                     and response_value['file_name'] == normalized_original_file_name
                 ):
                     updated_file_responses[qid].append(response_value)
