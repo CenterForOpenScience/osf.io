@@ -552,6 +552,12 @@ notification_types:
     template: 'website/templates/archive_registration_stuck_desk.html.mako'
     tests: []
 
+  - name: desk_archive_restart_report
+    subject: '[auto] Stuck registrations: {stuck_count} have not finished archiving'
+    object_content_type_model_name: desk
+    template: 'website/templates/archive_restart_report_desk.html.mako'
+    tests: ['osf_tests/management_commands/test_restart_stuck_registrations.py']
+
   - name: node_archive_success
     subject: 'Registration of {src_title} complete'
     object_content_type_model_name: abstractnode

@@ -107,6 +107,7 @@ from .schema_response_block import SchemaResponseBlock
 from .session import UserSessionMap
 from .spam import SpamStatus, SpamMixin
 from .storage import ProviderAssetFile, InstitutionAssetFile
+from .stuck_registration_report import StuckRegistrationReportConfig
 from .subject import Subject
 from .tag import Tag
 from .user import (
