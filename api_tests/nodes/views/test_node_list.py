@@ -1,6 +1,7 @@
 import pytest
 
 from django.utils import timezone
+from waffle.testutils import override_flag
 from api.base.settings.defaults import API_BASE, MAX_PAGE_SIZE
 from api.base.utils import default_node_permission_queryset
 from api.caching import settings as cache_settings
@@ -8,6 +9,7 @@ from api.caching.utils import storage_usage_cache
 from api_tests.nodes.filters.test_filters import NodesListFilteringMixin, NodesListDateFilteringMixin
 from api_tests.subjects.mixins import SubjectsFilterMixin
 from framework.auth.core import Auth
+from osf import features
 from osf.models import AbstractNode, Node, NodeLog, NotificationTypeEnum
 from osf.models.licenses import NodeLicense
 from osf.utils.sanitize import strip_html
@@ -3075,6 +3077,88 @@ class TestNodeBulkPartialUpdate:
             public_project_one.tags.values_list('name', flat=True)
         ) == ['tag1']
         assert public_project_one.is_public is False
+
+
+@pytest.mark.django_db
+class TestNodeBulkPartialUpdateProjectReadOnly:
+
+    @pytest.fixture()
+    def user(self):
+        return AuthUserFactory()
+
+    @pytest.fixture()
+    def title(self):
+        return 'Rachel is great'
+
+    @pytest.fixture()
+    def new_title(self):
+        return 'Rachel is awesome'
+
+    @pytest.fixture()
+    def private_project_one(self, user, title):
+        return ProjectFactory(title=title, is_public=False, creator=user)
+
+    @pytest.fixture()
+    def private_project_two(self, user, title):
+        return ProjectFactory(title=title, is_public=False, creator=user)
+
+    @pytest.fixture()
+    def public_project_one(self, user, title):
+        project = ProjectFactory(title=title, is_public=True, creator=user)
+        key = cache_settings.STORAGE_USAGE_KEY.format(target_id=project._id)
+        storage_usage_cache.set(key, 0, settings.STORAGE_USAGE_CACHE_TIMEOUT)
+        return project
+
+    @pytest.fixture()
+    def url(self):
+        return f'/{API_BASE}nodes/'
+
+    def test_bulk_make_public_only_allowed_when_project_read_only_flag_active(
+            self, app, user, private_project_one, private_project_two, url):
+        payload = {
+            'data': [
+                {'id': private_project_one._id, 'type': 'nodes', 'attributes': {'public': True}},
+                {'id': private_project_two._id, 'type': 'nodes', 'attributes': {'public': True}},
+            ]
+        }
+        with override_flag(features.PROJECT_READ_ONLY, active=True):
+            res = app.patch_json_api(url, payload, auth=user.auth, bulk=True)
+        assert res.status_code == 200
+        private_project_one.reload()
+        private_project_two.reload()
+        assert private_project_one.is_public
+        assert private_project_two.is_public
+
+    def test_bulk_make_private_blocked_when_project_read_only_flag_active(
+            self, app, user, public_project_one, url):
+        payload = {
+            'data': [
+                {'id': public_project_one._id, 'type': 'nodes', 'attributes': {'public': False}},
+            ]
+        }
+        with override_flag(features.PROJECT_READ_ONLY, active=True):
+            res = app.patch_json_api(url, payload, auth=user.auth, bulk=True, expect_errors=True)
+        assert res.status_code == 405
+        assert res.json['errors'][0]['detail'] == 'This action is no longer available. Contact support if you have any questions.'
+        public_project_one.reload()
+        assert public_project_one.is_public
+
+    def test_bulk_make_public_with_other_attributes_blocked_when_project_read_only_flag_active(
+            self, app, user, new_title, private_project_one, private_project_two, url):
+        payload = {
+            'data': [
+                {'id': private_project_one._id, 'type': 'nodes', 'attributes': {'public': True}},
+                {'id': private_project_two._id, 'type': 'nodes', 'attributes': {'public': True, 'title': new_title}},
+            ]
+        }
+        with override_flag(features.PROJECT_READ_ONLY, active=True):
+            res = app.patch_json_api(url, payload, auth=user.auth, bulk=True, expect_errors=True)
+        assert res.status_code == 405
+        assert res.json['errors'][0]['detail'] == 'This action is no longer available. Contact support if you have any questions.'
+        private_project_one.reload()
+        private_project_two.reload()
+        assert not private_project_one.is_public
+        assert not private_project_two.is_public
 
 
 @pytest.mark.django_db
