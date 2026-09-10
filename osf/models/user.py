@@ -1193,7 +1193,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         unconfirmed_emails = []
         email_verifications = self.email_verifications or []
         for token in email_verifications:
-            if self.email_verifications[token].get('confirmed', False):
+            if self.email_verifications[token].get('confirmed', False) and not self.email_verifications[token].get('external_identity'):
                 try:
                     user_merge = OSFUser.objects.get(emails__address__iexact=self.email_verifications[token]['email'])
                 except OSFUser.DoesNotExist:

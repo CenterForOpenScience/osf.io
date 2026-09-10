@@ -621,6 +621,8 @@ def external_login_confirm_email_get(auth, uid, token):
         sentry.log_message('external_login_confirm_email_get::400 - bad token')
         raise HTTPError(http_status.HTTP_400_BAD_REQUEST)
     verification = user.email_verifications[token]
+    if verification.get('confirmed'):
+        return redirect(cas.get_login_url(request.url))
     email = verification['email']
     provider = list(verification['external_identity'].keys())[0]
     provider_id = list(verification['external_identity'][provider].keys())[0]
@@ -644,7 +646,7 @@ def external_login_confirm_email_get(auth, uid, token):
 
     user.date_last_logged_in = timezone.now()
     user.external_identity[provider][provider_id] = 'VERIFIED'
-    del user.email_verifications[token]
+    user.email_verifications[token]['confirmed'] = True
     user.verification_key = generate_verification_key()
     user.save()
 
