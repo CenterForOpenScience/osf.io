@@ -13,7 +13,7 @@ from api.base.parsers import (
 )
 from api.base.versioning import PrivateVersioning
 from api.base.views import JSONAPIBaseView
-from api.cedar_metadata_records.permissions import CedarMetadataRecordPermission
+from api.cedar_metadata_records.permissions import CedarMetadataRecordPermission, CedarMetadataRecordsNotAllowed
 from api.cedar_metadata_records.serializers import (
     CedarMetadataRecordsCreateSerializer,
     CedarMetadataRecordsDetailSerializer,
@@ -30,6 +30,7 @@ class CedarMetadataRecordCreate(JSONAPIBaseView, CreateAPIView):
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
+        CedarMetadataRecordsNotAllowed,
     )
     required_read_scopes = [CoreScopes.NULL]
     required_write_scopes = [CoreScopes.CEDAR_METADATA_RECORD_WRITE]
@@ -50,6 +51,7 @@ class CedarMetadataRecordDetail(JSONAPIBaseView, RetrieveUpdateDestroyAPIView):
         CedarMetadataRecordPermission,
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
+        CedarMetadataRecordsNotAllowed,
     )
     required_read_scopes = [CoreScopes.CEDAR_METADATA_RECORD_READ]
     required_write_scopes = [CoreScopes.CEDAR_METADATA_RECORD_WRITE]

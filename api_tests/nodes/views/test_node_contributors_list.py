@@ -6,6 +6,7 @@ import random
 from api.base.settings.defaults import API_BASE
 from api.nodes.serializers import NodeContributorsCreateSerializer
 from framework.auth.core import Auth
+from osf import features
 from osf.models.notification_type import NotificationTypeEnum
 from osf_tests.factories import (
     fake_email,
@@ -18,6 +19,7 @@ from osf.utils import permissions
 from rest_framework import exceptions
 from tests.base import capture_signals, fake
 from tests.utils import capture_notifications
+from waffle.testutils import override_flag
 from website.project.signals import contributor_added, contributor_removed
 from api_tests.utils import disconnected_from_listeners
 
@@ -2957,3 +2959,86 @@ class TestNodeContributorFiltering:
         assert res.status_code == 200
         assert len(res.json['data']) == 1
         assert res.json['data'][0]['attributes'].get('permission') == permissions.READ
+
+
+@pytest.mark.django_db
+class TestNodeContributorListProjectReadOnly:
+
+    @pytest.fixture()
+    def user(self):
+        return AuthUserFactory()
+
+    @pytest.fixture()
+    def contrib(self):
+        return AuthUserFactory()
+
+    @pytest.fixture()
+    def node(self, user, contrib):
+        project = ProjectFactory(creator=user)
+        project.add_contributor(contrib, permissions=permissions.WRITE, visible=True, save=True)
+        return project
+
+    @pytest.fixture()
+    def url(self, node):
+        return f'/{API_BASE}nodes/{node._id}/contributors/'
+
+    @pytest.fixture()
+    def add_payload(self, user):
+        new_user = AuthUserFactory()
+        return {
+            'data': {
+                'type': 'contributors',
+                'attributes': {'bibliographic': True},
+                'relationships': {'users': {'data': {'type': 'users', 'id': new_user._id}}},
+            }
+        }
+
+    @pytest.fixture()
+    def bulk_patch_payload(self, node, contrib):
+        return {
+            'data': [
+                {
+                    'id': f'{node._id}-{contrib._id}',
+                    'type': 'contributors',
+                    'attributes': {'bibliographic': False},
+                }
+            ]
+        }
+
+    def test_post_blocked_when_project_read_only_flag_active(self, app, user, url, add_payload):
+        with override_flag(features.PROJECT_READ_ONLY, active=True):
+            res = app.post_json_api(url, add_payload, auth=user.auth, expect_errors=True)
+        assert res.status_code == 405
+        assert res.json['errors'][0]['detail'] == 'This action is no longer available. Contact support if you have any questions.'
+
+    def test_put_blocked_when_project_read_only_flag_active(self, app, user, url, bulk_patch_payload):
+        with override_flag(features.PROJECT_READ_ONLY, active=True):
+            res = app.put_json_api(url, bulk_patch_payload, auth=user.auth, expect_errors=True, bulk=True)
+        assert res.status_code == 405
+        assert res.json['errors'][0]['detail'] == 'This action is no longer available. Contact support if you have any questions.'
+
+    def test_patch_blocked_when_project_read_only_flag_active(self, app, user, url, bulk_patch_payload):
+        with override_flag(features.PROJECT_READ_ONLY, active=True):
+            res = app.patch_json_api(url, bulk_patch_payload, auth=user.auth, expect_errors=True, bulk=True)
+        assert res.status_code == 405
+        assert res.json['errors'][0]['detail'] == 'This action is no longer available. Contact support if you have any questions.'
+
+    def test_delete_allowed_when_project_read_only_flag_active(self, app, user, node, contrib, url):
+        delete_payload = {'data': [{'id': f'{node._id}-{contrib._id}', 'type': 'contributors'}]}
+        with override_flag(features.PROJECT_READ_ONLY, active=True):
+            with disconnected_from_listeners(contributor_removed):
+                res = app.delete_json_api(url, delete_payload, auth=user.auth, bulk=True)
+        assert res.status_code == 204
+        node.reload()
+        assert contrib not in node.contributors
+
+    def test_post_allowed_when_project_read_only_flag_inactive(self, app, user, url, add_payload):
+        with capture_notifications():
+            res = app.post_json_api(url, add_payload, auth=user.auth)
+        assert res.status_code == 201
+
+    def test_patch_allowed_when_project_read_only_flag_inactive(self, app, user, node, contrib, url, bulk_patch_payload):
+        res = app.patch_json_api(url, bulk_patch_payload, auth=user.auth, bulk=True)
+        assert res.status_code == 200
+        contrib.reload()
+        assert not node.get_visible(contrib)
