@@ -935,6 +935,65 @@ class ResetPassword(JSONAPIBaseView, generics.ListCreateAPIView):
             content_type='application/vnd.api+json; application/json',
         )
 
+class ResendConfirmation(JSONAPIBaseView, generics.ListCreateAPIView):
+    """
+      View for handling resend confirmation URL requests.
+
+      GET:
+      - Takes an email as a query parameter.
+      - If the email is not provided or invalid, returns a validation error.
+      - If the user has recently requested a resend URL, returns a throttling error.
+      """
+    permission_classes = (
+        drf_permissions.AllowAny,
+    )
+    view_category = 'users'
+    view_name = 'request-resend-confirmation'
+    throttle_classes = (NonCookieAuthThrottle, BurstRateThrottle, RootAnonThrottle, SendEmailThrottle)
+
+    def get(self, request, *args, **kwargs):
+        email = request.query_params.get('email', None)
+        if not email:
+            raise ValidationError('Request must include email in query params.')
+
+        status_message = language.RESET_PASSWORD_SUCCESS_STATUS_MESSAGE.format(email=email)
+        # check if the user exists
+        user_obj = get_user(email=email)
+
+        if user_obj:
+            # rate limit resend_confirmation_post
+            if not throttle_period_expired(user_obj.email_last_sent, settings.SEND_EMAIL_THROTTLE):
+                return Response(
+                    {
+                        'message': language.THROTTLE_PASSWORD_CHANGE_ERROR_MESSAGE,
+                        'kind': 'error',
+                    },
+                    status=status.HTTP_429_TOO_MANY_REQUESTS,
+                )
+            else:
+                notification_type = NotificationTypeEnum.USER_INITIAL_CONFIRM_EMAIL
+                confirmation_url = user_obj.get_confirmation_url(
+                    email,
+                    external=True,
+                    force=True,
+                    renew=False,
+                )
+                notification_type.instance.emit(
+                    destination_address=email,
+                    event_context={
+                        'user_fullname': user_obj.fullname,
+                        'confirmation_url': f'{confirmation_url}',
+                    },
+                    save=False
+                )
+
+        return Response(
+                status=status.HTTP_200_OK,
+                data={
+                    'message': status_message,
+                    'kind': 'success',
+                },
+            )
 
 class UserSettings(JSONAPIBaseView, generics.RetrieveUpdateAPIView, UserMixin):
     permission_classes = (
