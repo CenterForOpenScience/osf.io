@@ -1304,6 +1304,8 @@ class UserEmailsList(JSONAPIBaseView, generics.ListAPIView, generics.CreateAPIVi
             serialized_emails.append(serialized_email)
         email_verifications = user.email_verifications or {}
         for token, detail in email_verifications.items():
+            if detail.get('external_identity'):
+                continue
             is_merge = Email.objects.filter(address=detail['email']).exists()
             serialized_unconfirmed_email = UserEmail(
                 email_id=token,
@@ -1361,6 +1363,8 @@ class UserEmailsDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, U
         elif user.unconfirmed_emails:
             try:
                 email = user.email_verifications[email_id]
+                if email.get('external_identity'):
+                    raise KeyError(email_id)
                 address = email['email']
                 confirmed = email['confirmed']
                 verified = False
