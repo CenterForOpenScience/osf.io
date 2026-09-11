@@ -454,7 +454,9 @@ class CeleryConfig:
         'website.identifiers.tasks.task__update_verified_links'
     }
 
-    external_low_modules = {}
+    external_low_modules = {
+        'email.process_sendgrid_campaign_events',
+    }
 
     account_status_changes_modules = {}
 
@@ -501,7 +503,6 @@ class CeleryConfig:
         'website.identifiers.tasks',
         'website.preprints.tasks',
         'website.project.tasks',
-        'email.process_sendgrid_campaign_events',
     }
 
     high_pri_modules = {
