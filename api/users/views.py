@@ -984,16 +984,16 @@ class ResendConfirmation(JSONAPIBaseView, generics.ListCreateAPIView):
                         'user_fullname': user_obj.fullname,
                         'confirmation_url': f'{confirmation_url}',
                     },
-                    save=False
+                    save=False,
                 )
 
         return Response(
-                status=status.HTTP_200_OK,
-                data={
-                    'message': status_message,
-                    'kind': 'success',
-                },
-            )
+            status=status.HTTP_200_OK,
+            data={
+                'message': status_message,
+                'kind': 'success',
+            },
+        )
 
 class UserSettings(JSONAPIBaseView, generics.RetrieveUpdateAPIView, UserMixin):
     permission_classes = (
