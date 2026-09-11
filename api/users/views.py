@@ -1236,6 +1236,7 @@ class ConfirmEmailView(generics.CreateAPIView):
         ensure_external_identity_uniqueness(provider, provider_id, user)
         external_status = user.external_identity[provider][provider_id]
         user.external_identity[provider][provider_id] = 'VERIFIED'
+        user.record_external_identity_connected(provider, provider_id)
 
         if external_status == 'CREATE':
             service_url += '&' + urlencode({'new': 'true'})
@@ -1551,6 +1552,7 @@ class ExternalLoginConfirmEmailView(generics.CreateAPIView):
 
         user.date_last_logged_in = timezone.now()
         user.external_identity[provider][provider_id] = 'VERIFIED'
+        user.record_external_identity_connected(provider, provider_id)
         del user.email_verifications[token]
         user.verification_key = generate_verification_key()
         user.save()
