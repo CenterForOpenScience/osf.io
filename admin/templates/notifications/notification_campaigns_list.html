@@ -5,6 +5,16 @@
     <title>List of Notification Campaigns</title>
 {% endblock title %}
 {% block content %}
+    <div>
+        {% if messages %}
+            <ul>
+            {% for message in messages %}
+            <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}
+            </li>
+            {% endfor %}
+        </ul>
+        {% endif %}
+    </div>
     <h2>List of Notification Campaigns</h2>
     {% if active_campaign %}
         <h3>Active Campaign</h3>

@@ -11,7 +11,7 @@ from celery.utils.log import get_task_logger
 
 from framework.postcommit_tasks.handlers import run_postcommit
 from osf.models import OSFUser, Notification, NotificationTypeEnum, EmailTask, RegistrationProvider, \
-    CollectionProvider, AbstractProvider
+    CollectionProvider, AbstractProvider, NotificationCampaign, NotificationCampaignRecipient
 from framework.sentry import log_message
 from osf.registrations.utils import get_registration_provider_submissions_url
 from osf.utils.permissions import ADMIN
@@ -544,3 +544,37 @@ def delete_batch(
     logger.info(f'Deleted {deleted} rows from {model_name}')
 
     delete_batch.delay(app_label, model_name, filters, order_field, batch_size)
+
+
+@celery_app.task(
+    bind=True,
+    name='notifications.tasks.delete_notification_campaign_recipients',
+)
+def delete_notification_campaign_recipients(self):
+    """Delete recipients for old notification campaigns."""
+
+    cutoff = timezone.now() - settings.NOTIFICATION_CAMPAIGN_RECIPIENTS_CLEANUP_AGE
+
+    campaigns = NotificationCampaign.objects.filter(
+        completed_at__lt=cutoff,
+    ).values_list('id', flat=True)
+
+    for campaign_id in campaigns.iterator():
+        total_deleted = 0
+        while True:
+            recipient_ids = list(
+                NotificationCampaignRecipient.objects
+                .filter(campaign_id=campaign_id)
+                .values_list('id', flat=True)[:settings.NOTIFICATION_CAMPAIGN_RECIPIENTS_CLEANUP_BATCH_SIZE]
+            )
+
+            if not recipient_ids:
+                break
+
+            deleted, _ = NotificationCampaignRecipient.objects.filter(
+                id__in=recipient_ids,
+            ).delete()
+
+            total_deleted += deleted
+
+        logger.info(f'Deleted {total_deleted} recipients for campaign {campaign_id}')

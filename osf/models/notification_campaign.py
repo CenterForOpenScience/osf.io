@@ -13,6 +13,7 @@ class NotificationCampaignStatus(models.TextChoices):
     ENDED = 'ended', 'Ended'
 
 class NotificationCampaignRecipientStatus(models.TextChoices):
+    QUEUED = 'queued', 'Queued'
     PENDING = 'pending', 'Pending'
     SENT = 'sent', 'Sent'
     FAILED = 'failed', 'Failed'
@@ -83,7 +84,6 @@ class NotificationCampaign(models.Model):
         self.started_at = timezone.now()
         self.run_id = uuid.uuid4()
         if not restart_failed and not restart_stuck:
-            self.recipient_count = 0
             self.sent_count = 0
         self.failed_count = 0
         self.retries = 0
@@ -97,6 +97,16 @@ class NotificationCampaign(models.Model):
                 restart_failed=restart_failed,
                 restart_stuck=restart_stuck,
             )
+        )
+
+    def create_recipients(self):
+        from osf.email.notification_campaign import create_campaign_recipients
+
+        self.metadata.update({'recipients_creation_finished': False})
+        self.save()
+
+        transaction.on_commit(
+            lambda: create_campaign_recipients.delay(campaign_id=self.id)
         )
 
 
@@ -120,6 +130,7 @@ class NotificationCampaignRecipient(models.Model):
     error_message = models.TextField(null=True, blank=True)
 
     activity_score = models.IntegerField(default=0)
+    batch_id = models.UUIDField(null=True, blank=True, db_index=True)
 
     class Meta:
         unique_together = ('campaign', 'user')

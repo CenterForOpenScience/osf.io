@@ -67,6 +67,8 @@ class CeleryConfig(defaults.CeleryConfig):
 NO_ADDON_WAIT_TIME = timedelta(weeks=8)
 NO_LOGIN_WAIT_TIME = timedelta(weeks=4)
 NO_LOGIN_OSF4M_WAIT_TIME = timedelta(weeks=6)
+NOTIFICATION_CAMPAIGN_RECIPIENTS_CLEANUP_AGE = timedelta(weeks=12)  # 3 months to clean up old notification campaign recipients
+NOTIFICATION_CAMPAIGN_RECIPIENTS_CLEANUP_BATCH_SIZE = 10  # Batch size for notification campaign recipients cleanup
 
 # Configuration for "We miss you at OSF" email (`NotificationTypeEnum.USER_NO_LOGIN`)
 MAX_DAILY_NO_LOGIN_EMAILS = None
