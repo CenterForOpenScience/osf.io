@@ -956,7 +956,7 @@ class ResendConfirmation(JSONAPIBaseView, generics.ListCreateAPIView):
         if not email:
             raise ValidationError('Request must include email in query params.')
 
-        status_message = language.RESET_PASSWORD_SUCCESS_STATUS_MESSAGE.format(email=email)
+        status_message = language.RESEND_CONFIRMATION_SUCCESS_STATUS_MESSAGE.format(email=email)
         # check if the user exists
         user_obj = get_user(email=email)
 
@@ -965,7 +965,7 @@ class ResendConfirmation(JSONAPIBaseView, generics.ListCreateAPIView):
             if not throttle_period_expired(user_obj.email_last_sent, settings.SEND_EMAIL_THROTTLE):
                 return Response(
                     {
-                        'message': language.THROTTLE_PASSWORD_CHANGE_ERROR_MESSAGE,
+                        'message': language.THROTTLE_RESEND_CONFIRMATION_ERROR_MESSAGE,
                         'kind': 'error',
                     },
                     status=status.HTTP_429_TOO_MANY_REQUESTS,
