@@ -16,6 +16,7 @@ from api.wikis.permissions import (
     ExcludeWithdrawals,
     ContributorOrPublicWikiVersion,
     ExcludeWithdrawalsWikiVersion,
+    WikisEditingNotAllowed,
 )
 from api.wikis.serializers import (
     WikiSerializer,
@@ -128,6 +129,7 @@ class WikiDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, WikiMix
         base_permissions.TokenHasScope,
         ContributorOrPublic,
         ExcludeWithdrawals,
+        WikisEditingNotAllowed,
     )
 
     required_read_scopes = [CoreScopes.WIKI_BASE_READ]
@@ -192,6 +194,7 @@ class WikiVersions(JSONAPIBaseView, generics.ListCreateAPIView, WikiMixin):
         base_permissions.TokenHasScope,
         ContributorOrPublic,
         ExcludeWithdrawals,
+        WikisEditingNotAllowed,
     )
     view_category = 'wikis'
     view_name = 'wiki-versions'

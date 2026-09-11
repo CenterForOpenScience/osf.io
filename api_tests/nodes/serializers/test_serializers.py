@@ -1,6 +1,9 @@
 from dateutil.parser import parse as parse_date
 import pytest
 from urllib.parse import urlparse
+from waffle.testutils import override_flag
+from osf import features
+from osf.utils import permissions as osf_permissions
 
 from api.base.settings.defaults import API_BASE
 from api.nodes.serializers import NodeSerializer
@@ -236,3 +239,32 @@ class TestSparseRegistrationSerializer:
         assert 'forked_from' not in relationships
         assert 'sparse' not in relationships['detail']['links']['related']['href']
         assert 'sparse' in relationships['children']['links']['related']['href']
+
+
+@pytest.mark.django_db
+class TestGetCurrentUserPermissionsProjectReadOnly:
+    """`current_user_permissions` reports permissions, it does not enforce them —
+    writes are blocked by the permission classes instead. GravyValet authorizes
+    addon writes off this field and asks the same question for connecting,
+    configuring and disconnecting, so filtering it down to READ would also stop
+    users configuring and disconnecting addons they already have.
+    """
+
+    @pytest.fixture
+    def contributor(self):
+        return AuthUserFactory()
+
+    @pytest.fixture
+    def project(self, contributor):
+        return ProjectFactory(creator=contributor)
+
+    @pytest.mark.parametrize('flag_active', [True, False])
+    def test_permissions_are_reported_regardless_of_project_read_only(self, contributor, project, flag_active):
+        request = make_drf_request_with_version(version='2.0')
+        request.user = contributor
+        with override_flag(features.PROJECT_READ_ONLY, active=flag_active):
+            serializer = NodeSerializer(project, context={'request': request})
+            perms = serializer.get_current_user_permissions(project)
+        assert osf_permissions.WRITE in perms
+        assert osf_permissions.ADMIN in perms
+        assert osf_permissions.READ in perms

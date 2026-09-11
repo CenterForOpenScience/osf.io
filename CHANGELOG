@@ -2,6 +2,11 @@
 
 We follow the CalVer (https://calver.org/) versioning scheme: YY.MINOR.MICRO.
 
+26.21.0 (2026-09-10)
+====================
+
+- Project Creation and Project Read-only
+
 26.20.0 (2026-09-08)
 ====================
 

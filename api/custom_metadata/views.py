@@ -8,7 +8,7 @@ from api.base import permissions as base_permissions
 from api.base.views import JSONAPIBaseView
 
 import osf.models as osfdb
-from .permissions import CustomMetadataPermission
+from .permissions import CustomMetadataPermission, ItemMetadataEditingNotAllowed
 from .serializers import CustomFileMetadataSerializer, CustomItemMetadataSerializer
 
 
@@ -43,6 +43,7 @@ class CustomItemMetadataDetail(JSONAPIBaseView, rest_framework.generics.Retrieve
         CustomMetadataPermission,
         rest_framework.permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
+        ItemMetadataEditingNotAllowed,
     )
 
     required_read_scopes = [CoreScopes.GUIDS_READ]

@@ -1,10 +1,12 @@
 import pytest
+from waffle.testutils import override_flag
 
 from framework.auth.core import Auth
 from django.utils import timezone
 from api_tests.nodes.views.test_node_draft_registration_list import AbstractDraftRegistrationTestCase
 from api.base.settings.defaults import API_BASE
 
+from osf import features
 from osf.migrations import ensure_invisible_and_inactive_schema
 from osf.models import DraftRegistration, NodeLicense, RegistrationProvider, RegistrationSchema, NotificationTypeEnum
 from osf_tests.factories import (
@@ -412,6 +414,29 @@ class TestDraftRegistrationCreateWithNode(AbstractDraftRegistrationTestCase):
         )
         assert res.status_code == 409
 
+    def test_cannot_create_project_based_draft_when_project_read_only_flag_active(
+            self, app, user, payload, url_draft_registrations):
+        with override_flag(features.PROJECT_READ_ONLY, active=True):
+            res = app.post_json_api(
+                url_draft_registrations,
+                payload,
+                auth=user.auth,
+                expect_errors=True,
+            )
+        assert res.status_code == 405
+        assert res.json['errors'][0]['detail'] == 'This action is no longer available. Contact support if you have any questions.'
+
+    def test_can_create_project_based_draft_when_project_read_only_flag_inactive(
+            self, app, user, payload, url_draft_registrations):
+        with override_flag(features.PROJECT_READ_ONLY, active=False):
+            with capture_notifications():
+                res = app.post_json_api(
+                    url_draft_registrations,
+                    payload,
+                    auth=user.auth,
+                )
+        assert res.status_code == 201
+
 
 class TestDraftRegistrationCreateWithoutNode(AbstractDraftRegistrationTestCase):
     @pytest.fixture()
@@ -476,6 +501,17 @@ class TestDraftRegistrationCreateWithoutNode(AbstractDraftRegistrationTestCase):
             expect_errors=True,
         )
         assert res.status_code == 409
+
+    def test_can_create_no_project_draft_when_project_read_only_flag_active(
+            self, app, user, url_draft_registrations, payload):
+        with override_flag(features.PROJECT_READ_ONLY, active=True):
+            with capture_notifications():
+                res = app.post_json_api(
+                    url_draft_registrations,
+                    payload,
+                    auth=user.auth,
+                )
+        assert res.status_code == 201
 
     def test_write_contrib(self, app, user, project_public, payload, url_draft_registrations, user_write_contrib):
         """(no node supplied, so any logged in user can create)

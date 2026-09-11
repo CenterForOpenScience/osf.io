@@ -100,7 +100,15 @@ from api.nodes.permissions import (
     ExcludeWithdrawals,
     NodeLinksShowIfVersion,
     ReadOnlyIfWithdrawn,
+    ProjectCreationNotAllowed,
+    ProjectEditingNotAllowed,
+    ProjectRelationshipsEditingNotAllowed,
+    NodeIdentifierCreationNotAllowed,
+    NodeContributorWriteNotAllowed,
+    NodeDraftRegistrationCreationNotAllowed,
+    NodeAddonConnectionNotAllowed,
 )
+from api.wikis.permissions import WikisEditingNotAllowed
 from osf.utils import permissions as osf_permissions
 from api.nodes.serializers import (
     NodeSerializer,
@@ -253,6 +261,8 @@ class NodeList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_views.Bul
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
+        ProjectCreationNotAllowed,
+        ProjectEditingNotAllowed,
     )
 
     required_read_scopes = [CoreScopes.NODE_BASE_READ]
@@ -379,6 +389,7 @@ class NodeDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, NodeMix
         ReadOnlyIfRegistration,
         base_permissions.TokenHasScope,
         ExcludeWithdrawals,
+        ProjectEditingNotAllowed,
     )
 
     required_read_scopes = [CoreScopes.NODE_BASE_READ]
@@ -426,6 +437,7 @@ class NodeContributorsList(BaseContributorList, bulk_views.BulkUpdateJSONAPIView
         drf_permissions.IsAuthenticatedOrReadOnly,
         ReadOnlyIfRegistration,
         base_permissions.TokenHasScope,
+        NodeContributorWriteNotAllowed,
     )
 
     required_read_scopes = [CoreScopes.NODE_CONTRIBUTORS_READ]
@@ -534,6 +546,7 @@ class NodeContributorDetail(BaseContributorDetail, generics.RetrieveUpdateDestro
         drf_permissions.IsAuthenticatedOrReadOnly,
         ReadOnlyIfRegistration,
         base_permissions.TokenHasScope,
+        NodeContributorWriteNotAllowed,
     )
 
     required_read_scopes = [CoreScopes.NODE_CONTRIBUTORS_READ]
@@ -672,6 +685,7 @@ class NodeDraftRegistrationsList(JSONAPIBaseView, generics.ListCreateAPIView, No
     """
     permission_classes = (
         DraftRegistrationPermission,
+        NodeDraftRegistrationCreationNotAllowed,
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
         CanSubmitDraftRegistrationToProvider,
@@ -787,6 +801,7 @@ class NodeRegistrationsList(JSONAPIBaseView, generics.ListCreateAPIView, NodeMix
 class NodeChildrenList(BaseChildrenList, bulk_views.ListBulkCreateJSONAPIView, NodeMixin):
     """See [documentation for this endpoint](https://developer.osf.io/#operation/nodes_children_list).
     """
+    permission_classes = BaseChildrenList.permission_classes + (ProjectCreationNotAllowed,)
 
     required_read_scopes = [CoreScopes.NODE_CHILDREN_READ]
     required_write_scopes = [CoreScopes.NODE_CHILDREN_WRITE]
@@ -933,6 +948,7 @@ class NodeLinksList(BaseNodeLinksList, bulk_views.BulkDestroyJSONAPIView, bulk_v
         base_permissions.TokenHasScope,
         ExcludeWithdrawals,
         NodeLinksShowIfVersion,
+        ProjectRelationshipsEditingNotAllowed,
     )
 
     required_read_scopes = [CoreScopes.NODE_LINKS_READ]
@@ -1019,6 +1035,7 @@ class NodeLinksDetail(BaseNodeLinksDetail, generics.RetrieveDestroyAPIView, Node
         RegistrationAndPermissionCheckForPointers,
         ExcludeWithdrawals,
         NodeLinksShowIfVersion,
+        ProjectRelationshipsEditingNotAllowed,
     )
 
     required_read_scopes = [CoreScopes.NODE_LINKS_READ]
@@ -1060,6 +1077,7 @@ class NodeForksList(JSONAPIBaseView, generics.ListCreateAPIView, NodeMixin, Node
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
         ExcludeWithdrawals,
+        ProjectCreationNotAllowed,
     )
 
     required_read_scopes = [CoreScopes.NODE_FORKS_READ, CoreScopes.NODE_BASE_READ]
@@ -1352,6 +1370,7 @@ class NodeAddonDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, ge
         ContributorOrPublic,
         ExcludeWithdrawals,
         ReadOnlyIfRegistration,
+        NodeAddonConnectionNotAllowed,
         base_permissions.TokenHasScope,
     )
 
@@ -1742,6 +1761,7 @@ class NodeInstitutionsRelationship(JSONAPIBaseView, generics.RetrieveUpdateDestr
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
         WriteOrPublicForRelationshipInstitutions,
+        ProjectRelationshipsEditingNotAllowed,
     )
     required_read_scopes = [CoreScopes.NODE_BASE_READ]
     required_write_scopes = [CoreScopes.NODE_BASE_WRITE]
@@ -1840,6 +1860,7 @@ class NodeSubjectsRelationship(SubjectRelationshipBaseView, NodeMixin):
         base_permissions.TokenHasScope,
         ContributorOrPublic,
         ExcludeWithdrawals,
+        ProjectRelationshipsEditingNotAllowed,
     )
 
     required_read_scopes = [CoreScopes.NODE_BASE_READ]
@@ -1863,6 +1884,7 @@ class NodeWikiList(JSONAPIBaseView, generics.ListCreateAPIView, NodeMixin, ListF
         base_permissions.TokenHasScope,
         ContributorOrPublic,
         ExcludeWithdrawals,
+        WikisEditingNotAllowed,
     )
 
     required_read_scopes = [CoreScopes.WIKI_BASE_READ]
@@ -1950,6 +1972,8 @@ class NodeLinkedNodesRelationship(LinkedNodesRelationship, NodeMixin):
     This requires edit permission on the node. This will delete any node_links that have a
     corresponding node_id in the request.
     """
+
+    permission_classes = LinkedNodesRelationship.permission_classes + (ProjectRelationshipsEditingNotAllowed,)
 
     view_category = 'nodes'
     view_name = 'node-pointer-relationship'
@@ -2039,6 +2063,8 @@ class NodeLinkedRegistrationsRelationship(LinkedRegistrationsRelationship, NodeM
     This requires edit permission on the node. This will delete any node_links that have a
     corresponding node_id in the request.
     """
+
+    permission_classes = LinkedRegistrationsRelationship.permission_classes + (ProjectRelationshipsEditingNotAllowed,)
 
     view_category = 'nodes'
     view_name = 'node-registration-pointer-relationship'
@@ -2192,6 +2218,8 @@ class NodeIdentifierList(NodeMixin, IdentifierList):
     """See [documentation for this endpoint](https://developer.osf.io/#operation/nodes_identifiers_list).
     """
 
+    permission_classes = IdentifierList.permission_classes + (NodeIdentifierCreationNotAllowed,)
+
     serializer_class = NodeIdentifierSerializer
     node_lookup_url_kwarg = 'node_id'
 
@@ -2257,6 +2285,7 @@ class NodeRequestListCreate(JSONAPIBaseView, generics.ListCreateAPIView, ListFil
         base_permissions.TokenHasScope,
         NodeRequestPermission,
         InstitutionalAdminRequestTypePermission,
+        ProjectRelationshipsEditingNotAllowed,
     )
 
     required_read_scopes = [CoreScopes.NODE_REQUESTS_READ]
@@ -2287,6 +2316,7 @@ class NodeSettings(JSONAPIBaseView, generics.RetrieveUpdateAPIView, NodeMixin):
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
         IsContributorOrGroupMember,
+        ProjectEditingNotAllowed,
     )
 
     required_read_scopes = [CoreScopes.NODE_SETTINGS_READ]
