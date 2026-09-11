@@ -465,7 +465,6 @@ class CeleryConfig:
     project_enter_modules = {
         'email.send_campaign_batch',
         'email.process_campaign_retry',
-        'email.process_sendgrid_campaign_events',
     }
 
     low_pri_modules = {
@@ -502,6 +501,7 @@ class CeleryConfig:
         'website.identifiers.tasks',
         'website.preprints.tasks',
         'website.project.tasks',
+        'email.process_sendgrid_campaign_events',
     }
 
     high_pri_modules = {
