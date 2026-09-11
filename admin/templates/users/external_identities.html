@@ -1,0 +1,57 @@
+<tr>
+    <td>Authenticated IDs</td>
+    <td>
+        {% if external_identities %}
+            {% for identity in external_identities %}
+                <div style="margin-bottom: 8px;">
+                    <a href="{{ identity.profile_url }}" target="_blank" rel="noopener noreferrer">{{ identity.profile_url }}</a>
+                    {% if identity.status == 'VERIFIED' %}
+                        &nbsp;&nbsp;Connected {{ identity.connected_at|date:"N j, Y"|default:"Unknown" }}
+                    {% else %}
+                        &nbsp;&nbsp;<span class="text-warning">(pending: {{ identity.status }})</span>
+                    {% endif %}
+                    &nbsp;&nbsp;Access token: {{ identity.has_access_token|yesno:"present,missing" }}
+                    &nbsp;Refresh token: {{ identity.has_refresh_token|yesno:"present,missing" }}
+                    {% if identity.only_login_method %}
+                        <span class="text-danger">(only login method &mdash; removing will lock this user out)</span>
+                    {% endif %}
+                    <a class="btn btn-default btn-xs"
+                       data-toggle="modal"
+                       data-target="#removeExternalIdentityModal-{{ identity.provider }}-{{ forloop.counter }}">
+                        Remove
+                    </a>
+                    <div class="modal" id="removeExternalIdentityModal-{{ identity.provider }}-{{ forloop.counter }}">
+                        <div class="modal-dialog">
+                            <div class="modal-content">
+                                <form class="well" method="post" action="{% url 'users:remove-external-identity' guid=user.guid provider=identity.provider external_id=identity.external_id %}">
+                                    <div class="modal-header">
+                                        <button type="button" class="close" data-dismiss="modal">x</button>
+                                        <h3>This will remove the {{ identity.provider }} identity {{ identity.external_id }}.</h3>
+                                    </div>
+                                    <div class="modal-body">
+                                        This revokes the connected {{ identity.provider }} access and unlinks it from
+                                        this user.
+                                        {% if identity.only_login_method %}
+                                            This is the user's only login method &mdash; removing it will lock
+                                            them out until they set a password or link another identity.
+                                        {% endif %}
+                                        {% csrf_token %}
+                                    </div>
+                                    <div class="modal-footer">
+                                        <input class="btn btn-danger" type="submit" value="Confirm" />
+                                        <button type="button" class="btn btn-default"
+                                                data-dismiss="modal">
+                                            Cancel
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        {% else %}
+            None
+        {% endif %}
+    </td>
+</tr>
