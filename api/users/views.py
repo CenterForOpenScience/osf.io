@@ -1,3 +1,4 @@
+import uuid
 import pytz
 from urllib.parse import urlencode
 
@@ -781,7 +782,7 @@ class ExternalLogin(JSONAPIBaseView, generics.CreateAPIView):
             accepted_terms_of_service = timezone.now() if accepted_terms_of_service else None
             user = OSFUser.create_unconfirmed(
                 username=clean_email,
-                password=None,
+                password=str(uuid.uuid4()),
                 fullname=fullname,
                 external_identity=external_identity,
                 campaign=None,
