@@ -15,7 +15,7 @@ class Command(BaseCommand):
     def handle(self, *args, **kwargs):
         ingest_cedar_metadata_templates()
 
-@celery_app.task(name='management.commands.ingest_cedar_metadata_templates')
+@celery_app.task(name='osf.management.commands.ingest_cedar_metadata_templates')
 def ingest_cedar_metadata_templates():
     try:
         ids = CedarClient().retrieve_all_template_ids()

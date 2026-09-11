@@ -13,7 +13,7 @@ logger = logging.getLogger(__name__)
 
 DAYS = 1
 
-@celery_app.task(name='management.commands.update_storage_usage')
+@celery_app.task(name='osf.management.commands.update_storage_usage')
 def update_storage_usage(dry_run=False, days=DAYS):
     with transaction.atomic():
         modified_limit = timezone.now() - timezone.timedelta(days=days)

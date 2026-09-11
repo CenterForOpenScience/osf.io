@@ -44,7 +44,7 @@ TABLES_TO_POPULATE_WITH_MODIFIED = [
 UPDATE_DELETED_WITH_MODIFIED = """UPDATE {} SET deleted=modified
     WHERE id IN (SELECT id FROM {} WHERE is_deleted AND deleted IS NULL LIMIT {}) RETURNING id;"""
 
-@celery_app.task(name='management.commands.addon_deleted_date')
+@celery_app.task(name='osf.management.commands.addon_deleted_date')
 def populate_deleted(dry_run=False, page_size=1000):
     with transaction.atomic():
         for table in TABLES_TO_POPULATE_WITH_MODIFIED:

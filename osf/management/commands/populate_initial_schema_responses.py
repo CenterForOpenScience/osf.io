@@ -29,7 +29,7 @@ def _update_schema_response_state(schema_response):
     schema_response.save()
 
 
-@celery_app.task(name='management.commands.populate_initial_schema_responses')
+@celery_app.task(name='osf.management.commands.populate_initial_schema_responses')
 @transaction.atomic
 def populate_initial_schema_responses(dry_run=False, batch_size=None):
     '''Migrate registration_responses into a SchemaResponse for historical registrations.'''

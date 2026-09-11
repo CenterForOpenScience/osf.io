@@ -720,16 +720,16 @@ class CeleryConfig:
             'kwargs': {'dry_run': False},
         },
         'registration_schema_metrics': {
-            'task': 'management.commands.registration_schema_metrics',
+            'task': 'osf.management.commands.registration_schema_metrics',
             'schedule': crontab(minute=45, hour=7, day_of_month=3),  # Third day of month 2:45 a.m.
             'kwargs': {'dry_run': False}
         },
         'daily_reporters_go': {
-            'task': 'management.commands.daily_reporters_go',
+            'task': 'osf.management.commands.daily_reporters_go',
             'schedule': crontab(minute=0, hour=6),  # Daily 1:00 a.m.
         },
         'monthly_reporters_go': {
-            'task': 'management.commands.monthly_reporters_go',
+            'task': 'osf.management.commands.monthly_reporters_go',
             'schedule': crontab(minute=30, hour=6, day_of_month=2),     # Second day of month 1:30 a.m.
         },
         'generate_sitemap': {
@@ -737,11 +737,11 @@ class CeleryConfig:
             'schedule': crontab(minute=0, hour=5),  # Daily 12:00 a.m.
         },
         'deactivate_requested_accounts': {
-            'task': 'management.commands.deactivate_requested_accounts',
+            'task': 'osf.management.commands.deactivate_requested_accounts',
             'schedule': crontab(minute=0, hour=5),  # Daily 12:00 a.m.
         },
         'delete_withdrawn_or_failed_registration_files': {
-            'task': 'management.commands.delete_withdrawn_or_failed_registration_files',
+            'task': 'osf.management.commands.delete_withdrawn_or_failed_registration_files',
             'schedule': crontab(minute=0, hour=5),  # Daily 12 a.m
             'kwargs': {
                 'dry_run': False,

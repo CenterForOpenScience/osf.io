@@ -42,7 +42,7 @@ def mark_failed_registration_files_as_deleted(batch_size, dry_run=False):
                 file.delete()
 
 
-@celery_app.task(name='management.commands.delete_withdrawn_or_failed_registration_files')
+@celery_app.task(name='osf.management.commands.delete_withdrawn_or_failed_registration_files')
 def main(batch_size_withdrawn, batch_size_stuck, dry_run=False):
     """
     This script purges files that are deleted after being withdrawn 30 days.

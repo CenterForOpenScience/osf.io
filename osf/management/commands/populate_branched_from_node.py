@@ -23,7 +23,7 @@ FROM cte
 WHERE cte.id = a.id
 """
 
-@celery_app.task(name='management.commands.populate_branched_from')
+@celery_app.task(name='osf.management.commands.populate_branched_from')
 def populate_branched_from(page_size=10000, dry_run=False):
     with transaction.atomic():
         with connection.cursor() as cursor:

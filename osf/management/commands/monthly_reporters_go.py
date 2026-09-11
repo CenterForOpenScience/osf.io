@@ -21,7 +21,7 @@ _CONTINUE_AFTER_ERRORS = (
     PostgresOperationalError,
 )
 
-@celery_app.task(name='management.commands.monthly_reporters_go')
+@celery_app.task(name='osf.management.commands.monthly_reporters_go')
 def monthly_reporters_go(yearmonth: str = '', reporter_key: str = ''):
     _yearmonth = (
         YearMonth.from_str(yearmonth)
@@ -40,7 +40,7 @@ def monthly_reporters_go(yearmonth: str = '', reporter_key: str = ''):
         })
 
 
-@celery_app.task(name='management.commands.schedule_monthly_reporter')
+@celery_app.task
 def schedule_monthly_reporter(
     yearmonth: str,
     reporter_key: str,
@@ -69,7 +69,6 @@ def schedule_monthly_reporter(
 
 
 @celery_app.task(
-    name='management.commands.monthly_reporter_do',
     autoretry_for=_CONTINUE_AFTER_ERRORS,
     max_retries=15,
     retry_backoff=True,
