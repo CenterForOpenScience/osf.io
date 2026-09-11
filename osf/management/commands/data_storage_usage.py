@@ -450,7 +450,7 @@ def upload_to_storage(file_path, upload_url, params):
         )
 
 
-@celery_app.task(name='management.commands.data_storage_usage')
+@celery_app.task(name='osf.management.commands.data_storage_usage')
 def process_usages(
         dry_run=False,
         page_size=10000,

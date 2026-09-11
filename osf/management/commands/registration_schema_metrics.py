@@ -125,7 +125,7 @@ def write_raw_data(cursor, filename):
     upload_to_storage(file_path=file_path, upload_url=REG_METRICS_BASE_FOLDER, params=params)
 
 
-@celery_app.task(name='management.commands.registration_schema_metrics')
+@celery_app.task(name='osf.management.commands.registration_schema_metrics')
 def gather_metrics(dry_run=False):
     today = datetime.date.today()
     first = today.replace(day=1)

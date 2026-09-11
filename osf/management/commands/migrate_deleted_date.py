@@ -44,7 +44,7 @@ REVERSE_COMMENT = 'UPDATE osf_comment SET deleted = null'
 REVERSE_INSTITUTION = 'UPDATE osf_institution SET deleted = null'
 REVERSE_PRIVATE_LINK = 'UPDATE osf_privatelink SET deleted = null'
 
-@celery_app.task(name='management.commands.migrate_deleted_date')
+@celery_app.task(name='osf.management.commands.migrate_deleted_date')
 def populate_deleted(dry_run=False, page_size=1000):
     with transaction.atomic():
         for table in TABLES_TO_POPULATE_WITH_MODIFIED:

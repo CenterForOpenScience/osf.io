@@ -9,7 +9,7 @@ from osf.utils.workflows import RegistrationModerationStates
 logger = logging.getLogger(__name__)
 
 
-@celery_app.task(name='management.commands.correct_registration_moderation_states')
+@celery_app.task(name='osf.management.commands.correct_registration_moderation_states')
 def correct_registration_moderation_states(page_size=None):
     '''Backfill the moderation_state field of all registrations based on its current Sanction.'''
 

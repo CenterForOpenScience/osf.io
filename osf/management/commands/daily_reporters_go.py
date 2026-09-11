@@ -12,7 +12,7 @@ from osf.metrics.reporters import AllDailyReporters
 logger = logging.getLogger(__name__)
 
 
-@celery_app.task(name='management.commands.daily_reporters_go')
+@celery_app.task(name='osf.management.commands.daily_reporters_go')
 def daily_reporters_go(report_date=None, reporter_key=None, **kwargs):
     if not report_date:  # default to yesterday
         report_date = (timezone.now() - datetime.timedelta(days=1)).date()
@@ -29,7 +29,6 @@ def daily_reporters_go(report_date=None, reporter_key=None, **kwargs):
 
 
 @celery_app.task(
-    name='management.commands.daily_reporter_go',
     autoretry_for=(OperationalError,),
     max_retries=5,
     retry_backoff=True,

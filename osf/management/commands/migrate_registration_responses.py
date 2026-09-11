@@ -123,7 +123,7 @@ def migrate_responses(model, resources, resource_name, dry_run=False, rows='all'
     return total_count
 
 
-@celery_app.task(name='management.commands.migrate_registration_responses')
+@celery_app.task(name='osf.management.commands.migrate_registration_responses')
 def migrate_registration_responses(dry_run=False, rows=5000):
     script_start_time = datetime.datetime.now()
     logger.info(f'Script started time: {script_start_time}')

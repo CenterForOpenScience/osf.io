@@ -56,7 +56,7 @@ SELECT count(PC.id)
 where (PC.resource_id IS NULL or PC.file_id IS NULL);
 '''
 
-@celery_app.task(name='management.commands.migrate_pagecounter_data')
+@celery_app.task(name='osf.management.commands.migrate_pagecounter_data')
 def migrate_page_counters(dry_run=False, rows=10000, reverse=False):
     script_start_time = datetime.datetime.now()
     logger.info(f'Script started time: {script_start_time}')
