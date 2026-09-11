@@ -49,6 +49,11 @@ from osf.exceptions import (
     TagNotFoundError
 )
 
+from .admin_log_entry import (
+    update_admin_log,
+    EXTERNAL_IDENTITY_CONNECTED,
+    external_identity_connected_log_message,
+)
 from .base import BaseModel, GuidMixin, GuidMixinQuerySet
 from .notable_domain import NotableDomain
 from .contributor import Contributor, RecentlyAddedContributor
@@ -2173,6 +2178,61 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
                         f'user=[{self._id}], provider_id=[{orcid_id}], '
                         f'access_token=[{"present" if access_token else "missing"}], '
                         f'refresh_token=[{"present" if refresh_token else "missing"}]')
+
+    def record_external_identity_connected(self, provider, external_id):
+        """Records an admin-log entry when this user connects an external identity (e.g. ORCID).
+
+        Connection metadata (when/whether an identity was connected) lives only in the admin
+        log, so this does not touch `external_identity_tokens`.
+        """
+        update_admin_log(
+            user_id=self.id,
+            object_id=self.pk,
+            object_repr='User',
+            message=external_identity_connected_log_message(provider, external_id),
+            action_flag=EXTERNAL_IDENTITY_CONNECTED,
+        )
+
+    def remove_external_identity(self, provider, external_id):
+        """Unlinks a single external identity (e.g. ORCID) from this user, best-effort revoking
+        its token with the provider and killing the user's sessions.
+
+        Raises KeyError if `external_id` is not connected to this user under `provider`.
+        """
+        # Raises KeyError if the identity isn't actually connected -- callers rely on this.
+        del self.external_identity[provider][external_id]
+        if not self.external_identity[provider]:
+            del self.external_identity[provider]
+
+        token_entry = self.external_identity_tokens.get(provider, {}).pop(external_id, None)
+        if provider in self.external_identity_tokens and not self.external_identity_tokens[provider]:
+            del self.external_identity_tokens[provider]
+
+        if provider == 'ORCID' and token_entry:
+            orcid_token = token_entry.get('access_token') or token_entry.get('refresh_token')
+            if orcid_token:
+                try:
+                    response = requests.post(
+                        website_settings.ORCID_OAUTH_REVOKE_URL,
+                        data={
+                            'client_id': website_settings.ORCID_OAUTH_CLIENT_ID,
+                            'client_secret': website_settings.ORCID_OAUTH_CLIENT_SECRET,
+                            'token': orcid_token,
+                        },
+                        timeout=website_settings.ORCID_OAUTH_REVOKE_REQUEST_TIMEOUT,
+                    )
+                    response.raise_for_status()
+                    logger.info(f'[Remove external identity] ORCiD access revoked: '
+                                f'user={self._id}, orcid_id={external_id}')
+                except requests.exceptions.RequestException as e:
+                    # Local unlink must still succeed even if the remote revoke call fails.
+                    msg = (f'[Remove external identity] Failed to revoke ORCiD access: '
+                           f'user={self._id}, orcid_id={external_id}, error={e}')
+                    logger.error(msg)
+                    sentry.log_message(msg, level=logging.ERROR)
+                    sentry.log_exception(e)
+
+        remove_sessions_for_user(self)
 
     def _revoke_orcid_tokens(self):
         """Revokes all ORCiD tokens associated with this user via the ORCiD API.
