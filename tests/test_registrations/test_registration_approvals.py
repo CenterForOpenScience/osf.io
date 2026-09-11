@@ -25,6 +25,7 @@ from osf.models.sanctions import (
 from framework.auth import Auth
 from osf.models import Contributor, SpamStatus
 from osf.utils.permissions import ADMIN
+from tests.utils import capture_notifications
 
 DUMMY_TOKEN = tokens.encode({
     'dummy': 'token'
@@ -44,6 +45,19 @@ class RegistrationApprovalModelTestCase(OsfTestCase):
             self.user
         )
         assert RegistrationApproval.objects.all().count() == initial_count + 1
+
+    def test_require_approval_emits_initial_admin_notification(self):
+        with capture_notifications() as captured:
+            self.registration.require_approval(self.user)
+
+        assert {'node_pending_registration_admin'} <= {item['type'] for item in captured['emits']}
+
+    def test_embargo_registration_emits_initial_admin_notification(self):
+        end_date = timezone.now() + datetime.timedelta(days=7)
+        with capture_notifications() as captured:
+            self.registration.embargo_registration(self.user, end_date)
+
+        assert {'node_pending_embargo_admin'} <= {item['type'] for item in captured['emits']}
 
     def test__initiate_approval_does_not_create_tokens_for_unregistered_admin(self):
         unconfirmed_user = UnconfirmedUserFactory()
