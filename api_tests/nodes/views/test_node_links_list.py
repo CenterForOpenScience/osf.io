@@ -1,7 +1,9 @@
 import pytest
+from waffle.testutils import override_flag
 
 from api.base.settings.defaults import API_BASE
 from framework.auth.core import Auth
+from osf import features
 from osf.models import NodeLog
 from osf_tests.factories import (
     ProjectFactory,
@@ -1302,3 +1304,74 @@ class TestBulkDeleteNodeLinks:
         errors = res.json['errors']
         assert len(errors) == 1
         assert errors[0]['detail'] == 'Node link does not belong to the requested node.'
+
+
+@pytest.mark.django_db
+class TestNodeLinksListProjectReadOnly:
+
+    @pytest.fixture()
+    def user(self):
+        return AuthUserFactory()
+
+    @pytest.fixture()
+    def pointer_project(self, user):
+        return ProjectFactory(creator=user)
+
+    @pytest.fixture()
+    def project(self, user, pointer_project):
+        project = ProjectFactory(creator=user)
+        project.add_pointer(pointer_project, auth=Auth(user))
+        return project
+
+    @pytest.fixture()
+    def url(self, project):
+        return f'/{API_BASE}nodes/{project._id}/node_links/'
+
+    @pytest.fixture()
+    def payload(self, pointer_project):
+        return {
+            'data': {
+                'type': 'node_links',
+                'relationships': {
+                    'nodes': {
+                        'data': {
+                            'id': pointer_project._id,
+                            'type': 'nodes',
+                        },
+                    },
+                },
+            },
+        }
+
+    def test_post_blocked_when_project_read_only_flag_active(self, app, user, url, payload):
+        with override_flag(features.PROJECT_READ_ONLY, active=True):
+            res = app.post_json_api(url, payload, auth=user.auth, expect_errors=True)
+        assert res.status_code == 405
+        assert res.json['errors'][0]['detail'] == 'This action is no longer available. Contact support if you have any questions.'
+
+    def test_bulk_delete_blocked_when_project_read_only_flag_active(self, app, user, project, url):
+        node_relation = project.node_relations.filter(is_node_link=True).first()
+        delete_payload = {'data': [{'type': 'node_links', 'id': node_relation._id}]}
+        with override_flag(features.PROJECT_READ_ONLY, active=True):
+            res = app.delete_json_api(url, delete_payload, auth=user.auth, expect_errors=True, bulk=True)
+        assert res.status_code == 405
+        assert res.json['errors'][0]['detail'] == 'This action is no longer available. Contact support if you have any questions.'
+
+    def test_post_allowed_when_project_read_only_flag_inactive(self, app, user, url):
+        another_pointer_project = ProjectFactory(creator=user)
+        payload = {
+            'data': {
+                'type': 'node_links',
+                'relationships': {
+                    'nodes': {
+                        'data': {
+                            'id': another_pointer_project._id,
+                            'type': 'nodes',
+                        },
+                    },
+                },
+            },
+        }
+        res = app.post_json_api(url, payload, auth=user.auth)
+        assert res.status_code == 201
+        assert res.json['data']['embeds']['target_node']['data']['id'] == another_pointer_project._id

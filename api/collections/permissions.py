@@ -1,11 +1,13 @@
 import io
 
+import waffle
 from rest_framework import permissions
 from rest_framework.exceptions import NotFound, MethodNotAllowed
 
 from api.base.exceptions import Gone
 from api.base.parsers import JSONSchemaParser
 from api.base.utils import get_user_auth, assert_resource_type, get_object_or_error
+from osf import features
 from osf.models import AbstractNode, Preprint, Collection, CollectionSubmission, CollectionProvider
 from osf.utils.permissions import WRITE, ADMIN
 
@@ -46,6 +48,13 @@ class ReadOnlyIfCollectedRegistration(permissions.BasePermission):
         if isinstance(obj, AbstractNode) and obj.is_registration:
             return request.method in permissions.SAFE_METHODS
         return True
+
+class CollectionSubmissionsNotAllowed(permissions.BasePermission):
+    def has_permission(self, request, view):
+        if request.method == 'POST' and waffle.flag_is_active(request, features.PROJECT_READ_ONLY):
+            raise MethodNotAllowed(request.method, detail='This action is no longer available. Contact support if you have any questions.')
+        return True
+
 
 class CanSubmitToCollectionOrPublic(permissions.BasePermission):
     def has_object_permission(self, request, view, obj):

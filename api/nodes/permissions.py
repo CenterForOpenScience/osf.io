@@ -1,7 +1,9 @@
+import waffle
 from rest_framework import permissions
 from rest_framework import exceptions
 
 from addons.base.models import BaseAddonSettings
+from osf import features
 from osf.models import (
     AbstractNode,
     Contributor,
@@ -366,3 +368,89 @@ class NodeLinksShowIfVersion(ShowIfVersion):
         max_version = '2.0'
         deprecated_message = 'This feature is deprecated as of version 2.1'
         super().__init__(min_version, max_version, deprecated_message)
+
+
+class ProjectCreationNotAllowed(permissions.BasePermission):
+
+    def has_permission(self, request, view):
+        if request.method == 'POST' and waffle.flag_is_active(request, features.PREVENT_PROJECT_CREATION):
+            raise exceptions.MethodNotAllowed(request.method, detail='Project creation is currently disabled.')
+        return True
+
+
+class ProjectEditingNotAllowed(permissions.BasePermission):
+
+    # 'id' and 'type' are always present on a flattened JSON:API resource object;
+    # 'public' is the only attribute this exception allows through.
+    PUBLIC_ONLY_ALLOWED_KEYS = {'id', 'type', 'public'}
+
+    def has_permission(self, request, view):
+        if request.method in ['PUT', 'PATCH'] and waffle.flag_is_active(request, features.PROJECT_READ_ONLY):
+            if request.method == 'PATCH' and self._is_make_public_only_request(request.data):
+                return True
+            raise exceptions.MethodNotAllowed(request.method, detail='This action is no longer available. Contact support if you have any questions.')
+        return True
+
+    @classmethod
+    def _is_make_public_only_request(cls, data):
+        """True if every resource object in the (possibly bulk) request body only sets `public` to True."""
+        items = data if isinstance(data, list) else [data]
+        if not items:
+            return False
+
+        for item in items:
+            if not isinstance(item, dict):
+                return False
+            if set(item.keys()) - cls.PUBLIC_ONLY_ALLOWED_KEYS:
+                return False
+            if item.get('public') is not True:
+                return False
+        return True
+
+
+class NodeDraftRegistrationCreationNotAllowed(permissions.BasePermission):
+
+    def has_permission(self, request, view):
+        if request.method == 'POST' and waffle.flag_is_active(request, features.PROJECT_READ_ONLY):
+            raise exceptions.MethodNotAllowed(request.method, detail='This action is no longer available. Contact support if you have any questions.')
+        return True
+
+
+class NodeAddonConnectionNotAllowed(permissions.BasePermission):
+
+    def has_permission(self, request, view):
+        if request.method == 'POST' and waffle.flag_is_active(request, features.PROJECT_READ_ONLY):
+            raise exceptions.MethodNotAllowed(request.method, detail='This action is no longer available. Contact support if you have any questions.')
+        return True
+
+
+class ProjectRelationshipsEditingNotAllowed(permissions.BasePermission):
+
+    def has_permission(self, request, view):
+        if request.method not in permissions.SAFE_METHODS and waffle.flag_is_active(request, features.PROJECT_READ_ONLY):
+            raise exceptions.MethodNotAllowed(request.method, detail='This action is no longer available. Contact support if you have any questions.')
+        return True
+
+
+class NodeIdentifierCreationNotAllowed(permissions.BasePermission):
+
+    def has_object_permission(self, request, view, obj):
+        if request.method == 'POST' and not obj.is_registration and waffle.flag_is_active(request, features.PROJECT_READ_ONLY):
+            raise exceptions.MethodNotAllowed(request.method, detail='This action is no longer available. Contact support if you have any questions.')
+        return True
+
+
+class NodeContributorWriteNotAllowed(permissions.BasePermission):
+
+    def has_permission(self, request, view):
+        if not waffle.flag_is_active(request, features.PROJECT_READ_ONLY):
+            return True
+        if request.method in ['POST', 'PUT', 'PATCH']:
+            raise exceptions.MethodNotAllowed(request.method, detail='This action is no longer available. Contact support if you have any questions.')
+        if request.method == 'DELETE':
+            user_id = view.kwargs.get('user_id')
+            if user_id:
+                auth = get_user_auth(request)
+                if not auth.user or auth.user._id != user_id:
+                    raise exceptions.MethodNotAllowed(request.method, detail='This action is no longer available. Contact support if you have any questions.')
+        return True
