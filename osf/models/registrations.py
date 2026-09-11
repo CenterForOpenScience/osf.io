@@ -475,10 +475,17 @@ class Registration(AbstractNode):
             notify_initiator_on_complete=notify_initiator_on_complete
         )
         self.save()  # Set foreign field reference Node.registration_approval
-        admins = self.get_admin_contributors_recursive(unique_users=True)
+        admins = list(self.get_admin_contributors_recursive(unique_users=True))
         for (admin, node) in admins:
             self.registration_approval.add_authorizer(admin, node=node)
         self.registration_approval.save()  # Save approval's approval_state
+
+        try:
+            self.registration_approval.ask(admins)
+        except Exception:
+            logger = __import__('logging').getLogger(__name__)
+            logger.exception('Failed to emit registration approval notifications')
+
         return self.registration_approval
 
     def require_approval(self, user, notify_initiator_on_complete=False):
@@ -520,10 +527,15 @@ class Registration(AbstractNode):
         )
         self.update_moderation_state()
         self.save()  # Set foreign field reference Node.embargo
-        admins = self.get_admin_contributors_recursive(unique_users=True)
+        admins = list(self.get_admin_contributors_recursive(unique_users=True))
         for (admin, node) in admins:
             self.embargo.add_authorizer(admin, node)
         self.embargo.save()  # Save embargo's approval_state
+        try:
+            self.embargo.ask(admins)
+        except Exception:
+            logger = __import__('logging').getLogger(__name__)
+            logger.exception('Failed to emit embargo approval notifications')
         return self.embargo
 
     def embargo_registration(self, user, end_date, for_existing_registration=False,
@@ -644,9 +656,14 @@ class Registration(AbstractNode):
         )
         self.save()
         if not moderator_initiated:
-            admins = self.get_admin_contributors_recursive(unique_users=True)
+            admins = list(self.get_admin_contributors_recursive(unique_users=True))
             for (admin, node) in admins:
                 self.retraction.add_authorizer(admin, node)
+            try:
+                self.retraction.ask(admins)
+            except Exception:
+                logger = __import__('logging').getLogger(__name__)
+                logger.exception('Failed to emit retraction approval notifications')
         self.retraction.save()  # Save retraction approval state
         return self.retraction
 
