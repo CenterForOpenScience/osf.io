@@ -48,6 +48,9 @@ class NotificationCampaignCreateForm(forms.ModelForm):
     sendgrid_bulk = forms.BooleanField(
         required=False,
         initial=False,
+        help_text=(
+            'SendGrid caps personalizations at about 1000 per request - keep Batch Size ≤ 1000 for bulk requests'
+        ),
     )
 
     max_queued_batches = forms.IntegerField(

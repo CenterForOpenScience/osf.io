@@ -278,6 +278,9 @@
                                 name="sendgrid_bulk"
                                 value="{{ form.sendgrid_bulk.initial }}"
                             >
+                            <p class="help-block">
+                                {{ form.sendgrid_bulk.help_text }}
+                            </p>
                         </td>
                     </tr>
                     <tr>
@@ -300,6 +303,9 @@
                                 name="dispatch_interval"
                                 value="{{ form.dispatch_interval.initial }}"
                             >
+                            <p class="help-block">
+                                {{ form.dispatch_interval.help_text }}
+                            </p>
                         </td>
                     </tr>
                 </table>

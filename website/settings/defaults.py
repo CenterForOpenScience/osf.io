@@ -170,6 +170,8 @@ MAILHOG_API_HOST = 'http://mailhog:8025'
 # OR, if using Sendgrid's API
 # WARNING: If `SENDGRID_WHITELIST_MODE` is True,
 SENDGRID_API_KEY = None
+# Public verification key from SendGrid Event Webhook (Mail Settings -> Event Webhook -> Signed Event Webhook)
+SENDGRID_EVENT_WEBHOOK_PUBLIC_KEY = None
 
 # Mailchimp
 MAILCHIMP_API_KEY = None
@@ -197,6 +199,7 @@ DEFAULT_CAMPAIGN_ACTIVITY_THRESHOLD = 3  # Users at/above this activity total ar
 DEFAULT_CAMPAIGN_BATCH_SIZE = 1000
 DEFAULT_CAMPAIGN_WINDOW_TIME = 28800  # 8 hours
 DEFAULT_CAMPAIGN_MAX_RETRIES = 3
+DEFAULT_CAMPAIGN_DELIVERY_TIMEOUT = 86400  # 24 hours; mark remaining QUEUED as FAILED after this from started_at
 MAX_QUEUED_CAMPAIGN_BATCHES = 100  # Maximum number of queued campaign batches allowed before new batches are rejected. This is to prevent runaway campaigns from overwhelming the system.
 CAMPAIGN_DISPATCH_INTERVAL = 300  # 5 min (300 sec), minimum time before checking and dispatching new campaign batches.
 # The following are rough estimates so we can log to sentry those batches and sendgrid quests which run longer than normal
@@ -451,7 +454,9 @@ class CeleryConfig:
         'website.identifiers.tasks.task__update_verified_links'
     }
 
-    external_low_modules = {}
+    external_low_modules = {
+        'email.process_sendgrid_campaign_events',
+    }
 
     account_status_changes_modules = {}
 
