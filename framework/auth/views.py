@@ -1,3 +1,4 @@
+import uuid
 from furl import furl, urljoin
 from rest_framework import status as http_status
 from urllib.parse import urlencode
@@ -1128,7 +1129,7 @@ def external_login_email_post():
             accepted_terms_of_service = timezone.now() if form.accepted_terms_of_service.data else None
             user = OSFUser.create_unconfirmed(
                 username=clean_email,
-                password=None,
+                password=str(uuid.uuid4()),
                 fullname=fullname,
                 external_identity=external_identity,
                 campaign=None,
