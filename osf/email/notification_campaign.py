@@ -205,11 +205,12 @@ def process_sendgrid_campaign_events(events):
 
     Expects events that already include campaign ``custom_args``
     (``campaign_id``, ``campaign_recipient_id``, ``run_id``). Only ``QUEUED``
-    recipients whose event ``run_id`` matches the campaign's current run are
-    updated; delayed webhooks from a prior run are ignored.
+    or ``FAILED`` recipients whose event ``run_id`` matches the campaign's
+    current run are updated; delayed webhooks from a prior run are ignored.
 
-    A ``delivered`` event wins over failure events for the same recipient so a
-    confirmed delivery is never marked failed (and retried).
+    A ``delivered`` event wins over failure events for the same recipient
+    (including a prior ``FAILED`` from an earlier webhook) so a confirmed
+    delivery is never left failed (and retried).
     """
     campaign_ids = {
         event.get('campaign_id')
@@ -259,7 +260,10 @@ def process_sendgrid_campaign_events(events):
     if success_ids:
         NotificationCampaignRecipient.objects.filter(
             id__in=success_ids,
-            status=NotificationCampaignRecipientStatus.QUEUED,
+            status__in=[
+                NotificationCampaignRecipientStatus.QUEUED,
+                NotificationCampaignRecipientStatus.FAILED,
+            ],
         ).update(status=NotificationCampaignRecipientStatus.SENT, error_message=None)
 
     if failed:
@@ -288,13 +292,6 @@ def process_campaign_retry(self, campaign_id, run_id):
 
     campaign.refresh_from_db()
     execution = campaign.metadata.get('execution', {})
-
-    if campaign.status == NotificationCampaignStatus.CANCELLED:
-        message = f'[Notification Campaign #{campaign_id}] WARNING: Campaign {campaign.name} was cancelled.'
-        logger.info(message)
-        sentry.log_message(message)
-        self.finish_campaign(campaign)
-        return
 
     queued_qs = NotificationCampaignRecipient.objects.filter(
         campaign=campaign,
@@ -327,6 +324,13 @@ def process_campaign_retry(self, campaign_id, run_id):
 
         # Do not retry timed-out deliveries; close the run as partially completed.
         self.finish_campaign(campaign, NotificationCampaignStatus.PARTIALLY_COMPLETED)
+        return
+
+    if campaign.status == NotificationCampaignStatus.CANCELLED:
+        message = f'[Notification Campaign #{campaign_id}] WARNING: Campaign {campaign.name} was cancelled.'
+        logger.info(message)
+        sentry.log_message(message)
+        self.finish_campaign(campaign)
         return
 
     failed_recipients_count = NotificationCampaignRecipient.objects.filter(
@@ -579,7 +583,6 @@ def send_campaign_batch(
     invalid_emails_qs.update(status=NotificationCampaignRecipientStatus.SKIPPED, error_message='Invalid email address')
 
     if campaign.metadata.get('sendgrid_bulk', False):
-        # NOTE: sendgrid bulk send feature has not been fully implemented and tested
         recipients = list(valid_emails_qs)
         recipient_emails = []
         custom_args_list = []

@@ -13,6 +13,7 @@ from osf.email.notification_campaign import (
     create_campaign_recipients,
     get_campaign_recipient_stats,
     process_campaign_retry,
+    process_sendgrid_campaign_events,
     send_campaign_batch,
     start_notification_campaign,
     build_query,
@@ -1183,3 +1184,81 @@ class TestProcessCampaignRetry:
         assert campaign.completed_at is None
         mock_apply_async.assert_called_once()
         mock_dispatch_campaign.assert_not_called()
+
+
+class TestProcessSendgridCampaignEvents:
+
+    def _event(self, campaign, recipient, event, **extra):
+        payload = {
+            'event': event,
+            'campaign_id': str(campaign.id),
+            'campaign_recipient_id': str(recipient.id),
+            'run_id': str(campaign.run_id),
+        }
+        payload.update(extra)
+        return payload
+
+    def _queued_recipient(self, campaign, user=None):
+        user = user or UserFactory()
+        create_campaign_recipients(Q(**{'id__in': [user.id]}), campaign_id=campaign.id)
+        recipient = NotificationCampaignRecipient.objects.get(campaign=campaign, user=user)
+        recipient.status = NotificationCampaignRecipientStatus.QUEUED
+        recipient.save(update_fields=['status'])
+        return recipient
+
+    def test_delivered_marks_queued_sent(self, campaign):
+        campaign.run_id = uuid.uuid4()
+        campaign.save(update_fields=['run_id'])
+        recipient = self._queued_recipient(campaign)
+
+        process_sendgrid_campaign_events([
+            self._event(campaign, recipient, 'delivered'),
+        ])
+
+        recipient.refresh_from_db()
+        assert recipient.status == NotificationCampaignRecipientStatus.SENT
+        assert recipient.error_message is None
+
+    def test_failure_marks_queued_failed(self, campaign):
+        campaign.run_id = uuid.uuid4()
+        campaign.save(update_fields=['run_id'])
+        recipient = self._queued_recipient(campaign)
+
+        process_sendgrid_campaign_events([
+            self._event(campaign, recipient, 'bounce', reason='mailbox full'),
+        ])
+
+        recipient.refresh_from_db()
+        assert recipient.status == NotificationCampaignRecipientStatus.FAILED
+        assert recipient.error_message == 'mailbox full'
+
+    def test_delivered_overrides_failed(self, campaign):
+        campaign.run_id = uuid.uuid4()
+        campaign.save(update_fields=['run_id'])
+        recipient = self._queued_recipient(campaign)
+        recipient.status = NotificationCampaignRecipientStatus.FAILED
+        recipient.error_message = 'bounce'
+        recipient.save(update_fields=['status', 'error_message'])
+
+        process_sendgrid_campaign_events([
+            self._event(campaign, recipient, 'delivered'),
+        ])
+
+        recipient.refresh_from_db()
+        assert recipient.status == NotificationCampaignRecipientStatus.SENT
+        assert recipient.error_message is None
+
+    def test_ignores_stale_run_id(self, campaign):
+        campaign.run_id = uuid.uuid4()
+        campaign.save(update_fields=['run_id'])
+        recipient = self._queued_recipient(campaign)
+
+        process_sendgrid_campaign_events([{
+            'event': 'delivered',
+            'campaign_id': str(campaign.id),
+            'campaign_recipient_id': str(recipient.id),
+            'run_id': str(uuid.uuid4()),
+        }])
+
+        recipient.refresh_from_db()
+        assert recipient.status == NotificationCampaignRecipientStatus.QUEUED
