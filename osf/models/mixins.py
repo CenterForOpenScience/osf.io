@@ -373,6 +373,16 @@ class AffiliatedInstitutionMixin(models.Model):
     def is_affiliated_with_institution(self, institution):
         return self.affiliated_institutions.filter(id=institution.id).exists()
 
+    def get_affiliated_institutions(self, *, include_deactivated: bool = False):
+        """
+        Return a queryset of the institutions affiliated with this object.  Deactivated are hidden
+        by the default Institution manager, so pass include_deactivated to keep them,
+        so that metadata and DOIs do not lose ROR ids they already have
+        """
+        if include_deactivated:
+            return self.affiliated_institutions(manager='_base_manager').all()
+        return self.affiliated_institutions.all()
+
     class Meta:
         abstract = True
 
