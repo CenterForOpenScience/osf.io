@@ -2462,3 +2462,88 @@ class TestUserGdprDelete:
             user.gdpr_delete()
         assert exc_info.value.args[0] == 'You cannot delete this user because they have an external account for' \
                                          ' github attached to Node {}, which has other contributors.'.format(project_with_two_admins_and_addon_credentials._id)
+
+
+class TestDisconnectExternalIdentity:
+
+    @pytest.fixture()
+    def user(self):
+        user = AuthUserFactory()
+        user.external_identity = {
+            'ORCID': {'fake-orcid-id': 'VERIFIED'},
+            'LOTUS': {'fake-lotus-id': 'LINK'},
+        }
+        user.external_identity_tokens = {
+            'ORCID': {'fake-orcid-id': {'access_token': 'fake-orcid-token'}},
+        }
+        user.save()
+        return user
+
+    @mock.patch('osf.models.user.requests_retry_session')
+    def test_disconnect_orcid_revokes_token_and_removes_identity_and_token(self, mock_retry_session, user):
+        mock_session = mock.Mock()
+        mock_session.post.return_value = mock.Mock(status_code=200, text='')
+        mock_retry_session.return_value = mock_session
+
+        user.disconnect_external_identity('ORCID', 'fake-orcid-id')
+        user.save()
+
+        mock_retry_session.assert_called_once_with(retries=settings.ORCID_OAUTH_REVOKE_MAX_RETRIES)
+        mock_session.post.assert_called_once()
+        assert mock_session.post.call_args.kwargs['data']['token'] == 'fake-orcid-token'
+        assert 'ORCID' not in user.external_identity
+        assert 'ORCID' not in user.external_identity_tokens
+        assert user.external_identity['LOTUS'] == {'fake-lotus-id': 'LINK'}
+
+    @mock.patch('osf.models.user.sentry.log_exception')
+    @mock.patch('osf.models.user.sentry.log_message')
+    @mock.patch('osf.models.user.requests_retry_session')
+    def test_disconnect_orcid_removes_token_even_when_revoke_fails(
+            self, mock_retry_session, mock_log_message, mock_log_exception, user):
+        mock_session = mock.Mock()
+        mock_session.post.side_effect = requests.exceptions.ConnectionError('boom')
+        mock_retry_session.return_value = mock_session
+
+        # Should not raise -- disconnect proceeds locally even if ORCiD's API is unreachable.
+        user.disconnect_external_identity('ORCID', 'fake-orcid-id')
+        user.save()
+
+        assert 'ORCID' not in user.external_identity
+        assert 'ORCID' not in user.external_identity_tokens
+        assert mock_log_message.called
+
+    def test_disconnect_non_orcid_identity_does_not_call_orcid_api(self, user):
+        with mock.patch('osf.models.user.requests_retry_session') as mock_retry_session:
+            user.disconnect_external_identity('LOTUS', 'fake-lotus-id')
+            user.save()
+
+        mock_retry_session.assert_not_called()
+        assert 'LOTUS' not in user.external_identity
+        assert user.external_identity['ORCID'] == {'fake-orcid-id': 'VERIFIED'}
+
+    def test_disconnect_orcid_without_stored_token_skips_revoke_call(self, user):
+        user.external_identity_tokens = {}
+        user.save()
+
+        with mock.patch('osf.models.user.requests_retry_session') as mock_retry_session:
+            user.disconnect_external_identity('ORCID', 'fake-orcid-id')
+            user.save()
+
+        mock_retry_session.assert_not_called()
+        assert 'ORCID' not in user.external_identity
+
+    def test_disconnect_orcid_then_gdpr_delete_does_not_raise(self, user):
+        with mock.patch('osf.models.user.requests_retry_session') as mock_retry_session:
+            mock_session = mock.Mock()
+            mock_session.post.return_value = mock.Mock(status_code=200, text='')
+            mock_retry_session.return_value = mock_session
+
+            user.disconnect_external_identity('ORCID', 'fake-orcid-id')
+            user.save()
+
+        # No ORCiD connection left -- GDPR delete's revoke check should just skip, not raise.
+        with mock.patch('osf.models.user.requests.post') as mock_post:
+            user.gdpr_delete()
+
+        mock_post.assert_not_called()
+        assert user.deleted is not None
