@@ -222,6 +222,14 @@ RESET_PASSWORD_SUCCESS_STATUS_MESSAGE = (
 THROTTLE_PASSWORD_CHANGE_ERROR_MESSAGE = \
     'You have recently requested to change your password. Please wait a few minutes before trying again.'
 
+RESEND_CONFIRMATION_SUCCESS_STATUS_MESSAGE = (
+    'If there is an OSF account associated with {email}, an confirmation link has been sent to {email}.'
+    'If you do not receive an email and believe you should have, please contact OSF Support. '
+)
+
+THROTTLE_RESEND_CONFIRMATION_ERROR_MESSAGE = \
+    'You have recently requested to resend your confirmation link. Please wait a few minutes before trying again.'
+
 SANCTION_STATUS_MESSAGES = {
     'registration': {
         'approve': 'Your registration approval has been accepted.',
