@@ -161,4 +161,52 @@
     </tbody>
 </table>
 
+<h2>Completed Embargoes Stuck Private</h2>
+<p>These embargoes are marked completed, but the registration never actually went public. This usually means an error occurred while making the registration public (e.g. a spam flag) after the embargo had already been marked complete.</p>
+<table class="table table-striped table-bordered table-hover">
+    <thead>
+        <tr>
+            <th>Registration</th>
+            <th>Embargo ID</th>
+            <th>State</th>
+            <th>Embargo End</th>
+            <th>Initiated By</th>
+        </tr>
+    </thead>
+    {% if stuck_completed_page.paginator.num_pages > 1 %}
+        {% include "util/pagination.html" with items=stuck_completed_page page_param="stuck_completed_page" status='' pagin=False order='' %}
+    {% endif %}
+    <tbody>
+        {% for embargo in stuck_completed_page %}
+            {% with registration=embargo.registrations.all.0 %}
+                {% if registration %}
+                <tr>
+                    <td>
+                        <a href="{{ registration | reverse_node }}">
+                            {{ registration.title | truncatechars:30 }}
+                        </a>
+                    </td>
+                    <td>{{ embargo.id }}</td>
+                    <td>{{ embargo.state }}</td>
+                    <td>{{ embargo.end_date|date:"F j, Y P" }}</td>
+                    <td>
+                        {% if embargo.initiated_by %}
+                            <a href="{{ embargo.initiated_by | reverse_user }}">
+                                {{ embargo.initiated_by.fullname }}
+                            </a>
+                        {% else %}
+                            &mdash;
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endif %}
+            {% endwith %}
+        {% empty %}
+        <tr>
+            <td colspan="5">No completed embargoes stuck private.</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
 {% endblock %}

@@ -51,13 +51,12 @@ def main(dry_run=True):
                     embargo.save()
                     continue
 
-                sid = transaction.savepoint()
                 try:
-                    # Call 'accept' trigger directly. This will terminate the embargo
-                    # if the registration is unmoderated or push it into the moderation
-                    # queue if it is part of a moderated registry.
-                    embargo.accept()
-                    transaction.savepoint_commit(sid)
+                    with transaction.atomic():
+                        # Call 'accept' trigger directly. This will terminate the embargo
+                        # if the registration is unmoderated or push it into the moderation
+                        # queue if it is part of a moderated registry.
+                        embargo.accept()
                 except Exception as err:
                     root = parent_registration._dirty_root
                     embargo = root.embargo
@@ -75,14 +74,18 @@ def main(dry_run=True):
                     logger.exception(err)
                     sentry.log_exception(err)
 
-                    transaction.savepoint_rollback(sid)
-
     active_embargoes = Embargo.objects.active_embargoes()
     for embargo in active_embargoes:
         if embargo.should_be_completed:
             if dry_run:
                 logger.warning('Dry run mode')
-            parent_registration = Registration.objects.get(embargo=embargo)
+            try:
+                parent_registration = Registration.objects.get(embargo=embargo)
+            except Registration.DoesNotExist:
+                logger.error(
+                    f'Embargo {embargo._id} is not attached to a registration'
+                )
+                continue
             logger.warning(
                 'Embargo {} complete. Making registration {} public'
                 .format(embargo._id, parent_registration._id)
@@ -94,10 +97,9 @@ def main(dry_run=True):
                     embargo.save()
                     continue
 
-                sid = transaction.savepoint()
                 try:
-                    parent_registration.terminate_embargo()
-                    transaction.savepoint_commit(sid)
+                    with transaction.atomic():
+                        parent_registration.terminate_embargo()
                 except Exception as err:
                     root = parent_registration._dirty_root
                     embargo = root.embargo
@@ -113,8 +115,6 @@ def main(dry_run=True):
                     )
                     logger.exception(err)
                     sentry.log_exception(err)
-
-                    transaction.savepoint_rollback(sid)
 
 
 @celery_app.task(name='scripts.embargo_registrations')
