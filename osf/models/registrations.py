@@ -475,14 +475,17 @@ class Registration(AbstractNode):
             notify_initiator_on_complete=notify_initiator_on_complete
         )
         self.save()  # Set foreign field reference Node.registration_approval
-        admins = self.get_admin_contributors_recursive(unique_users=True)
+        admins = list(self.get_admin_contributors_recursive(unique_users=True))
         for (admin, node) in admins:
             self.registration_approval.add_authorizer(admin, node=node)
         self.registration_approval.save()  # Save approval's approval_state
+        try:
+            self.registration_approval.ask(admins)
+        except Exception:
+            logger.exception(f'Failed to emit registration approval notifications for registration: {self._id}')
         return self.registration_approval
 
     def require_approval(self, user, notify_initiator_on_complete=False):
-
         if not self.is_registration:
             raise NodeStateError('Only registrations can require registration approval')
         if not self.is_admin_contributor(user):
@@ -520,10 +523,15 @@ class Registration(AbstractNode):
         )
         self.update_moderation_state()
         self.save()  # Set foreign field reference Node.embargo
-        admins = self.get_admin_contributors_recursive(unique_users=True)
+        admins = list(self.get_admin_contributors_recursive(unique_users=True))
         for (admin, node) in admins:
             self.embargo.add_authorizer(admin, node)
         self.embargo.save()  # Save embargo's approval_state
+
+        try:
+            self.embargo.ask(admins)
+        except Exception:
+            logger.exception(f'Failed to emit registration embargo notifications for registration: {self._id}')
         return self.embargo
 
     def embargo_registration(self, user, end_date, for_existing_registration=False,
