@@ -184,6 +184,7 @@ class TestOsfstorageFileNode(StorageTestCase):
         assert child.get_download_count() == 0
 
     def test_download_count_file(self):
+        # PageCounter is disabled (ENG-12193), so legacy counts stay at zero
         s = SessionStore()
         s.create()
         child = self.node_settings.get_root().append_file('Test')
@@ -192,10 +193,10 @@ class TestOsfstorageFileNode(StorageTestCase):
         utils.update_analytics(self.project, child, 1, s.session_key)
         utils.update_analytics(self.project, child, 2, s.session_key)
 
-        assert child.get_download_count() == 3
-        assert child.get_download_count(0) == 1
-        assert child.get_download_count(1) == 1
-        assert child.get_download_count(2) == 1
+        assert child.get_download_count() == 0
+        assert child.get_download_count(0) == 0
+        assert child.get_download_count(1) == 0
+        assert child.get_download_count(2) == 0
 
     def test_create_version_locks_file_row(self):
 

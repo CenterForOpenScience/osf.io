@@ -27,6 +27,7 @@ class TestSerializeRevision(StorageTestCase):
         self.record.save()
 
     def test_serialize_revision(self):
+        # PageCounter is disabled (ENG-12193), so legacy counts stay at zero
         s = SessionStore()
         s.create()
         utils.update_analytics(self.project, self.record, 0, s.session_key)
@@ -39,7 +40,7 @@ class TestSerializeRevision(StorageTestCase):
                 'url': self.user.url,
             },
             'date': self.versions[0].created.isoformat(),
-            'downloads': 2,
+            'downloads': 0,
             'md5': None,
             'sha256': None,
         }
@@ -50,9 +51,9 @@ class TestSerializeRevision(StorageTestCase):
             0,
         )
         assert expected == observed
-        assert self.record.get_download_count() == 3
-        assert self.record.get_download_count(version=2) == 1
-        assert self.record.get_download_count(version=0) == 2
+        assert self.record.get_download_count() == 0
+        assert self.record.get_download_count(version=2) == 0
+        assert self.record.get_download_count(version=0) == 0
 
     def test_anon_revisions(self):
         s = SessionStore()
