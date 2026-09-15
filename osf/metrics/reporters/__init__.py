@@ -2,7 +2,8 @@ import enum
 
 # from .active_users import ActiveUserReporter
 from .storage_addon_usage import StorageAddonUsageReporter
-from .download_count import DownloadCountReporter
+# reads PageCounter, which is disabled (ENG-12193)
+# from .download_count import DownloadCountReporter
 from .institution_summary import InstitutionSummaryReporter
 from .institutional_users import InstitutionalUsersReporter
 from .institution_summary_monthly import InstitutionalSummaryMonthlyReporter
@@ -21,7 +22,7 @@ from .private_spam_metrics import PrivateSpamMetricsReporter
 
 class AllDailyReporters(enum.Enum):
     # ACTIVE_USER = ActiveUserReporter
-    DOWNLOAD_COUNT = DownloadCountReporter
+    # DOWNLOAD_COUNT = DownloadCountReporter
     INSTITUTION_SUMMARY = InstitutionSummaryReporter
     NEW_USER_DOMAIN = NewUserDomainReporter
     NODE_COUNT = NodeCountReporter

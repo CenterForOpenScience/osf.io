@@ -92,40 +92,34 @@ def page_counter_for_individual_version(project, file_node3):
 @pytest.mark.django_db
 class TestPageCounter:
 
-    def test_download_update_counter(self, project, file_node):
+    def test_update_counter_is_disabled(self, project, file_node):
+        # ENG-12193: no row created, nothing written
         session = SessionStore()
         session['auth_user_id'] = 'yeji'
         session.create()
         resource = project.guids.first()
-        PageCounter.update_counter(resource, file_node, version=None, action='download', node_info={}, session_key=session.session_key)
-
-        page_counter = PageCounter.objects.get(resource=resource, file=file_node, version=None, action='download')
-        assert page_counter.total == 1
-        assert page_counter.unique == 1
 
         PageCounter.update_counter(resource, file_node, version=None, action='download', node_info={}, session_key=session.session_key)
 
-        page_counter.refresh_from_db()
-        assert page_counter.total == 2
-        assert page_counter.unique == 1
+        assert not PageCounter.objects.filter(resource=resource, file=file_node).exists()
 
-    def test_download_update_counter_contributor(self, user, project, file_node):
+    def test_update_counter_leaves_existing_rows_frozen(self, project, file_node):
+        # old rows keep their numbers and stay readable, they just never move
         session = SessionStore()
-        session['auth_user_id'] = user._id
         session.create()
         resource = project.guids.first()
+        existing = PageCounter.objects.create(
+            _id=f'download:{project._id}:{file_node._id}',
+            resource=resource, file=file_node, action='download', version=None,
+            total=7, unique=3,
+        )
 
-        PageCounter.update_counter(resource, file_node, version=None, action='download', node_info={'contributors': project.contributors}, session_key=session.session_key)
+        PageCounter.update_counter(resource, file_node, version=None, action='download', node_info={}, session_key=session.session_key)
 
-        page_counter = PageCounter.objects.get(resource=resource, file=file_node, version=None, action='download')
-        assert page_counter.total == 0
-        assert page_counter.unique == 0
-
-        PageCounter.update_counter(resource, file_node, version=None, action='download', node_info={'contributors': project.contributors}, session_key=session.session_key)
-
-        page_counter.refresh_from_db()
-        assert page_counter.total == 0
-        assert page_counter.unique == 0
+        existing.refresh_from_db()
+        assert existing.total == 7
+        assert existing.unique == 3
+        assert PageCounter.get_basic_counters(resource, file_node, version=None, action='download') == (3, 7)
 
     def test_get_all_downloads_on_date(self, page_counter, page_counter2):
         """

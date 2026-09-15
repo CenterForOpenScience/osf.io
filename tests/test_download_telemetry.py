@@ -13,6 +13,7 @@ from osf.models import DownloadEvent, OSFUser
 from osf.utils.download_telemetry import (
     classify_download_channel,
     derive_user_region,
+    get_client_ip,
     record_download,
 )
 from osf_tests.factories import AuthUserFactory, ProjectFactory
@@ -326,6 +327,23 @@ class TestSingleFileDownloadTelemetry(OsfTestCase):
 
         assert DownloadEvent.objects.get().zip_completed is None
 
+    def test_ip_comes_from_forwarded_for_not_the_proxy(self):
+        """Behind the load balancer remote_addr is the balancer; the person downloading
+        is in X-Forwarded-For. The test client's peer address is loopback, i.e. a proxy
+        hop, so the recorded address must be the forwarded client."""
+        self.app.get(
+            f'/download/{self.guid}/', auth=self.user.auth,
+            headers={'X-Forwarded-For': '203.0.113.9, 10.12.0.4'},
+        )
+
+        assert DownloadEvent.objects.get().ip == '203.0.113.9'
+
+    def test_ip_falls_back_to_remote_addr_without_forwarded_header(self):
+        """No proxies in the path (local dev, direct hits): the peer address stands."""
+        self.app.get(f'/download/{self.guid}/', auth=self.user.auth)
+
+        assert DownloadEvent.objects.get().ip == '127.0.0.1'
+
     def test_source_tag_marks_a_frontend_download(self):
         self.app.get(f'/download/{self.guid}/?source=file-detail', auth=self.user.auth)
 
@@ -415,6 +433,60 @@ class TestUserRegionDerivation:
 
     def test_unknown_is_empty(self):
         assert derive_user_region('', None, '') == ''
+
+
+class TestClientIp:
+    """Resolving the real client behind proxies, without ever trusting the spoofable
+    left end of X-Forwarded-For unless everything to its right checked out."""
+
+    def test_no_header_returns_remote_addr(self):
+        assert get_client_ip('198.51.100.7') == '198.51.100.7'
+
+    def test_private_hops_are_skipped(self):
+        # nginx / internal hops appended themselves; the client sits to their left
+        assert get_client_ip('10.0.0.5', '203.0.113.9, 10.0.0.4') == '203.0.113.9'
+
+    def test_gcp_lb_source_ranges_are_skipped(self):
+        # Google's LB connects to backends from documented ranges; not a client
+        assert get_client_ip('130.211.0.5', '203.0.113.9') == '203.0.113.9'
+        assert get_client_ip('10.0.0.5', '203.0.113.9, 35.191.10.20') == '203.0.113.9'
+
+    def test_spoofed_left_entries_are_not_believed(self):
+        # the client wrote '1.2.3.4' into its own header; the rightmost
+        # non-proxy hop (what our edge actually saw) wins
+        assert get_client_ip('10.0.0.5', '1.2.3.4, 203.0.113.9') == '203.0.113.9'
+
+    def test_configured_lb_address_is_skipped(self, monkeypatch):
+        # the LB appends its own public VIP after the client; devops registers it
+        from website import settings as website_settings
+        monkeypatch.setattr(website_settings, 'TRUSTED_PROXY_CIDRS', ['35.190.55.96/32'])
+
+        assert get_client_ip('10.0.0.5', '203.0.113.9, 35.190.55.96') == '203.0.113.9'
+
+    def test_unconfigured_public_hop_is_reported_as_the_client(self):
+        # a public rightmost hop that nobody registered as a proxy IS the client
+        # as far as our edge can tell (e.g. a cloud-hosted scraper behind NAT)
+        assert get_client_ip('10.0.0.5', '203.0.113.9, 198.51.100.30') == '198.51.100.30'
+
+    def test_garbage_tokens_are_skipped(self):
+        assert get_client_ip('10.0.0.5', 'unknown, 203.0.113.9, not-an-ip') == '203.0.113.9'
+
+    def test_all_internal_falls_back_to_the_first_hop(self):
+        # a purely internal request keeps its origin instead of reporting loopback
+        assert get_client_ip('127.0.0.1', '10.0.0.9') == '10.0.0.9'
+
+    def test_nothing_parseable_returns_none(self):
+        assert get_client_ip('', 'unknown') is None
+        assert get_client_ip(None) is None
+
+    def test_ipv6_client(self):
+        assert get_client_ip('10.0.0.5', '2001:db8::1, 10.0.0.4') == '2001:db8::1'
+
+    def test_invalid_configured_cidr_is_ignored(self, monkeypatch):
+        from website import settings as website_settings
+        monkeypatch.setattr(website_settings, 'TRUSTED_PROXY_CIDRS', ['garbage', '10.0.0.0/8'])
+
+        assert get_client_ip('10.0.0.5', '203.0.113.9') == '203.0.113.9'
 
 
 class TestChannelClassification:
