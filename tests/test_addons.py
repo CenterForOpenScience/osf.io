@@ -230,7 +230,8 @@ class TestAddonAuth(OsfTestCase):
         assert res.status_code == 200
 
         test_file.reload()
-        assert test_file.get_download_count() == 1
+        # PageCounter is disabled (ENG-12193); the download itself still works
+        assert test_file.get_download_count() == 0
         assert node.logs.count() == nlogs # don't log views
 
     def test_action_download_mfr_views_contrib(self):
@@ -254,7 +255,8 @@ class TestAddonAuth(OsfTestCase):
         assert res.status_code == 200
 
         test_file.reload()
-        assert test_file.get_view_count() == 1
+        # PageCounter is disabled (ENG-12193); rendering still works
+        assert test_file.get_view_count() == 0
         assert node.logs.count() == nlogs # don't log views
 
 
