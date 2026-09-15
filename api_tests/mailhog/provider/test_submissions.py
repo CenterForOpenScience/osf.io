@@ -108,7 +108,7 @@ class TestRegistriesModerationSubmissions:
         registration.add_contributor(another_contributor, permissions='admin', visible=True)
 
         delete_mailhog_messages()
-        with capture_notifications() as notifications:
+        with capture_notifications(passthrough=True) as notifications:
             # 2 notifications: creator and another contributor are notified of node_pending_registration_admin
             registration.require_approval(user=registration.creator)
             approval = registration.registration_approval
