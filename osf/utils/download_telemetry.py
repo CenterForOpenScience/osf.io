@@ -1,4 +1,5 @@
 import functools
+import ipaddress
 import logging
 
 from addons.osfstorage.settings import DEFAULT_REGION_NAME
@@ -14,6 +15,81 @@ UNSET_USER_TIMEZONE = 'Etc/UTC'
 # Identifiers worth having in the log line to track a failure back to one download.
 # Deliberately excludes the IP.
 LOGGED_CONTEXT_KEYS = ('download_type', 'resource_guid', 'file_id', 'user_guid')
+
+# Hops that are never the person downloading: internal networks the request passes
+# through on its way in, and the ranges Google's load balancers connect to backends
+# from. Deployment-specific addresses (the LB's own public IP, say) belong in
+# settings.TRUSTED_PROXY_CIDRS rather than here.
+PROXY_NETWORKS = tuple(
+    ipaddress.ip_network(cidr)
+    for cidr in (
+        '10.0.0.0/8', '172.16.0.0/12', '192.168.0.0/16',   # RFC1918
+        '127.0.0.0/8', '::1/128',                          # loopback
+        '169.254.0.0/16', 'fe80::/10',                     # link-local
+        'fc00::/7',                                        # IPv6 ULA
+        '130.211.0.0/22', '35.191.0.0/16',                 # GCP LB -> backend ranges
+    )
+)
+
+
+def get_client_ip(remote_addr, forwarded_for=''):
+    """The address of whoever is actually downloading, not of our own infrastructure.
+
+    ``remote_addr`` is just the peer that opened the TCP connection -- behind the load
+    balancer that's the balancer itself, which is how every telemetry row ended up
+    carrying the same LB address. The real client survives in ``X-Forwarded-For``, so
+    walk that chain right to left and return the first hop that isn't a proxy
+    (:data:`PROXY_NETWORKS` plus ``settings.TRUSTED_PROXY_CIDRS``).
+
+    Right to left matters: the left end of the header arrives from the client and can
+    say anything, so it is only believed once every hop to its right checked out. If
+    the whole chain is internal (or there's no header at all) this falls back to the
+    leftmost parseable address, which is today's behaviour.
+
+    Returns a validated address or None -- never garbage, the column is an inet.
+    """
+    candidates = [part.strip() for part in (forwarded_for or '').split(',') if part.strip()]
+    if remote_addr and remote_addr.strip():
+        candidates.append(remote_addr.strip())
+
+    parsed = [ip for ip in (_parse_ip(raw) for raw in candidates) if ip is not None]
+    if not parsed:
+        return None
+
+    proxy_networks = PROXY_NETWORKS + _configured_proxy_networks()
+    for ip in reversed(parsed):
+        if not any(ip in network for network in proxy_networks):
+            return str(ip)
+    return str(parsed[0])
+
+
+def _parse_ip(raw):
+    """One X-Forwarded-For token as an address, or None -- proxies put all sorts of
+    junk in that header ('unknown', obfuscated entries), and junk just gets skipped."""
+    value = raw.strip()
+    if value.startswith('[') and ']' in value:  # bracketed IPv6, possibly with a port
+        value = value[1:value.index(']')]
+    try:
+        return ipaddress.ip_address(value)
+    except ValueError:
+        return None
+
+
+def _configured_proxy_networks():
+    """Deployment-specific proxy CIDRs (the LB's public address), straight from settings.
+
+    Parsed per call so a bad entry can be fixed by config alone; an invalid CIDR is
+    logged and skipped rather than taking the capture down with it.
+    """
+    from website import settings
+
+    networks = []
+    for cidr in getattr(settings, 'TRUSTED_PROXY_CIDRS', None) or []:
+        try:
+            networks.append(ipaddress.ip_network(cidr, strict=False))
+        except ValueError:
+            logger.warning('Ignoring invalid CIDR in TRUSTED_PROXY_CIDRS: %r', cidr)
+    return tuple(networks)
 
 
 def classify_download_channel(source_area, is_api_token=False):

@@ -81,6 +81,17 @@ ANONYMIZED_TITLES = ['Authors']
 
 LOAD_BALANCER = False
 
+# Extra proxy hops to skip when resolving the real client address out of
+# X-Forwarded-For (download telemetry). Comma-separated CIDRs; add the load
+# balancer's own public address(es) here, e.g. '35.190.55.96/32'. Private,
+# loopback and link-local ranges and the documented GCP load-balancer source
+# ranges are always skipped and don't need listing.
+TRUSTED_PROXY_CIDRS = [
+    cidr.strip()
+    for cidr in os.environ.get('OSF_TRUSTED_PROXY_CIDRS', '').split(',')
+    if cidr.strip()
+]
+
 # May set these to True in local.py for development
 DEV_MODE = False
 DEBUG_MODE = False

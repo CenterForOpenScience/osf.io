@@ -99,6 +99,11 @@ class PageCounter(BaseModel):
 
     @classmethod
     def update_counter(cls, resource, file, version, action, node_info, session_key):
+        # ENG-12193: disabled. The metrics service owns these counts now, and the
+        # select_for_update below piles up on hot rows under heavy download traffic.
+        # Reads still work, numbers are frozen. Full removal is a follow-up.
+        return
+
         if version is not None:
             page = f'{action}:{resource._id}:{file._id}:{version}'
         else:

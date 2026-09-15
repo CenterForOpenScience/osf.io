@@ -652,13 +652,18 @@ new Chart(
 
 // A zero slice ("File" or "Zip") has no arc, so don't pop a "File 0" / "Zip 0"
 // tooltip for it — that reads as a bug when a filter zeroes one side out.
+// The tooltip must also hit-test the arc actually under the cursor
+// (nearest + intersect): the "index" mode inherited from commonOptions resolved
+// hovers to the invisible zero slice, so filtering to zips only showed no
+// tooltip at all instead of the Zip count/GB.
 const doughnutOptions = {
     ...commonOptions,
     cutout: "60%",
     plugins: {
         ...commonOptions.plugins,
         tooltip: {
-            ...commonOptions.plugins.tooltip,
+            mode: "nearest",
+            intersect: true,
             filter: (item) => item.parsed !== 0
         }
     }
