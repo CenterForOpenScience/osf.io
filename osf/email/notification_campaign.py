@@ -272,34 +272,44 @@ def process_sendgrid_campaign_events(self, events):
             error_message = event.get('reason') or event.get('type') or event_type
             failed[recipient_pk] = error_message
 
-    if success_ids:
-        NotificationCampaignRecipient.objects.filter(
-            id__in=success_ids,
-            status__in=[
-                NotificationCampaignRecipientStatus.QUEUED,
-                NotificationCampaignRecipientStatus.FAILED,
-            ],
-        ).update(status=NotificationCampaignRecipientStatus.SENT, error_message=None)
+    if not success_ids and not failed:
+        return
 
-    if failed:
-        failed_errors = [
-            When(id=recipient_pk, then=Value(error_message))
-            for recipient_pk, error_message in failed.items()
-        ]
-        NotificationCampaignRecipient.objects.filter(
-            id__in=failed.keys(),
-            status=NotificationCampaignRecipientStatus.QUEUED,
-        ).update(
-            status=NotificationCampaignRecipientStatus.FAILED,
-            error_message=Case(
-                *failed_errors,
-                default=Value('SendGrid delivery failed'),
-                output_field=TextField(),
-            ),
+    with transaction.atomic():
+        # Lock campaign rows so concurrent webhook/batch syncs cannot overwrite
+        # counters with a stale aggregate snapshot.
+        campaigns = list(
+            NotificationCampaign.objects.select_for_update()
+            .filter(id__in=campaign_ids)
+            .order_by('id')
         )
+        if success_ids:
+            NotificationCampaignRecipient.objects.filter(
+                id__in=success_ids,
+                status__in=[
+                    NotificationCampaignRecipientStatus.QUEUED,
+                    NotificationCampaignRecipientStatus.FAILED,
+                ],
+            ).update(status=NotificationCampaignRecipientStatus.SENT, error_message=None)
 
-    if success_ids or failed:
-        for campaign in NotificationCampaign.objects.filter(id__in=campaign_ids):
+        if failed:
+            failed_errors = [
+                When(id=recipient_pk, then=Value(error_message))
+                for recipient_pk, error_message in failed.items()
+            ]
+            NotificationCampaignRecipient.objects.filter(
+                id__in=failed.keys(),
+                status=NotificationCampaignRecipientStatus.QUEUED,
+            ).update(
+                status=NotificationCampaignRecipientStatus.FAILED,
+                error_message=Case(
+                    *failed_errors,
+                    default=Value('SendGrid delivery failed'),
+                    output_field=TextField(),
+                ),
+            )
+
+        for campaign in campaigns:
             self.sync_campaign_stats(campaign)
 
 
