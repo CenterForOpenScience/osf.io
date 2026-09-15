@@ -148,6 +148,7 @@ def create_campaign_recipients(filters=None, campaign_id=None):
             'activity_score',
         )
     )
+    processed_records = 0
 
     for rows in batched(qs.iterator(chunk_size=BULK_CREATE_SIZE), BULK_CREATE_SIZE):
         NotificationCampaignRecipient.objects.bulk_create(
@@ -163,10 +164,11 @@ def create_campaign_recipients(filters=None, campaign_id=None):
             update_fields=['activity_score'],
             unique_fields=['campaign', 'user'],
         )
+        processed_records += len(rows)
 
-    campaign.recipient_count = NotificationCampaignRecipient.objects.filter(campaign_id=campaign_id).count()
+    campaign.recipient_count = processed_records
     campaign.metadata['recipients_creation_finished'] = True
-    campaign.save(update_fields=['recipient_count', 'metadata'])
+    campaign.save()
 
     recipients_creation_finished_at = timezone.now()
     recipients_creation_run_time = (recipients_creation_finished_at - recipients_creation_started_at)
