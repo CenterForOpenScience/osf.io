@@ -136,8 +136,14 @@ class TestRegistriesModerationSubmissions:
 
         send_users_instant_digest_email.delay()
         messages = get_mailhog_messages()
-        assert messages['count'] == 1
-        assert messages['items'][0]['Content']['Headers']['To'][0] == registration.creator.username
+        assert messages['count'] == 4
+
+        # actions within capture_notifications triggered registration approval + submission confirmation emails
+        user_and_email_type = [(message['Content']['Headers']['To'][0], message['Content']['Headers']['Subject'][0]) for message in messages['items']]
+        assert (registration.creator.username, 'Pending Registration - Admin Notification') in user_and_email_type
+        assert (another_contributor.username, 'Pending Registration - Admin Notification') in user_and_email_type
+        assert (registration.creator.username, 'Submission Confirmation') in user_and_email_type
+        assert (another_contributor.username, 'Submission Confirmation') in user_and_email_type
 
         delete_mailhog_messages()
 
