@@ -63,6 +63,7 @@ class NotificationCampaignTask(celery_app.Task):
         campaign.recipient_count = stats['recipient_count']
         campaign.sent_count = stats['sent_count']
         campaign.failed_count = stats['failed_count']
+        campaign.queued_count = stats['queued_count']
         return stats
 
     def finish_campaign(self, campaign, status=None):
@@ -198,6 +199,10 @@ def get_campaign_recipient_stats(campaign_id):
                 ]
             ),
         ),
+        queued_count=Count(
+            'id',
+            filter=Q(status=NotificationCampaignRecipientStatus.QUEUED),
+        ),
     )
 
 
@@ -305,7 +310,13 @@ def process_campaign_retry(self, campaign_id, run_id):
         if timezone.now() - reference_time < timedelta(seconds=delivery_timeout):
             # Still waiting for in-flight sends / SendGrid delivery webhooks.
             self.sync_campaign_stats(campaign)
-            campaign.save()
+            campaign.save(update_fields=[
+                'sent_count',
+                'failed_count',
+                'queued_count',
+                'recipient_count',
+                'updated_at',
+            ])
             process_campaign_retry.apply_async(
                 kwargs={'campaign_id': campaign_id, 'run_id': campaign.run_id},
                 countdown=execution.get('dispatch_interval', settings.CAMPAIGN_DISPATCH_INTERVAL),
@@ -658,7 +669,7 @@ def send_campaign_batch(
     with transaction.atomic():
         notification_campaign = NotificationCampaign.objects.select_for_update().get(pk=campaign_id)
         self.sync_campaign_stats(notification_campaign)
-        notification_campaign.save(update_fields=['sent_count', 'failed_count', 'recipient_count', 'updated_at'])
+        notification_campaign.save(update_fields=['sent_count', 'failed_count', 'queued_count', 'recipient_count', 'updated_at'])
 
     batch_finished_at = timezone.now()
     batch_run_time = (batch_finished_at - batch_started_at).total_seconds()

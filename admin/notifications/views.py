@@ -403,6 +403,7 @@ class NotificationCampaignDetail(PermissionRequiredMixin, DetailView):
                 ('Status', notification_campaign.get_status_display()),
                 ('Recipients', notification_campaign.recipient_count),
                 ('Sent', notification_campaign.sent_count),
+                ('Queued', notification_campaign.queued_count),
                 ('Failed', notification_campaign.failed_count),
                 ('Retries', notification_campaign.retries),
                 ('Created', notification_campaign.created_at),
@@ -437,7 +438,8 @@ class NotificationCampaignDetail(PermissionRequiredMixin, DetailView):
 
         if notification_campaign.status != NotificationCampaignStatus.CREATED:
             processed = notification_campaign.sent_count + notification_campaign.failed_count
-            pending = max(notification_campaign.recipient_count - processed, 0)
+            queued = notification_campaign.queued_count
+            pending = max(notification_campaign.recipient_count - processed - queued, 0)
 
             sent_percent = (
                 notification_campaign.sent_count / notification_campaign.recipient_count * 100
@@ -447,8 +449,12 @@ class NotificationCampaignDetail(PermissionRequiredMixin, DetailView):
                 notification_campaign.failed_count / notification_campaign.recipient_count * 100
                 if notification_campaign.recipient_count else 0
             )
+            queued_percent = (
+                queued / notification_campaign.recipient_count * 100
+                if notification_campaign.recipient_count else 0
+            )
 
-            pending_percent = max(100 - sent_percent - failed_percent, 0)
+            pending_percent = max(100 - sent_percent - failed_percent - queued_percent, 0)
             elapsed = None
             speed = None
             eta = None
@@ -462,8 +468,9 @@ class NotificationCampaignDetail(PermissionRequiredMixin, DetailView):
                 elapsed_seconds = elapsed.total_seconds()
                 if processed > 0 and elapsed_seconds > 0:
                     speed = processed / elapsed_seconds
-                    if pending:
-                        eta = timedelta(seconds=int(pending / speed))
+                    remaining = pending + queued
+                    if remaining:
+                        eta = timedelta(seconds=int(remaining / speed))
                         estimated_finish = timezone.now() + eta
 
             if notification_campaign.updated_at:
@@ -476,8 +483,10 @@ class NotificationCampaignDetail(PermissionRequiredMixin, DetailView):
             context.update({
                 'processed': processed,
                 'pending': pending,
+                'queued': queued,
                 'sent_percent': sent_percent,
                 'failed_percent': failed_percent,
+                'queued_percent': queued_percent,
                 'pending_percent': pending_percent,
                 'elapsed': elapsed,
                 'speed': speed,
