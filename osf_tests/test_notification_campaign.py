@@ -68,8 +68,9 @@ class TestNotificationCampaignTask:
         NotificationCampaignRecipient.objects.filter(campaign=campaign).update(
             status=NotificationCampaignRecipientStatus.QUEUED
         )
-        stats = task.sync_campaign_stats(campaign)
+        stats = task.sync_campaign_stats(campaign, save=True)
         assert stats['queued_count'] == 1
+        campaign.refresh_from_db()
         assert campaign.queued_count == 1
 
 

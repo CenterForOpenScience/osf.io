@@ -58,17 +58,25 @@ class NotificationCampaignTask(celery_app.Task):
             return None
         return campaign
 
-    def sync_campaign_stats(self, campaign):
+    def sync_campaign_stats(self, campaign, *, save=True):
         stats = get_campaign_recipient_stats(campaign.id)
         campaign.recipient_count = stats['recipient_count']
         campaign.sent_count = stats['sent_count']
         campaign.failed_count = stats['failed_count']
         campaign.queued_count = stats['queued_count']
+        if save:
+            campaign.save(update_fields=[
+                'recipient_count',
+                'sent_count',
+                'failed_count',
+                'queued_count',
+                'updated_at',
+            ])
         return stats
 
     def finish_campaign(self, campaign, status=None):
         """Sync recipient counters, set completed_at once, optionally update status, and save."""
-        self.sync_campaign_stats(campaign)
+        self.sync_campaign_stats(campaign, save=False)
         if campaign.completed_at is None:
             campaign.completed_at = timezone.now()
         if status is not None:
@@ -206,8 +214,8 @@ def get_campaign_recipient_stats(campaign_id):
     )
 
 
-@celery_app.task(name='email.process_sendgrid_campaign_events')
-def process_sendgrid_campaign_events(events):
+@celery_app.task(bind=True, base=NotificationCampaignTask, name='email.process_sendgrid_campaign_events')
+def process_sendgrid_campaign_events(self, events):
     """Update campaign recipients from filtered SendGrid Event Webhook events.
 
     Expects events that already include campaign ``custom_args``
@@ -290,6 +298,10 @@ def process_sendgrid_campaign_events(events):
             ),
         )
 
+    if success_ids or failed:
+        for campaign in NotificationCampaign.objects.filter(id__in=campaign_ids):
+            self.sync_campaign_stats(campaign)
+
 
 @celery_app.task(bind=True, base=NotificationCampaignTask, name='email.process_campaign_retry')
 def process_campaign_retry(self, campaign_id, run_id):
@@ -310,13 +322,6 @@ def process_campaign_retry(self, campaign_id, run_id):
         if timezone.now() - reference_time < timedelta(seconds=delivery_timeout):
             # Still waiting for in-flight sends / SendGrid delivery webhooks.
             self.sync_campaign_stats(campaign)
-            campaign.save(update_fields=[
-                'sent_count',
-                'failed_count',
-                'queued_count',
-                'recipient_count',
-                'updated_at',
-            ])
             process_campaign_retry.apply_async(
                 kwargs={'campaign_id': campaign_id, 'run_id': campaign.run_id},
                 countdown=execution.get('dispatch_interval', settings.CAMPAIGN_DISPATCH_INTERVAL),
@@ -669,7 +674,6 @@ def send_campaign_batch(
     with transaction.atomic():
         notification_campaign = NotificationCampaign.objects.select_for_update().get(pk=campaign_id)
         self.sync_campaign_stats(notification_campaign)
-        notification_campaign.save(update_fields=['sent_count', 'failed_count', 'queued_count', 'recipient_count', 'updated_at'])
 
     batch_finished_at = timezone.now()
     batch_run_time = (batch_finished_at - batch_started_at).total_seconds()
