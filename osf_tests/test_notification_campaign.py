@@ -5,6 +5,7 @@ from unittest import mock
 
 from django.utils import timezone
 from django.db.models import Q
+from django.contrib.contenttypes.models import ContentType
 
 from osf.email import _build_sendgrid_personalizations
 from osf.email.notification_campaign import (
@@ -19,6 +20,7 @@ from osf.email.notification_campaign import (
     build_query,
 )
 from osf.models import UserActivityCounter, OSFUser
+from osf.models.base import Guid, generate_guid
 from osf.models.notification_campaign import (
     NotificationCampaign,
     NotificationCampaignRecipient,
@@ -254,6 +256,32 @@ class TestCreateCampaignRecipients:
         assert recipients[low.id] == 50
         assert recipients[zero.id] == 0
         assert NotificationCampaignRecipient.objects.filter(campaign=campaign).count() == 3
+
+    def test_creates_one_recipient_for_multi_guid_user(self, campaign):
+        user = UserFactory()
+        other = UserFactory()
+        _set_activity(user, 42)
+        Guid.objects.create(
+            object_id=user.pk,
+            content_type=ContentType.objects.get_for_model(OSFUser),
+            _id=generate_guid(),
+        )
+        assert user.guids.count() == 2
+
+        create_campaign_recipients(
+            Q(**{'id__in': [user.id, other.id]}),
+            campaign_id=campaign.id,
+        )
+
+        recipients = list(
+            NotificationCampaignRecipient.objects.filter(campaign=campaign).order_by('user_id')
+        )
+        assert len(recipients) == 2
+        by_user = {r.user_id: r.activity_score for r in recipients}
+        assert by_user[user.id] == 42
+        assert by_user[other.id] == 0
+        campaign.refresh_from_db()
+        assert campaign.recipient_count == 2
 
     def test_respects_user_filters(self, campaign):
         included = UserFactory(is_staff=True)

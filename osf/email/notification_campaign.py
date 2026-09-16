@@ -3,7 +3,7 @@ import uuid
 from osf.models import NotificationType, NotificationTypeEnum, OSFUser, UserActivityCounter, Email
 from osf.models.spam import SpamStatus
 from django.db import transaction
-from django.db.models import OuterRef, Subquery, Case, When, Value, CharField, Count, Q, BooleanField, TextField
+from django.db.models import OuterRef, Subquery, Case, When, Value, CharField, Count, Max, Q, BooleanField, TextField
 from django.db.models.functions import Coalesce
 from framework.celery_tasks import app as celery_app
 from django.utils import timezone
@@ -139,10 +139,14 @@ def create_campaign_recipients(filters=None, campaign_id=None):
         raw_filters = campaign.metadata.get('filters', {})
         filters = build_campaign_filter_query(raw_filters)
 
+    # values('id').annotate(...) collapses any duplicate user rows
+    # (e.g. from filters that join guids) so each (campaign, user) appears once.
     qs = (
         OSFUser.objects
         .filter(filters)
-        .annotate(activity_score=Coalesce(Subquery(counter_subquery), 0))
+        .annotate(_activity_score=Coalesce(Subquery(counter_subquery), 0))
+        .values('id')
+        .annotate(activity_score=Max('_activity_score'))
         .values_list(
             'id',
             'activity_score',
