@@ -320,7 +320,7 @@ def capture_notifications(
         _real_send_over_smtp = _osf_email.send_email_over_smtp
         _real_send_with_sendgrid = _osf_email.send_email_with_send_grid
 
-        def _fake_send_over_smtp(to_email, notification_type, context=None, email_context=None):
+        def _fake_send_over_smtp(to_email, notification_type, context=None, email_context=None, rendered_html=None):
             captured['emails'].append({
                 'protocol': 'smtp',
                 'to': to_email,
@@ -329,9 +329,9 @@ def capture_notifications(
                 'email_context': email_context.copy() if isinstance(email_context, dict) else email_context,
             })
             if passthrough:
-                return _real_send_over_smtp(to_email, notification_type, context, email_context)
+                return _real_send_over_smtp(to_email, notification_type, context, email_context, rendered_html)
 
-        def _fake_send_with_sendgrid(user, notification_type, context=None, email_context=None):
+        def _fake_send_with_sendgrid(user, notification_type, context=None, email_context=None, rendered_html=None):
             captured['emails'].append({
                 'protocol': 'sendgrid',
                 'to': user,
@@ -340,7 +340,7 @@ def capture_notifications(
                 'email_context': email_context.copy() if isinstance(email_context, dict) else email_context,
             })
             if passthrough:
-                return _real_send_with_sendgrid(user, notification_type, context, email_context)
+                return _real_send_with_sendgrid(user, notification_type, context, email_context, rendered_html)
 
         patches.extend([
             mock.patch('osf.email.send_email_over_smtp', new=_fake_send_over_smtp),
