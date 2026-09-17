@@ -1,6 +1,6 @@
 from django.urls import reverse, reverse_lazy
 from django.http import Http404
-from django.shortcuts import redirect
+from django.shortcuts import redirect, render
 from django.utils.decorators import method_decorator
 from django.views.decorators.cache import never_cache
 from django.views.decorators.csrf import csrf_protect
@@ -11,7 +11,7 @@ from django.contrib.auth import login, REDIRECT_FIELD_NAME, authenticate, logout
 
 from osf.models.user import OSFUser
 from osf.models import AdminProfile
-from admin.common_auth.forms import LoginForm, UserRegistrationForm, DeskUserForm
+from admin.common_auth.forms import LoginForm, UserRegistrationForm, DeskUserForm, TwoFactorForm
 
 
 class LoginView(FormView):
@@ -24,20 +24,86 @@ class LoginView(FormView):
     def dispatch(self, request, *args, **kwargs):
         return super().dispatch(request, *args, **kwargs)
 
-    def form_valid(self, form):
-        user = authenticate(
-            username=form.cleaned_data.get('email').strip(),
-            password=form.cleaned_data.get('password').strip()
-        )
-        if user is not None:
-            login(self.request, user)
+    def get_form_class(self):
+        if self.request.method == 'POST':
+            if 'code' in self.request.POST:
+                return TwoFactorForm
+
+        return LoginForm
+
+    def post(self, request, *args, **kwargs):
+        form = self.get_context_data()['form']
+        if isinstance(form, LoginForm):
+            error_message = 'Email and/or Password incorrect. Please try again.'
         else:
+            error_message = 'Invalid two-factor code. Please try again.'
+
+        if not form.is_valid():
+            messages.error(self.request, error_message)
+            return redirect('auth:login')
+
+        email = form.cleaned_data.get('email').strip()
+        password = form.cleaned_data.get('password').strip()
+
+        # authentication happens for both login and two-factor auth
+        # because sign in and two-factor auth are two different requests
+        # so for two-factor auth we pass creds from the login request
+        # to be sure creds weren't changed and any user doesn't open two-factor
+        # auth page manually. So for two-factor auth we pass creds implicitly
+        user = authenticate(username=email, password=password)
+        if not user:
+            messages.error(request, error_message)
+            return redirect('auth:login')
+
+        # login and two-factor auth is not possible without having two-factor auth enabled
+        two_factor_settings = user.enabled_two_factor_settings
+        if not two_factor_settings:
             messages.error(
-                self.request,
-                'Email and/or Password incorrect. Please try again.'
+                request,
+                'Two-factor authentication must be enabled.'
             )
             return redirect('auth:login')
-        return super().form_valid(form)
+
+        # to not lose creds after login request, we save them as initial values
+        # and use HiddenInput to not display them
+        if isinstance(form, LoginForm):
+            self.form_class = TwoFactorForm
+            return render(
+                request,
+                'two_factor.html',
+                {
+                    'form': self.form_class(
+                        initial={
+                            'email': email,
+                            'password': password
+                        }
+                    )
+                }
+            )
+
+        # two-factor section
+        is_valid_code = two_factor_settings.verify_code(form.cleaned_data.get('code'))
+        if not is_valid_code:
+            messages.error(
+                self.request,
+                'Invalid two-factor code. Please try again.'
+            )
+            self.form_class = TwoFactorForm
+            return render(
+                request,
+                'two_factor.html',
+                {
+                    'form': self.form_class(
+                        initial={
+                            'email': email,
+                            'password': password
+                        }
+                    )
+                }
+            )
+
+        login(self.request, user)
+        return super().post(request, *args, **kwargs)
 
     def get_success_url(self):
         redirect_to = self.request.GET.get(self.redirect_field_name, '')
