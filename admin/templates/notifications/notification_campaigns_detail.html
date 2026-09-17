@@ -69,6 +69,11 @@
             {{ notification_campaign.sent_count }}
         </div>
 
+        <div class="progress-bar progress-bar-warning"
+            style="width: {{ queued_percent }}%;">
+            {{ notification_campaign.queued_count }}
+        </div>
+
         <div class="progress-bar progress-bar-danger"
             style="width: {{ failed_percent }}%;">
             {{ notification_campaign.failed_count }}
@@ -86,6 +91,11 @@
     <tr>
         <th style="width:250px;">Processed</th>
         <td>{{ processed }} / {{ notification_campaign.recipient_count }}</td>
+    </tr>
+
+    <tr>
+        <th>Queued</th>
+        <td>{{ notification_campaign.queued_count }}</td>
     </tr>
 
     <tr>

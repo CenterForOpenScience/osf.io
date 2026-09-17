@@ -66,11 +66,12 @@ class TestNotificationCampaignTask:
         user = UserFactory()
         create_campaign_recipients(Q(**{'id__in': [user.id]}), campaign_id=campaign.id)
         NotificationCampaignRecipient.objects.filter(campaign=campaign).update(
-            status=NotificationCampaignRecipientStatus.SENT
+            status=NotificationCampaignRecipientStatus.QUEUED
         )
-        stats = task.sync_campaign_stats(campaign)
-        assert stats['sent_count'] == 1
-        assert campaign.sent_count == 1
+        stats = task.sync_campaign_stats(campaign, save=True)
+        assert stats['queued_count'] == 1
+        campaign.refresh_from_db()
+        assert campaign.queued_count == 1
 
 
 @pytest.fixture
@@ -305,6 +306,7 @@ class TestGetCampaignRecipientStats:
             'recipient_count': 0,
             'sent_count': 0,
             'failed_count': 0,
+            'queued_count': 0,
         }
 
     def test_counts_sent_failed_and_skipped(self, campaign, notification_type):
@@ -312,8 +314,9 @@ class TestGetCampaignRecipientStats:
         failed = UserFactory()
         skipped = UserFactory()
         pending = UserFactory()
+        queued = UserFactory()
         create_campaign_recipients(
-            Q(**{'id__in': [sent.id, failed.id, skipped.id, pending.id]}),
+            Q(**{'id__in': [sent.id, failed.id, skipped.id, pending.id, queued.id]}),
             campaign_id=campaign.id,
         )
         NotificationCampaignRecipient.objects.filter(campaign=campaign, user=sent).update(
@@ -325,11 +328,15 @@ class TestGetCampaignRecipientStats:
         NotificationCampaignRecipient.objects.filter(campaign=campaign, user=skipped).update(
             status=NotificationCampaignRecipientStatus.SKIPPED
         )
+        NotificationCampaignRecipient.objects.filter(campaign=campaign, user=queued).update(
+            status=NotificationCampaignRecipientStatus.QUEUED
+        )
 
         assert get_campaign_recipient_stats(campaign.id) == {
-            'recipient_count': 4,
+            'recipient_count': 5,
             'sent_count': 1,
             'failed_count': 2,  # FAILED + SKIPPED
+            'queued_count': 1,
         }
 
     def test_scopes_to_requested_campaign(self, campaign, notification_type):
@@ -353,11 +360,13 @@ class TestGetCampaignRecipientStats:
             'recipient_count': 1,
             'sent_count': 1,
             'failed_count': 0,
+            'queued_count': 0,
         }
         assert get_campaign_recipient_stats(other.id) == {
             'recipient_count': 1,
             'sent_count': 0,
             'failed_count': 1,
+            'queued_count': 0,
         }
 
 
@@ -728,6 +737,7 @@ class TestSendCampaignBatch:
         assert recipient.status == NotificationCampaignRecipientStatus.QUEUED
         assert running_campaign.sent_count == 0
         assert running_campaign.failed_count == 0
+        assert running_campaign.queued_count == 1
 
     def test_build_sendgrid_personalizations_shared_to_list(self):
         personalizations = _build_sendgrid_personalizations(
@@ -1218,6 +1228,9 @@ class TestProcessSendgridCampaignEvents:
         recipient.refresh_from_db()
         assert recipient.status == NotificationCampaignRecipientStatus.SENT
         assert recipient.error_message is None
+        campaign.refresh_from_db()
+        assert campaign.sent_count == 1
+        assert campaign.queued_count == 0
 
     def test_failure_marks_queued_failed(self, campaign):
         campaign.run_id = uuid.uuid4()
@@ -1231,6 +1244,9 @@ class TestProcessSendgridCampaignEvents:
         recipient.refresh_from_db()
         assert recipient.status == NotificationCampaignRecipientStatus.FAILED
         assert recipient.error_message == 'mailbox full'
+        campaign.refresh_from_db()
+        assert campaign.failed_count == 1
+        assert campaign.queued_count == 0
 
     def test_delivered_overrides_failed(self, campaign):
         campaign.run_id = uuid.uuid4()
