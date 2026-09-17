@@ -20,8 +20,21 @@
                 <form method="post"
                       action="{% url 'management:waffle_flag'%}">
                     {% csrf_token %}
-                    <input class="btn btn-success" type="submit"
-                           value="Run" />
+                    <label>
+                        <input
+                            type="checkbox"
+                            name="preserve_everyone"
+                            checked
+                        >
+                        Preserve existing "everyone" values
+                    </label>
+
+                    <p class="help-block">
+                        When enabled, existing flags will keep their current "everyone"
+                        value. New flags will use the value from the configuration file.
+                    </p>
+
+                    <input class="btn btn-success" type="submit" value="Run" />
                 </form>
             </ul>
             <h4> <u>Update Registration Schemas and Schema Blocks </u>
