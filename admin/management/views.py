@@ -52,8 +52,12 @@ class ManagementCommandPermissionView(View, PermissionRequiredMixin):
 class WaffleFlag(ManagementCommandPermissionView):
 
     def post(self, request, *args, **kwargs):
-        manage_waffle()
-        messages.success(request, 'Waffle flags have been successfully updated.')
+        preserve_everyone = request.POST.get('preserve_everyone') == 'on'
+        manage_waffle(preserve_everyone=preserve_everyone)
+        messages.success(
+            request,
+            'Waffle flags have been successfully updated.',
+        )
         return redirect(reverse('management:commands'))
 
 
