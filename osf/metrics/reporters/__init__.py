@@ -9,10 +9,11 @@ from .institutional_users import InstitutionalUsersReporter
 from .institution_summary_monthly import InstitutionalSummaryMonthlyReporter
 from .new_user_domain import NewUserDomainReporter
 from .node_count import NodeCountReporter
-from .osfstorage_file_count import (
-    OsfstorageFileCountReporter,
-    MonthlyOsfstorageFileCountReporter,
-)
+# queries need optimizing before these run again (ENG-12211, follow-up ENG-12212)
+# from .osfstorage_file_count import (
+#     OsfstorageFileCountReporter,
+#     MonthlyOsfstorageFileCountReporter,
+# )
 from .preprint_count import PreprintCountReporter
 from .public_item_usage import PublicItemUsageReporter
 from .user_count import UserCountReporter
@@ -26,7 +27,7 @@ class AllDailyReporters(enum.Enum):
     INSTITUTION_SUMMARY = InstitutionSummaryReporter
     NEW_USER_DOMAIN = NewUserDomainReporter
     NODE_COUNT = NodeCountReporter
-    OSFSTORAGE_FILE_COUNT = OsfstorageFileCountReporter
+    # OSFSTORAGE_FILE_COUNT = OsfstorageFileCountReporter
     PREPRINT_COUNT = PreprintCountReporter
     STORAGE_ADDON_USAGE = StorageAddonUsageReporter
     USER_COUNT = UserCountReporter
@@ -38,4 +39,4 @@ class AllMonthlyReporters(enum.Enum):
     INSTITUTIONAL_SUMMARY = InstitutionalSummaryMonthlyReporter
     ITEM_USAGE = PublicItemUsageReporter
     PRIVATE_SPAM_METRICS = PrivateSpamMetricsReporter
-    OSFSTORAGE_FILE_COUNT = MonthlyOsfstorageFileCountReporter
+    # OSFSTORAGE_FILE_COUNT = MonthlyOsfstorageFileCountReporter
