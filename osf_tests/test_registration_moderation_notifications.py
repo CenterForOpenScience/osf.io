@@ -140,7 +140,11 @@ class TestRegistrationMachineNotification:
         assert notification['emits'][1]['type'] == NotificationTypeEnum.PROVIDER_REVIEWS_SUBMISSION_CONFIRMATION
         assert notification['emits'][1]['kwargs']['user'] == contrib
         assert notification['emits'][2]['type'] == NotificationTypeEnum.PROVIDER_NEW_PENDING_SUBMISSIONS
-        assert NotificationSubscription.objects.count() == 7
+        # under the hood registration fixture creates a registration and calls require_approval
+        # which emits NotificationTypeEnum.NODE_PENDING_REGISTRATION_ADMIN and creates a NotificationSubscription
+        # for the admin contributor and sends the creator a notification of type NotificationTypeEnum.NODE_PENDING_REGISTRATION_ADMIN
+        # so it's 8 subscriptions, not 7
+        assert NotificationSubscription.objects.count() == 8
         digest = NotificationSubscription.objects.last()
         assert digest.user == moderator
 

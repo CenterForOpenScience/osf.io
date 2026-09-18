@@ -177,6 +177,80 @@ class TestSanctionEmailRendering:
 
 
 @pytest.mark.django_db
+class TestSanctionAskNotification:
+
+    @pytest.fixture
+    def contributor(self):
+        return factories.AuthUserFactory()
+
+    @pytest.fixture()
+    def registration_approval_registration(self, request, contributor):
+        sanction = factories.RegistrationApprovalFactory()
+        registration = sanction.target_registration
+        registration.add_contributor(contributor)
+        registration.save()
+        return registration
+
+    @pytest.fixture()
+    def embargo_registration(self, request, contributor):
+        sanction = factories.EmbargoFactory(end_date=timezone.now())
+        registration = sanction.target_registration
+        registration.add_contributor(contributor)
+        registration.save()
+        return registration
+
+    @pytest.mark.parametrize('reviews_workflow', [None, 'pre-moderation'])
+    @pytest.mark.parametrize('branched_from_node', [True, False])
+    def test_registration_approval_creates_notifications_for_approval_for_contributors(self, reviews_workflow, branched_from_node, registration_approval_registration):
+        registration = registration_approval_registration
+        provider = registration.provider
+        provider.reviews_workflow = reviews_workflow
+        provider.save()
+
+        registration.branched_from_node = branched_from_node
+        registration.save()
+
+        admin_contributor = factories.AuthUserFactory()
+        registration.add_contributor(admin_contributor, permissions.ADMIN)
+        with capture_notifications() as notifications:
+            registration.require_approval(registration.creator)
+
+        # ensure RegistrationCreateSerializer sends emails to admin contributors
+        real_admins = {registration.creator, admin_contributor}
+        admins_with_notifications = set()
+        assert len(notifications['emits']) == 2
+        for emit in notifications['emits']:
+            admins_with_notifications.add(emit['kwargs']['user'])
+
+        assert real_admins == admins_with_notifications
+
+    @pytest.mark.parametrize('reviews_workflow', [None, 'pre-moderation'])
+    @pytest.mark.parametrize('branched_from_node', [True, False])
+    def test_embargo_creates_notifications_for_approval_for_contributors(self, reviews_workflow, branched_from_node, embargo_registration):
+        registration = embargo_registration
+        provider = registration.provider
+        provider.reviews_workflow = reviews_workflow
+        provider.save()
+
+        registration.branched_from_node = branched_from_node
+        registration.save()
+
+        admin_contributor = factories.AuthUserFactory()
+        registration.add_contributor(admin_contributor, permissions.ADMIN)
+        with capture_notifications() as notifications:
+            registration.embargo_registration(registration.creator, timezone.now() + datetime.timedelta(days=10))
+
+        # ensure RegistrationCreateSerializer sends emails to admin contributors
+        real_admins = {registration.creator, admin_contributor}
+        admins_with_notifications = set()
+        assert len(notifications['emits']) == 2
+        for emit in notifications['emits']:
+            admins_with_notifications.add(emit['kwargs']['user'])
+
+        assert real_admins == admins_with_notifications
+
+
+@pytest.mark.django_db
 @pytest.mark.usefixtures('mock_gravy_valet_get_verified_links')
 class TestDOICreation:
 
