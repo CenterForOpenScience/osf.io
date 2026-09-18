@@ -277,14 +277,20 @@ class RecoverDeletedPreprintView(PermissionRequiredMixin, FormView):
     form_class = RecoverDeletedPreprintForm
 
     def _copy_primary_file(self, preprint, file_guid):
-        source_file = getattr(Guid.load(file_guid), 'referent', None)
+        source, _ = Guid.load_referent(file_guid)
+        if isinstance(source, Preprint):
+            source_file = source.primary_file
+            if source_file is None:
+                raise ValueError(f'Preprint "{file_guid}" has no primary file to copy.')
+        else:
+            source_file = source
         if not isinstance(source_file, BaseFileNode):
-            raise ValueError(f'No file found for guid "{file_guid}".')
+            raise ValueError(f'No file or preprint found for guid "{file_guid}".')
         latest_version = source_file.versions.order_by('-created').first()
         if latest_version is None:
             raise ValueError(f'File "{file_guid}" has no versions to copy.')
         copied = copy_files(source_file, target_node=preprint, identifier=latest_version.identifier)
-        preprint.set_primary_file(copied, auth=self.request, save=True)
+        preprint.set_primary_file(copied, auth=self.request, save=True, ignore_permission=True)
 
     def form_valid(self, form):
         data = form.cleaned_data
