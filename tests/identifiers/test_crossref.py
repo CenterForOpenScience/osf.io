@@ -3,6 +3,7 @@ from unittest import mock
 import lxml
 import pytest
 import responses
+from django.utils import timezone
 
 from tests.utils import capture_notifications
 from website import settings
@@ -330,6 +331,22 @@ class TestCrossRefClient:
         institution.save()
         preprint.creator.add_or_update_affiliated_institution(institution)
         preprint.creator.save()
+
+        crossref_xml = crossref_client.build_metadata(preprint)
+        root = lxml.etree.fromstring(crossref_xml)
+        contributors = root.find('.//{%s}contributors' % crossref.CROSSREF_NAMESPACE)
+        assert contributors.find('.//{%s}institution_name' % crossref.CROSSREF_NAMESPACE).text == institution.name
+        assert contributors.find('.//{%s}institution_id' % crossref.CROSSREF_NAMESPACE).text == institution.ror_uri
+
+    def test_metadata_for_affiliated_institutions_survives_deactivation(self, crossref_client, preprint):
+        institution = InstitutionFactory()
+        institution.ror_uri = 'http://ror.org/WHATisITgoodFOR/'
+        institution.save()
+        preprint.creator.add_or_update_affiliated_institution(institution)
+        preprint.creator.save()
+
+        institution.deactivated = timezone.now()
+        institution.save()
 
         crossref_xml = crossref_client.build_metadata(preprint)
         root = lxml.etree.fromstring(crossref_xml)

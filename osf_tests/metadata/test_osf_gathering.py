@@ -3,6 +3,7 @@ from unittest import mock
 
 import pytest
 from django.test import TestCase
+from django.utils import timezone
 import rdflib
 from rdflib import Literal, URIRef
 
@@ -596,6 +597,29 @@ class TestOsfGathering(TestCase):
             (institution_iri, DCTERMS.identifier, Literal(institution.identifier_domain)),
             (institution_iri, DCTERMS.identifier, Literal(institution.ror_uri)),
         })
+
+    def test_gather_affiliated_institutions_survives_deactivation(self):
+        """
+        Turning an institution off hides it from the front end and search, but metadata and
+        DOIs that already have its ROR id keep that id, even though the record is updated
+        """
+        institution = factories.InstitutionFactory()
+        institution_iri = URIRef(institution.ror_uri)
+        self.user__admin.add_or_update_affiliated_institution(institution)
+        with capture_notifications():
+            self.project.add_affiliated_institution(institution, self.user__admin)
+            self.preprint.add_affiliated_institution(institution, self.user__admin)
+        institution.deactivated = timezone.now()
+        institution.save()
+        for focus in (self.projectfocus, self.preprintfocus, self.userfocus__admin):
+            assert_triples(osf_gathering.gather_affiliated_institutions(focus), {
+                (focus.iri, OSF.affiliation, institution_iri),
+                (institution_iri, RDF.type, DCTERMS.Agent),
+                (institution_iri, RDF.type, FOAF.Organization),
+                (institution_iri, FOAF.name, Literal(institution.name)),
+                (institution_iri, DCTERMS.identifier, Literal(institution.identifier_domain)),
+                (institution_iri, DCTERMS.identifier, Literal(institution.ror_uri)),
+            })
 
     def test_gather_funding(self):
         # focus: project

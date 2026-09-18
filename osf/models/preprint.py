@@ -356,9 +356,17 @@ class Preprint(DirtyFieldsMixin, VersionedGuidMixin, IdentifierMixin, Reviewable
         preprint.save(guid_ready=False)
         # Step 2: Create the base guid obj
         if manual_guid:
-            if not check_manually_assigned_guid(manual_guid):
+            existing_guid = Guid.objects.filter(_id=manual_guid).first()
+            if existing_guid is not None:
+                # Reuse an orphaned guid so deleted preprints can be recovered at their
+                # original id; a guid still pointing at a live object is a real collision.
+                if existing_guid.referent is not None:
+                    raise ValidationError(f'GUID cannot be manually assigned: guid_str={manual_guid}.')
+                base_guid_obj = existing_guid
+            elif check_manually_assigned_guid(manual_guid):
+                base_guid_obj = Guid.objects.create(_id=manual_guid)
+            else:
                 raise ValidationError(f'GUID cannot be manually assigned: guid_str={manual_guid}.')
-            base_guid_obj = Guid.objects.create(_id=manual_guid)
         else:
             base_guid_obj = Guid.objects.create()
         base_guid_obj.referent = preprint
@@ -539,8 +547,9 @@ class Preprint(DirtyFieldsMixin, VersionedGuidMixin, IdentifierMixin, Reviewable
                 sentry.log_message(f'Unregistered contributor was not added to new preprint version due to error: '
                                    f'[preprint={preprint._id}, user={contributor.user._id}]')
 
-        # Add affiliated institutions
-        for institution in latest_version.affiliated_institutions.all():
+        # Add affiliated institutions. Deactivated institutions are carried over on purpose so a
+        # new version does not silently drop an affiliation and its ROR id the previous one had
+        for institution in latest_version.get_affiliated_institutions(include_deactivated=True):
             preprint.add_affiliated_institution(institution, auth.user, ignore_user_affiliation=True)
 
         # Update Guid obj to point to the new version if there is no moderation and new version is bigger
