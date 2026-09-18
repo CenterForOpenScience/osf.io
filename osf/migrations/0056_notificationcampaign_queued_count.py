@@ -20,8 +20,8 @@ class Migration(migrations.Migration):
             name='status',
             field=models.CharField(
                 choices=[
-                    ('pending', 'Pending'),
                     ('queued', 'Queued'),
+                    ('pending', 'Pending'),
                     ('awaiting_delivery', 'Awaiting Delivery'),
                     ('sent', 'Sent'),
                     ('failed', 'Failed'),
