@@ -485,7 +485,9 @@ class CeleryConfig:
     }
 
     low_pri_modules = {
-        'framework.analytics.tasks',
+        # covers increment_user_activity_counters, which moved from
+        # framework/analytics/tasks.py ( deleted ) into the package __init__
+        'framework.analytics',
         'framework.celery_tasks',
         'scripts.osfstorage.usage_audit',
         'scripts.stuck_registration_audit',
@@ -498,21 +500,37 @@ class CeleryConfig:
         'osf.management.commands.migrate_pagecounter_data',
         'osf.management.commands.migrate_deleted_date',
         'osf.management.commands.addon_deleted_date',
-        'osf.management.commands.archive_registrations_on_IA'
+        'osf.management.commands.archive_registrations_on_IA',
         'osf.management.commands.sync_doi_metadata',
         'osf.management.commands.sync_collection_provider_indices',
         'osf.management.commands.sync_datacite_doi_metadata',
-        'osf.management.commands.populate_branched_from',
-        'osf.management.commands.spam_metrics',
+        'osf.management.commands.populate_branched_from_node',
         'osf.management.commands.daily_reporters_go',
         'osf.management.commands.monthly_reporters_go',
-        'osf.management.commands.ingest_cedar_metadata_templates',
+        'osf.management.commands.fetch_cedar_metadata_templates',
         'osf.metrics.reporters',
         'scripts.remove_after_use.merge_notification_subscription_provider_ct',
+        # Items below are celery task names, not python module paths.
+        # These tasks set an explicit name= that does not start with their own
+        # module path, so the module entries above never match them. Listing the
+        # names keeps them on the intended queue without renaming the tasks
+        'management.commands.addon_deleted_date',
+        'management.commands.daily_reporters_go',
+        'management.commands.daily_reporter_go',
+        'management.commands.delete_withdrawn_or_failed_registration_files',
+        'management.commands.migrate_deleted_date',
+        'management.commands.migrate_pagecounter_data',
+        'management.commands.ingest_cedar_metadata_templates',
+        'management.commands.populate_branched_from',
+        'osf.management.commands.sync_doi_metadata_command',
+        'osf.management.commands.sync_preprint_missing_dois',
+        'osf.management.commands.async_request_identifier_update',
+        'osf.management.commands.sync_doi_empty_metadata_dataarchive_registrations_command',
     }
 
     med_pri_modules = {
         'scripts.triggered_mails',
+        'scripts.triggered_no_login_email',
         'website.mailchimp_utils',
         'notifications.tasks',
         'website.collections.tasks',
@@ -530,12 +548,15 @@ class CeleryConfig:
         'scripts.retract_registrations',
         'website.archiver.tasks',
         'scripts.add_missing_identifiers_to_preprints',
-        'osf.management.commands.approve_pending_schema_response',
+        'osf.management.commands.approve_pending_schema_responses',
         'api.share.utils',
         'scripts.check_manual_restart_approval',
         'scripts.enhanced_stuck_registration_audit',
         'email.start_notification_campaign',
         'email.dispatch_campaign',
+        'scripts.check_manual_restart_approvals_batch',
+        'scripts.delayed_manual_restart_approval',
+        'scripts.manual_restart_approval_batch',
     }
 
     background_migration_modules = {
@@ -760,7 +781,7 @@ class CeleryConfig:
             'schedule': crontab(minute=0, hour=6),  # Daily 1:00 a.m.
         },
         'monthly_reporters_go': {
-            'task': 'management.commands.monthly_reporters_go',
+            'task': 'osf.management.commands.monthly_reporters_go.monthly_reporters_go',
             'schedule': crontab(minute=30, hour=6, day_of_month=2),     # Second day of month 1:30 a.m.
         },
         'generate_sitemap': {
