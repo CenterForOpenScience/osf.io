@@ -58,6 +58,7 @@ from osf.models import (
 from osf.utils import permissions
 from osf.utils.download_telemetry import (
     classify_download_channel,
+    get_client_ip,
     never_breaks_downloads,
     record_download,
 )
@@ -221,7 +222,9 @@ def _record_file_download(target, file_node, query_params, auth, version=None):
         version_identifier=getattr(version, 'identifier', None),
         storage_provider=getattr(file_node, 'provider', '') or '',
         user_guid=getattr(getattr(auth, 'user', None), '_id', None),
-        ip=request.remote_addr,
+        # remote_addr behind the load balancer is the balancer, not the client --
+        # the client is recovered from X-Forwarded-For
+        ip=get_client_ip(request.remote_addr, request.headers.get('X-Forwarded-For', '')),
         user_agent=request.headers.get('User-Agent', ''),
         source_area=source_area,
         download_channel=classify_download_channel(source_area, is_api_token=is_api_token),

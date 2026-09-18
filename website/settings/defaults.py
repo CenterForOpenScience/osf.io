@@ -81,6 +81,17 @@ ANONYMIZED_TITLES = ['Authors']
 
 LOAD_BALANCER = False
 
+# Extra proxy hops to skip when resolving the real client address out of
+# X-Forwarded-For (download telemetry). Comma-separated CIDRs; add the load
+# balancer's own public address(es) here, e.g. '35.190.55.96/32'. Private,
+# loopback and link-local ranges and the documented GCP load-balancer source
+# ranges are always skipped and don't need listing.
+TRUSTED_PROXY_CIDRS = [
+    cidr.strip()
+    for cidr in os.environ.get('OSF_TRUSTED_PROXY_CIDRS', '').split(',')
+    if cidr.strip()
+]
+
 # May set these to True in local.py for development
 DEV_MODE = False
 DEBUG_MODE = False
@@ -170,6 +181,8 @@ MAILHOG_API_HOST = 'http://mailhog:8025'
 # OR, if using Sendgrid's API
 # WARNING: If `SENDGRID_WHITELIST_MODE` is True,
 SENDGRID_API_KEY = None
+# Public verification key from SendGrid Event Webhook (Mail Settings -> Event Webhook -> Signed Event Webhook)
+SENDGRID_EVENT_WEBHOOK_PUBLIC_KEY = None
 
 # Mailchimp
 MAILCHIMP_API_KEY = None
@@ -189,12 +202,17 @@ NO_LOGIN_WAIT_TIME = timedelta(weeks=52)   # 1 year for "We miss you at OSF" ema
 NO_LOGIN_OSF4M_WAIT_TIME = timedelta(weeks=52)  # 1 year for "We miss you at OSF" email to users created from OSF4M
 NOTIFICATIONS_CLEANUP_AGE = timedelta(weeks=12)  # 3 months to clean up old notifications and email tasks
 NOTIFICATIONS_CLEANUP_BATCH_SIZE = 10000  # Batch size for notifications and email tasks cleanup
+NOTIFICATION_CAMPAIGN_RECIPIENTS_CLEANUP_AGE = timedelta(weeks=12)  # 3 months to clean up old notification campaign recipients
+NOTIFICATION_CAMPAIGN_RECIPIENTS_CLEANUP_BATCH_SIZE = 5000  # Batch size for notification campaign recipients cleanup
 
 # Notification campaign execution defaults (overridable per campaign in admin metadata)
 DEFAULT_CAMPAIGN_ACTIVITY_THRESHOLD = 3  # Users at/above this activity total are scheduled in the high-activity phase
 DEFAULT_CAMPAIGN_BATCH_SIZE = 1000
 DEFAULT_CAMPAIGN_WINDOW_TIME = 28800  # 8 hours
 DEFAULT_CAMPAIGN_MAX_RETRIES = 3
+DEFAULT_CAMPAIGN_DELIVERY_TIMEOUT = 86400  # 24 hours; mark remaining QUEUED as FAILED after this from started_at
+MAX_QUEUED_CAMPAIGN_BATCHES = 100  # Maximum number of queued campaign batches allowed before new batches are rejected. This is to prevent runaway campaigns from overwhelming the system.
+CAMPAIGN_DISPATCH_INTERVAL = 300  # 5 min (300 sec), minimum time before checking and dispatching new campaign batches.
 # The following are rough estimates so we can log to sentry those batches and sendgrid quests which run longer than normal
 ESTIMATED_PER_REQUEST_THRESHOLD = 0.3  # On production, sending one email via SendGrid takes 0.20 ~ 0.50 seconds, set default alert threshold at 0.30s
 ESTIMATED_BATCH_RUN_TIME_THRESHOLD = 300  # On production, with batch size 1000, we expect each batch to finish within 300s (5m)
@@ -451,7 +469,9 @@ class CeleryConfig:
         'website.identifiers.tasks.task__update_verified_links'
     }
 
-    external_low_modules = {}
+    external_low_modules = {
+        'email.process_sendgrid_campaign_events',
+    }
 
     account_status_changes_modules = {}
 
@@ -515,6 +535,7 @@ class CeleryConfig:
         'scripts.check_manual_restart_approval',
         'scripts.enhanced_stuck_registration_audit',
         'email.start_notification_campaign',
+        'email.dispatch_campaign',
     }
 
     background_migration_modules = {
@@ -719,6 +740,10 @@ class CeleryConfig:
             'task': 'notifications.tasks.notifications_cleanup_task',
             'schedule': crontab(minute=0, hour=7),  # Daily 2 a.m
             'kwargs': {'dry_run': False},
+        },
+        'delete_notification_campaign_recipients': {
+            'task': 'notifications.tasks.delete_notification_campaign_recipients',
+            'schedule': crontab(minute=0, hour=3, day_of_month=1),
         },
         'clear_expired_sessions': {
             'task': 'osf.management.commands.clear_expired_sessions',
