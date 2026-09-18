@@ -1085,6 +1085,36 @@ class TestRecoverDeletedPreprintView(AdminTestCase):
         assert recovered.primary_file is not None
         assert recovered.primary_file.copied_from_id == source_file.id
 
+    def test_copies_primary_file_from_source_preprint_versioned_guid(self):
+        source = PreprintFactory(provider=self.provider)
+        source_file = source.primary_file
+
+        response = self._post(self._base_data(file_guid=source._id))
+        assert response.status_code == 302
+
+        recovered = Preprint.load('abcde')
+        assert recovered.primary_file.copied_from_id == source_file.id
+
+    def test_copies_primary_file_when_admin_is_not_a_contributor(self):
+        source = PreprintFactory(provider=self.provider)
+        target = PreprintFactory(provider=self.provider)
+        guid_str = target._id.split('_v')[0]
+        target.deleted = timezone.now()
+        target.save()
+        assert not target.has_permission(self.user, 'write')
+
+        response = self._post(self._base_data(guid=guid_str, file_guid=source._id))
+        assert response.status_code == 302
+
+        recovered = Preprint.load(guid_str)
+        assert recovered.deleted is None
+        assert recovered.primary_file.copied_from_id == source.primary_file.id
+
+    def test_unknown_source_guid_shows_error(self):
+        response = self._post(self._base_data(file_guid='zzzzz_v1'))
+        assert response.status_code == 302
+        assert Preprint.load('abcde') is None
+
     def _orphan_guid(self, provider):
         # Leave a base Guid with a dangling referent (the deleted-preprint state we recover from).
         # Detach the GenericRelation first so deleting the preprint doesn't cascade the Guid away.

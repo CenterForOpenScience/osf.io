@@ -913,7 +913,7 @@ class Preprint(DirtyFieldsMixin, VersionedGuidMixin, IdentifierMixin, Reviewable
                 action=PreprintLog.FILE_UPDATED,
                 params={
                     'preprint': self._id,
-                    'file': self.primary_file._id
+                    'file': str(self.primary_file._id)
                 },
                 auth=auth,
                 save=False
