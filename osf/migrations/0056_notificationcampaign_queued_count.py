@@ -15,4 +15,22 @@ class Migration(migrations.Migration):
             name='queued_count',
             field=models.PositiveIntegerField(default=0),
         ),
+        migrations.AlterField(
+            model_name='notificationcampaignrecipient',
+            name='status',
+            field=models.CharField(
+                choices=[
+                    ('pending', 'Pending'),
+                    ('queued', 'Queued'),
+                    ('awaiting_delivery', 'Awaiting Delivery'),
+                    ('sent', 'Sent'),
+                    ('failed', 'Failed'),
+                    ('skipped', 'Skipped'),
+                    ('postponed', 'Postponed'),
+                ],
+                db_index=True,
+                default='pending',
+                max_length=20,
+            ),
+        ),
     ]

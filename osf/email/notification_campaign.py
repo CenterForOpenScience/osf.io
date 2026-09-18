@@ -209,7 +209,12 @@ def get_campaign_recipient_stats(campaign_id):
         ),
         queued_count=Count(
             'id',
-            filter=Q(status=NotificationCampaignRecipientStatus.QUEUED),
+            filter=Q(
+                status__in=[
+                    NotificationCampaignRecipientStatus.QUEUED,
+                    NotificationCampaignRecipientStatus.AWAITING_DELIVERY,
+                ]
+            ),
         ),
     )
 
@@ -219,9 +224,10 @@ def process_sendgrid_campaign_events(self, events):
     """Update campaign recipients from filtered SendGrid Event Webhook events.
 
     Expects events that already include campaign ``custom_args``
-    (``campaign_id``, ``campaign_recipient_id``, ``run_id``). Only ``QUEUED``
-    or ``FAILED`` recipients whose event ``run_id`` matches the campaign's
-    current run are updated; delayed webhooks from a prior run are ignored.
+    (``campaign_id``, ``campaign_recipient_id``, ``run_id``). Only
+    ``AWAITING_DELIVERY`` or ``FAILED`` recipients whose
+    event ``run_id`` matches the campaign's current run are updated; delayed
+    webhooks from a prior run are ignored.
 
     A ``delivered`` event wins over failure events for the same recipient
     (including a prior ``FAILED`` from an earlier webhook) so a confirmed
@@ -287,7 +293,7 @@ def process_sendgrid_campaign_events(self, events):
             NotificationCampaignRecipient.objects.filter(
                 id__in=success_ids,
                 status__in=[
-                    NotificationCampaignRecipientStatus.QUEUED,
+                    NotificationCampaignRecipientStatus.AWAITING_DELIVERY,
                     NotificationCampaignRecipientStatus.FAILED,
                 ],
             ).update(status=NotificationCampaignRecipientStatus.SENT, error_message=None)
@@ -299,7 +305,7 @@ def process_sendgrid_campaign_events(self, events):
             ]
             NotificationCampaignRecipient.objects.filter(
                 id__in=failed.keys(),
-                status=NotificationCampaignRecipientStatus.QUEUED,
+                status=NotificationCampaignRecipientStatus.AWAITING_DELIVERY,
             ).update(
                 status=NotificationCampaignRecipientStatus.FAILED,
                 error_message=Case(
@@ -322,11 +328,11 @@ def process_campaign_retry(self, campaign_id, run_id):
     campaign.refresh_from_db()
     execution = campaign.metadata.get('execution', {})
 
-    queued_qs = NotificationCampaignRecipient.objects.filter(
+    awaiting_qs = NotificationCampaignRecipient.objects.filter(
         campaign=campaign,
-        status=NotificationCampaignRecipientStatus.QUEUED,
+        status=NotificationCampaignRecipientStatus.AWAITING_DELIVERY,
     )
-    if queued_qs.exists():
+    if awaiting_qs.exists():
         delivery_timeout = execution.get('delivery_timeout', settings.DEFAULT_CAMPAIGN_DELIVERY_TIMEOUT)
         reference_time = campaign.started_at or campaign.created_at
         if timezone.now() - reference_time < timedelta(seconds=delivery_timeout):
@@ -338,13 +344,13 @@ def process_campaign_retry(self, campaign_id, run_id):
             )
             return
 
-        timed_out = queued_qs.update(
+        timed_out = awaiting_qs.update(
             status=NotificationCampaignRecipientStatus.FAILED,
             error_message='SendGrid delivery timeout',
         )
         message = (
             f'[Notification Campaign #{campaign_id}] WARNING: '
-            f'Marked {timed_out} queued recipients as FAILED after delivery timeout '
+            f'Marked {timed_out} awaiting-delivery recipients as FAILED after delivery timeout '
             f'({delivery_timeout}s) for campaign {campaign.name}.'
         )
         logger.warning(message)
@@ -404,7 +410,10 @@ def start_notification_campaign(self, campaign_id, restart_failed=False, restart
     if restart_stuck:
         NotificationCampaignRecipient.objects.filter(
             campaign_id=campaign_id,
-            status=NotificationCampaignRecipientStatus.QUEUED
+            status__in=[
+                NotificationCampaignRecipientStatus.QUEUED,
+                NotificationCampaignRecipientStatus.AWAITING_DELIVERY,
+            ],
         ).update(status=NotificationCampaignRecipientStatus.PENDING, batch_id=None)
 
     dispatch_campaign.apply_async(
@@ -631,7 +640,7 @@ def send_campaign_batch(
                 email_context={'custom_args_list': custom_args_list},
                 is_multiple=True,
             )
-            # Leave QUEUED until SendGrid Event Webhook confirms delivery.
+            valid_emails_qs.update(status=NotificationCampaignRecipientStatus.AWAITING_DELIVERY)
         except Exception as exc:
             message = (f'[Notification Campaign #{campaign_id}] ERROR: '
                        f'Campaign {campaign.name} sendgrid bulk request failed, error={str(exc)}')
