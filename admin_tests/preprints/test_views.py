@@ -6,6 +6,7 @@ from django.urls import reverse
 from django.core.exceptions import PermissionDenied
 from django.contrib.auth.models import Permission, Group, AnonymousUser
 from django.contrib.messages.storage.fallback import FallbackStorage
+from django.utils import timezone
 
 from tests.base import AdminTestCase
 from osf.models import Preprint, PreprintLog, PreprintRequest, NotificationTypeEnum
@@ -19,7 +20,7 @@ from osf_tests.factories import (
     SubjectFactory,
 
 )
-from osf.models.admin_log_entry import AdminLogEntry, PREPRINT_RECOVERED
+from osf.models.admin_log_entry import AdminLogEntry, PREPRINT_RECOVERED, PREPRINT_RESTORED
 from osf.models.spam import SpamStatus
 from osf.utils.workflows import DefaultStates, RequestTypes
 from osf.utils.permissions import ADMIN
@@ -1051,6 +1052,26 @@ class TestRecoverDeletedPreprintView(AdminTestCase):
         assert list(versions.values_list('version', flat=True)) == [1, 2]
         for version_through in versions:
             assert version_through.referent._id == f'abcde_v{version_through.version}'
+
+    def test_soft_deleted_preprint_is_restored_not_recreated(self):
+        preprint = PreprintFactory(provider=self.provider)
+        guid_str = preprint._id.split('_v')[0]
+        original_file = preprint.primary_file
+        preprint.deleted = timezone.now()
+        preprint.save()
+
+        response = self._post(self._base_data(guid=guid_str))
+        assert response.status_code == 302
+
+        recovered = Preprint.load(guid_str)
+        assert recovered.id == preprint.id
+        assert recovered._id == preprint._id
+        assert recovered.deleted is None
+        assert recovered.primary_file_id == original_file.id
+
+        log = AdminLogEntry.objects.get(action_flag=PREPRINT_RESTORED)
+        assert log.user_id == self.user.id
+        assert 'ENG-1234' in log.change_message
 
     def test_copies_primary_file_from_source_guid(self):
         source = PreprintFactory(provider=self.provider)
