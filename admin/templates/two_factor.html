@@ -17,9 +17,9 @@
     <div class="login-box">
         <div class="login-logo">
             <b>OSF</b>Admin</a>
-        </div><!-- /.login-logo -->
+        </div>
         <div class="login-box-body">
-            <p class="login-box-msg">Sign in to start your session</p>
+            <p class="login-box-msg">A verification code has been sent to your authenticator app.</p>
             <form action="" method="post">
                 {% csrf_token %}
                 {% if form.non_field_errors %}
@@ -30,24 +30,21 @@
                 </ul>
                 {% endif %}
                 <div class="form-group">
-                    <label for="username">Email:</label>
-                    <p>{{ form.email }}</p>
-                    {% if form.email.errors %}<span class="text-danger"> {{ form.email.errors }}</span>{% endif %}
+                    <label for="code">Verification code:</label>
+                    <p>{{ form.code }}</p>
+                    {% if form.code.errors %}<span class="text-danger"> {{ form.code.errors }}</span>{% endif %}
                 </div>
-                <div class="form-group">
-                    <label for="username">Password:</label>
-                    <p>{{ form.password }}</p>
-                    {% if form.password.errors %}<span class="text-danger"> {{ form.password.errors }}</span>{% endif %}
-                </div>
+                {{ form.email }}
+                {{ form.password }}
                 <div class="row">
                     <div class="col-xs-4">
                         <button type="submit" class="btn btn-primary btn-block btn-flat">Sign In</button>
-                    </div><!-- /.col -->
+                    </div>
                 </div>
                 <div>
                     <br>
                     {% if messages %}
-                        <ul class="register_page_messages">
+                        <ul class="two_factor_page_messages">
                         {% for message in messages %}
                             <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}
                             </li>
@@ -56,8 +53,8 @@
                     {% endif %}
                 </div>
             </form>
-        </div><!-- /.login-box-body -->
-      <br><!-- refactor  -->
-    </div><!-- /.login-box -->
+        </div>
+      <br>
+    </div>
 </div>
 {% endblock %}
