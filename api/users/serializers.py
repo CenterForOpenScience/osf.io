@@ -460,6 +460,11 @@ class UserResetPasswordSerializer(BaseAPISerializer):
     class Meta:
         type_ = 'user_reset_password'
 
+class UserResendConfirmationSerializer(BaseAPISerializer):
+    email = ser.CharField(write_only=True, required=True)
+
+    class Meta:
+        type_ = 'user_resend_confirmation'
 
 class ConfirmEmailTokenSerializer(BaseAPISerializer):
     uid = ser.CharField(write_only=True, required=True)

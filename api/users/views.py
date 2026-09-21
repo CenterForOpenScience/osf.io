@@ -69,6 +69,7 @@ from api.users.serializers import (
     ExternalLoginSerialiser,
     ConfirmEmailTokenSerializer,
     SanctionTokenSerializer,
+    UserResendConfirmationSerializer,
 )
 from django.contrib.auth.models import AnonymousUser
 from django.http import JsonResponse
@@ -939,7 +940,7 @@ class ResendConfirmation(JSONAPIBaseView, generics.ListCreateAPIView):
     """
       View for handling resend confirmation URL requests.
 
-      GET:
+      POST:
       - Takes an email as a query parameter.
       - If the email is not provided or invalid, returns a validation error.
       - If the user has recently requested a resend URL, returns a throttling error.
@@ -947,12 +948,15 @@ class ResendConfirmation(JSONAPIBaseView, generics.ListCreateAPIView):
     permission_classes = (
         drf_permissions.AllowAny,
     )
+    serializer_class = UserResendConfirmationSerializer
     view_category = 'users'
     view_name = 'request-resend-confirmation'
     throttle_classes = (NonCookieAuthThrottle, BurstRateThrottle, RootAnonThrottle, SendEmailThrottle)
 
-    def get(self, request, *args, **kwargs):
-        email = request.query_params.get('email', None)
+    def post(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        email = request.data.get('email', None)
         if not email:
             raise ValidationError('Request must include email in query params.')
 
@@ -971,21 +975,23 @@ class ResendConfirmation(JSONAPIBaseView, generics.ListCreateAPIView):
                     status=status.HTTP_429_TOO_MANY_REQUESTS,
                 )
             else:
-                notification_type = NotificationTypeEnum.USER_INITIAL_CONFIRM_EMAIL
-                confirmation_url = user_obj.get_confirmation_url(
-                    email,
-                    external=True,
-                    force=True,
-                    renew=False,
+                if not user_obj.email_verifications:
+                    # already confirmed
+                    status_message = language.RESEND_CONFIRMATION_ALREADY_CONFIRMED_ERROR_MESSAGE.format(email=email)
+                    return Response(
+                        {
+                            'message': status_message,
+                            'kind': 'error',
+                        },
+                        status=status.HTTP_400_BAD_REQUEST,
+                    )
+                send_confirm_email_async(
+                    user=user_obj,
+                    email=user_obj.username,
+                    renew=True
                 )
-                notification_type.instance.emit(
-                    destination_address=email,
-                    event_context={
-                        'user_fullname': user_obj.fullname,
-                        'confirmation_url': f'{confirmation_url}',
-                    },
-                    save=False,
-                )
+                user_obj.email_last_sent = timezone.now()
+                user_obj.save()
 
         return Response(
             status=status.HTTP_200_OK,
