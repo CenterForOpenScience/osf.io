@@ -772,6 +772,29 @@ class TestNodeFilesListPagination(ApiTestCase):
         res = self.app.get(url, auth=self.user.auth)
         self.check_file_order(res, 'date_modified', key=parse_date, ascending=True)
 
+    def test_node_files_osfstorage_pagination_has_no_duplicates_or_gaps(self):
+        root = self.project.get_addon('osfstorage').get_root()
+        expected_ids = set()
+        for i in range(25):
+            fobj = root.append_file(f'test_file_{i:02d}')
+            fobj.save()
+            expected_ids.add(fobj._id)
+
+        url = f'/{API_BASE}nodes/{self.project._id}/files/osfstorage/'
+        page_one = self.app.get(url, auth=self.user.auth)
+        page_two = self.app.get(url + '?page=2', auth=self.user.auth)
+
+        page_one_ids = [item['id'] for item in page_one.json['data']]
+        page_two_ids = [item['id'] for item in page_two.json['data']]
+
+        assert set(page_one_ids) & set(page_two_ids) == set()
+
+        all_url = url + '?page[size]=100'
+        all_res = self.app.get(all_url, auth=self.user.auth)
+        all_ids = [item['id'] for item in all_res.json['data']]
+        assert len(all_ids) == len(set(all_ids))
+        assert set(all_ids) == expected_ids
+
 
 class TestNodeStorageProviderDetail(ApiTestCase):
 
