@@ -13,8 +13,11 @@ class NotificationCampaignStatus(models.TextChoices):
     ENDED = 'ended', 'Ended'
 
 class NotificationCampaignRecipientStatus(models.TextChoices):
+    # Batch assigned; Celery send task in flight (counts toward max_queued_batches).
     QUEUED = 'queued', 'Queued'
     PENDING = 'pending', 'Pending'
+    # SendGrid accepted the message; waiting on Event Webhook delivery/failure.
+    AWAITING_DELIVERY = 'awaiting_delivery', 'Awaiting Delivery'
     SENT = 'sent', 'Sent'
     FAILED = 'failed', 'Failed'
     SKIPPED = 'skipped', 'Skipped'

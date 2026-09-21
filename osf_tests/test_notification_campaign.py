@@ -331,12 +331,20 @@ class TestGetCampaignRecipientStats:
         NotificationCampaignRecipient.objects.filter(campaign=campaign, user=queued).update(
             status=NotificationCampaignRecipientStatus.QUEUED
         )
+        awaiting = UserFactory()
+        create_campaign_recipients(
+            Q(**{'id__in': [awaiting.id]}),
+            campaign_id=campaign.id,
+        )
+        NotificationCampaignRecipient.objects.filter(campaign=campaign, user=awaiting).update(
+            status=NotificationCampaignRecipientStatus.AWAITING_DELIVERY
+        )
 
         assert get_campaign_recipient_stats(campaign.id) == {
-            'recipient_count': 5,
+            'recipient_count': 6,
             'sent_count': 1,
             'failed_count': 2,  # FAILED + SKIPPED
-            'queued_count': 1,
+            'queued_count': 2,  # QUEUED + AWAITING_DELIVERY
         }
 
     def test_scopes_to_requested_campaign(self, campaign, notification_type):
@@ -614,19 +622,33 @@ class TestNotificationCampaignStart:
         assert NotificationCampaignRecipient.objects.get(pk=recipient.pk).status == NotificationCampaignRecipientStatus.FAILED
 
     @mock.patch('osf.email.notification_campaign.dispatch_campaign')
-    def test_start_restart_stuck_does_not_recreate_recipients(self, mock_dispatch_campaign, campaign):
+    def test_start_restart_stuck_resets_queued_and_awaiting_delivery(self, mock_dispatch_campaign, campaign):
         user = UserFactory()
-        create_campaign_recipients(Q(**{'id__in': [user.id]}), campaign_id=campaign.id)
+        other = UserFactory()
+        create_campaign_recipients(Q(**{'id__in': [user.id, other.id]}), campaign_id=campaign.id)
+        NotificationCampaignRecipient.objects.filter(campaign=campaign, user=user).update(
+            status=NotificationCampaignRecipientStatus.QUEUED,
+            batch_id=uuid.uuid4(),
+        )
+        NotificationCampaignRecipient.objects.filter(campaign=campaign, user=other).update(
+            status=NotificationCampaignRecipientStatus.AWAITING_DELIVERY,
+            batch_id=uuid.uuid4(),
+        )
         campaign.run_id = uuid.uuid4()
-        campaign.recipient_count = 1
+        campaign.recipient_count = 2
         campaign.save()
         mock_dispatch_campaign.return_value.apply_async = mock.Mock()
 
         start_notification_campaign(campaign.id, restart_stuck=True)
 
-        assert NotificationCampaignRecipient.objects.filter(campaign=campaign).count() == 1
+        recipients = NotificationCampaignRecipient.objects.filter(campaign=campaign)
+        assert recipients.count() == 2
+        assert set(recipients.values_list('status', flat=True)) == {
+            NotificationCampaignRecipientStatus.PENDING,
+        }
+        assert list(recipients.values_list('batch_id', flat=True)) == [None, None]
         campaign.refresh_from_db()
-        assert campaign.recipient_count == 1
+        assert campaign.recipient_count == 2
 
 
 class TestSendCampaignBatch:
@@ -734,7 +756,7 @@ class TestSendCampaignBatch:
             'campaign_id': str(running_campaign.id),
             'run_id': str(running_campaign.run_id),
         }]
-        assert recipient.status == NotificationCampaignRecipientStatus.QUEUED
+        assert recipient.status == NotificationCampaignRecipientStatus.AWAITING_DELIVERY
         assert running_campaign.sent_count == 0
         assert running_campaign.failed_count == 0
         assert running_campaign.queued_count == 1
@@ -1114,11 +1136,11 @@ class TestProcessCampaignRetry:
         assert campaign.completed_at is not None
 
     @mock.patch('osf.email.notification_campaign.process_campaign_retry.apply_async')
-    def test_process_campaign_retry_waits_for_queued_recipients(self, mock_apply_async, campaign):
+    def test_process_campaign_retry_waits_for_awaiting_delivery_recipients(self, mock_apply_async, campaign):
         user = UserFactory()
         create_campaign_recipients(Q(**{'id__in': [user.id]}), campaign_id=campaign.id)
         NotificationCampaignRecipient.objects.filter(campaign=campaign).update(
-            status=NotificationCampaignRecipientStatus.QUEUED
+            status=NotificationCampaignRecipientStatus.AWAITING_DELIVERY
         )
         campaign.run_id = uuid.uuid4()
         campaign.status = NotificationCampaignStatus.RUNNING
@@ -1139,11 +1161,11 @@ class TestProcessCampaignRetry:
             countdown=60,
         )
 
-    def test_process_campaign_retry_times_out_queued_marks_partial_without_retry(self, campaign):
+    def test_process_campaign_retry_times_out_awaiting_delivery_marks_partial_without_retry(self, campaign):
         user = UserFactory()
         create_campaign_recipients(Q(**{'id__in': [user.id]}), campaign_id=campaign.id)
         NotificationCampaignRecipient.objects.filter(campaign=campaign).update(
-            status=NotificationCampaignRecipientStatus.QUEUED
+            status=NotificationCampaignRecipientStatus.AWAITING_DELIVERY
         )
         campaign.run_id = uuid.uuid4()
         campaign.retries = 0
@@ -1165,7 +1187,7 @@ class TestProcessCampaignRetry:
 
     @mock.patch('osf.email.notification_campaign.process_campaign_retry.apply_async')
     @mock.patch('osf.email.notification_campaign.dispatch_campaign.apply_async')
-    def test_process_campaign_retry_waits_for_queued_before_retrying_failed(
+    def test_process_campaign_retry_waits_for_awaiting_delivery_before_retrying_failed(
         self, mock_dispatch_campaign, mock_apply_async, campaign
     ):
         queued_user = UserFactory()
@@ -1175,7 +1197,7 @@ class TestProcessCampaignRetry:
             campaign_id=campaign.id,
         )
         NotificationCampaignRecipient.objects.filter(campaign=campaign, user=queued_user).update(
-            status=NotificationCampaignRecipientStatus.QUEUED
+            status=NotificationCampaignRecipientStatus.AWAITING_DELIVERY
         )
         NotificationCampaignRecipient.objects.filter(campaign=campaign, user=failed_user).update(
             status=NotificationCampaignRecipientStatus.FAILED
@@ -1208,18 +1230,18 @@ class TestProcessSendgridCampaignEvents:
         payload.update(extra)
         return payload
 
-    def _queued_recipient(self, campaign, user=None):
+    def _awaiting_recipient(self, campaign, user=None):
         user = user or UserFactory()
         create_campaign_recipients(Q(**{'id__in': [user.id]}), campaign_id=campaign.id)
         recipient = NotificationCampaignRecipient.objects.get(campaign=campaign, user=user)
-        recipient.status = NotificationCampaignRecipientStatus.QUEUED
+        recipient.status = NotificationCampaignRecipientStatus.AWAITING_DELIVERY
         recipient.save(update_fields=['status'])
         return recipient
 
-    def test_delivered_marks_queued_sent(self, campaign):
+    def test_delivered_marks_awaiting_sent(self, campaign):
         campaign.run_id = uuid.uuid4()
         campaign.save(update_fields=['run_id'])
-        recipient = self._queued_recipient(campaign)
+        recipient = self._awaiting_recipient(campaign)
 
         process_sendgrid_campaign_events([
             self._event(campaign, recipient, 'delivered'),
@@ -1232,10 +1254,10 @@ class TestProcessSendgridCampaignEvents:
         assert campaign.sent_count == 1
         assert campaign.queued_count == 0
 
-    def test_failure_marks_queued_failed(self, campaign):
+    def test_failure_marks_awaiting_failed(self, campaign):
         campaign.run_id = uuid.uuid4()
         campaign.save(update_fields=['run_id'])
-        recipient = self._queued_recipient(campaign)
+        recipient = self._awaiting_recipient(campaign)
 
         process_sendgrid_campaign_events([
             self._event(campaign, recipient, 'bounce', reason='mailbox full'),
@@ -1251,7 +1273,7 @@ class TestProcessSendgridCampaignEvents:
     def test_delivered_overrides_failed(self, campaign):
         campaign.run_id = uuid.uuid4()
         campaign.save(update_fields=['run_id'])
-        recipient = self._queued_recipient(campaign)
+        recipient = self._awaiting_recipient(campaign)
         recipient.status = NotificationCampaignRecipientStatus.FAILED
         recipient.error_message = 'bounce'
         recipient.save(update_fields=['status', 'error_message'])
@@ -1267,7 +1289,7 @@ class TestProcessSendgridCampaignEvents:
     def test_ignores_stale_run_id(self, campaign):
         campaign.run_id = uuid.uuid4()
         campaign.save(update_fields=['run_id'])
-        recipient = self._queued_recipient(campaign)
+        recipient = self._awaiting_recipient(campaign)
 
         process_sendgrid_campaign_events([{
             'event': 'delivered',
@@ -1275,6 +1297,22 @@ class TestProcessSendgridCampaignEvents:
             'campaign_recipient_id': str(recipient.id),
             'run_id': str(uuid.uuid4()),
         }])
+
+        recipient.refresh_from_db()
+        assert recipient.status == NotificationCampaignRecipientStatus.AWAITING_DELIVERY
+
+    def test_ignores_queued_recipients_not_yet_submitted(self, campaign):
+        campaign.run_id = uuid.uuid4()
+        campaign.save(update_fields=['run_id'])
+        user = UserFactory()
+        create_campaign_recipients(Q(**{'id__in': [user.id]}), campaign_id=campaign.id)
+        recipient = NotificationCampaignRecipient.objects.get(campaign=campaign, user=user)
+        recipient.status = NotificationCampaignRecipientStatus.QUEUED
+        recipient.save(update_fields=['status'])
+
+        process_sendgrid_campaign_events([
+            self._event(campaign, recipient, 'delivered'),
+        ])
 
         recipient.refresh_from_db()
         assert recipient.status == NotificationCampaignRecipientStatus.QUEUED
