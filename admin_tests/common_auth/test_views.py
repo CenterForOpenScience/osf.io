@@ -155,11 +155,11 @@ class TestLoginView(AdminTestCase):
         message_error.assert_not_called()
         assert 'two_factor.html' in mock_render.call_args[0]
 
-        # email and password are used to authenticate user again
-        # on two factor auth, thus are hidden from user to be sure
+        # user guid is used to authenticate user again
+        # on two factor auth, thus we hide it from the form to be sure
         # the same user completes two-factor auth and get user object
         # within two different requests: sign in and code submit
-        for field in ['email', 'password', 'code']:
+        for field in ['guid', 'code']:
             assert field in mock_render.call_args[0][2]['form'].fields
 
         assert not hasattr(request, 'user')
@@ -175,7 +175,7 @@ class TestLoginView(AdminTestCase):
 
         view = setup_view(self.view, request)
         # imitate case when email and password are valid and enter an invalid code
-        view.extra_context = {'form': TwoFactorForm({'code': 'nonono', 'email': self.user.username, 'password': '1234'})}
+        view.extra_context = {'form': TwoFactorForm({'code': 'nonono', 'guid': self.user._id})}
         with mock.patch('django.contrib.messages.error') as message_error:
             with mock.patch('admin.common_auth.views.render') as _:
                 with mock.patch('addons.twofactor.models.UserSettings.verify_code') as mock_verify_code:
@@ -199,7 +199,7 @@ class TestLoginView(AdminTestCase):
 
         view = setup_view(self.view, request)
         # imitate case when email and password are valid and enter a valid code
-        view.extra_context = {'form': TwoFactorForm({'code': 'yesyes', 'email': self.user.username, 'password': '1234'})}
+        view.extra_context = {'form': TwoFactorForm({'code': 'yesyes', 'guid': str(self.user._id)})}
         with mock.patch('django.contrib.messages.error') as message_error:
             with mock.patch('admin.common_auth.views.render') as mock_render:
                 with mock.patch('addons.twofactor.models.UserSettings.verify_code') as mock_verify_code:
@@ -216,3 +216,30 @@ class TestLoginView(AdminTestCase):
 
         response = NodeSearchView.as_view()(request)
         assert response.status_code == 200
+
+    def test_two_factor_without_guid_redirects_to_login(self):
+        request = RequestFactory().post('/fake_path', data={'email': self.user.username, 'password': '1234'})
+        settings = self.create_user_two_factor_settings()
+        settings.is_confirmed = True
+        settings.deleted = None
+        settings.save()
+
+        patch_messages(request)
+
+        def custom_login(request, user, *args, **kwargs):
+            request.user = user
+
+        view = setup_view(self.view, request)
+        view.extra_context = {'form': TwoFactorForm({'code': 'yesyes'})}
+        with mock.patch('django.contrib.messages.error') as message_error:
+            with mock.patch('admin.common_auth.views.redirect') as mock_redirect:
+                with mock.patch('addons.twofactor.models.UserSettings.verify_code') as mock_verify_code:
+                    with mock.patch('admin.common_auth.views.login') as mocked_login:
+                        mocked_login.side_effect = custom_login
+                        mock_verify_code.return_value = True
+                        view.post(request)
+
+        message_error.assert_called_with(request, 'Email and/or Password incorrect. Please try again.')
+        mock_redirect.assert_called()
+        mocked_login.assert_not_called()
+        assert not hasattr(request, 'user')

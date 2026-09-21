@@ -35,12 +35,7 @@ class DeskUserForm(forms.ModelForm):
 
 
 class TwoFactorForm(forms.Form):
-    email = forms.CharField(label='Email', required=True, widget=forms.HiddenInput())
-    password = forms.CharField(
-        label='Password',
-        widget=forms.HiddenInput(),
-        required=True
-    )
+    guid = forms.CharField(label='Guid', required=True, widget=forms.HiddenInput())
     code = forms.CharField(
         label='Two-Factor Code',
         required=True,

@@ -37,20 +37,21 @@ class LoginView(FormView):
             error_message = 'Email and/or Password incorrect. Please try again.'
         else:
             error_message = 'Invalid two-factor code. Please try again.'
+            if 'guid' not in form.data:
+                error_message = 'Email and/or Password incorrect. Please try again.'
 
         if not form.is_valid():
             messages.error(self.request, error_message)
             return redirect('auth:login')
 
-        email = form.cleaned_data.get('email').strip()
-        password = form.cleaned_data.get('password').strip()
+        email = form.cleaned_data.get('email', '').strip()
+        password = form.cleaned_data.get('password', '').strip()
+        guid = form.cleaned_data.get('guid', '')
+        if isinstance(form, LoginForm):
+            user = authenticate(username=email, password=password)
+        else:
+            user = OSFUser.load(guid)
 
-        # authentication happens for both login and two-factor auth
-        # because sign in and two-factor auth are two different requests
-        # so for two-factor auth we pass creds from the login request
-        # to be sure creds weren't changed and any user doesn't open two-factor
-        # auth page manually. So for two-factor auth we pass creds implicitly
-        user = authenticate(username=email, password=password)
         if not user:
             messages.error(request, error_message)
             return redirect('auth:login')
@@ -64,8 +65,8 @@ class LoginView(FormView):
             )
             return redirect('auth:login')
 
-        # to not lose creds after login request, we save them as initial values
-        # and use HiddenInput to not display them
+        # to not lose user after login request, we save its guid
+        # and use HiddenInput to not display it
         if isinstance(form, LoginForm):
             self.form_class = TwoFactorForm
             return render(
@@ -74,8 +75,7 @@ class LoginView(FormView):
                 {
                     'form': self.form_class(
                         initial={
-                            'email': email,
-                            'password': password
+                            'guid': str(user._id),
                         }
                     )
                 }
@@ -95,13 +95,15 @@ class LoginView(FormView):
                 {
                     'form': self.form_class(
                         initial={
-                            'email': email,
-                            'password': password
+                            'guid': str(user._id)
                         }
                     )
                 }
             )
 
+        # during 2FA step we don't authenticate user via authenticate(),
+        # so need to specify backend to set all appropriate attributes to the user correctly
+        user.backend = 'api.base.authentication.backends.ODMBackend'
         login(self.request, user)
         return super().post(request, *args, **kwargs)
 
