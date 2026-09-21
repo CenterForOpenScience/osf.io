@@ -988,7 +988,7 @@ class ResendConfirmation(JSONAPIBaseView, generics.ListCreateAPIView):
                 send_confirm_email_async(
                     user=user_obj,
                     email=user_obj.username,
-                    renew=True
+                    renew=True,
                 )
                 user_obj.email_last_sent = timezone.now()
                 user_obj.save()
