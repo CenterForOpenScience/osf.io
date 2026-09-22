@@ -2116,6 +2116,10 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
             # Finally delete the user's info.
             self._clear_identifying_information()
 
+            # Revoke all sessions (and their `UserSessionMap` entries) once the deletion is committed, so that
+            # a GDPR deleted user can't come back with a live cookie, including sessions created mid-deletion.
+            transaction.on_commit(lambda: remove_sessions_for_user(self))
+
     def _validate_and_remove_resource_for_gdpr_delete(self, resources, hard_delete):
         """
         This method ensures a user's resources are properly deleted of using during GDPR delete request.
