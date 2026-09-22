@@ -56,13 +56,14 @@ class ParseCrossRefConfirmation(APIView):
                     _, version = Guid.split_guid(guid) if guid else (None, None)
                     if not version:
                         logger.info(f'Unversioned DOI confirmed by CrossRef: {doi}')
-                        if created and guid:
+                        if guid:
                             v1_preprint = Preprint.objects.filter(
                                 versioned_guids__guid___id=guid,
                                 versioned_guids__version=1,
                             ).first()
                             if v1_preprint:
                                 v1_preprint.set_identifier_value(category='doi_unversioned', value=doi)
+                                Preprint.objects.filter(id=v1_preprint.id).update(doi_resync_queued_at=None)
                         dois_processed += 1
                         continue
 
@@ -74,6 +75,7 @@ class ParseCrossRefConfirmation(APIView):
                     elif 'possible preprint/vor pair' not in msg.lower():
                         # Directly updates the identifier
                         preprint.set_identifier_value(category='doi', value=doi)
+                    Preprint.objects.filter(id=preprint.id).update(doi_resync_queued_at=None)
 
                     dois_processed += 1
 

@@ -180,13 +180,12 @@ class CrossRefClient(AbstractIdentifierClient):
         return posted_content
 
     def build_unversioned_posted_content(self, preprint, element):
-        latest = preprint.get_guid().referent
-        base_guid = latest.get_guid()._id
+        base_guid = preprint.get_guid()._id
         return self.build_posted_content(
-            latest,
+            preprint,
             element,
             include_relation=False,
-            doi_override=self.build_unversioned_doi(latest),
+            doi_override=self.build_unversioned_doi(preprint),
             resource_override=settings.DOMAIN + base_guid,
         )
 

@@ -307,4 +307,4 @@ class TestCrossRefEmailResponse:
 
         preprint.reload()
         assert preprint.get_identifier_value('doi') == versioned_doi
-        assert preprint.get_identifier_value('doi_unversioned') is None
+        assert preprint.get_identifier_value('doi_unversioned') == unversioned_doi

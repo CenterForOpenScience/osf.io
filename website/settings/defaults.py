@@ -393,6 +393,13 @@ DAYS_CROSSREF_DOIS_MUST_BE_STUCK_BEFORE_EMAIL = 2
 # Crossref has a second metadata api that uses JSON with different features
 CROSSREF_JSON_API_URL = 'https://api.crossref.org/'
 
+# Max preprints to work on same time and wait for the confirmation
+PREPRINT_DOI_RESYNC_MAX_IN_FLIGHT = 1000
+# Reschedule interval while there's still eligible work and free capacity.
+PREPRINT_DOI_RESYNC_DISPATCH_INTERVAL = timedelta(minutes=5)
+# Preprint that hasn't received a Crossref confirmation within this window is treated as `stale` and it becomes eligible to be resync again.
+PREPRINT_DOI_RESYNC_INFLIGHT_TIMEOUT = timedelta(hours=24)
+
 
 # Leave as `None` for production, test/staging/local envs must set
 SHARE_PROVIDER_PREPEND = None
@@ -822,11 +829,6 @@ class CeleryConfig:
         'delete_expired_djelme_indexes': {
             'task': 'osf.metrics.events.delete_expired_djelme_indexes',
             'schedule': crontab(minute=30, hour=7, day_of_month=5),     # Fifth day of month 2:30 a.m. EST
-        },
-        'resync_preprint_dois_v1': {
-            'task': 'osf.management.commands.resync_preprint_dois_v1',
-            'schedule': crontab(minute='*/5'),  # Every 5 minutes
-            'kwargs': {'dry_run': False},
         },
     }
 
