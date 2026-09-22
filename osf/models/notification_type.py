@@ -15,6 +15,8 @@ def get_default_frequency_choices():
 class NotificationTypeEnum(str, Enum):
     EMPTY = 'empty'
     BLANK = 'blank'
+    NOTIFICATION_CAMPAIGN_LOG = 'notification_campaign_log'
+
     # Desk notifications
     REVIEWS_SUBMISSION_STATUS = 'reviews_submission_status'
     ADDONS_BOA_JOB_FAILURE = 'addon_boa_job_failure'

@@ -65,6 +65,12 @@ class NotificationCampaignCreateForm(forms.ModelForm):
         help_text='The time in seconds between dispatches of campaign batches.',
     )
 
+    log_email_recipients = forms.CharField(
+        required=False,
+        initial='',
+        help_text='List of email addresses to receive campaign log emails, separated by commas.',
+    )
+
     class Meta:
         model = NotificationCampaign
         fields = (
