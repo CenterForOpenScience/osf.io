@@ -1,9 +1,10 @@
 from datetime import timedelta
+from unittest import mock
 import pytest
 from django.utils import timezone
 
 from tests.base import OsfTestCase
-from osf.models import NodeLog
+from osf.models import Embargo, NodeLog, Registration, SpamStatus
 from osf_tests.factories import RegistrationFactory, UserFactory
 
 from scripts.embargo_registrations import main
@@ -125,3 +126,60 @@ class TestRetractRegistrations(OsfTestCase):
         assert self.registration.registered_from.logs.filter(
                 action=NodeLog.EMBARGO_COMPLETED
             ).exists()
+
+    @pytest.mark.usefixtures('mock_gravy_valet_get_verified_links')
+    def test_failed_completion_rolls_back_embargo_state(self):
+
+        self.registration.embargo.accept()
+        self.registration.embargo.end_date = timezone.now() - timedelta(days=1)
+        self.registration.embargo.save()
+        self.registration.spam_status = SpamStatus.SPAM
+        self.registration.save()
+
+        main(dry_run=False)
+
+        self.registration.embargo.refresh_from_db()
+        self.registration.refresh_from_db()
+        assert not self.registration.is_public
+        assert self.registration.embargo.state == Embargo.APPROVED
+        assert not Embargo.objects.stuck_completed().filter(id=self.registration.embargo.id).exists()
+
+        self.registration.spam_status = SpamStatus.HAM
+        self.registration.save()
+        main(dry_run=False)
+        self.registration.refresh_from_db()
+        assert self.registration.is_public
+
+    @pytest.mark.usefixtures('mock_gravy_valet_get_verified_links')
+    def test_orphaned_active_embargo_does_not_abort_run(self):
+        other_user = UserFactory()
+        other_registration = RegistrationFactory(creator=other_user)
+        other_registration.embargo_registration(
+            other_user,
+            timezone.now() + timedelta(days=10)
+        )
+        other_registration.save()
+        other_registration.embargo.accept()
+        other_registration.embargo.end_date = timezone.now() - timedelta(days=1)
+        other_registration.embargo.save()
+
+        self.registration.embargo.accept()
+        self.registration.embargo.end_date = timezone.now() - timedelta(days=1)
+        self.registration.embargo.save()
+        broken_embargo_id = self.registration.embargo.id
+
+        real_get = Registration.objects.get
+
+        def get_with_simulated_race(*args, **kwargs):
+            embargo_kwarg = kwargs.get('embargo')
+            if embargo_kwarg is not None and embargo_kwarg.id == broken_embargo_id:
+                raise Registration.DoesNotExist()
+            return real_get(*args, **kwargs)
+
+        with mock.patch.object(Registration.objects, 'get', side_effect=get_with_simulated_race):
+            main(dry_run=False)
+
+        other_registration.refresh_from_db()
+        assert other_registration.is_public
+        self.registration.refresh_from_db()
+        assert not self.registration.is_public
