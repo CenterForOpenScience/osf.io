@@ -1198,7 +1198,7 @@ class NodeFilesList(JSONAPIBaseView, generics.ListAPIView, WaterButlerMixin, Lis
         ExcludeWithdrawals,
     )
 
-    ordering = ('_materialized_path',)  # default ordering
+    ordering = ('_materialized_path', 'id')  # default ordering
 
     required_read_scopes = [CoreScopes.NODE_FILE_READ]
     required_write_scopes = [CoreScopes.NODE_FILE_WRITE]
