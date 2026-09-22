@@ -233,6 +233,7 @@ class Preprint(DirtyFieldsMixin, VersionedGuidMixin, IdentifierMixin, Reviewable
 
     identifiers = GenericRelation(Identifier, related_query_name='preprints')
     preprint_doi_created = NonNaiveDateTimeField(default=None, null=True, blank=True)
+    doi_resync_queued_at = NonNaiveDateTimeField(default=None, null=True, blank=True)
     date_withdrawn = NonNaiveDateTimeField(default=None, null=True, blank=True)
     withdrawal_justification = models.TextField(default='', blank=True)
     ever_public = models.BooleanField(default=False, blank=True)

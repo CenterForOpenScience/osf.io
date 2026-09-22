@@ -393,6 +393,13 @@ DAYS_CROSSREF_DOIS_MUST_BE_STUCK_BEFORE_EMAIL = 2
 # Crossref has a second metadata api that uses JSON with different features
 CROSSREF_JSON_API_URL = 'https://api.crossref.org/'
 
+# Max preprints to work on same time and wait for the confirmation
+PREPRINT_DOI_RESYNC_MAX_IN_FLIGHT = 1000
+# Reschedule interval while there's still eligible work and free capacity.
+PREPRINT_DOI_RESYNC_DISPATCH_INTERVAL = timedelta(minutes=5)
+# Preprint that hasn't received a Crossref confirmation within this window is treated as `stale` and it becomes eligible to be resync again.
+PREPRINT_DOI_RESYNC_INFLIGHT_TIMEOUT = timedelta(hours=24)
+
 
 # Leave as `None` for production, test/staging/local envs must set
 SHARE_PROVIDER_PREPEND = None
@@ -508,6 +515,7 @@ class CeleryConfig:
         'osf.management.commands.daily_reporters_go',
         'osf.management.commands.monthly_reporters_go',
         'osf.management.commands.fetch_cedar_metadata_templates',
+        'osf.management.commands.resync_preprint_dois_v1',
         'osf.metrics.reporters',
         'scripts.remove_after_use.merge_notification_subscription_provider_ct',
         # Items below are celery task names, not python module paths.
@@ -673,6 +681,7 @@ class CeleryConfig:
         'osf.management.commands.archive_registrations_on_IA',
         'osf.management.commands.approve_pending_schema_responses',
         'osf.management.commands.sync_doi_metadata',
+        'osf.management.commands.resync_preprint_dois_v1',
         'api.providers.tasks',
         'api.users.tasks',
         'osf.utils.download_telemetry',
