@@ -66,6 +66,7 @@ class NotificationCampaignCreateForm(forms.ModelForm):
     )
 
     log_email_recipients = forms.CharField(
+        required=False,
         initial='',
         help_text='List of email addresses to receive campaign log emails, separated by commas.',
     )
