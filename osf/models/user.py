@@ -2315,6 +2315,20 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
 
         return nodes or preprints
 
+    @property
+    def enabled_two_factor_settings(self):
+        from addons.twofactor.models import UserSettings as TwoFactorUserSettings
+
+        try:
+            two_factor_settings = TwoFactorUserSettings.objects.get(owner_id=self.pk)
+        except TwoFactorUserSettings.DoesNotExist:
+            two_factor_settings = None
+
+        if not two_factor_settings or two_factor_settings.deleted or not two_factor_settings.is_confirmed:
+            return None
+
+        return two_factor_settings
+
     class Meta:
         # custom permissions for use in the OSF Admin App
         permissions = (
