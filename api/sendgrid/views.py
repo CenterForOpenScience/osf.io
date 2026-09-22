@@ -44,6 +44,8 @@ class SendGridEventWebhook(APIView):
        - Enable Signed Event Webhook; copy the verification key into
          ``SENDGRID_EVENT_WEBHOOK_PUBLIC_KEY`` (``website/settings/local.py``).
        - Subscribe at least to ``delivered``, ``bounce``, and ``dropped``.
+         (``deferred`` is safe to enable but ignored for campaigns - SendGrid
+         retries those itself.)
     4. Send a notification campaign email (personalization ``custom_args`` must
        include ``campaign_id``, ``campaign_recipient_id``, and ``run_id``).
        SendGrid's "Test Your Integration" payload lacks those keys, so this view
