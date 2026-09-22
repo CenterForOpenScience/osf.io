@@ -73,6 +73,20 @@ class NotificationCampaignTask(celery_app.Task):
         if status is not None:
             campaign.status = status
         campaign.save()
+        self.send_campaign_log_email(campaign, status or campaign.status, f"Campaign finished with status {status or campaign.status}")
+
+    def send_campaign_log_email(self, campaign, status, message):
+        """Send a notification campaign status email."""
+        recipients = [recipient.strip() for recipient in campaign.metadata['execution'].get('log_email_recipients', '').split(',') if recipient]
+        for recipient in recipients:
+            try:
+                send_email(
+                    recipient_address=recipient,
+                    notification_type=NotificationTypeEnum.NOTIFICATION_CAMPAIGN_LOG.instance,
+                    event_context={'campaign_name': campaign.name, 'status': status, 'message': message},)
+            except Exception as exc:
+                logger.error(f"Failed to send error logs email for campaign {campaign.id}: {exc}")
+                sentry.log_message(f"Failed to send error logs email for campaign {campaign.id}: {exc}")
 
 
 def build_query(node):
@@ -295,6 +309,13 @@ def process_campaign_retry(self, campaign_id, run_id):
     campaign.refresh_from_db()
     execution = campaign.metadata.get('execution', {})
 
+    if campaign.status == NotificationCampaignStatus.CANCELLED:
+        message = f'[Notification Campaign #{campaign_id}] WARNING: Campaign {campaign.name} was cancelled.'
+        logger.info(message)
+        sentry.log_message(message)
+        self.finish_campaign(campaign)
+        return
+
     queued_qs = NotificationCampaignRecipient.objects.filter(
         campaign=campaign,
         status=NotificationCampaignRecipientStatus.QUEUED,
@@ -326,13 +347,6 @@ def process_campaign_retry(self, campaign_id, run_id):
 
         # Do not retry timed-out deliveries; close the run as partially completed.
         self.finish_campaign(campaign, NotificationCampaignStatus.PARTIALLY_COMPLETED)
-        return
-
-    if campaign.status == NotificationCampaignStatus.CANCELLED:
-        message = f'[Notification Campaign #{campaign_id}] WARNING: Campaign {campaign.name} was cancelled.'
-        logger.info(message)
-        sentry.log_message(message)
-        self.finish_campaign(campaign)
         return
 
     failed_recipients_count = NotificationCampaignRecipient.objects.filter(
@@ -571,6 +585,7 @@ def send_campaign_batch(
                 )
                 logger.warning(message)
                 sentry.log_message(message)
+                self.send_campaign_log_email(campaign, message=message, status='WARNING')
 
     recipient_records = []
     recipients_qs_annotated = recipients_qs.annotate(

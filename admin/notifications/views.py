@@ -585,6 +585,7 @@ class NotificationCampaignCreateView(CreateView):
                 'time_window': form.cleaned_data['time_window'],
                 'max_queued_batches': form.cleaned_data['max_queued_batches'],
                 'dispatch_interval': form.cleaned_data['dispatch_interval'],
+                'log_email_recipients': form.cleaned_data['log_email_recipients'],
             },
             'sendgrid_bulk': form.cleaned_data.get('sendgrid_bulk', False),
             'recipients_creation_finished': False,
