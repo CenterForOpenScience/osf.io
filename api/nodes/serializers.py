@@ -1551,7 +1551,7 @@ class NodeInstitutionsRelationshipSerializer(BaseAPISerializer):
 
     def make_instance_obj(self, obj):
         return {
-            'data': obj.affiliated_institutions.all(),
+            'data': obj.get_affiliated_institutions(),
             'self': obj,
         }
 

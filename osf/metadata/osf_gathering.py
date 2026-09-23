@@ -871,10 +871,10 @@ def gather_verified_link(focus):
 
 @gather.er(OSF.affiliation)
 def gather_affiliated_institutions(focus):
-    if hasattr(focus.dbmodel, 'get_affiliated_institutions'):   # like OSFUser
-        institution_qs = focus.dbmodel.get_affiliated_institutions()
-    elif hasattr(focus.dbmodel, 'affiliated_institutions'):     # like AbstractNode or Preprint
-        institution_qs = focus.dbmodel.affiliated_institutions.all()
+    if hasattr(focus.dbmodel, 'get_affiliated_institutions'):   # like OSFUser, AbstractNode or Preprint
+        # Deactivated institutions are included on purpose: metadata and DOIs that already
+        # have institution's ROR id should keep it after the institution is turned off
+        institution_qs = focus.dbmodel.get_affiliated_institutions(include_deactivated=True)
     else:
         institution_qs = ()
     for osf_institution in institution_qs:

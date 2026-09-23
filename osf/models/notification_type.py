@@ -21,6 +21,7 @@ class NotificationTypeEnum(str, Enum):
     ADDONS_BOA_JOB_COMPLETE = 'addon_boa_job_complete'
 
     DESK_ARCHIVE_REGISTRATION_STUCK = 'desk_archive_registration_stuck'
+    DESK_ARCHIVE_RESTART_REPORT = 'desk_archive_restart_report'
     DESK_REQUEST_EXPORT = 'desk_request_export'
     DESK_REQUEST_DEACTIVATION = 'desk_request_deactivation'
     DESK_REGISTRATION_BULK_UPLOAD_PRODUCT_OWNER = 'desk_registration_bulk_upload_product_owner'
@@ -107,6 +108,7 @@ class NotificationTypeEnum(str, Enum):
     NODE_WITHDRAWAl_REQUEST_APPROVED = 'node_withdrawal_request_approved'
     NODE_WITHDRAWAl_REQUEST_REJECTED = 'node_withdrawal_request_rejected'
     NODE_NEW_PUBLIC_PROJECT = 'node_new_public_project'
+    NODE_CONFIRMED_SPAM = 'node_confirmed_spam'
 
     FILE_UPDATED = 'file_updated'
     FILE_ADDED = 'file_added'
@@ -131,6 +133,7 @@ class NotificationTypeEnum(str, Enum):
     PREPRINT_REQUEST_WITHDRAWAL_DECLINED = 'preprint_request_withdrawal_declined'
     PREPRINT_CONTRIBUTOR_ADDED_PREPRINT_NODE_FROM_OSF = 'preprint_contributor_added_preprint_node_from_osf'
     PREPRINT_CONTRIBUTOR_ADDED_DEFAULT = 'preprint_contributor_added_default'
+    PREPRINT_CONFIRMED_SPAM = 'preprint_confirmed_spam'
 
     # Collections Submission notifications
     COLLECTION_SUBMISSION_REMOVED_ADMIN = 'collection_submission_removed_admin'
