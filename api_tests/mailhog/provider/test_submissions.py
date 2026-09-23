@@ -18,7 +18,7 @@ from osf_tests.factories import (
 
 from tests.base import get_default_metaschema
 
-from osf.models import NotificationTypeEnum
+from osf.models import NotificationTypeEnum, Notification
 
 from osf.migrations import update_provider_auth_groups
 from tests.utils import capture_notifications, get_mailhog_messages, delete_mailhog_messages, assert_emails
@@ -99,28 +99,51 @@ class TestRegistriesModerationSubmissions:
         assert resp.status_code == 401
 
         resp = app.get(provider_actions_url, auth=moderator.auth)
-
         assert resp.status_code == 200
         assert len(resp.json['data']) == 0
+        # registration fixture asks the creator for approval
+        assert Notification.objects.count() == 1
+
+        another_contributor = AuthUserFactory()
+        registration.add_contributor(another_contributor, permissions='admin', visible=True)
+
         delete_mailhog_messages()
         with capture_notifications(passthrough=True) as notifications:
-
+            # 2 notifications: creator and another contributor are notified of node_pending_registration_admin
             registration.require_approval(user=registration.creator)
             approval = registration.registration_approval
+            # approve the registration to trigger the notification to the provider moderators
+            # 2 notifications: creator and another contributor are notified of provider_reviews_submission_confirmation
             approval.approve(
                 user=registration.creator,
                 token=approval.token_for_user(registration.creator, 'approval')
             )
-
+            approval.approve(
+                user=another_contributor,
+                token=approval.token_for_user(another_contributor, 'approval')
+            )
+            # 1 notification after all approvals: provider moderator is notified about provider_new_pending_submissions
             resp = app.get(provider_actions_url, auth=moderator.auth)
 
-        assert len(notifications['emits']) == 2
-        assert notifications['emits'][0]['type'] == NotificationTypeEnum.PROVIDER_REVIEWS_SUBMISSION_CONFIRMATION
-        assert notifications['emits'][1]['type'] == NotificationTypeEnum.PROVIDER_NEW_PENDING_SUBMISSIONS
+        assert len(notifications['emits']) == 5
+
+        notifications = [(notification['kwargs']['user'], notification['type']) for notification in notifications['emits']]
+        assert (registration.creator, NotificationTypeEnum.NODE_PENDING_REGISTRATION_ADMIN) in notifications
+        assert (another_contributor, NotificationTypeEnum.NODE_PENDING_REGISTRATION_ADMIN) in notifications
+        assert (registration.creator, NotificationTypeEnum.PROVIDER_REVIEWS_SUBMISSION_CONFIRMATION) in notifications
+        assert (another_contributor, NotificationTypeEnum.PROVIDER_REVIEWS_SUBMISSION_CONFIRMATION) in notifications
+        assert (moderator, NotificationTypeEnum.PROVIDER_NEW_PENDING_SUBMISSIONS) in notifications
+
         send_users_instant_digest_email.delay()
         messages = get_mailhog_messages()
-        assert messages['count'] == 1
-        assert messages['items'][0]['Content']['Headers']['To'][0] == registration.creator.username
+        assert messages['count'] == 4
+
+        # actions within capture_notifications triggered registration approval + submission confirmation emails
+        user_and_email_type = [(message['Content']['Headers']['To'][0], message['Content']['Headers']['Subject'][0]) for message in messages['items']]
+        assert (registration.creator.username, 'Pending Registration - Admin Notification') in user_and_email_type
+        assert (another_contributor.username, 'Pending Registration - Admin Notification') in user_and_email_type
+        assert (registration.creator.username, 'Submission Confirmation') in user_and_email_type
+        assert (another_contributor.username, 'Submission Confirmation') in user_and_email_type
 
         delete_mailhog_messages()
 
