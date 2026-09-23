@@ -717,4 +717,4 @@ class TestUserMerge(AdminTestCase):
         assert valid_form.is_valid()
 
         view.form_valid(valid_form)
-        mock_merge_users_delay.assert_called_with(user._id, user_merged._id)
+        mock_merge_users_delay.assert_called_with(user._id, user_merged._id, initiator_guid=view.request.user._id)
