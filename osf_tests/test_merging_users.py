@@ -1,9 +1,11 @@
 import pytest
 from unittest import mock
 import datetime as dt
+from django.test import TestCase
 from django.utils import timezone
 from tests.base import OsfTestCase
 
+from api.users.tasks import merge_users
 from framework.celery_tasks import handlers
 from website import settings
 from website.util.metrics import OsfSourceTags
@@ -196,7 +198,7 @@ class TestUserMerging(OsfTestCase):
         mock_client = mock.MagicMock()
         mock_get_mailchimp_api.return_value = mock_client
 
-        with run_celery_tasks():
+        with run_celery_tasks(), TestCase.captureOnCommitCallbacks(execute=True):
             # perform the merge
             with override_flag(ENABLE_GV, active=True):
                 self.user.merge_user(other_user)
@@ -328,3 +330,52 @@ class TestUserMerging(OsfTestCase):
         assert len(notifications['emits']) == 1
         assert notifications['emits'][0]['type'] == NotificationTypeEnum.USER_CONFIRM_MERGE
         assert notifications['emits'][0]['kwargs']['destination_address'] == target_email
+
+    @mock.patch('framework.sentry.log_exception')
+    def test_failed_merge_is_rolled_back(self, mock_log_exception):
+        other_user = UserFactory()
+        other_user.add_system_tag('other')
+        project = ProjectFactory(creator=other_user)
+        error = Exception('missing permissions')
+
+        with mock.patch('osf.models.user.OSFUser._merge_users_preprints', side_effect=error):
+            with pytest.raises(Exception, match='missing permissions'):
+                self.user.merge_user(other_user)
+
+        mock_log_exception.assert_called_once_with(error)
+        project.reload()
+        self.user.reload()
+        other_user.reload()
+        assert project.is_contributor(other_user)
+        assert not project.is_contributor(self.user)
+        assert project.creator == other_user
+        assert other_user.merged_by is None
+        assert not other_user.is_merged
+        assert 'other' not in self.user.system_tags
+        assert other_user.emails.filter(address=other_user.username).exists()
+
+    def test_merge_users_task_notifies_initiator_on_failure(self):
+        other_user = UserFactory()
+        initiator = UserFactory()
+
+        with mock.patch('osf.models.user.OSFUser.merge_user', side_effect=Exception('missing permissions')):
+            with capture_notifications() as notifications:
+                merge_users(self.user._id, other_user._id, initiator_guid=initiator._id)
+
+        assert len(notifications['emits']) == 1
+        assert notifications['emits'][0]['type'] == NotificationTypeEnum.USER_MERGE_FAILED_REPORT
+        assert notifications['emits'][0]['kwargs']['user'] == initiator
+        assert notifications['emits'][0]['kwargs']['event_context']['merger_guid'] == self.user._id
+        assert notifications['emits'][0]['kwargs']['event_context']['mergee_guid'] == other_user._id
+        assert 'missing permissions' in notifications['emits'][0]['kwargs']['event_context']['error']
+
+    def test_merge_users_task_does_not_notify_on_success(self):
+        other_user = UserFactory()
+        initiator = UserFactory()
+
+        with capture_notifications(expect_none=True):
+            with override_flag(ENABLE_GV, active=True):
+                merge_users(self.user._id, other_user._id, initiator_guid=initiator._id)
+
+        other_user.reload()
+        assert other_user.merged_by == self.user

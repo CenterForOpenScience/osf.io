@@ -432,7 +432,7 @@ class UserMergeAccounts(UserMixin, FormView):
         guid_to_be_merged = form.cleaned_data['user_guid_to_be_merged']
 
         user_to_be_merged = OSFUser.objects.get(guids___id=guid_to_be_merged, guids___id__isnull=False)
-        merge_users.delay(user._id, user_to_be_merged._id)
+        merge_users.delay(user._id, user_to_be_merged._id, initiator_guid=self.request.user._id)
         messages.success(
             self.request,
             f'Merge of user {user_to_be_merged._id} into {user._id} has been queued and will run in the background.',
