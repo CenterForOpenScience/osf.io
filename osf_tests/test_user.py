@@ -1,5 +1,6 @@
 # Tests ported from tests/test_models.py and tests/test_user.py
 import datetime
+import logging
 import os
 import json
 import datetime as dt
@@ -2462,3 +2463,141 @@ class TestUserGdprDelete:
             user.gdpr_delete()
         assert exc_info.value.args[0] == 'You cannot delete this user because they have an external account for' \
                                          ' github attached to Node {}, which has other contributors.'.format(project_with_two_admins_and_addon_credentials._id)
+
+    @mock.patch('osf.models.user.requests.post')
+    def test_gdpr_delete_atomic_rollback_when_clear_identifying_information_fails(
+            self, mock_post, user, project_with_two_admins, preprint):
+        mock_post.return_value = mock.Mock(status_code=200)
+
+        with mock.patch.object(
+            OSFUser, '_clear_identifying_information', side_effect=RuntimeError('boom')
+        ):
+            with pytest.raises(RuntimeError):
+                user.gdpr_delete()
+
+        project_with_two_admins.reload()
+        preprint.reload()
+
+        mock_post.assert_called_once()
+        assert user.deleted is None
+        assert not user.is_disabled
+        assert user.fullname != 'Deleted user'
+        assert project_with_two_admins.contributors.filter(id=user.id).exists()
+        assert not preprint.is_deleted
+
+    def test_gdpr_delete_atomic_rollback_when_second_resource_type_fails(
+            self, user, project_with_two_admins):
+        original_method = OSFUser._validate_and_remove_resource_for_gdpr_delete
+        calls = []
+
+        def flaky(resources, hard_delete):
+            calls.append(hard_delete)
+            if len(calls) == 2:
+                raise RuntimeError('boom')
+            return original_method(user, resources, hard_delete)
+
+        with mock.patch.object(
+            OSFUser, '_validate_and_remove_resource_for_gdpr_delete', side_effect=flaky
+        ):
+            with pytest.raises(RuntimeError):
+                user.gdpr_delete()
+
+        project_with_two_admins.reload()
+
+        assert len(calls) == 2
+        assert project_with_two_admins.contributors.filter(id=user.id).exists()
+        assert user.deleted is None
+        assert not user.is_disabled
+
+    @mock.patch('osf.models.user.sentry.log_message')
+    @mock.patch('osf.models.user.requests.post')
+    def test_revoke_orcid_tokens_multiple_identities_warns_and_revokes_all(
+            self, mock_post, mock_log_message, user):
+        mock_post.return_value = mock.Mock(status_code=200)
+        user.external_identity = {
+            'ORCID': {'orcid-id-a': 'VERIFIED', 'orcid-id-b': 'VERIFIED'},
+        }
+        user.external_identity_tokens = {
+            'ORCID': {
+                'orcid-id-a': {'access_token': 'token-a'},
+                'orcid-id-b': {'access_token': 'token-b'},
+            },
+        }
+        user.save()
+
+        user._revoke_orcid_tokens()
+
+        assert mock_post.call_count == 2
+        tokens_sent = [call.kwargs['data']['token'] for call in mock_post.call_args_list]
+        assert tokens_sent == ['token-a', 'token-b']
+
+        warning_calls = [
+            call for call in mock_log_message.call_args_list
+            if call.kwargs.get('level') == logging.WARNING
+        ]
+        assert len(warning_calls) == 1
+
+    @mock.patch('osf.models.user.requests.post')
+    def test_revoke_orcid_tokens_uses_refresh_token_when_access_token_missing(
+            self, mock_post, user):
+        mock_post.return_value = mock.Mock(status_code=200)
+        user.external_identity = {'ORCID': {'fake-orcid-id': 'VERIFIED'}}
+        user.external_identity_tokens = {
+            'ORCID': {'fake-orcid-id': {'refresh_token': 'fake-refresh-token'}},
+        }
+        user.save()
+
+        user._revoke_orcid_tokens()
+
+        mock_post.assert_called_once()
+        assert mock_post.call_args.kwargs['data']['token'] == 'fake-refresh-token'
+
+
+class TestSaveExternalIdentityTokens:
+
+    @pytest.fixture()
+    def user(self):
+        return AuthUserFactory()
+
+    @pytest.fixture()
+    def orcid_provider(self):
+        return settings.EXTERNAL_IDENTITY_PROFILE['OrcidProfile']
+
+    @mock.patch('osf.models.user.sentry.log_message')
+    def test_save_external_identity_tokens_missing_access_token_logs_and_skips_store(
+            self, mock_log_message, user):
+        user.save_external_identity_tokens('fake-orcid-id', None, 'fake-refresh-token')
+
+        error_calls = [
+            call for call in mock_log_message.call_args_list
+            if call.kwargs.get('level') == logging.ERROR
+        ]
+        assert len(error_calls) == 1
+        assert user.external_identity_tokens == {}
+
+    @mock.patch('osf.models.user.sentry.log_message')
+    def test_save_external_identity_tokens_missing_refresh_token_still_stores(
+            self, mock_log_message, user, orcid_provider):
+        user.save_external_identity_tokens('fake-orcid-id', 'fake-access-token', None)
+
+        mock_log_message.assert_not_called()
+        assert user.external_identity_tokens == {
+            orcid_provider: {'fake-orcid-id': {'access_token': 'fake-access-token'}},
+        }
+
+    def test_save_external_identity_tokens_both_present_stores_both(self, user, orcid_provider):
+        user.save_external_identity_tokens('fake-orcid-id', 'fake-access-token', 'fake-refresh-token')
+
+        assert user.external_identity_tokens == {
+            orcid_provider: {
+                'fake-orcid-id': {
+                    'access_token': 'fake-access-token',
+                    'refresh_token': 'fake-refresh-token',
+                },
+            },
+        }
+
+    def test_save_external_identity_tokens_missing_orcid_id_stores_nothing(self, user):
+        user.save_external_identity_tokens(None, 'fake-access-token', 'fake-refresh-token')
+
+        assert user.external_identity_tokens == {}

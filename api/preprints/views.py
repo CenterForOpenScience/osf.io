@@ -798,7 +798,7 @@ class PreprintInstitutionsList(JSONAPIBaseView, generics.ListAPIView, ListFilter
         return self.get_preprint()
 
     def get_queryset(self):
-        return self.get_resource().affiliated_institutions.all()
+        return self.get_resource().get_affiliated_institutions()
 
 
 class PreprintInstitutionsRelationship(PreprintOldVersionsImmutableMixin, JSONAPIBaseView, generics.RetrieveUpdateAPIView, PreprintMixin):
@@ -822,7 +822,7 @@ class PreprintInstitutionsRelationship(PreprintOldVersionsImmutableMixin, JSONAP
     def get_object(self):
         preprint = self.get_resource()
         obj = {
-            'data': preprint.affiliated_institutions.all(),
+            'data': preprint.get_affiliated_institutions(),
             'self': preprint,
         }
         self.check_object_permissions(self.request, obj)

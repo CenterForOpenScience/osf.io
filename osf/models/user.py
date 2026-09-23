@@ -1492,18 +1492,30 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
 
         return True
 
-    def confirm_spam(self, domains=None, save=True, train_spam_services=False, skip_resources_spam=False):
+    def confirm_spam(self, domains=None, save=True, train_spam_services=False, skip_resources_spam=False, notify=True):
+        was_disabled = self.is_disabled
         self.deactivate_account()
         super().confirm_spam(domains=domains, save=save, train_spam_services=train_spam_services)
+
+        if notify and not was_disabled:
+            NotificationTypeEnum.USER_SPAM_BANNED.instance.emit(
+                user=self,
+                event_context={
+                    'user_fullname': self.fullname,
+                    'osf_support_email': website_settings.OSF_SUPPORT_EMAIL,
+                }
+            )
 
         if skip_resources_spam:
             return
 
-        # Don't train on resources merely associated with spam user
+        # Don't train on resources merely associated with spam user, and don't
+        # send a separate per-item notification for content caught up in the
+        # account-level ban cascade -- the single account-ban email covers it.
         for node in self.nodes.filter(is_public=True, is_deleted=False):
-            node.confirm_spam(domains=domains, train_spam_services=train_spam_services)
+            node.confirm_spam(domains=domains, train_spam_services=train_spam_services, notify=False)
         for preprint in self.preprints.filter(is_public=True, deleted__isnull=True):
-            preprint.confirm_spam(domains=domains, train_spam_services=train_spam_services)
+            preprint.confirm_spam(domains=domains, train_spam_services=train_spam_services, notify=False)
 
     def confirm_ham(self, save=False, train_spam_services=False):
         self.reactivate_account()
@@ -1828,10 +1840,15 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         """Return if the current user is affiliated with any institutions."""
         return InstitutionAffiliation.objects.filter(user__id=self.id).exists()
 
-    def get_affiliated_institutions(self):
-        """Return a queryset of all affiliated institutions for the current user."""
+    def get_affiliated_institutions(self, *, include_deactivated: bool = False):
+        """
+        Return a queryset of all affiliated institutions for the current user. Deactivated
+        are hidden by the default Institution manager; pass include_deactivated to keep them, so
+        that metadata and DOIs do not lose ROR ids they already have
+        """
         qs = InstitutionAffiliation.objects.filter(user__id=self.id).values_list('institution', flat=True)
-        return Institution.objects.filter(pk__in=qs)
+        institutions = Institution.objects.get_all_institutions() if include_deactivated else Institution.objects.all()
+        return institutions.filter(pk__in=qs)
 
     def get_institution_affiliations(self):
         """Return a queryset of all institution affiliations for the current user."""
@@ -2297,6 +2314,20 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         preprints = Preprint.objects.filter(_contributors=self, ever_public=True, deleted__isnull=True).exists()
 
         return nodes or preprints
+
+    @property
+    def enabled_two_factor_settings(self):
+        from addons.twofactor.models import UserSettings as TwoFactorUserSettings
+
+        try:
+            two_factor_settings = TwoFactorUserSettings.objects.get(owner_id=self.pk)
+        except TwoFactorUserSettings.DoesNotExist:
+            two_factor_settings = None
+
+        if not two_factor_settings or two_factor_settings.deleted or not two_factor_settings.is_confirmed:
+            return None
+
+        return two_factor_settings
 
     class Meta:
         # custom permissions for use in the OSF Admin App

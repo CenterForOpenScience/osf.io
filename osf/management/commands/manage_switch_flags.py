@@ -8,7 +8,7 @@ from website import settings
 logger = logging.getLogger(__name__)
 
 
-def manage_waffle(delete_waffle=False):
+def manage_waffle(delete_waffle=False, preserve_everyone=True):
     # Inline importation of models is done to so for use in post migrate signal.
     from django.apps import apps
     Flag = apps.get_model('waffle.Flag')
@@ -25,7 +25,16 @@ def manage_waffle(delete_waffle=False):
             features = yaml.safe_load(stream)
         for flag in features['flags']:
             flag.pop('flag_name')
-            Flag.objects.update_or_create(name=flag['name'], defaults=flag)
+
+            flag_obj, created = Flag.objects.get_or_create(name=flag['name'], defaults=flag)
+
+            if not created:
+                if preserve_everyone:
+                    flag.pop('everyone', None)
+                for field, value in flag.items():
+                    setattr(flag_obj, field, value)
+                flag_obj.save()
+
         for switch in features['switches']:
             switch.pop('flag_name')
             Switch.objects.update_or_create(name=switch['name'], defaults=switch)
@@ -43,6 +52,13 @@ class Command(BaseCommand):
             help='Use this flag to remove flags; otherwise, the script will just add flags'
         )
 
+        parser.add_argument(
+            '--preserve-everyone',
+            action='store_true',
+            help="Preserve the existing 'everyone' value for flags",
+        )
+
     def handle(self, *args, **options):
         delete_waffle = options.get('delete', False)
-        manage_waffle(delete_waffle)
+        preserve_everyone = options.get('preserve_everyone', True)
+        manage_waffle(delete_waffle, preserve_everyone)
