@@ -118,6 +118,12 @@ TEMPLATES_PATH = os.path.join(BASE_PATH, 'templates')
 CONFIRM_REGISTRATIONS_BY_EMAIL = True
 ALLOW_LOGIN = True
 
+# Date the Terms of Use and Privacy Policy last changed. An acceptance older than this no longer counts and the
+# user is asked to accept again; their stored timestamp is kept, and will be updated on new approval.
+# Set it as a datetime in the private config as an ISO date in an environment variable,
+# e.g. LATEST_TERMS_OF_SERVICE_UPDATE=2026-10-01 (no timezone means UTC)
+LATEST_TERMS_OF_SERVICE_UPDATE = datetime.datetime(2018, 5, 25, tzinfo=datetime.timezone.utc)  # GDPR terms update
+
 SEARCH_ENGINE = 'elastic'  # Can be 'elastic', or None
 ELASTIC_URI = '127.0.0.1:9200'
 ELASTIC8_URI = os.environ.get('ELASTIC8_URI')

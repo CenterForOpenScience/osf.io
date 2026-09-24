@@ -1099,6 +1099,38 @@ class TestIsActive:
         assert user.is_active is False
 
 
+class TestHasAcceptedCurrentTermsOfService:
+
+    def test_is_false_when_never_accepted(self):
+        user = UserFactory(accepted_terms_of_service=None)
+        assert user.has_accepted_current_terms_of_service is False
+
+    def test_is_false_when_acceptance_predates_latest_update(self):
+        user = UserFactory(accepted_terms_of_service=dt.datetime(2018, 5, 24, tzinfo=dt.timezone.utc))
+        assert user.has_accepted_current_terms_of_service is False
+
+    def test_is_true_when_acceptance_follows_latest_update(self):
+        user = UserFactory(accepted_terms_of_service=timezone.now())
+        assert user.has_accepted_current_terms_of_service is True
+
+    def test_moving_latest_update_forward_invalidates_acceptance_without_clearing_it(self):
+        accepted = dt.datetime(2020, 1, 1, tzinfo=dt.timezone.utc)
+        user = UserFactory(accepted_terms_of_service=accepted)
+        assert user.has_accepted_current_terms_of_service is True
+        with mock.patch.object(
+            settings,
+            'LATEST_TERMS_OF_SERVICE_UPDATE',
+            dt.datetime(2026, 1, 1, tzinfo=dt.timezone.utc),
+        ):
+            assert user.has_accepted_current_terms_of_service is False
+        user.reload()
+        assert user.accepted_terms_of_service == accepted
+
+    def test_unset_configured_date_leaves_acceptance_current(self):
+        user = UserFactory(accepted_terms_of_service=dt.datetime(2018, 5, 24, tzinfo=dt.timezone.utc))
+        with mock.patch.object(settings, 'LATEST_TERMS_OF_SERVICE_UPDATE', None):
+            assert user.has_accepted_current_terms_of_service is True
+
 class TestAddUnconfirmedEmail:
 
     @mock.patch('website.security.random_string')

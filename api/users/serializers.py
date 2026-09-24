@@ -258,7 +258,7 @@ class UserSerializer(JSONAPISerializer):
         return region_id
 
     def get_accepted_terms_of_service(self, obj):
-        return bool(obj.accepted_terms_of_service)
+        return obj.has_accepted_current_terms_of_service
 
     def get_merged_by_absolute_url(self, obj):
         if obj.merged_by:
@@ -292,7 +292,7 @@ class UserSerializer(JSONAPISerializer):
                 for key, val in value.items():
                     instance.social[key] = val
             elif 'accepted_terms_of_service' == attr:
-                if value and not instance.accepted_terms_of_service:
+                if value and not instance.has_accepted_current_terms_of_service:
                     instance.accepted_terms_of_service = timezone.now()
             elif 'default_region' == attr:
                 user_settings = instance._settings_model('osfstorage').objects.get(owner=instance)

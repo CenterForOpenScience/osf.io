@@ -762,7 +762,7 @@ class ExternalLogin(JSONAPIBaseView, generics.CreateAPIView):
                     user.external_identity[external_id_provider].update(external_identity[external_id_provider])
             else:
                 user.external_identity.update(external_identity)
-            if not user.accepted_terms_of_service and accepted_terms_of_service:
+            if accepted_terms_of_service and not user.has_accepted_current_terms_of_service:
                 user.accepted_terms_of_service = timezone.now()
             # 2. add unconfirmed email and send confirmation email
             user.add_unconfirmed_email(clean_email, external_identity=external_identity)
