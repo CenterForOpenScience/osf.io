@@ -8,6 +8,14 @@ import pytest
 from website import settings
 
 
+@pytest.fixture(autouse=True)
+def reload_settings_after_test():
+    # The tests below reload website.settings so its module-level normalisation runs against a patched
+    # environment, reload it once more afterwards so the rest of the suite sees the original values
+    yield
+    importlib.reload(settings)
+
+
 class TestLatestTermsOfServiceUpdate:
 
     def test_defaults_to_the_gdpr_terms_update(self):
