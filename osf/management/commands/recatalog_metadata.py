@@ -39,7 +39,7 @@ def recatalog_chunk(queryset, start_id, chunk_size):
             if guid:
                 task__update_share.apply_async(
                     kwargs={'guid': guid, 'is_backfill': True},
-                    queue=CeleryConfig.task_low_queue,  # "low priority" queue
+                    queue=CeleryConfig.task_external_low_queue,
                 )
             else:
                 logger.debug('skipping item without guid: %s', item)

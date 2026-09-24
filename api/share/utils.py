@@ -216,7 +216,7 @@ def task__update_share(self, guid: str, is_backfill=False, osfmap_partition_name
         _resource.mark_indexing_success()
 
 
-@celery_app.task
+@celery_app.task(queue=settings.CeleryConfig.task_external_low_queue)
 def task__reindex_failed_or_not_indexed_resource_into_share(resource_type: str, start_id: int = 0, chunk_count: int = 200, chunk_size: int = 500):
     from osf.management.commands.recatalog_metadata import recatalog
     queryset = get_not_indexed_guids_for_resource_with_no_indexed_guid(resource_type, only_oldest_guid=False)
