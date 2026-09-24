@@ -1,13 +1,18 @@
 from datetime import timedelta
 
 from django.apps import apps as global_apps
+from django.contrib import admin as django_admin
 from django.contrib.admin.sites import AdminSite
 from django.contrib.auth.models import Group, Permission
-from django.test import RequestFactory
+from django.db import connection
+from django.test import RequestFactory, override_settings
+from django.test.utils import CaptureQueriesContext
+from django.urls import path
 from django.utils import timezone
 
 from osf.admin import (
     DASHBOARD_GROUP_NAME,
+    OUTCOME_SORT_ORDER,
     DownloadEventsView,
     ProjectGuidFilter,
     DownloadUserFilter,
@@ -15,6 +20,10 @@ from osf.admin import (
 from osf.models import DownloadEvent
 from osf_tests.factories import AuthUserFactory, ProjectFactory, PreprintFactory
 from tests.base import OsfTestCase
+
+# Minimal urlconf so admin views resolve their own reverse() calls when tests drive
+# changelist_view directly (the real mount lives in the admin service, not here).
+urlpatterns = [path('admin/', django_admin.site.urls)]
 
 
 class FakeRequest:
@@ -434,7 +443,9 @@ class TestSortableColumns(OsfTestCase):
         self.request = RequestFactory().get('/admin/osf/downloadevent/')
 
     def test_outcome_column_declares_a_sort_field(self):
-        assert self.admin.outcome.admin_order_field == '_outcome_rank'
+        # an expression, not an annotation: the CASE must only run when someone sorts
+        # by Outcome, not on every queryset the dashboard aggregates
+        assert self.admin.outcome.admin_order_field is OUTCOME_SORT_ORDER
 
     def test_outcome_rank_orders_completed_cancelled_failed_then_single(self):
         completed = make_event(download_type=DownloadEvent.FOLDER_ZIP, zip_completed=True)
@@ -443,7 +454,7 @@ class TestSortableColumns(OsfTestCase):
         single = make_event(download_type=DownloadEvent.FILE)
 
         ordered = list(
-            self.admin.get_queryset(self.request).order_by('_outcome_rank').values_list('id', flat=True)
+            DownloadEvent.objects.order_by(OUTCOME_SORT_ORDER.asc(), 'id').values_list('id', flat=True)
         )
 
         assert ordered == [completed.id, cancelled.id, failed.id, single.id]
@@ -480,18 +491,103 @@ class TestSortableColumns(OsfTestCase):
     def test_channel_display_falls_back_when_blank(self):
         assert self.admin.channel_display(make_event(download_channel='')) == '—'
 
-    def test_outcome_annotation_does_not_change_dashboard_numbers(self):
-        """Production feeds get_queryset() (annotated with _outcome_rank for sorting) into
-        get_dashboard_data. The annotation must not alter any aggregate — guards against a
-        stray GROUP BY. Full equality, since the region sort is now deterministic."""
+class TestDashboardQueryShape(OsfTestCase):
+    """Guards for the 502-on-wide-ranges fixes.
+
+    The changelist hands the dashboard an ORDERED queryset, and Django folds ordering
+    columns into the GROUP BY of values().annotate() — which exploded every breakdown
+    into one row per event over wide ranges. These lock in that the ordering is dropped
+    and that the headline numbers stay a single scan.
+    """
+
+    def setUp(self):
+        super().setUp()
+        self.admin = DownloadEventsView(DownloadEvent, AdminSite())
         make_event(download_type=DownloadEvent.FILE, storage_region='Germany', size_bytes=2 * 1024 ** 3)
         make_event(download_type=DownloadEvent.FOLDER_ZIP, storage_region='Germany', zip_completed=True, size_bytes=3 * 1024 ** 3)
-        make_event(download_type=DownloadEvent.PROJECT, storage_region='United States', zip_completed=False, status_code=404, size_bytes=5 * 1024 ** 3)
+        make_event(download_type=DownloadEvent.PROJECT, storage_region='United States',
+                   zip_completed=False, status_code=404, size_bytes=5 * 1024 ** 3)
 
-        annotated = self.admin.get_dashboard_data(self.admin.get_queryset(self.request))
+    def test_changelist_ordering_does_not_change_dashboard_numbers(self):
+        """Production feeds the changelist queryset (ordered by -created) into
+        get_dashboard_data. Ordering must not alter any aggregate. Full equality,
+        since the region sort is deterministic."""
+        ordered = self.admin.get_dashboard_data(DownloadEvent.objects.order_by('-created'))
         plain = self.admin.get_dashboard_data(DownloadEvent.objects.all())
 
-        assert annotated == plain
+        assert ordered == plain
+
+    def test_breakdown_group_bys_do_not_include_created(self):
+        """The actual failure shape: `created` folded into a breakdown's GROUP BY makes
+        the database return ~one row per event instead of one per group. The time series
+        legitimately groups by a truncation OF created, so that one is exempt."""
+        with CaptureQueriesContext(connection) as ctx:
+            self.admin.get_dashboard_data(DownloadEvent.objects.order_by('-created'))
+
+        offenders = [
+            query['sql'] for query in ctx.captured_queries
+            if 'GROUP BY' in query['sql']
+            and '"osf_downloadevent"."created"' in query['sql'].split('GROUP BY')[1]
+            and 'DATE_TRUNC' not in query['sql']
+        ]
+        assert offenders == []
+
+    def test_headline_numbers_are_a_single_query(self):
+        """Counts, byte sums, zip outcomes and unique users all come from one
+        aggregate pass — they were twelve separate scans of the same range."""
+        with CaptureQueriesContext(connection) as ctx:
+            self.admin.get_dashboard_data(DownloadEvent.objects.all())
+
+        # 1 headline aggregate + 2 time series + 3 region/provider + 1 channel
+        # + 2 top-N (+ 1 node-title lookup when top projects has rows)
+        assert len(ctx.captured_queries) <= 10
+
+    def test_full_table_count_is_disabled(self):
+        """show_full_result_count makes the admin COUNT(*) the entire table on every
+        page load just to print 'n total'. Locked off."""
+        assert self.admin.show_full_result_count is False
+
+
+class TestChangelistView(OsfTestCase):
+    """The dashboard context comes from the one ChangeList the admin itself builds."""
+
+    def setUp(self):
+        super().setUp()
+        self.admin = DownloadEventsView(DownloadEvent, AdminSite())
+        group, _ = Group.objects.get_or_create(name=DASHBOARD_GROUP_NAME)
+        self.user = AuthUserFactory()
+        self.user.is_staff = True
+        self.user.save()
+        group.user_set.add(self.user)
+
+    def _get(self, params=None):
+        request = RequestFactory().get('/admin/osf/downloadevent/', params or {})
+        request.user = type(self.user).objects.get(pk=self.user.pk)
+        # admin views reverse() their own urls; the real mount lives in the admin
+        # service, so point at this module's minimal urlconf for the duration
+        with override_settings(ROOT_URLCONF='tests.test_download_events_dashboard'):
+            return self.admin.changelist_view(request)
+
+    def test_dashboard_data_is_injected_from_the_changelist(self):
+        make_event(size_bytes=1024 ** 3)
+
+        response = self._get()
+
+        assert 'cl' in response.context_data
+        dashboard = response.context_data['download_events_dashboard']
+        assert dashboard['summary']['total_downloads'] == 1
+        assert response.context_data['download_events_active_filters']
+
+    def test_filters_scope_the_charts(self):
+        node = ProjectFactory()
+        make_event(resource_guid=node._id, size_bytes=2 * 1024 ** 3)
+        make_event(resource_guid='unrelated', size_bytes=1024 ** 3)
+
+        response = self._get({'project_guid': node._id})
+
+        dashboard = response.context_data['download_events_dashboard']
+        assert dashboard['summary']['total_downloads'] == 1
+        assert dashboard['summary']['total_gb'] == 2
 
 
 class TestDashboardFilters(OsfTestCase):
@@ -556,44 +652,81 @@ class TestDashboardFilters(OsfTestCase):
 
 
 class TestActiveFiltersBanner(OsfTestCase):
-    """The read-only summary of what the dashboard is currently scoped to."""
+    """The read-only summary of what the dashboard is currently scoped to.
+
+    Driven through the real ChangeList so the banner is asserted against exactly
+    what the filter panel produces -- ENG-12137: the old hand-kept param map
+    missed the ``__exact`` params of choice fields (download type, channel) and
+    echoed raw values ('1') instead of the panel's labels ('Yes').
+    """
 
     def setUp(self):
         super().setUp()
         self.admin = DownloadEventsView(DownloadEvent, AdminSite())
+        group, _ = Group.objects.get_or_create(name=DASHBOARD_GROUP_NAME)
+        self.user = AuthUserFactory()
+        self.user.is_staff = True
+        self.user.save()
+        group.user_set.add(self.user)
 
-    def test_lists_applied_filters_with_labels(self):
-        request = RequestFactory().get('/', {
-            'project_guid': 'abcde',
+    def _active(self, params=None):
+        request = RequestFactory().get('/admin/osf/downloadevent/', params or {})
+        request.user = type(self.user).objects.get(pk=self.user.pk)
+        with override_settings(ROOT_URLCONF='tests.test_download_events_dashboard'):
+            response = self.admin.changelist_view(request)
+        return {f['label']: f['value'] for f in response.context_data['download_events_active_filters']}
+
+    def test_choice_filters_show_up_with_panel_labels(self):
+        """Download type and channel filter through `<field>__exact` params -- both
+        must appear, wearing the same labels the filter panel shows."""
+        active = self._active({
+            'download_type__exact': DownloadEvent.FOLDER_ZIP,
+            'download_channel__exact': DownloadEvent.API,
+        })
+
+        assert active['Download type'] == 'Folder zip'
+        assert active['Download channel'] == 'API client'
+
+    def test_boolean_filter_shows_yes_not_the_raw_value(self):
+        active = self._active({'zip_completed__exact': '1'})
+
+        assert active['Zip completed'] == 'Yes'
+
+    def test_boolean_unknown_variant(self):
+        active = self._active({'zip_completed__isnull': 'True'})
+
+        assert active['Zip completed'] == 'Unknown'
+
+    def test_simple_and_input_filters_and_search(self):
+        node = ProjectFactory()
+        active = self._active({
+            'outcome': 'completed',
+            'project_guid': node._id,
             'download_user': 'a@b.com',
-            'download_type': 'file',
             'q': 'chrome',
         })
 
-        active = {f['label']: f['value'] for f in self.admin._active_filters(request)}
-
-        assert active['Project'] == 'abcde'
-        assert active['User'] == 'a@b.com'
-        assert active['Download type'] == 'file'
+        assert active['Download outcome'] == 'Completed'
+        assert active['Project guid'] == node._id
+        assert active['User (email or guid)'] == 'a@b.com'
         assert active['Search'] == 'chrome'
 
     def test_combines_the_date_range_halves(self):
-        request = RequestFactory().get('/', {
+        active = self._active({
             'created__range__gte_0': '2026-01-01',
             'created__range__gte_1': '00:00:00',
             'created__range__lte_0': '2026-01-02',
             'created__range__lte_1': '12:00:00',
         })
 
-        active = self.admin._active_filters(request)
-        date = next(f for f in active if f['label'] == 'Date (UTC)')
+        assert active['Date (UTC)'] == '2026-01-01 00:00:00 → 2026-01-02 12:00:00'
 
-        assert date['value'] == '2026-01-01 00:00:00 → 2026-01-02 12:00:00'
+    def test_default_window_is_the_only_chip_on_a_bare_load(self):
+        """No explicit filters: the injected last-hour window is all the banner
+        reports -- no phantom chips from unapplied filters."""
+        active = self._active()
 
-    def test_empty_when_no_filters_applied(self):
-        request = RequestFactory().get('/')
-
-        assert self.admin._active_filters(request) == []
+        assert list(active) == ['Date (UTC)']
 
 
 class TestStaffAccessMigration(OsfTestCase):

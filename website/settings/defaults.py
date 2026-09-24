@@ -81,6 +81,17 @@ ANONYMIZED_TITLES = ['Authors']
 
 LOAD_BALANCER = False
 
+# Extra proxy hops to skip when resolving the real client address out of
+# X-Forwarded-For (download telemetry). Comma-separated CIDRs; add the load
+# balancer's own public address(es) here, e.g. '35.190.55.96/32'. Private,
+# loopback and link-local ranges and the documented GCP load-balancer source
+# ranges are always skipped and don't need listing.
+TRUSTED_PROXY_CIDRS = [
+    cidr.strip()
+    for cidr in os.environ.get('OSF_TRUSTED_PROXY_CIDRS', '').split(',')
+    if cidr.strip()
+]
+
 # May set these to True in local.py for development
 DEV_MODE = False
 DEBUG_MODE = False
@@ -170,6 +181,8 @@ MAILHOG_API_HOST = 'http://mailhog:8025'
 # OR, if using Sendgrid's API
 # WARNING: If `SENDGRID_WHITELIST_MODE` is True,
 SENDGRID_API_KEY = None
+# Public verification key from SendGrid Event Webhook (Mail Settings -> Event Webhook -> Signed Event Webhook)
+SENDGRID_EVENT_WEBHOOK_PUBLIC_KEY = None
 
 # Mailchimp
 MAILCHIMP_API_KEY = None
@@ -189,12 +202,17 @@ NO_LOGIN_WAIT_TIME = timedelta(weeks=52)   # 1 year for "We miss you at OSF" ema
 NO_LOGIN_OSF4M_WAIT_TIME = timedelta(weeks=52)  # 1 year for "We miss you at OSF" email to users created from OSF4M
 NOTIFICATIONS_CLEANUP_AGE = timedelta(weeks=12)  # 3 months to clean up old notifications and email tasks
 NOTIFICATIONS_CLEANUP_BATCH_SIZE = 10000  # Batch size for notifications and email tasks cleanup
+NOTIFICATION_CAMPAIGN_RECIPIENTS_CLEANUP_AGE = timedelta(weeks=12)  # 3 months to clean up old notification campaign recipients
+NOTIFICATION_CAMPAIGN_RECIPIENTS_CLEANUP_BATCH_SIZE = 5000  # Batch size for notification campaign recipients cleanup
 
 # Notification campaign execution defaults (overridable per campaign in admin metadata)
 DEFAULT_CAMPAIGN_ACTIVITY_THRESHOLD = 3  # Users at/above this activity total are scheduled in the high-activity phase
 DEFAULT_CAMPAIGN_BATCH_SIZE = 1000
 DEFAULT_CAMPAIGN_WINDOW_TIME = 28800  # 8 hours
 DEFAULT_CAMPAIGN_MAX_RETRIES = 3
+DEFAULT_CAMPAIGN_DELIVERY_TIMEOUT = 86400  # 24 hours; mark remaining QUEUED as FAILED after this from started_at
+MAX_QUEUED_CAMPAIGN_BATCHES = 100  # Maximum number of queued campaign batches allowed before new batches are rejected. This is to prevent runaway campaigns from overwhelming the system.
+CAMPAIGN_DISPATCH_INTERVAL = 300  # 5 min (300 sec), minimum time before checking and dispatching new campaign batches.
 # The following are rough estimates so we can log to sentry those batches and sendgrid quests which run longer than normal
 ESTIMATED_PER_REQUEST_THRESHOLD = 0.3  # On production, sending one email via SendGrid takes 0.20 ~ 0.50 seconds, set default alert threshold at 0.30s
 ESTIMATED_BATCH_RUN_TIME_THRESHOLD = 300  # On production, with batch size 1000, we expect each batch to finish within 300s (5m)
@@ -385,6 +403,10 @@ SHARE_URL = 'https://share.osf.io/'
 SHARE_API_TOKEN = None  # Required to send project updates to SHARE
 
 EXTERNAL_REQUEST_TIMEOUT = (10, 30)  # (connect, read) timeout for outbound requests to external services
+# The archive copy request is synchronous on WaterButler's side: it holds the connection open until
+# the whole osfstorage tree has been copied. Large registrations exceed the 30s general read timeout,
+# so give this specific request a longer read timeout while keeping the connect timeout short.
+ARCHIVE_COPY_REQUEST_TIMEOUT = (10, 600)
 
 SHARE_UPDATE_TASK_SOFT_TIME_LIMIT = 90
 SHARE_UPDATE_TASK_HARD_TIME_LIMIT = 120
@@ -447,7 +469,9 @@ class CeleryConfig:
         'website.identifiers.tasks.task__update_verified_links'
     }
 
-    external_low_modules = {}
+    external_low_modules = {
+        'email.process_sendgrid_campaign_events',
+    }
 
     account_status_changes_modules = {}
 
@@ -461,7 +485,9 @@ class CeleryConfig:
     }
 
     low_pri_modules = {
-        'framework.analytics.tasks',
+        # covers increment_user_activity_counters, which moved from
+        # framework/analytics/tasks.py ( deleted ) into the package __init__
+        'framework.analytics',
         'framework.celery_tasks',
         'scripts.osfstorage.usage_audit',
         'scripts.stuck_registration_audit',
@@ -469,25 +495,42 @@ class CeleryConfig:
         'website.search.elastic_search',
         'scripts.generate_sitemap',
         'osf.management.commands.clear_expired_sessions',
+        'osf.management.commands.restart_stuck_registrations',
         'osf.management.commands.delete_withdrawn_or_failed_registration_files',
         'osf.management.commands.migrate_pagecounter_data',
         'osf.management.commands.migrate_deleted_date',
         'osf.management.commands.addon_deleted_date',
-        'osf.management.commands.archive_registrations_on_IA'
+        'osf.management.commands.archive_registrations_on_IA',
         'osf.management.commands.sync_doi_metadata',
         'osf.management.commands.sync_collection_provider_indices',
         'osf.management.commands.sync_datacite_doi_metadata',
-        'osf.management.commands.populate_branched_from',
-        'osf.management.commands.spam_metrics',
+        'osf.management.commands.populate_branched_from_node',
         'osf.management.commands.daily_reporters_go',
         'osf.management.commands.monthly_reporters_go',
-        'osf.management.commands.ingest_cedar_metadata_templates',
+        'osf.management.commands.fetch_cedar_metadata_templates',
         'osf.metrics.reporters',
         'scripts.remove_after_use.merge_notification_subscription_provider_ct',
+        # Items below are celery task names, not python module paths.
+        # These tasks set an explicit name= that does not start with their own
+        # module path, so the module entries above never match them. Listing the
+        # names keeps them on the intended queue without renaming the tasks
+        'management.commands.addon_deleted_date',
+        'management.commands.daily_reporters_go',
+        'management.commands.daily_reporter_go',
+        'management.commands.delete_withdrawn_or_failed_registration_files',
+        'management.commands.migrate_deleted_date',
+        'management.commands.migrate_pagecounter_data',
+        'management.commands.ingest_cedar_metadata_templates',
+        'management.commands.populate_branched_from',
+        'osf.management.commands.sync_doi_metadata_command',
+        'osf.management.commands.sync_preprint_missing_dois',
+        'osf.management.commands.async_request_identifier_update',
+        'osf.management.commands.sync_doi_empty_metadata_dataarchive_registrations_command',
     }
 
     med_pri_modules = {
         'scripts.triggered_mails',
+        'scripts.triggered_no_login_email',
         'website.mailchimp_utils',
         'notifications.tasks',
         'website.collections.tasks',
@@ -505,11 +548,15 @@ class CeleryConfig:
         'scripts.retract_registrations',
         'website.archiver.tasks',
         'scripts.add_missing_identifiers_to_preprints',
-        'osf.management.commands.approve_pending_schema_response',
+        'osf.management.commands.approve_pending_schema_responses',
         'api.share.utils',
         'scripts.check_manual_restart_approval',
         'scripts.enhanced_stuck_registration_audit',
         'email.start_notification_campaign',
+        'email.dispatch_campaign',
+        'scripts.check_manual_restart_approvals_batch',
+        'scripts.delayed_manual_restart_approval',
+        'scripts.manual_restart_approval_batch',
     }
 
     background_migration_modules = {
@@ -636,6 +683,7 @@ class CeleryConfig:
         'scripts.remove_after_use.merge_notification_subscription_provider_ct',
         'scripts.disable_removed_beat_tasks',
         'osf.management.commands.delete_withdrawn_or_failed_registration_files',
+        'osf.management.commands.restart_stuck_registrations',
         'osf.email.notification_campaign',
     )
 
@@ -714,6 +762,10 @@ class CeleryConfig:
             'schedule': crontab(minute=0, hour=7),  # Daily 2 a.m
             'kwargs': {'dry_run': False},
         },
+        'delete_notification_campaign_recipients': {
+            'task': 'notifications.tasks.delete_notification_campaign_recipients',
+            'schedule': crontab(minute=0, hour=3, day_of_month=1),
+        },
         'clear_expired_sessions': {
             'task': 'osf.management.commands.clear_expired_sessions',
             'schedule': crontab(minute=0, hour=5),  # Daily 12 a.m
@@ -729,7 +781,7 @@ class CeleryConfig:
             'schedule': crontab(minute=0, hour=6),  # Daily 1:00 a.m.
         },
         'monthly_reporters_go': {
-            'task': 'management.commands.monthly_reporters_go',
+            'task': 'osf.management.commands.monthly_reporters_go.monthly_reporters_go',
             'schedule': crontab(minute=30, hour=6, day_of_month=2),     # Second day of month 1:30 a.m.
         },
         'generate_sitemap': {
@@ -758,6 +810,11 @@ class CeleryConfig:
         'approve_registration_updates': {
             'task': 'osf.management.commands.approve_pending_schema_responses',
             'schedule': crontab(minute=0, hour=5),  # Daily 12 a.m
+            'kwargs': {'dry_run': False},
+        },
+        'restart_stuck_registrations': {
+            'task': 'osf.management.commands.restart_stuck_registrations',
+            'schedule': crontab(minute=30, hour=5),  # Daily 12:30 a.m
             'kwargs': {'dry_run': False},
         },
         'delete_expired_djelme_indexes': {

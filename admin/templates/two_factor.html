@@ -1,0 +1,59 @@
+{% extends 'base.html' %}
+{% load render_bundle from webpack_loader %}
+
+{% block title %}
+<title>OSFAdmin | Log in</title>
+{% endblock %}
+
+<!-- hide navbar, sidebar, and User account menu -->
+{% block navbar %}
+{% endblock %}
+{% block sidebar %}
+{% endblock %}
+
+{% block content %}
+
+<div class="login-page">
+    <div class="login-box">
+        <div class="login-logo">
+            <b>OSF</b>Admin</a>
+        </div>
+        <div class="login-box-body">
+            <p class="login-box-msg">A verification code has been sent to your authenticator app.</p>
+            <form action="" method="post">
+                {% csrf_token %}
+                {% if form.non_field_errors %}
+                <ul>
+                {% for error in form.non_field_errors %}
+                <li class="errorclass">{{ error }}</li>
+                {% endfor %}
+                </ul>
+                {% endif %}
+                <div class="form-group">
+                    <label for="code">Verification code:</label>
+                    <p>{{ form.code }}</p>
+                    {% if form.code.errors %}<span class="text-danger"> {{ form.code.errors }}</span>{% endif %}
+                </div>
+                {{ form.guid }}
+                <div class="row">
+                    <div class="col-xs-4">
+                        <button type="submit" class="btn btn-primary btn-block btn-flat">Sign In</button>
+                    </div>
+                </div>
+                <div>
+                    <br>
+                    {% if messages %}
+                        <ul class="two_factor_page_messages">
+                        {% for message in messages %}
+                            <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}
+                            </li>
+                        {% endfor %}
+                        </ul>
+                    {% endif %}
+                </div>
+            </form>
+        </div>
+      <br>
+    </div>
+</div>
+{% endblock %}

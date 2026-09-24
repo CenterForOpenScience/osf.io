@@ -184,6 +184,7 @@ class TestOsfstorageFileNode(StorageTestCase):
         assert child.get_download_count() == 0
 
     def test_download_count_file(self):
+        # PageCounter is disabled (ENG-12193), so legacy counts stay at zero
         s = SessionStore()
         s.create()
         child = self.node_settings.get_root().append_file('Test')
@@ -192,10 +193,10 @@ class TestOsfstorageFileNode(StorageTestCase):
         utils.update_analytics(self.project, child, 1, s.session_key)
         utils.update_analytics(self.project, child, 2, s.session_key)
 
-        assert child.get_download_count() == 3
-        assert child.get_download_count(0) == 1
-        assert child.get_download_count(1) == 1
-        assert child.get_download_count(2) == 1
+        assert child.get_download_count() == 0
+        assert child.get_download_count(0) == 0
+        assert child.get_download_count(1) == 0
+        assert child.get_download_count(2) == 0
 
     def test_create_version_locks_file_row(self):
 
@@ -265,6 +266,22 @@ class TestOsfstorageFileNode(StorageTestCase):
         assert root.type == 'osf.osfstoragefolder'
         assert BaseFileNode.objects.get(_id=folder._id).type == 'osf.trashedfolder'
         assert BaseFileNode.objects.get(_id=file._id).type == 'osf.trashedfile'
+
+    def test_restore_deleted_file_without_deleted_field(self):
+        assert models.TrashedFileNode.objects.exists() is False
+
+        child = self.node_settings.get_root().append_file('Test')
+        child.delete()
+
+        trashed_file = models.TrashedFileNode.objects.first()
+        restored_file = trashed_file.restore()
+
+        assert restored_file.deleted is None
+        assert restored_file.deleted_on is None
+        # None because we do not set deleted_by when delete the child
+        assert restored_file.deleted_by is None
+
+        assert models.TrashedFileNode.objects.exists() is False
 
     def test_delete_file(self):
         child = self.node_settings.get_root().append_file('Test')
