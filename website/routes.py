@@ -55,7 +55,7 @@ from api.waffle.utils import flag_is_active
 
 
 def set_status_message(user):
-    if user and not user.accepted_terms_of_service:
+    if user and not user.has_accepted_current_terms_of_service:
         status.push_status_message(
             message=language.TERMS_OF_SERVICE.format(api_domain=settings.API_DOMAIN,
                                                      user_id=user._id,
