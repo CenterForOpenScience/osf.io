@@ -40,9 +40,5 @@ class AllMonthlyReporters(enum.Enum):
     INSTITUTIONAL_SUMMARY = InstitutionalSummaryMonthlyReporter
     ITEM_USAGE = PublicItemUsageReporter
     PRIVATE_SPAM_METRICS = PrivateSpamMetricsReporter
-<<<<<<< HEAD
     ANGULAR_SSR_METRICS = AngularSSRMetricsReporter
-    OSFSTORAGE_FILE_COUNT = MonthlyOsfstorageFileCountReporter
-=======
     # OSFSTORAGE_FILE_COUNT = MonthlyOsfstorageFileCountReporter
->>>>>>> upstream/develop
