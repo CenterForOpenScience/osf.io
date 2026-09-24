@@ -20,8 +20,21 @@
                 <form method="post"
                       action="{% url 'management:waffle_flag'%}">
                     {% csrf_token %}
-                    <input class="btn btn-success" type="submit"
-                           value="Run" />
+                    <label>
+                        <input
+                            type="checkbox"
+                            name="preserve_everyone"
+                            checked
+                        >
+                        Preserve existing "everyone" values
+                    </label>
+
+                    <p class="help-block">
+                        When enabled, existing flags will keep their current "everyone"
+                        value. New flags will use the value from the configuration file.
+                    </p>
+
+                    <input class="btn btn-success" type="submit" value="Run" />
                 </form>
             </ul>
             <h4> <u>Update Registration Schemas and Schema Blocks </u>
@@ -211,6 +224,31 @@
                 </form>
             </section>
             <section>
+                <h4><u>Set email for stuck registration report</u></h4>
+                <p>
+                    Registrations stuck archiving are restarted automatically every day. Enter up to
+                    three addresses to send the report of what is still stuck to.
+                </p>
+                <form method="post"
+                      action="{% url 'management:stuck_registration_report'%}">
+                    {% csrf_token %}
+                    <label>Emails (up to 3, comma separated):</label>
+                    <input type="text" name="report_emails" size="60"
+                           value="{{ stuck_registration_report.emails|join:', ' }}"/><br>
+
+                    <label for="report_cadence">Report notification:</label>
+                    <select id="report_cadence" name="report_cadence">
+                        {% for value, label in stuck_registration_report_cadences %}
+                            <option value="{{ value }}" {% if value == stuck_registration_report.cadence %}selected{% endif %}>{{ label }}</option>
+                        {% endfor %}
+                    </select><br>
+
+                    <nav>
+                        <input class="btn btn-success" type="submit" value="Save" />
+                    </nav>
+                </form>
+            </section>
+            <section>
                 <h4><u>Update ROR funder names to be consistent and proper.</u></h4>
                 <p>
                     Take a csv file of <code>ROR ID</code>, <code>ROR
@@ -226,7 +264,7 @@
                     </nav>
                 </form>
             </section>
-                        <section>
+            <section>
                 <h4><u>Reject pending collection submissions</u></h4>
                 <p>
                     Use this management command to reject all collection submissions currently in the pending state.
@@ -252,6 +290,19 @@
                     {% csrf_token %}
                     Comment: <input type="text" name="comment" style="width: 550px;"
                                     placeholder="Leave blank for default rejection message 'This project is now read-only, so this access request has been automatically rejected.'" />
+                    <nav>
+                        <input class="btn btn-success" type="submit" value="Run" />
+                    </nav>
+                </form>
+            </section>
+            <section>
+                <h4><u>Fix restored files</u></h4>
+                <p>
+                    Use this management command to fix restored files that were previously trashed.
+                </p>
+                <form method="post"
+                      action="{% url 'management:fix_restored_trashed_files'%}">
+                    {% csrf_token %}
                     <nav>
                         <input class="btn btn-success" type="submit" value="Run" />
                     </nav>

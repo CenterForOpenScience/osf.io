@@ -265,6 +265,11 @@ class RecoverDeletedPreprintView(PermissionRequiredMixin, FormView):
     its primary file, so admins copy from a project of uploaded files rather than
     uploading here. The DOIs are deterministic from the GUID, so resyncing CrossRef
     restores each version's original DOI.
+
+    If the GUID belongs to a preprint that's only soft-deleted (e.g. via the admin
+    "Remove" action, `PreprintDeleteView`) rather than hard-deleted, this just
+    clears `deleted` instead of creating a redundant new version - `Preprint.load`
+    can't tell "never existed" apart from "exists but soft-deleted" on its own.
     """
     template_name = 'preprints/recover_preprint.html'
     permission_required = ('osf.change_preprint',)
@@ -272,14 +277,20 @@ class RecoverDeletedPreprintView(PermissionRequiredMixin, FormView):
     form_class = RecoverDeletedPreprintForm
 
     def _copy_primary_file(self, preprint, file_guid):
-        source_file = getattr(Guid.load(file_guid), 'referent', None)
+        source, _ = Guid.load_referent(file_guid)
+        if isinstance(source, Preprint):
+            source_file = source.primary_file
+            if source_file is None:
+                raise ValueError(f'Preprint "{file_guid}" has no primary file to copy.')
+        else:
+            source_file = source
         if not isinstance(source_file, BaseFileNode):
-            raise ValueError(f'No file found for guid "{file_guid}".')
+            raise ValueError(f'No file or preprint found for guid "{file_guid}".')
         latest_version = source_file.versions.order_by('-created').first()
         if latest_version is None:
             raise ValueError(f'File "{file_guid}" has no versions to copy.')
         copied = copy_files(source_file, target_node=preprint, identifier=latest_version.identifier)
-        preprint.set_primary_file(copied, auth=self.request, save=True)
+        preprint.set_primary_file(copied, auth=self.request, save=True, ignore_permission=True)
 
     def form_valid(self, form):
         data = form.cleaned_data
@@ -287,13 +298,27 @@ class RecoverDeletedPreprintView(PermissionRequiredMixin, FormView):
         file_guid = data['file_guid'].strip()
         try:
             with transaction.atomic():
-                if Preprint.load(guid):
+                existing = Preprint.load(guid)
+                if existing and existing.deleted:
+                    existing.deleted = None
+                    existing.save()
+                    version = existing
+                    action_flag = PREPRINT_RESTORED
+                    log_message = f'Preprint {version._id} restored (ref: {data["ticket_reference"]}).'
+                    success_message = f'Restored preprint {version._id}.'
+                elif existing:
                     # GUID already recovered: add the next version.
                     version, _ = Preprint.create_version(
                         create_from_guid=guid,
                         auth=self.request,
                         ignore_permission=True,
                         ignore_existing_versions=True,
+                    )
+                    action_flag = PREPRINT_RECOVERED
+                    log_message = f'Preprint {version._id} recreated after deletion (ref: {data["ticket_reference"]}).'
+                    success_message = (
+                        f'Recreated preprint version {version._id}. Set contributors/metadata, then publish '
+                        'and resync CrossRef. Run again on the same GUID to add the next version.'
                     )
                 else:
                     version = Preprint.create(
@@ -303,25 +328,27 @@ class RecoverDeletedPreprintView(PermissionRequiredMixin, FormView):
                         description=data['description'],
                         manual_guid=guid,
                     )
+                    action_flag = PREPRINT_RECOVERED
+                    log_message = f'Preprint {version._id} recreated after deletion (ref: {data["ticket_reference"]}).'
+                    success_message = (
+                        f'Recreated preprint version {version._id}. Set contributors/metadata, then publish '
+                        'and resync CrossRef. Run again on the same GUID to add the next version.'
+                    )
                 if file_guid:
                     self._copy_primary_file(version, file_guid)
                 update_admin_log(
                     user_id=self.request.user.id,
                     object_id=version._id,
                     object_repr='Preprint',
-                    message=f'Preprint {version._id} recreated after deletion (ref: {data["ticket_reference"]}).',
-                    action_flag=PREPRINT_RECOVERED,
+                    message=log_message,
+                    action_flag=action_flag,
                 )
         except (ValidationError, ValueError) as exc:
             reason = '; '.join(exc.messages) if isinstance(exc, ValidationError) else str(exc)
             messages.error(self.request, f'Could not recover preprint: {reason}')
             return redirect(reverse_lazy('preprints:recover'))
 
-        messages.success(
-            self.request,
-            f'Recreated preprint version {version._id}. Set contributors/metadata, then publish '
-            'and resync CrossRef. Run again on the same GUID to add the next version.',
-        )
+        messages.success(self.request, success_message)
         return redirect(reverse_lazy('preprints:preprint', kwargs={'guid': version._id}))
 
 

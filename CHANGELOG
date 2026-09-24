@@ -2,6 +2,37 @@
 
 We follow the CalVer (https://calver.org/) versioning scheme: YY.MINOR.MICRO.
 
+26.23.0 (2026-09-23)
+====================
+- Registration state outdated
+- File exists, but is not retrievable in the UI
+- Stuck Registrations are restarted on a daily basis
+- Clean out Stuck Registration list in Admin
+- Fix Registration File Links Pointing to Source Project During Moderation
+- PDFs fail to display on recovered preprints
+- Recover preprint fails due to "Could not recover preprint: GUID cannot be manually assigned"
+- Account spam/ban notifications not sending
+- User unable to register project (2nd iteration)
+- Upgrade django to latest patch version
+- Expand unit tests based on recent changes
+- Reported Backfill Task Wrong Queue
+- Require two-factor authentication for Admin App
+
+26.22.0 (2026-09-17)
+====================
+
+- PB&S Release: Post-ENTER
+
+26.21.2 (2026-09-17)
+====================
+
+- Hotfix to disable the osfstorage file count reporters
+
+26.21.1 (2026-09-15)
+====================
+
+- Hotfix to disable PageCounter and correctly prioritize monthly reporter tasks
+
 26.21.0 (2026-09-10)
 ====================
 

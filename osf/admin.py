@@ -415,6 +415,22 @@ class NotificationAdmin(admin.ModelAdmin):
 # threshold is what separates a real failure from a cancel.
 DOWNLOAD_FAILURE_MIN_STATUS = 400
 
+# Sort key for the computed Outcome column: Completed, Cancelled, Failed, then single
+# files (which have no outcome). Attached via ``admin_order_field``, so the CASE only
+# runs when someone actually sorts by Outcome -- annotating it onto every queryset made
+# all the dashboard aggregates and counts pay for it on every page load.
+OUTCOME_SORT_ORDER = Case(
+    When(zip_completed=True, then=Value(0)),  # Completed
+    When(
+        zip_completed=False,
+        status_code__gte=DOWNLOAD_FAILURE_MIN_STATUS,
+        then=Value(2),  # Failed
+    ),
+    When(zip_completed=False, then=Value(1)),  # Cancelled
+    default=Value(3),  # single files have no outcome ('—')
+    output_field=IntegerField(),
+)
+
 
 class DownloadOutcomeFilter(SimpleListFilter):
     """Filter zips by how they ended: completed, cancelled mid-stream, or failed."""
@@ -552,27 +568,10 @@ class DownloadEventsView(admin.ModelAdmin):
         'user_agent'
     )
     search_help_text = 'Search by username, full name, user or node guid, ip, path, storage provider, user or storage region, source area, user agent.'
-
-    def get_queryset(self, request):
-        """Annotate an outcome rank so the computed Outcome column is sortable.
-
-        The rank mirrors :meth:`outcome` exactly. It's just an ordering key — it doesn't
-        change what rows are returned, so the table and the dashboard aggregates are
-        unaffected.
-        """
-        return super().get_queryset(request).annotate(
-            _outcome_rank=Case(
-                When(zip_completed=True, then=Value(0)),  # Completed
-                When(
-                    zip_completed=False,
-                    status_code__gte=DOWNLOAD_FAILURE_MIN_STATUS,
-                    then=Value(2),  # Failed
-                ),
-                When(zip_completed=False, then=Value(1)),  # Cancelled
-                default=Value(3),  # single files have no outcome ('—')
-                output_field=IntegerField(),
-            )
-        )
+    # Without this the admin runs a COUNT(*) over the ENTIRE table on every page load,
+    # just to print "n total" next to the filtered count. At production volume that's a
+    # full-table scan per view.
+    show_full_result_count = False
 
     @admin.display(description='User', ordering='user__username')
     def user_display(self, obj):
@@ -593,7 +592,7 @@ class DownloadEventsView(admin.ModelAdmin):
             return '—'
         return obj.user_agent if len(obj.user_agent) <= 80 else obj.user_agent[:79] + '…'
 
-    @admin.display(description='Outcome', ordering='_outcome_rank')
+    @admin.display(description='Outcome', ordering=OUTCOME_SORT_ORDER)
     def outcome(self, obj):
         """Human-readable end state. Single files have no outcome — they're recorded at the
         redirect before any bytes move, so they never report completion."""
@@ -630,33 +629,38 @@ class DownloadEventsView(admin.ModelAdmin):
 
         if extra_context is None:
             extra_context = {}
-        changelist = self.get_changelist_instance(request)
-        extra_context['download_events_dashboard'] = self.get_dashboard_data(changelist.get_queryset(request))
-        extra_context['download_events_active_filters'] = self._active_filters(request)
-        return super().changelist_view(request, extra_context=extra_context)
+        response = super().changelist_view(request, extra_context=extra_context)
 
-    # query-string param -> human label, for the "applied filters" banner above the charts
-    FILTER_LABELS = (
-        ('q', 'Search'),
-        ('project_guid', 'Project'),
-        ('download_user', 'User'),
-        ('download_type', 'Download type'),
-        ('outcome', 'Outcome'),
-        ('zip_completed__exact', 'Zip completed'),
-        ('storage_provider', 'Storage provider'),
-    )
+        # Feed the charts from the ChangeList the admin just built rather than
+        # constructing a second one -- every ChangeList runs the whole
+        # filter/count/results pipeline in __init__, so two of them doubled all of
+        # that work per page view. On non-changelist responses (e.g. the redirect
+        # the admin issues for a bad filter value) there is no `cl` and the charts
+        # are simply skipped, where the old code 500ed.
+        context_data = getattr(response, 'context_data', None) or {}
+        changelist = context_data.get('cl')
+        if changelist is not None:
+            response.context_data['download_events_dashboard'] = self.get_dashboard_data(changelist.queryset)
+            response.context_data['download_events_active_filters'] = self._active_filters(request, changelist)
+        return response
 
-    def _active_filters(self, request):
+    def _active_filters(self, request, changelist):
         """The filters/search currently in effect, as ``[{'label', 'value'}]``, so the
         dashboard can show at a glance what its numbers are scoped to.
 
-        Purely presentational — it reads the same query string the changelist already
-        filtered on; it never changes what's queried.
+        Read off the ChangeList's own filter specs, so the banner shows exactly what
+        the filter panel shows -- same titles, same choice labels ('Yes', not '1';
+        'Single file', not 'file') -- and a filter added to ``list_filter`` shows up
+        here on its own. A hand-kept param map drifted: it missed the ``__exact``
+        params Django uses for choice fields and never learned about new filters.
+
+        Purely presentational; it never changes what's queried.
         """
         params = request.GET
         active = []
 
-        # the date range arrives in date+time halves; recombine them into one readable line
+        # The date range renders as a form, not choices, so its spec has nothing to
+        # report -- recombine the date+time halves from the query string instead.
         date_from = ' '.join(
             part for part in (params.get('created__range__gte_0'), params.get('created__range__gte_1')) if part
         )
@@ -666,10 +670,31 @@ class DownloadEventsView(admin.ModelAdmin):
         if date_from or date_to:
             active.append({'label': 'Date (UTC)', 'value': f"{date_from or '…'} → {date_to or 'now'}"})
 
-        for param, label in self.FILTER_LABELS:
-            value = params.get(param)
-            if value:
-                active.append({'label': label, 'value': value})
+        # the search box isn't a filter spec either
+        if params.get('q'):
+            active.append({'label': 'Search', 'value': params['q']})
+
+        for spec in changelist.filter_specs:
+            title = str(spec.title)
+            label = title[:1].upper() + title[1:]
+            if isinstance(spec, InputFilter):
+                # free-text filters override choices() for their form, so read the
+                # typed value directly
+                if spec.value():
+                    active.append({'label': label, 'value': spec.value()})
+                continue
+            try:
+                choices = list(spec.choices(changelist))
+            except Exception:
+                # a spec that can't enumerate choices (form-based filters) simply
+                # doesn't contribute a chip; never let the banner break the page
+                continue
+            active.extend(
+                {'label': label, 'value': str(choice.get('display', ''))}
+                # the first choice is always "All" -- selected means the filter is off
+                for choice in choices[1:]
+                if choice.get('selected') and choice.get('display')
+            )
         return active
 
     def _in_dashboard_group(self, request):
@@ -713,9 +738,6 @@ class DownloadEventsView(admin.ModelAdmin):
     # genuinely terabyte-scale, so small numbers aren't cluttered with "(0.0 TB)".
     GB_PER_TB = 1024
 
-    def _sum_bytes(self, queryset):
-        return queryset.aggregate(total_bytes=Sum('size_bytes'))['total_bytes'] or 0
-
     def _to_gb(self, total_bytes):
         return round((total_bytes or 0) / (1024**3), 2)
 
@@ -736,15 +758,39 @@ class DownloadEventsView(admin.ModelAdmin):
         return round(part * 100 / whole, 2)
 
     def get_dashboard_data(self, queryset):
-        file_queryset = queryset.filter(download_type=DownloadEvent.FILE)
-        zip_queryset = queryset.exclude(download_type=DownloadEvent.FILE)
-        total_file_downloads = file_queryset.count()
-        total_zip_downloads = zip_queryset.count()
-        total_bytes = self._sum_bytes(queryset)
+        # The changelist hands this queryset over ordered by `created`, and Django folds
+        # ordering columns into the GROUP BY of values().annotate(). Since `created` is
+        # near-unique, that exploded every breakdown below into one row per EVENT rather
+        # than one per group -- harmless on an hour of data, a timeout on a day of it.
+        # Aggregates have no use for an ordering; drop it before anything else runs.
+        queryset = queryset.order_by()
 
-        total_downloads = queryset.count()
-        total_file_gb = self._to_gb(self._sum_bytes(file_queryset))
-        total_zip_gb = self._to_gb(self._sum_bytes(zip_queryset))
+        is_file = Q(download_type=DownloadEvent.FILE)
+        # Every headline number in one pass over the range -- these were twelve separate
+        # scans of the same rows before.
+        totals = queryset.aggregate(
+            total_downloads=Count('id'),
+            total_bytes=Sum('size_bytes'),
+            file_downloads=Count('id', filter=is_file),
+            file_bytes=Sum('size_bytes', filter=is_file),
+            zip_downloads=Count('id', filter=~is_file),
+            zip_bytes=Sum('size_bytes', filter=~is_file),
+            # Zip outcomes. Single files are recorded before any bytes move, so they
+            # have no outcome and are left out of these entirely.
+            completed_zips=Count('id', filter=~is_file & Q(zip_completed=True)),
+            incomplete_zips=Count('id', filter=~is_file & Q(zip_completed=False)),
+            failed_zips=Count('id', filter=~is_file & Q(
+                zip_completed=False, status_code__gte=DOWNLOAD_FAILURE_MIN_STATUS)),
+            # distinct non-null users; Count skips NULLs, so anonymous rows don't count
+            unique_users=Count('user_id', distinct=True),
+        )
+        total_downloads = totals['total_downloads']
+        total_file_downloads = totals['file_downloads']
+        total_zip_downloads = totals['zip_downloads']
+        failed_zips = totals['failed_zips']
+        total_file_gb = self._to_gb(totals['file_bytes'])
+        total_zip_gb = self._to_gb(totals['zip_bytes'])
+
         time_series = self._build_time_series(queryset)
         # each breakdown returns the ranked *known* regions plus, separately, the
         # "Unknown" bucket — so a large Unknown doesn't crowd real regions off the chart
@@ -753,20 +799,14 @@ class DownloadEventsView(admin.ModelAdmin):
         # downloads and GB grouped by where the bytes came from (osfstorage vs addons)
         storage_providers, storage_providers_unknown = self._build_region_breakdown(queryset, 'storage_provider')
 
-        # Zip outcomes. Single files are recorded before any bytes move, so they have no
-        # outcome and are left out of this breakdown entirely.
-        completed_zips = zip_queryset.filter(zip_completed=True).count()
-        failed_zips = zip_queryset.filter(
-            zip_completed=False, status_code__gte=DOWNLOAD_FAILURE_MIN_STATUS).count()
-        incomplete_zips = zip_queryset.filter(zip_completed=False).count()
         zip_outcomes = {
-            'completed': completed_zips,
+            'completed': totals['completed_zips'],
             # everything that didn't complete and wasn't a server failure is a user cancel
-            'cancelled': incomplete_zips - failed_zips,
+            'cancelled': totals['incomplete_zips'] - failed_zips,
             'failed': failed_zips,
         }
 
-        total_gb = self._to_gb(total_bytes)
+        total_gb = self._to_gb(totals['total_bytes'])
         split = {
             'file': {
                 'count': total_file_downloads,
@@ -789,7 +829,7 @@ class DownloadEventsView(admin.ModelAdmin):
                 'total_downloads': total_downloads,
                 'total_gb': total_gb,
                 'total_gb_tb_suffix': self._tb_suffix(total_gb),
-                'unique_users': queryset.exclude(user_id__isnull=True).values('user_id').distinct().count(),
+                'unique_users': totals['unique_users'],
                 'failed_zips': failed_zips,
             },
             'split': split,
@@ -970,8 +1010,8 @@ class DownloadEventsView(admin.ModelAdmin):
             total_bytes=Sum('size_bytes'),
         )
         labels = dict(DownloadEvent.DOWNLOAD_CHANNELS)
-        # Fold by channel in Python: a pre-existing annotation on the queryset (e.g. the
-        # sort's _outcome_rank) can leak into the GROUP BY and split a channel across rows,
+        # Fold by channel in Python: anything that sneaks extra columns into the GROUP BY
+        # (an inherited ordering, a stray annotation) would split a channel across rows,
         # so sum them back together — same reason _build_region_breakdown folds.
         folded = defaultdict(lambda: {'downloads': 0, 'bytes': 0})
         for row in rows:
