@@ -218,7 +218,7 @@ def expected_apply_async_calls(items):
                 'guid': _osfid,
                 'is_backfill': True,
             },
-            queue='low',
+            queue='external_low',
         )
         for _osfid in _iter_osfids(items)
     ]

@@ -177,6 +177,7 @@ def task__update_share(self, guid: str, is_backfill=False, osfmap_partition_name
     """
     Send SHARE/trove current metadata record(s) for the osf-guid-identified object
     """
+    queue = self.request.delivery_info.get('routing_key', settings.CeleryConfig.task_external_low_queue)
     _osfmap_partition = OsfmapPartition[osfmap_partition_name]
     _osfid_instance = apps.get_model('osf.Guid').load(guid)
     if _osfid_instance is None:
@@ -206,10 +207,9 @@ def task__update_share(self, guid: str, is_backfill=False, osfmap_partition_name
     # enqueue followup task for supplementary metadata
     _next_partition = _next_osfmap_partition(_osfmap_partition)
     if _next_partition is not None:
-        task__update_share.delay(
-            guid,
-            is_backfill=is_backfill,
-            osfmap_partition_name=_next_partition.name,
+        task__update_share.apply_async(
+            args=[guid, is_backfill, _next_partition.name],
+            queue=queue,
         )
     else:
         _schedule_cedar_record_updates(_osfid_instance)
