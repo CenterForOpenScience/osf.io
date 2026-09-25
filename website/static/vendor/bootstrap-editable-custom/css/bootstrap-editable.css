@@ -38,8 +38,8 @@
 .editable-input {
     vertical-align: top; 
     display: inline-block; /* should be inline to take effect of parent's white-space: nowrap */
-    width: auto; /* bootstrap-responsive has width: 100% that breakes layout */
-    white-space: normal; /* reset white-space decalred in parent*/
+    width: auto; /* bootstrap-responsive has width: 100% that breaks layout */
+    white-space: normal; /* reset white-space declared in parent*/
    /* display-inline emulation for IE7*/
    zoom: 1; 
    *display: inline;   

@@ -18,7 +18,7 @@
       submitted updates. Decisions must be made within
       ${registration_approval_time} hours.
     % else:
-      <a href="${update_url}">Click here</a> to review the submited updates.
+      <a href="${update_url}">Click here</a> to review the submitted updates.
       Admins have up to ${registration_update_approval_time} hours
       to make their decision.
     % endif

@@ -149,7 +149,7 @@ class OwnerOnly(permissions.BasePermission):
 
 
 def PermissionWithGetter(Base, getter):
-    """A psuedo class for checking permissions
+    """A pseudo class for checking permissions
     of subresources without having to redefine permission classes
     """
     class Perm(Base):

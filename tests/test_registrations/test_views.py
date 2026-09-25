@@ -449,7 +449,7 @@ class TestModeratorRegistrationViews:
         return registration
 
 
-    # API paths for registrations that are not publically available on non-public Registrations
+    # API paths for registrations that are not publicly available on non-public Registrations
     PROTECTED_REGISTRATION_SUB_ROUTES = [
         '',
         'bibliographic_contributors',

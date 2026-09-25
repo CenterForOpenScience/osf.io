@@ -22,3 +22,10 @@ repos:
   rev: v2.13.6
   hooks:
   - id: jshint
+- repo: https://github.com/codespell-project/codespell
+  rev: v2.4.2
+  hooks:
+  - id: codespell
+    args:
+    - --ignore-words-list=bu,doesnt,indx,nd,ser,theses,usera
+    - --skip="*.aff,*.dic,*.js,*.json,*.lock,*.svg,*.vcl"

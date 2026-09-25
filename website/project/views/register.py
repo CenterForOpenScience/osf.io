@@ -119,7 +119,7 @@ def node_register_template_page(auth, node, metaschema_id, **kwargs):
         try:
             meta_schema = RegistrationSchema.objects.get(_id=metaschema_id)
         except RegistrationSchema.DoesNotExist:
-            # backwards compatability for old urls, lookup by name
+            # backwards compatibility for old urls, lookup by name
             meta_schema = RegistrationSchema.objects.filter(name=_id_to_name(metaschema_id)).order_by('-schema_version').first()
             if not meta_schema:
                 raise HTTPError(http_status.HTTP_404_NOT_FOUND, data={

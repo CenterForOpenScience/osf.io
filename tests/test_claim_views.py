@@ -317,7 +317,7 @@ class TestClaimViews(OsfTestCase):
         url_with_service_ticket = f'{url}?ticket={service_ticket}'
         res = self.app.get(url_with_service_ticket)
         # The response of this request is expected to be a 302 with `Location`.
-        # And the redirect URL must equal to the originial service URL
+        # And the redirect URL must equal to the original service URL
         assert res.status_code == 302
         redirect_url = res.headers['Location']
         assert redirect_url == url
@@ -461,7 +461,7 @@ class TestClaimViews(OsfTestCase):
         assert res.status_code == 400
 
     def test_cannot_claim_user_with_user_who_is_already_contributor(self):
-        # user who is already a contirbutor to the project
+        # user who is already a contributor to the project
         contrib = AuthUserFactory()
         self.project.add_contributor(contrib, auth=Auth(self.project.creator))
         self.project.save()

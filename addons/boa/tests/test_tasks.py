@@ -76,7 +76,7 @@ class TestSubmitToBoa(OsfTestCase):
 
     def setUp(self):
         super().setUp()
-        self.host = 'http://locahost:9999/boa/?q=boa/api'
+        self.host = 'http://localhost:9999/boa/?q=boa/api'
         self.username = 'fake-boa-username'
         self.password = 'fake-boa-password'
         self.user_guid = AuthUserFactory()._id
@@ -120,7 +120,7 @@ class TestSubmitToBoaAsync(OsfTestCase):
 
     def setUp(self):
         super().setUp()
-        self.host = 'http://locahost:9999/boa/?q=boa/api'
+        self.host = 'http://localhost:9999/boa/?q=boa/api'
         self.username = 'fake-boa-username'
         self.password = 'fake-boa-password'
         self.user = AuthUserFactory()
