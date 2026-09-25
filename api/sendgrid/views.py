@@ -47,7 +47,7 @@ class SendGridEventWebhook(APIView):
          (``deferred`` is safe to enable but ignored for campaigns - SendGrid
          retries those itself.)
     4. Send a notification campaign email (personalization ``custom_args`` must
-       include ``campaign_id``, ``campaign_recipient_id``, and ``run_id``).
+       include ``campaign_id``, ``campaign_recipient_id``, and ``sent_at``).
        SendGrid's "Test Your Integration" payload lacks those keys, so this view
        accepts it with 200 but does not update campaign recipients.
     """

@@ -136,6 +136,8 @@ class NotificationCampaignRecipient(models.Model):
 
     activity_score = models.IntegerField(default=0)
     batch_id = models.UUIDField(null=True, blank=True, db_index=True)
+    # Unix timestamp of the SendGrid accept
+    sent_at = models.PositiveBigIntegerField(null=True, blank=True)
 
     class Meta:
         unique_together = ('campaign', 'user')
