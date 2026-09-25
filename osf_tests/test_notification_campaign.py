@@ -1254,7 +1254,26 @@ class TestProcessSendgridCampaignEvents:
         assert campaign.sent_count == 1
         assert campaign.queued_count == 0
 
-    def test_failure_marks_awaiting_failed(self, campaign):
+    def test_hard_bounce_marks_awaiting_skipped(self, campaign):
+        campaign.run_id = uuid.uuid4()
+        campaign.save(update_fields=['run_id'])
+        recipient = self._awaiting_recipient(campaign)
+
+        process_sendgrid_campaign_events([
+            self._event(
+                campaign, recipient, 'bounce',
+                type='bounce', reason='550 user unknown',
+            ),
+        ])
+
+        recipient.refresh_from_db()
+        assert recipient.status == NotificationCampaignRecipientStatus.SKIPPED
+        assert recipient.error_message == '550 user unknown'
+        campaign.refresh_from_db()
+        assert campaign.failed_count == 1  # SKIPPED counts in failed_count
+        assert campaign.queued_count == 0
+
+    def test_bounce_without_type_treated_as_hard_skipped(self, campaign):
         campaign.run_id = uuid.uuid4()
         campaign.save(update_fields=['run_id'])
         recipient = self._awaiting_recipient(campaign)
@@ -1264,11 +1283,53 @@ class TestProcessSendgridCampaignEvents:
         ])
 
         recipient.refresh_from_db()
-        assert recipient.status == NotificationCampaignRecipientStatus.FAILED
+        assert recipient.status == NotificationCampaignRecipientStatus.SKIPPED
         assert recipient.error_message == 'mailbox full'
+
+    def test_soft_bounce_blocked_marks_awaiting_failed(self, campaign):
+        campaign.run_id = uuid.uuid4()
+        campaign.save(update_fields=['run_id'])
+        recipient = self._awaiting_recipient(campaign)
+
+        process_sendgrid_campaign_events([
+            self._event(
+                campaign, recipient, 'bounce',
+                type='blocked', reason='mailbox temporarily unavailable',
+            ),
+        ])
+
+        recipient.refresh_from_db()
+        assert recipient.status == NotificationCampaignRecipientStatus.FAILED
+        assert recipient.error_message == 'mailbox temporarily unavailable'
         campaign.refresh_from_db()
         assert campaign.failed_count == 1
         assert campaign.queued_count == 0
+
+    def test_dropped_marks_awaiting_skipped(self, campaign):
+        campaign.run_id = uuid.uuid4()
+        campaign.save(update_fields=['run_id'])
+        recipient = self._awaiting_recipient(campaign)
+
+        process_sendgrid_campaign_events([
+            self._event(campaign, recipient, 'dropped', reason='Bounced Address'),
+        ])
+
+        recipient.refresh_from_db()
+        assert recipient.status == NotificationCampaignRecipientStatus.SKIPPED
+        assert recipient.error_message == 'Bounced Address'
+
+    def test_deferred_is_ignored(self, campaign):
+        campaign.run_id = uuid.uuid4()
+        campaign.save(update_fields=['run_id'])
+        recipient = self._awaiting_recipient(campaign)
+
+        process_sendgrid_campaign_events([
+            self._event(campaign, recipient, 'deferred', reason='try again later'),
+        ])
+
+        recipient.refresh_from_db()
+        assert recipient.status == NotificationCampaignRecipientStatus.AWAITING_DELIVERY
+        assert recipient.error_message in (None, '')
 
     def test_delivered_overrides_failed(self, campaign):
         campaign.run_id = uuid.uuid4()
@@ -1285,6 +1346,64 @@ class TestProcessSendgridCampaignEvents:
         recipient.refresh_from_db()
         assert recipient.status == NotificationCampaignRecipientStatus.SENT
         assert recipient.error_message is None
+
+    def test_delivered_overrides_skipped(self, campaign):
+        campaign.run_id = uuid.uuid4()
+        campaign.save(update_fields=['run_id'])
+        recipient = self._awaiting_recipient(campaign)
+        recipient.status = NotificationCampaignRecipientStatus.SKIPPED
+        recipient.error_message = 'dropped'
+        recipient.save(update_fields=['status', 'error_message'])
+
+        process_sendgrid_campaign_events([
+            self._event(campaign, recipient, 'delivered'),
+        ])
+
+        recipient.refresh_from_db()
+        assert recipient.status == NotificationCampaignRecipientStatus.SENT
+        assert recipient.error_message is None
+
+    def test_delivered_in_same_batch_wins_over_hard_bounce(self, campaign):
+        campaign.run_id = uuid.uuid4()
+        campaign.save(update_fields=['run_id'])
+        recipient = self._awaiting_recipient(campaign)
+
+        process_sendgrid_campaign_events([
+            self._event(campaign, recipient, 'bounce', type='bounce', reason='hard'),
+            self._event(campaign, recipient, 'delivered'),
+        ])
+
+        recipient.refresh_from_db()
+        assert recipient.status == NotificationCampaignRecipientStatus.SENT
+        assert recipient.error_message is None
+
+    def test_restart_failed_excludes_skipped_hard_bounces(self, campaign):
+        soft = UserFactory()
+        hard = UserFactory()
+        create_campaign_recipients(
+            Q(**{'id__in': [soft.id, hard.id]}),
+            campaign_id=campaign.id,
+        )
+        NotificationCampaignRecipient.objects.filter(campaign=campaign, user=soft).update(
+            status=NotificationCampaignRecipientStatus.FAILED,
+        )
+        NotificationCampaignRecipient.objects.filter(campaign=campaign, user=hard).update(
+            status=NotificationCampaignRecipientStatus.SKIPPED,
+        )
+
+        batch_id = assign_batch_id_to_recipients(
+            campaign_id=campaign.id,
+            batch_size=10,
+            restart_failed=True,
+        )
+        assert batch_id is not None
+        retried = list(
+            NotificationCampaignRecipient.objects.filter(batch_id=batch_id).values_list('user_id', flat=True)
+        )
+        assert retried == [soft.id]
+        hard_recipient = NotificationCampaignRecipient.objects.get(campaign=campaign, user=hard)
+        assert hard_recipient.status == NotificationCampaignRecipientStatus.SKIPPED
+        assert hard_recipient.batch_id is None
 
     def test_ignores_stale_run_id(self, campaign):
         campaign.run_id = uuid.uuid4()

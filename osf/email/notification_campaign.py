@@ -26,7 +26,11 @@ FILTER_PRESETS = {
 # Flattened onto SendGrid Event Webhook payloads via personalization custom_args.
 CAMPAIGN_CUSTOM_ARG_KEYS = ('campaign_id', 'campaign_recipient_id', 'run_id')
 SENDGRID_SUCCESS_EVENTS = frozenset({'delivered'})
-SENDGRID_FAILURE_EVENTS = frozenset({'bounce', 'dropped'})
+# Permanent / non-retryable delivery failures → SKIPPED (excluded from restart_failed).
+SENDGRID_SKIP_EVENTS = frozenset({'dropped'})
+# Soft / retryable failures → FAILED (eligible for campaign retry).
+SENDGRID_SOFT_BOUNCE_TYPE = 'blocked'
+SENDGRID_HARD_BOUNCE_TYPE = 'bounce'
 
 first_email_subquery = (
     Email.objects
@@ -219,19 +223,46 @@ def get_campaign_recipient_stats(campaign_id):
     )
 
 
+def _sendgrid_event_error_message(event):
+    return event.get('reason') or event.get('type') or event.get('event') or 'SendGrid delivery failed'
+
+
+def _classify_sendgrid_failure(event):
+    """Return SKIPPED/FAILED status for a failure event, or None to ignore.
+
+    - ``dropped`` / hard ``bounce`` (type ``bounce`` or missing): permanent → SKIPPED
+    - soft ``bounce`` (type ``blocked``): transient → FAILED (campaign may retry)
+    - ``deferred`` and other events: ignored (SendGrid keeps retrying deferred)
+    """
+    event_type = event.get('event')
+    if event_type in SENDGRID_SKIP_EVENTS:
+        return NotificationCampaignRecipientStatus.SKIPPED
+    if event_type == 'bounce':
+        bounce_type = event.get('type') or SENDGRID_HARD_BOUNCE_TYPE
+        if bounce_type == SENDGRID_SOFT_BOUNCE_TYPE:
+            return NotificationCampaignRecipientStatus.FAILED
+        return NotificationCampaignRecipientStatus.SKIPPED
+    return None
+
+
 @celery_app.task(bind=True, base=NotificationCampaignTask, name='email.process_sendgrid_campaign_events')
 def process_sendgrid_campaign_events(self, events):
     """Update campaign recipients from filtered SendGrid Event Webhook events.
 
     Expects events that already include campaign ``custom_args``
     (``campaign_id``, ``campaign_recipient_id``, ``run_id``). Only
-    ``AWAITING_DELIVERY`` or ``FAILED`` recipients whose
-    event ``run_id`` matches the campaign's current run are updated; delayed
+    ``AWAITING_DELIVERY``, ``FAILED``, or ``SKIPPED`` recipients whose event
+    ``run_id`` matches the campaign's current run are updated; delayed
     webhooks from a prior run are ignored.
 
+    Permanent failures (``dropped``, hard bounce) become ``SKIPPED`` so
+    ``restart_failed`` will not resend them. Soft bounces (``type=blocked``)
+    become ``FAILED`` and remain retryable. ``deferred`` events are ignored
+    (SendGrid retries those itself).
+
     A ``delivered`` event wins over failure events for the same recipient
-    (including a prior ``FAILED`` from an earlier webhook) so a confirmed
-    delivery is never left failed (and retried).
+    (including a prior ``FAILED``/``SKIPPED`` from an earlier webhook) so a
+    confirmed delivery is never left failed (and retried).
     """
     campaign_ids = {
         event.get('campaign_id')
@@ -253,6 +284,7 @@ def process_sendgrid_campaign_events(self, events):
 
     success_ids = set()
     failed = dict()
+    skipped = dict()
 
     for event in events:
         campaign_id = event.get('campaign_id', '')
@@ -272,13 +304,22 @@ def process_sendgrid_campaign_events(self, events):
         if event_type in SENDGRID_SUCCESS_EVENTS:
             success_ids.add(recipient_pk)
             failed.pop(recipient_pk, None)
-        elif event_type in SENDGRID_FAILURE_EVENTS:
-            if recipient_pk in success_ids:
-                continue
-            error_message = event.get('reason') or event.get('type') or event_type
-            failed[recipient_pk] = error_message
+            skipped.pop(recipient_pk, None)
+            continue
 
-    if not success_ids and not failed:
+        failure_status = _classify_sendgrid_failure(event)
+        if failure_status is None or recipient_pk in success_ids:
+            continue
+
+        error_message = _sendgrid_event_error_message(event)
+        if failure_status == NotificationCampaignRecipientStatus.SKIPPED:
+            skipped[recipient_pk] = error_message
+            failed.pop(recipient_pk, None)
+        else:
+            failed[recipient_pk] = error_message
+            skipped.pop(recipient_pk, None)
+
+    if not success_ids and not failed and not skipped:
         return
 
     with transaction.atomic():
@@ -295,6 +336,7 @@ def process_sendgrid_campaign_events(self, events):
                 status__in=[
                     NotificationCampaignRecipientStatus.AWAITING_DELIVERY,
                     NotificationCampaignRecipientStatus.FAILED,
+                    NotificationCampaignRecipientStatus.SKIPPED,
                 ],
             ).update(status=NotificationCampaignRecipientStatus.SENT, error_message=None)
 
@@ -311,6 +353,23 @@ def process_sendgrid_campaign_events(self, events):
                 error_message=Case(
                     *failed_errors,
                     default=Value('SendGrid delivery failed'),
+                    output_field=TextField(),
+                ),
+            )
+
+        if skipped:
+            skipped_errors = [
+                When(id=recipient_pk, then=Value(error_message))
+                for recipient_pk, error_message in skipped.items()
+            ]
+            NotificationCampaignRecipient.objects.filter(
+                id__in=skipped.keys(),
+                status=NotificationCampaignRecipientStatus.AWAITING_DELIVERY,
+            ).update(
+                status=NotificationCampaignRecipientStatus.SKIPPED,
+                error_message=Case(
+                    *skipped_errors,
+                    default=Value('SendGrid delivery skipped'),
                     output_field=TextField(),
                 ),
             )
