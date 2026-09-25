@@ -950,69 +950,6 @@ def register_user(**kwargs):
         return {'message': 'You may now log in.'}
 
 
-@collect_auth
-def resend_confirmation_get(auth):
-    """
-    View for user to land on resend confirmation page.
-    HTTP Method: GET
-    """
-
-    # If user is already logged in, log user out
-    if auth.logged_in:
-        return auth_logout(redirect_url=request.url)
-
-    form = ResendConfirmationForm(request.form)
-    return {
-        'form': form,
-    }
-
-
-@collect_auth
-def resend_confirmation_post(auth):
-    """
-    View for user to submit resend confirmation form.
-    HTTP Method: POST
-    """
-    try:
-        # If user is already logged in, log user out
-        if auth.logged_in:
-            return auth_logout(redirect_url=request.url)
-
-        form = ResendConfirmationForm(request.form)
-
-        if form.validate():
-            clean_email = form.email.data
-            user = get_user(email=clean_email)
-            status_message = (
-                f'If there is an OSF account associated with this unconfirmed email address {clean_email}, '
-                'a confirmation email has been resent to it. If you do not receive an email and believe '
-                'you should have, please contact OSF Support.'
-            )
-            kind = 'success'
-            if user:
-                if throttle_period_expired(user.email_last_sent, settings.SEND_EMAIL_THROTTLE):
-                    try:
-                        send_confirm_email(user, clean_email, renew=True)
-                    except KeyError:
-                        # already confirmed, redirect to my-projects
-                        status_message = f'This email {clean_email} has already been confirmed.'
-                        kind = 'warning'
-                    user.email_last_sent = timezone.now()
-                    user.save()
-                else:
-                    status_message = ('You have recently requested to resend your confirmation email. '
-                                    'Please wait a few minutes before trying again.')
-                    kind = 'error'
-            status.push_status_message(status_message, kind=kind, trust=False)
-        else:
-            forms.push_errors_to_status(form.errors)
-    except Exception as err:
-        sentry.log_exception(f'Async email confirmation failed because of the error: {err}')
-
-    # Don't go anywhere
-    return {'form': form}
-
-
 def external_login_email_get():
     """
     Landing view for first-time oauth-login user to enter their email address.

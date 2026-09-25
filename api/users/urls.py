@@ -5,6 +5,7 @@ app_name = 'osf'
 
 urlpatterns = [
     re_path(r'^reset_password/$', views.ResetPassword.as_view(), name=views.ResetPassword.view_name),
+    re_path(r'^resend_confirmation/$', views.ResendConfirmation.as_view(), name=views.ResendConfirmation.view_name),
     re_path(r'^external_login_comfirm_email/$', views.ExternalLoginConfirmEmailView.as_view(), name=views.ExternalLoginConfirmEmailView.view_name),
     re_path(r'^external_login/$', views.ExternalLogin.as_view(), name=views.ExternalLogin.view_name),
     re_path(r'^$', views.UserList.as_view(), name=views.UserList.view_name),

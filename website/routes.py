@@ -563,23 +563,6 @@ def make_url_map(app):
             OsfWebRenderer('public/resetpassword.mako', render_mako_string, trust=False)
         ),
 
-        # resend confirmation get
-        Rule(
-            '/resend/',
-            'get',
-            auth_views.resend_confirmation_get,
-            OsfWebRenderer('resend.mako', render_mako_string, trust=False)
-        ),
-
-        # resend confirmation post
-        Rule(
-            '/resend/',
-            'post',
-            auth_views.resend_confirmation_post,
-            OsfWebRenderer('resend.mako', render_mako_string, trust=False)
-
-        ),
-
         # oauth user email get
         Rule(
             '/external-login/email',

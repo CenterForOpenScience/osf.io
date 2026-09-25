@@ -69,6 +69,7 @@ from api.users.serializers import (
     ExternalLoginSerialiser,
     ConfirmEmailTokenSerializer,
     SanctionTokenSerializer,
+    UserResendConfirmationSerializer,
 )
 from django.contrib.auth.models import AnonymousUser
 from django.http import JsonResponse
@@ -935,6 +936,70 @@ class ResetPassword(JSONAPIBaseView, generics.ListCreateAPIView):
             content_type='application/vnd.api+json; application/json',
         )
 
+class ResendConfirmation(JSONAPIBaseView, generics.ListCreateAPIView):
+    """
+      View for handling resend confirmation URL requests.
+
+      POST:
+      - Takes an email as a query parameter.
+      - If the email is not provided or invalid, returns a validation error.
+      - If the user has recently requested a resend URL, returns a throttling error.
+      """
+    permission_classes = (
+        drf_permissions.AllowAny,
+    )
+    serializer_class = UserResendConfirmationSerializer
+    view_category = 'users'
+    view_name = 'request-resend-confirmation'
+    throttle_classes = (NonCookieAuthThrottle, BurstRateThrottle, RootAnonThrottle, SendEmailThrottle)
+
+    def post(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        email = request.data.get('email', None)
+        if not email:
+            raise ValidationError('Request must include email in query params.')
+
+        status_message = language.RESEND_CONFIRMATION_SUCCESS_STATUS_MESSAGE.format(email=email)
+        # check if the user exists
+        user_obj = get_user(email=email)
+
+        if user_obj:
+            # rate limit resend_confirmation_post
+            if not throttle_period_expired(user_obj.email_last_sent, settings.SEND_EMAIL_THROTTLE):
+                return Response(
+                    {
+                        'message': language.THROTTLE_RESEND_CONFIRMATION_ERROR_MESSAGE,
+                        'kind': 'error',
+                    },
+                    status=status.HTTP_429_TOO_MANY_REQUESTS,
+                )
+            else:
+                if not user_obj.email_verifications:
+                    # already confirmed
+                    status_message = language.RESEND_CONFIRMATION_ALREADY_CONFIRMED_ERROR_MESSAGE.format(email=email)
+                    return Response(
+                        {
+                            'message': status_message,
+                            'kind': 'error',
+                        },
+                        status=status.HTTP_400_BAD_REQUEST,
+                    )
+                send_confirm_email_async(
+                    user=user_obj,
+                    email=user_obj.username,
+                    renew=True,
+                )
+                user_obj.email_last_sent = timezone.now()
+                user_obj.save()
+
+        return Response(
+            status=status.HTTP_200_OK,
+            data={
+                'message': status_message,
+                'kind': 'success',
+            },
+        )
 
 class UserSettings(JSONAPIBaseView, generics.RetrieveUpdateAPIView, UserMixin):
     permission_classes = (
