@@ -808,3 +808,10 @@ notification_types:
     object_content_type_model_name: osfuser
     template: 'website/templates/blank.html.mako'
     tests: []
+
+  - name: notification_campaign_log
+    subject: 'Notification campaign "{campaign_name}" — {status}'
+    __docs__: ...
+    object_content_type_model_name: osfuser
+    template: 'website/templates/notification_campaign_log.html.mako'
+    tests: []

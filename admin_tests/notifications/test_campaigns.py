@@ -63,6 +63,7 @@ def _valid_form_data(notification_type, **overrides):
         'time_window': 8 * 60 * 60,
         'max_queued_batches': settings.MAX_QUEUED_CAMPAIGN_BATCHES,
         'dispatch_interval': settings.CAMPAIGN_DISPATCH_INTERVAL,
+        'log_email_recipients': '',
     }
     data.update(overrides)
     return data
@@ -80,6 +81,7 @@ class TestNotificationCampaignCreateForm:
         assert form.cleaned_data['activity_threshold'] == settings.DEFAULT_CAMPAIGN_ACTIVITY_THRESHOLD
         assert form.cleaned_data['time_window'] == 8 * 60 * 60
         assert form.cleaned_data['sendgrid_bulk'] is False
+        assert form.cleaned_data['log_email_recipients'] == ''
 
     def test_defaults_come_from_settings(self):
         form = NotificationCampaignCreateForm()
@@ -290,6 +292,7 @@ class TestNotificationCampaignCreateView(AdminTestCase):
             'time_window': 28800,
             'max_queued_batches': 10,
             'dispatch_interval': 60,
+            'log_email_recipients': ''
         }
         assert campaign.metadata['sendgrid_bulk'] is True
         assert campaign.metadata['filters'] == {'predefined': 'active'}
