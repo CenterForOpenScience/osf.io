@@ -67,13 +67,11 @@ class NotificationCampaignTask(celery_app.Task):
         campaign.recipient_count = stats['recipient_count']
         campaign.sent_count = stats['sent_count']
         campaign.failed_count = stats['failed_count']
-        campaign.queued_count = stats['queued_count']
         if save:
             campaign.save(update_fields=[
                 'recipient_count',
                 'sent_count',
                 'failed_count',
-                'queued_count',
                 'updated_at',
             ])
         return stats
@@ -213,12 +211,11 @@ def get_campaign_recipient_stats(campaign_id):
         ),
         queued_count=Count(
             'id',
-            filter=Q(
-                status__in=[
-                    NotificationCampaignRecipientStatus.QUEUED,
-                    NotificationCampaignRecipientStatus.AWAITING_DELIVERY,
-                ]
-            ),
+            filter=Q(status=NotificationCampaignRecipientStatus.QUEUED),
+        ),
+        awaiting_count=Count(
+            'id',
+            filter=Q(status=NotificationCampaignRecipientStatus.AWAITING_DELIVERY),
         ),
     )
 

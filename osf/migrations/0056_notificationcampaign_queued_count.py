@@ -10,11 +10,6 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.AddField(
-            model_name='notificationcampaign',
-            name='queued_count',
-            field=models.PositiveIntegerField(default=0),
-        ),
         migrations.AlterField(
             model_name='notificationcampaignrecipient',
             name='status',
