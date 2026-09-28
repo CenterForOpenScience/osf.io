@@ -733,6 +733,8 @@ class ExternalLogin(JSONAPIBaseView, generics.CreateAPIView):
         session = request.session
         external_id_provider = session.get('auth_user_external_id_provider', None)
         external_id = session.get('auth_user_external_id', None)
+        external_id_access_token = session.get('auth_user_external_id_access_token', None)
+        external_id_refresh_token = session.get('auth_user_external_id_refresh_token', None)
         fullname = session.get('auth_user_fullname', None) or request.data.get('auth_user_fullname', None)
 
         accepted_terms_of_service = request.data.get('accepted_terms_of_service', False)
@@ -766,6 +768,7 @@ class ExternalLogin(JSONAPIBaseView, generics.CreateAPIView):
                 user.accepted_terms_of_service = timezone.now()
             # 2. add unconfirmed email and send confirmation email
             user.add_unconfirmed_email(clean_email, external_identity=external_identity)
+            user.save_external_identity_tokens(external_id, external_id_access_token, external_id_refresh_token)
             user.save()
             send_confirm_email_async(
                 user,
@@ -788,6 +791,7 @@ class ExternalLogin(JSONAPIBaseView, generics.CreateAPIView):
                 accepted_terms_of_service=accepted_terms_of_service,
             )
             # TODO: [#OSF-6934] update social fields, verified social fields cannot be modified
+            user.save_external_identity_tokens(external_id, external_id_access_token, external_id_refresh_token)
             user.save()
             # 3. send confirmation email
             send_confirm_email_async(
