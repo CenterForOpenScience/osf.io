@@ -724,7 +724,10 @@ def send_campaign_batch(
                     },
                     rendered_html=rendered_html,
                 )
-                recipient.status = NotificationCampaignRecipientStatus.SENT
+                if settings.CAMPAIGN_SINGLE_SEND_WEBHOOK:
+                    recipient.status = NotificationCampaignRecipientStatus.AWAITING_DELIVERY
+                else:
+                    recipient.status = NotificationCampaignRecipientStatus.SENT
                 recipient.error_message = None
                 recipient_records.append(recipient)
             except Exception as exc:

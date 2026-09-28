@@ -216,6 +216,7 @@ CAMPAIGN_DISPATCH_INTERVAL = 300  # 5 min (300 sec), minimum time before checkin
 # The following are rough estimates so we can log to sentry those batches and sendgrid quests which run longer than normal
 ESTIMATED_PER_REQUEST_THRESHOLD = 0.3  # On production, sending one email via SendGrid takes 0.20 ~ 0.50 seconds, set default alert threshold at 0.30s
 ESTIMATED_BATCH_RUN_TIME_THRESHOLD = 300  # On production, with batch size 1000, we expect each batch to finish within 300s (5m)
+CAMPAIGN_SINGLE_SEND_WEBHOOK = False  # If True, recipient will be marked as SENT/FAILED/SKIPPED based on SendGrid webhook event, instead of when the request is completed.
 
 # Configuration for "We miss you at OSF" email (`NotificationTypeEnum.USER_NO_LOGIN`)
 # Note: 1) we can gradually increase `MAX_DAILY_NO_LOGIN_EMAILS` to 10000, 100000, etc. or set it to `None` after we
