@@ -19,7 +19,7 @@ from mako.lexer import Lexer
 from mako.parsetree import ControlLine
 from string import Formatter
 from osf.email import _render_email_html
-from osf.email.notification_campaign import FILTER_PRESETS, counter_subquery, build_campaign_filter_query
+from osf.email.notification_campaign import FILTER_PRESETS, counter_subquery, build_campaign_filter_query, get_campaign_recipient_stats
 from website import settings
 from urllib.parse import urlencode
 
@@ -392,6 +392,9 @@ class NotificationCampaignDetail(PermissionRequiredMixin, DetailView):
     def get_context_data(self, *args, **kwargs):
         notification_campaign = self.get_object()
         metadata = notification_campaign.metadata or {}
+        stats = get_campaign_recipient_stats(notification_campaign.id)
+        queued = stats['queued_count']
+        awaiting = stats['awaiting_count']
 
         context = {
             'notification_campaign': notification_campaign,
@@ -403,7 +406,8 @@ class NotificationCampaignDetail(PermissionRequiredMixin, DetailView):
                 ('Status', notification_campaign.get_status_display()),
                 ('Recipients', notification_campaign.recipient_count),
                 ('Sent', notification_campaign.sent_count),
-                ('Queued', notification_campaign.queued_count),
+                ('Queued', queued),
+                ('Awaiting Delivery', awaiting),
                 ('Failed', notification_campaign.failed_count),
                 ('Retries', notification_campaign.retries),
                 ('Created', notification_campaign.created_at),
@@ -438,8 +442,16 @@ class NotificationCampaignDetail(PermissionRequiredMixin, DetailView):
 
         if notification_campaign.status != NotificationCampaignStatus.CREATED:
             processed = notification_campaign.sent_count + notification_campaign.failed_count
-            queued = notification_campaign.queued_count
-            pending = max(notification_campaign.recipient_count - processed - queued, 0)
+            pending = max(
+                notification_campaign.recipient_count - processed - queued - awaiting,
+                0,
+            )
+            awaiting_delivery = (
+                notification_campaign.status == NotificationCampaignStatus.RUNNING
+                and pending == 0
+                and queued == 0
+                and awaiting > 0
+            )
 
             sent_percent = (
                 notification_campaign.sent_count / notification_campaign.recipient_count * 100
@@ -453,8 +465,15 @@ class NotificationCampaignDetail(PermissionRequiredMixin, DetailView):
                 queued / notification_campaign.recipient_count * 100
                 if notification_campaign.recipient_count else 0
             )
+            awaiting_percent = (
+                awaiting / notification_campaign.recipient_count * 100
+                if notification_campaign.recipient_count else 0
+            )
 
-            pending_percent = max(100 - sent_percent - failed_percent - queued_percent, 0)
+            pending_percent = max(
+                100 - sent_percent - failed_percent - queued_percent - awaiting_percent,
+                0,
+            )
             elapsed = None
             speed = None
             eta = None
@@ -484,9 +503,12 @@ class NotificationCampaignDetail(PermissionRequiredMixin, DetailView):
                 'processed': processed,
                 'pending': pending,
                 'queued': queued,
+                'awaiting': awaiting,
+                'awaiting_delivery': awaiting_delivery,
                 'sent_percent': sent_percent,
                 'failed_percent': failed_percent,
                 'queued_percent': queued_percent,
+                'awaiting_percent': awaiting_percent,
                 'pending_percent': pending_percent,
                 'elapsed': elapsed,
                 'speed': speed,
