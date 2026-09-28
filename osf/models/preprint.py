@@ -338,6 +338,9 @@ class Preprint(DirtyFieldsMixin, VersionedGuidMixin, IdentifierMixin, Reviewable
             ('write_preprint', 'Can write the preprint'),
             ('admin_preprint', 'Can manage the preprint'),
         )
+        indexes = [
+            models.Index(fields=['deleted', 'spam_status', 'created'], name='preprint_del_spam_created_idx'),
+        ]
 
     def __unicode__(self):
         return '{} ({} preprint) (guid={}){}'.format(self.title, 'published' if self.is_published else 'unpublished', self._id, ' with supplemental files on ' + self.node.__unicode__() if self.node else '')
