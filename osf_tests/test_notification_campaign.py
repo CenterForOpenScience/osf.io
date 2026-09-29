@@ -10,6 +10,7 @@ from osf.email import _build_sendgrid_personalizations
 from osf.email.notification_campaign import (
     NotificationCampaignTask,
     assign_batch_id_to_recipients,
+    build_campaign_filter_query,
     create_campaign_recipients,
     get_campaign_recipient_stats,
     process_campaign_retry,
@@ -18,7 +19,7 @@ from osf.email.notification_campaign import (
     start_notification_campaign,
     build_query,
 )
-from osf.models import UserActivityCounter, OSFUser
+from osf.models import UserActivityCounter, OSFUser, Contributor
 from osf.models.notification_campaign import (
     NotificationCampaign,
     NotificationCampaignRecipient,
@@ -27,7 +28,14 @@ from osf.models.notification_campaign import (
 )
 from osf.models.notification_type import NotificationType
 from osf.models.spam import SpamStatus
-from osf_tests.factories import UserFactory
+from osf_tests.factories import (
+    DraftRegistrationFactory,
+    NodeFactory,
+    PreprintFactory,
+    ProjectFactory,
+    RegistrationFactory,
+    UserFactory,
+)
 
 pytestmark = pytest.mark.django_db
 
@@ -200,8 +208,6 @@ class TestBuildQuery:
         assert user_ids == {confirmed.id}
 
     def test_build_campaign_filter_query_ands_predefined_and_manual(self):
-        from osf.email.notification_campaign import build_campaign_filter_query
-
         confirmed = UserFactory()
         unconfirmed = UserFactory(date_confirmed=None, is_registered=False)
         inactive = UserFactory()
@@ -230,6 +236,125 @@ class TestBuildQuery:
         user_ids = set(OSFUser.objects.filter(query).values_list('id', flat=True))
 
         assert user_ids == {confirmed.id}
+
+
+class TestExcludeNonContributors:
+
+    def _filtered_ids(self, users, exclude_non_contributors):
+        filters = {
+            'manual': {
+                'operator': 'AND',
+                'children': [
+                    {
+                        'field': 'id',
+                        'lookup': 'in',
+                        'value': ','.join(str(user.id) for user in users),
+                    },
+                ],
+            },
+        }
+        if exclude_non_contributors:
+            filters['exclude_non_contributors'] = True
+        query = build_campaign_filter_query(filters)
+        return list(OSFUser.objects.filter(query).values_list('id', flat=True))
+
+    def test_contributor_on_a_project_is_included(self):
+        contributor = UserFactory()
+        non_contributor = UserFactory()
+        project = ProjectFactory()
+        project.add_contributor(contributor, save=True)
+        assert set(self._filtered_ids([contributor, non_contributor], True)) == {contributor.id}
+
+    def test_contributor_on_a_nested_component_is_included(self):
+        contributor = UserFactory()
+        project = ProjectFactory()
+        component = NodeFactory(parent=project)
+        grandchild = NodeFactory(parent=component)
+        grandchild.add_contributor(contributor, save=True)
+        assert component.parent_node == project
+        assert grandchild.parent_node == component
+        assert contributor not in project.contributors
+        assert contributor not in component.contributors
+        assert self._filtered_ids([contributor], True) == [contributor.id]
+
+    def test_contributor_on_only_a_registration_is_excluded(self):
+        contributor = UserFactory()
+        registration = RegistrationFactory()
+        registration.add_contributor(contributor, save=True)
+        assert registration.type == 'osf.registration'
+        assert Contributor.objects.filter(user=contributor, node=registration).exists()
+        assert self._filtered_ids([contributor], True) == []
+
+    def test_contributor_on_only_a_preprint_is_excluded(self):
+        contributor = UserFactory()
+        preprint = PreprintFactory(creator=contributor)
+        assert preprint.node is None
+        assert contributor in preprint.contributors
+        assert self._filtered_ids([contributor], True) == []
+
+    def test_contributor_on_only_a_draft_registration_is_excluded(self):
+        contributor = UserFactory()
+        draft = DraftRegistrationFactory(initiator=contributor)
+        assert draft.branched_from.type == 'osf.draftnode'
+        assert Contributor.objects.filter(user=contributor, node=draft.branched_from).exists()
+        assert self._filtered_ids([contributor], True) == []
+
+    def test_contributor_on_a_deleted_or_spam_project_is_included(self):
+        deleted_contributor = UserFactory()
+        spam_contributor = UserFactory()
+        deleted = ProjectFactory(creator=deleted_contributor)
+        deleted.is_deleted = True
+        deleted.deleted = timezone.now()
+        deleted.save()
+        spam = ProjectFactory(creator=spam_contributor)
+        spam.spam_status = SpamStatus.SPAM
+        spam.save()
+        assert self._filtered_ids([deleted_contributor], True) == [deleted_contributor.id]
+        assert self._filtered_ids([spam_contributor], True) == [spam_contributor.id]
+
+    def test_non_contributors_are_included_when_the_option_is_off(self):
+        contributor = UserFactory()
+        non_contributor = UserFactory()
+        project = ProjectFactory()
+        project.add_contributor(contributor, save=True)
+        assert set(self._filtered_ids([contributor, non_contributor], False)) == {
+            contributor.id,
+            non_contributor.id,
+        }
+
+    def test_contributor_on_several_projects_appears_once(self):
+        contributor = UserFactory()
+        for _ in range(3):
+            ProjectFactory(creator=contributor)
+        NodeFactory(parent=ProjectFactory(creator=contributor), creator=contributor)
+        assert Contributor.objects.filter(user=contributor, node__type='osf.node').count() > 1
+        assert self._filtered_ids([contributor], True) == [contributor.id]
+
+    def test_create_campaign_recipients_excludes_non_contributors(self, campaign):
+        contributor = UserFactory()
+        non_contributor = UserFactory()
+        ProjectFactory(creator=contributor)
+        _set_activity(contributor, 120)
+        _set_activity(non_contributor, 120)
+        campaign.metadata['filters'] = {
+            'manual': {
+                'operator': 'AND',
+                'children': [
+                    {
+                        'field': 'id',
+                        'lookup': 'in',
+                        'value': f'{contributor.id},{non_contributor.id}',
+                    },
+                ],
+            },
+            'exclude_non_contributors': True,
+        }
+        campaign.save()
+        create_campaign_recipients(campaign_id=campaign.id)
+        recipients = NotificationCampaignRecipient.objects.filter(campaign=campaign)
+        assert [(r.user_id, r.activity_score) for r in recipients] == [(contributor.id, 120)]
+        campaign.refresh_from_db()
+        assert campaign.recipient_count == 1
 
 
 class TestCreateCampaignRecipients:
