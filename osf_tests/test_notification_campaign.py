@@ -540,7 +540,7 @@ class TestNotificationCampaignStart:
             restart_stuck=True,
         )
 
-    @mock.patch('osf.email.notification_campaign.dispatch_campaign.apply_async')
+    @mock.patch('osf.email.notification_campaign.execution.dispatch_campaign.apply_async')
     def test_start_schedules_workflow(self, mock_dispatch_campaign, campaign):
         high = UserFactory()
         low = UserFactory()
@@ -568,7 +568,7 @@ class TestNotificationCampaignStart:
         assert campaign.recipient_count == 3
         mock_dispatch_campaign.assert_called_once()
 
-    @mock.patch('osf.email.notification_campaign.dispatch_campaign')
+    @mock.patch('osf.email.notification_campaign.execution.dispatch_campaign')
     def test_start_excludes_unconfirmed_accounts_when_enabled(self, mock_dispatch_campaign, campaign):
         confirmed = UserFactory()
         unconfirmed = UserFactory(date_confirmed=None, is_registered=False)
@@ -607,7 +607,7 @@ class TestNotificationCampaignStart:
         )
         assert recipient_ids == {confirmed.id}
 
-    @mock.patch('osf.email.notification_campaign.dispatch_campaign')
+    @mock.patch('osf.email.notification_campaign.execution.dispatch_campaign')
     def test_start_restart_failed_does_not_recreate_recipients(self, mock_dispatch_campaign, campaign):
         user = UserFactory()
         _set_activity(user, 50)
@@ -628,7 +628,7 @@ class TestNotificationCampaignStart:
         assert NotificationCampaignRecipient.objects.filter(campaign=campaign).count() == 1
         assert NotificationCampaignRecipient.objects.get(pk=recipient.pk).status == NotificationCampaignRecipientStatus.FAILED
 
-    @mock.patch('osf.email.notification_campaign.dispatch_campaign')
+    @mock.patch('osf.email.notification_campaign.execution.dispatch_campaign')
     def test_start_restart_stuck_resets_only_queued(self, mock_dispatch_campaign, campaign):
         user = UserFactory()
         other = UserFactory()
@@ -671,7 +671,7 @@ class TestSendCampaignBatch:
         campaign.save()
         return campaign
 
-    @mock.patch('osf.email.notification_campaign.send_email')
+    @mock.patch('osf.email.notification_campaign.execution.send_email')
     def test_send_campaign_batch_marks_recipients_sent(self, mock_send_email, running_campaign):
         user = UserFactory()
         create_campaign_recipients(Q(**{'id__in': [user.id]}), campaign_id=running_campaign.id)
@@ -692,8 +692,8 @@ class TestSendCampaignBatch:
         assert running_campaign.sent_count == 1
         mock_send_email.assert_called_once()
 
-    @mock.patch('osf.email.notification_campaign.send_email', side_effect=Exception('send failed'))
-    @mock.patch('osf.email.notification_campaign.sentry.log_exception')
+    @mock.patch('osf.email.notification_campaign.execution.send_email', side_effect=Exception('send failed'))
+    @mock.patch('osf.email.notification_campaign.execution.sentry.log_exception')
     def test_send_campaign_batch_marks_recipients_failed(self, mock_sentry, mock_send_email, running_campaign):
         user = UserFactory()
         create_campaign_recipients(Q(**{'id__in': [user.id]}), campaign_id=running_campaign.id)
@@ -739,7 +739,7 @@ class TestSendCampaignBatch:
         assert running_campaign.failed_count == 1
         assert running_campaign.sent_count == 0
 
-    @mock.patch('osf.email.notification_campaign.send_email_with_send_grid')
+    @mock.patch('osf.email.notification_campaign.execution.send_email_with_send_grid')
     def test_send_campaign_batch_sendgrid_bulk_success(self, mock_sendgrid, running_campaign):
         user = UserFactory()
         running_campaign.metadata['sendgrid_bulk'] = True
@@ -817,10 +817,10 @@ class TestSendCampaignBatch:
         ]
 
     @mock.patch(
-        'osf.email.notification_campaign.send_email_with_send_grid',
+        'osf.email.notification_campaign.execution.send_email_with_send_grid',
         side_effect=Exception('bulk failed'),
     )
-    @mock.patch('osf.email.notification_campaign.sentry.log_exception')
+    @mock.patch('osf.email.notification_campaign.execution.sentry.log_exception')
     def test_send_campaign_batch_sendgrid_bulk_failure(self, mock_sentry, mock_sendgrid, running_campaign):
         user = UserFactory()
         running_campaign.metadata['sendgrid_bulk'] = True
@@ -843,7 +843,7 @@ class TestSendCampaignBatch:
         assert running_campaign.failed_count == 1
         assert running_campaign.sent_count == 0
 
-    @mock.patch('osf.email.notification_campaign.sentry.log_message')
+    @mock.patch('osf.email.notification_campaign.execution.sentry.log_message')
     def test_send_campaign_batch_logs_when_time_window_exceeded(self, mock_sentry, running_campaign):
         user = UserFactory()
         running_campaign.started_at = timezone.now() - timedelta(seconds=9)
@@ -853,7 +853,7 @@ class TestSendCampaignBatch:
         batch_id = assign_batch_id_to_recipients(campaign_id=running_campaign.id, batch_size=1)
         mock_sentry.reset_mock()
 
-        with mock.patch('osf.email.notification_campaign.send_email'):
+        with mock.patch('osf.email.notification_campaign.execution.send_email'):
             send_campaign_batch(
                 context={},
                 batch_id=batch_id,
@@ -867,7 +867,7 @@ class TestSendCampaignBatch:
         assert running_campaign.developer_reminder_sent is True
         mock_sentry.assert_called_once()
 
-    @mock.patch('osf.email.notification_campaign.sentry.log_message')
+    @mock.patch('osf.email.notification_campaign.execution.sentry.log_message')
     def test_send_campaign_batch_skips_reminder_without_developer_reminder_flag(
         self, mock_sentry, running_campaign
     ):
@@ -879,7 +879,7 @@ class TestSendCampaignBatch:
         batch_id = assign_batch_id_to_recipients(campaign_id=running_campaign.id, batch_size=1)
         mock_sentry.reset_mock()
 
-        with mock.patch('osf.email.notification_campaign.send_email'):
+        with mock.patch('osf.email.notification_campaign.execution.send_email'):
             send_campaign_batch(
                 context={},
                 batch_id=batch_id,
@@ -892,7 +892,7 @@ class TestSendCampaignBatch:
         assert running_campaign.developer_reminder_sent is False
         mock_sentry.assert_not_called()
 
-    @mock.patch('osf.email.notification_campaign.sentry.log_message')
+    @mock.patch('osf.email.notification_campaign.execution.sentry.log_message')
     def test_send_campaign_batch_reminder_claimed_only_once(self, mock_sentry, running_campaign):
         user_a = UserFactory()
         user_b = UserFactory()
@@ -907,7 +907,7 @@ class TestSendCampaignBatch:
         batch_id_2 = assign_batch_id_to_recipients(campaign_id=running_campaign.id, batch_size=1)
         mock_sentry.reset_mock()
 
-        with mock.patch('osf.email.notification_campaign.send_email'):
+        with mock.patch('osf.email.notification_campaign.execution.send_email'):
             send_campaign_batch(
                 context={},
                 batch_id=batch_id_1,
@@ -984,7 +984,7 @@ class TestSendCampaignBatch:
         recipient.refresh_from_db()
         assert recipient.status == NotificationCampaignRecipientStatus.QUEUED
 
-    @mock.patch('osf.email.notification_campaign.send_email')
+    @mock.patch('osf.email.notification_campaign.execution.send_email')
     def test_send_campaign_batch_uses_fallback_email_when_username_has_no_at(self, mock_send_email, running_campaign):
         user = UserFactory()
         user.username = 'invalid'
@@ -1079,7 +1079,7 @@ class TestProcessCampaignRetry:
         assert campaign.completed_at is None
         assert campaign.sent_count == 0
 
-    @mock.patch('osf.email.notification_campaign.sentry.log_message')
+    @mock.patch('osf.email.notification_campaign.execution.sentry.log_message')
     def test_process_campaign_retry_keeps_cancelled_status_and_syncs_stats(self, mock_sentry, campaign):
         sent_user = UserFactory()
         failed_user = UserFactory()
@@ -1108,7 +1108,7 @@ class TestProcessCampaignRetry:
         assert campaign.completed_at is not None
         mock_sentry.assert_called_once()
 
-    @mock.patch('osf.email.notification_campaign.dispatch_campaign.apply_async')
+    @mock.patch('osf.email.notification_campaign.execution.dispatch_campaign.apply_async')
     def test_process_campaign_retry_retries_failed_recipients(self, mock_dispatch_campaign, campaign):
         user = UserFactory()
         create_campaign_recipients(Q(**{'id__in': [user.id]}), campaign_id=campaign.id)
@@ -1146,7 +1146,7 @@ class TestProcessCampaignRetry:
         assert campaign.recipient_count == 1
         assert campaign.completed_at is not None
 
-    @mock.patch('osf.email.notification_campaign.process_campaign_retry.apply_async')
+    @mock.patch('osf.email.notification_campaign.execution.process_campaign_retry.apply_async')
     def test_process_campaign_retry_waits_for_awaiting_delivery_recipients(self, mock_apply_async, campaign):
         user = UserFactory()
         create_campaign_recipients(Q(**{'id__in': [user.id]}), campaign_id=campaign.id)
@@ -1196,8 +1196,8 @@ class TestProcessCampaignRetry:
         assert campaign.failed_count == 1
         assert campaign.completed_at is not None
 
-    @mock.patch('osf.email.notification_campaign.process_campaign_retry.apply_async')
-    @mock.patch('osf.email.notification_campaign.dispatch_campaign.apply_async')
+    @mock.patch('osf.email.notification_campaign.execution.process_campaign_retry.apply_async')
+    @mock.patch('osf.email.notification_campaign.execution.dispatch_campaign.apply_async')
     def test_process_campaign_retry_waits_for_awaiting_delivery_before_retrying_failed(
         self, mock_dispatch_campaign, mock_apply_async, campaign
     ):
