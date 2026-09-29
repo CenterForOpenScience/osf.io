@@ -473,6 +473,22 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         return bool(self.date_confirmed)
 
     @property
+    def has_accepted_current_terms_of_service(self):
+        """
+        Check whether this user's acceptance of the Terms of Use is relevant and set.
+        If acceptance recorded before LATEST_TERMS_OF_SERVICE_UPDATE date, the
+        user counts as not having accepted until they accept again. The previously stored timestamp is not cleared, and
+        will be updated if the user accept new terms of service version
+        """
+        if not self.accepted_terms_of_service:
+            return False
+        latest_update = website_settings.LATEST_TERMS_OF_SERVICE_UPDATE
+        if not latest_update:
+            # No terms update configured
+            return True
+        return self.accepted_terms_of_service >= latest_update
+
+    @property
     def is_merged(self):
         """Whether or not this account has been merged into another account.
         """

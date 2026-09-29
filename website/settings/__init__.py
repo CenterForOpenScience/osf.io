@@ -16,6 +16,13 @@ except ImportError:
 # apply environment variables
 globals().update(os.environ)
 
+# Environment variables arrive as strings, so a date configured that way shows up as e.g. 2026-09-29
+if isinstance(LATEST_TERMS_OF_SERVICE_UPDATE, str):
+    LATEST_TERMS_OF_SERVICE_UPDATE = datetime.datetime.fromisoformat(LATEST_TERMS_OF_SERVICE_UPDATE)
+
+if LATEST_TERMS_OF_SERVICE_UPDATE and LATEST_TERMS_OF_SERVICE_UPDATE.tzinfo is None:
+    LATEST_TERMS_OF_SERVICE_UPDATE = LATEST_TERMS_OF_SERVICE_UPDATE.replace(tzinfo=datetime.timezone.utc)
+
 if not DEV_MODE:
     from . import local
     from . import defaults
