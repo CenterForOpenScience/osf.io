@@ -517,6 +517,7 @@ class EmbargoReportView(PermissionRequiredMixin, TemplateView):
     - pending embargoes that should have been activated
     - active embargoes that are past their end date
     - upcoming active embargoes
+    - embargoes marked completed whose registration never actually went public
     """
 
     template_name = 'nodes/embargo_report.html'
@@ -561,6 +562,11 @@ class EmbargoReportView(PermissionRequiredMixin, TemplateView):
                 request,
                 self._embargo_report_queryset(Embargo.objects.active_past_end_date()),
                 'overdue_page',
+            ),
+            'stuck_completed_page': self.paginate_embargo_report(
+                request,
+                self._embargo_report_queryset(Embargo.objects.stuck_completed()),
+                'stuck_completed_page',
             ),
         })
         return context
