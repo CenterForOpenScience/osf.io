@@ -136,8 +136,14 @@ class NotificationCampaignRecipient(models.Model):
 
     activity_score = models.IntegerField(default=0)
     batch_id = models.UUIDField(null=True, blank=True, db_index=True)
-    # Unix timestamp of the SendGrid accept
-    sent_at = models.PositiveBigIntegerField(null=True, blank=True)
+    # Unix seconds when mail was handed to SendGrid for this send attempt. Mirrored
+    # into SendGrid custom_args as ``sent_at`` and matched on inbound webhooks so
+    # delayed events from a prior attempt (e.g. after restart_failed) are ignored.
+    sent_at = models.PositiveBigIntegerField(
+        null=True,
+        blank=True,
+        db_column='sent_at_big_int',
+    )
 
     class Meta:
         unique_together = ('campaign', 'user')

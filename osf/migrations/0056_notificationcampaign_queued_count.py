@@ -36,6 +36,10 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='notificationcampaignrecipient',
             name='sent_at',
-            field=models.PositiveBigIntegerField(blank=True, null=True),
+            field=models.PositiveBigIntegerField(
+                blank=True,
+                db_column='sent_at_big_int',
+                null=True,
+            ),
         ),
     ]
