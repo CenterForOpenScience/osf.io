@@ -178,6 +178,21 @@
                     </p>
                 </div>
 
+                <div class="form-group" style="margin-top:15px;">
+                    <label>
+                        <input
+                            type="checkbox"
+                            id="exclude-non-contributors"
+                        >
+                        Exclude non-contributors
+                    </label>
+                    <p class="help-block">
+                        When enabled, only users who are contributors on at least one
+                        project or component (at any nesting level) are kept in the
+                        recipient list. Registrations and preprints do not count.
+                    </p>
+                </div>
+
                 <input
                     type="hidden"
                     id="filters-input"
@@ -477,6 +492,10 @@ function buildFilters() {
                 children: [confirmed],
             };
         }
+    }
+
+    if (document.getElementById("exclude-non-contributors").checked) {
+        filters.exclude_non_contributors = true;
     }
 
     return filters;
