@@ -1690,6 +1690,7 @@ class TestDisablingUsers(OsfTestCase):
 
         assert not SessionStore().exists(session_key=session1.session_key)
         assert not SessionStore().exists(session_key=session2.session_key)
+        assert not UserSessionMap.objects.filter(user=self.user).exists()
 
 
 # Copied from tests/modes/test_user.py
@@ -2262,6 +2263,47 @@ class TestUserGdprDelete:
         assert user.deleted is not None
         mock_post.assert_called_once()
         assert mock_post.call_args.kwargs['data']['token'] == 'fake-orcid-token'
+
+    def test_gdpr_delete_removes_sessions(self, user, django_capture_on_commit_callbacks):
+        session1 = SessionStore()
+        session1.create()
+        UserSessionMap.objects.create(user=user, session_key=session1.session_key)
+
+        session2 = SessionStore()
+        session2.create()
+        UserSessionMap.objects.create(user=user, session_key=session2.session_key)
+
+        with django_capture_on_commit_callbacks(execute=True):
+            user.gdpr_delete()
+
+        assert not SessionStore().exists(session_key=session1.session_key)
+        assert not SessionStore().exists(session_key=session2.session_key)
+        assert not UserSessionMap.objects.filter(user=user).exists()
+
+    @mock.patch('osf.models.user.requests.post')
+    def test_gdpr_delete_revokes_all_orcid_ids_when_multiple_present(self, mock_post, user):
+        # A merge with a user who had a different verified ORCID can leave more than one entry behind.
+        mock_post.return_value = mock.Mock(status_code=200)
+        user.external_identity = {
+            'ORCID': {'fake-orcid-id': 'VERIFIED', 'other-orcid-id': 'VERIFIED'},
+        }
+        user.external_identity_tokens = {
+            'ORCID': {
+                'fake-orcid-id': {'access_token': 'fake-orcid-token'},
+                'other-orcid-id': {'access_token': 'other-orcid-token'},
+            },
+        }
+        user.save()
+
+        user.gdpr_delete()
+
+        assert user.deleted is not None
+        assert user.is_disabled
+        assert user.external_identity == {}
+        assert user.external_identity_tokens == {}
+        assert mock_post.call_count == 2
+        revoked_tokens = {call.kwargs['data']['token'] for call in mock_post.call_args_list}
+        assert revoked_tokens == {'fake-orcid-token', 'other-orcid-token'}
 
     @mock.patch('osf.models.user.requests.post')
     def test_gdpr_delete_orcid_identity_without_token_blocks_delete(self, mock_post, user):
