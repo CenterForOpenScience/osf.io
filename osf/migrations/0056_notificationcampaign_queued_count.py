@@ -28,4 +28,13 @@ class Migration(migrations.Migration):
                 max_length=20,
             ),
         ),
+        migrations.AddField(
+            model_name='notificationcampaignrecipient',
+            name='sent_at',
+            field=models.PositiveBigIntegerField(
+                blank=True,
+                db_column='sent_at_big_int',
+                null=True,
+            ),
+        ),
     ]
