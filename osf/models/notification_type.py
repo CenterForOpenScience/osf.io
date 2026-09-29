@@ -81,6 +81,7 @@ class NotificationTypeEnum(str, Enum):
     USER_CROSSREF_DOI_PENDING = 'user_crossref_doi_pending'
     USER_TERMS_OF_USE_UPDATED = 'user_terms_of_use_updated'  # added as a placeholder
     USER_CONFIRM_HAM_REPORT = 'user_confirm_ham_report'
+    USER_MERGE_FAILED_REPORT = 'user_merge_failed_report'
 
     # Node notifications
     NODE_FILE_UPDATED = 'node_file_updated'

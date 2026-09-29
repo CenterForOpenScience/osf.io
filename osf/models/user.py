@@ -755,6 +755,24 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         if self == user:
             raise ValueError('Cannot merge a user into itself')
 
+        try:
+            with transaction.atomic():
+                nodes_to_reindex, preprints_to_reindex = self._merge_user(user)
+        except Exception as exc:
+            logger.exception(f'Failed to merge user {user._id} into {self._id}; the merge was rolled back')
+            sentry.log_exception(exc)
+            self.refresh_from_db()
+            user.refresh_from_db()
+            raise
+
+        # Side effects outside the database only run once the merge is committed
+        transaction.on_commit(lambda: self._after_merge_user(user, nodes_to_reindex, preprints_to_reindex))
+
+    def _merge_user(self, user):
+        """Database part of `merge_user`. Must run inside a transaction.
+
+        :return: nodes and preprints of `user` to reindex in SHARE after the merge is committed
+        """
         # Capture content to SHARE reindex BEFORE merge transfers contributors
         # After merge, user.contributed and user.preprints will be empty
         nodes_to_reindex = list(user.contributed)
@@ -881,8 +899,6 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         self._merge_user_draft_registrations(user)
 
         # finalize the merge
-        remove_sessions_for_user(user)
-
         # - username is set to the GUID so the merging user can set it primary
         #   in the future (note: it cannot be set to None due to non-null constraint)
         user.set_unusable_username()
@@ -892,6 +908,12 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         user.merged_by = self
 
         user.save()
+
+        return nodes_to_reindex, preprints_to_reindex
+
+    def _after_merge_user(self, user, nodes_to_reindex, preprints_to_reindex):
+        """Side effects of `merge_user` outside the database, run after the merge is committed."""
+        remove_sessions_for_user(user)
         signals.user_account_merged.send(user)
 
         from api.share.utils import update_share

@@ -447,7 +447,7 @@ class TestOSFUser:
         assert not draft_five.is_contributor(user2)
 
     @mock.patch('api.share.utils.update_share')
-    def test_merge_user_triggers_share_reindex(self, mock_update_share):
+    def test_merge_user_triggers_share_reindex(self, mock_update_share, django_capture_on_commit_callbacks):
         from osf.models import Preprint
 
         user = AuthUserFactory()
@@ -461,7 +461,8 @@ class TestOSFUser:
         preprint_two = PreprintFactory(title='preprint_two')
         preprint_two.add_contributor(user2)
 
-        user.merge_user(user2)
+        with django_capture_on_commit_callbacks(execute=True):
+            user.merge_user(user2)
 
         # Verify update_share was called for both nodes
         nodes_reindexed = [
@@ -1494,22 +1495,24 @@ class TestMergingUsers:
         assert master.emails.filter(address='joseph123@hotmail.com').exists()
 
     @mock.patch('website.mailchimp_utils.get_mailchimp_api')
-    def test_send_user_merged_signal(self, mock_get_mailchimp_api, dupe, merge_dupe):
+    def test_send_user_merged_signal(self, mock_get_mailchimp_api, dupe, merge_dupe, django_capture_on_commit_callbacks):
         dupe.mailchimp_mailing_lists['foo'] = True
         dupe.save()
 
         with capture_signals() as mock_signals:
-            merge_dupe()
+            with django_capture_on_commit_callbacks(execute=True):
+                merge_dupe()
             assert mock_signals.signals_sent() == {user_account_merged}
 
     @pytest.mark.enable_enqueue_task
     @mock.patch('website.mailchimp_utils.unsubscribe_mailchimp_async')
     @mock.patch('website.mailchimp_utils.get_mailchimp_api')
-    def test_merged_user_unsubscribed_from_mailing_lists(self, mock_mailchimp_api, mock_unsubscribe, dupe, merge_dupe, email_subscriptions_enabled):
+    def test_merged_user_unsubscribed_from_mailing_lists(self, mock_mailchimp_api, mock_unsubscribe, dupe, merge_dupe, email_subscriptions_enabled, django_capture_on_commit_callbacks):
         list_name = settings.MAILCHIMP_GENERAL_LIST
         dupe.mailchimp_mailing_lists[list_name] = True
         dupe.save()
-        merge_dupe()
+        with django_capture_on_commit_callbacks(execute=True):
+            merge_dupe()
         assert mock_unsubscribe.called
 
     def test_inherits_projects_contributed_by_dupe(self, dupe, master, merge_dupe):
