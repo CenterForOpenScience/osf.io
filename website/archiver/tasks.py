@@ -27,7 +27,6 @@ from website.archiver import (
 )
 from website.archiver import utils
 from website.archiver.utils import normalize_unicode_filenames
-from website.archiver import utils as archiver_utils
 from website.archiver import signals as archiver_signals
 
 from scripts.check_manual_restart_approval import delayed_manual_restart_approval
@@ -44,6 +43,7 @@ from osf.models import (
 from osf import features
 from osf.utils.requests import get_current_request
 from osf.external.gravy_valet import request_helpers, translations
+from website.project import signals as project_signals
 
 
 def create_app_context():
@@ -419,22 +419,8 @@ def archive_node(self, stat_results, job_pk):
                         ]
                     )
                 )
-
-        # NOTE: use self.replace() rather than `return celery.chain(...)`. A Celery
-        # task that merely *returns* a signature does NOT execute it, so the copy
-        # requests and archive_callback would never run -- the archive would stall
-        # and the registration would be torn down (deleted) after submission.
-        if not addon_tasks:
-            return self.replace(celery.chain([
-                archive_callback.si(dst_id=dst._id)
-            ]))
-
-        return self.replace(celery.chain(
-            [
-                celery.group(addon_tasks),
-                archive_callback.si(dst_id=dst._id),
-            ]
-        ))
+        project_signals.archive_callback.send(dst)
+        return celery.group(addon_tasks)
 
 
 def archive(job_pk):
@@ -543,30 +529,3 @@ def force_archive(self, registration_id, permissible_addons, allow_unconfigured=
         sentry.log_message(f'Archive task failed for {registration_id}: {exc}')
         sentry.log_exception(exc)
         return f'{exc.__class__.__name__}: {str(exc)}'
-
-
-@celery_app.task
-@logged('archive_callback')
-def archive_callback(dst_id):
-    """Blinker task for updates to the archive task. When the tree of ArchiveJob
-    instances is complete, proceed to send success or failure mails
-
-    :param dst: registration Node
-    """
-    dst = Registration.load(dst_id)
-    root = dst.root
-    root_job = root.archive_job
-    if not root_job.archive_tree_finished():
-        return
-    if root_job.sent:
-        return
-    if root_job.success:
-        archive_success.delay(dst_pk=root._id, job_pk=root_job._id)
-    else:
-        archiver_utils.handle_archive_fail(
-            ARCHIVER_UNCAUGHT_ERROR,
-            root.registered_from,
-            root,
-            root.registered_user,
-            dst.archive_job.target_info(),
-        )

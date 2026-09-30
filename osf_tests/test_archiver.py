@@ -33,6 +33,7 @@ from osf_tests import factories
 from tests.base import OsfTestCase, fake
 from tests import utils as test_utils
 from tests.utils import unique as _unique, capture_notifications
+from website.archiver.listeners import archive_callback
 
 pytestmark = pytest.mark.django_db
 
@@ -544,9 +545,11 @@ class TestArchiverTasks(ArchiverTestCase):
         )
         mock_log_exception.assert_called_once()
 
-    @mock.patch.object(archive_node, 'replace')
+    @mock.patch('celery.chain')
+    @mock.patch('website.archiver.tasks.make_copy_request.s')
     @mock.patch('website.archiver.tasks.archive_addon.si')
-    def test_archive_node_pass(self, mock_archive_addon, mock_replace):
+    @mock.patch('celery.group')
+    def test_archive_node_pass(self, mock_group, mock_archive_addon, mock_copy_request, mock_chain):
         settings.MAX_ARCHIVE_SIZE = 1024 ** 3
         with mock.patch.object(BaseStorageAddon, '_get_file_tree') as mock_file_tree:
             mock_file_tree.return_value = FILE_TREE
@@ -564,10 +567,9 @@ class TestArchiverTasks(ArchiverTestCase):
         with pytest.raises(ArchiverSizeExceeded):  # Note: Requires task_eager_propagates = True in celery
             archive_node.apply(args=(results, self.archive_job._id))
 
-    @mock.patch.object(archive_node, 'replace')
-    @mock.patch('website.archiver.tasks.archive_callback.si')
-    @mock.patch('website.archiver.tasks.archive_addon.si')
-    def test_archive_node_does_not_archive_empty_addons(self, mock_archive_addon, mock_send, mock_replace):
+    @mock.patch('website.project.signals.archive_callback.send')
+    @mock.patch('website.archiver.tasks.archive_addon.delay')
+    def test_archive_node_does_not_archive_empty_addons(self, mock_archive_addon, mock_send):
         with mock.patch('osf.models.mixins.AddonModelMixin.get_addon') as mock_get_addon:
             mock_addon = MockAddon()
 
@@ -586,9 +588,11 @@ class TestArchiverTasks(ArchiverTestCase):
         assert mock_send.called
 
     @use_fake_addons
-    @mock.patch.object(archive_node, 'replace')
+    @mock.patch('celery.chain')
+    @mock.patch('website.archiver.tasks.make_copy_request.s')
     @mock.patch('website.archiver.tasks.archive_addon.si')
-    def test_archive_node_no_archive_size_limit(self, mock_archive_addon, mock_replace):
+    @mock.patch('celery.group')
+    def test_archive_node_no_archive_size_limit(self, mock_group, mock_archive_addon, mock_copy_request, mock_chain):
         settings.MAX_ARCHIVE_SIZE = 100
         self.archive_job.initiator.add_system_tag(NO_ARCHIVE_LIMIT)
         self.archive_job.initiator.save()
@@ -596,8 +600,13 @@ class TestArchiverTasks(ArchiverTestCase):
             mock_file_tree.return_value = FILE_TREE
             results = [stat_addon(addon, self.archive_job._id) for addon in ['osfstorage', 'dropbox']]
         archive_node(results, self.archive_job._id)
+
+        assert mock_group.called
         mock_archive_addon.assert_called_with(
             addon_short_name='dropbox',
+            job_pk=self.archive_job._id,
+        )
+        mock_copy_request.assert_called_with(
             job_pk=self.archive_job._id,
         )
 
@@ -618,12 +627,6 @@ class TestArchiverTasks(ArchiverTestCase):
             # the archive with WaterButler's "already exists" naming conflict.
             'conflict': 'replace',
         }
-
-    @mock.patch('website.archiver.tasks.archive_callback.delay')
-    def test_archive_addon_does_not_trigger_callback_immediately(self, mock_archive_callback):
-        archive_addon('osfstorage', self.archive_job._id)
-
-        mock_archive_callback.assert_not_called()
 
     @mock.patch('website.archiver.tasks.requests.post')
     def test_copy_request_is_idempotent_and_uses_archive_timeout(self, mock_post):
@@ -650,7 +653,7 @@ class TestArchiverTasks(ArchiverTestCase):
         assert self.archive_job.get_target('osfstorage').status == ARCHIVER_SUCCESS
 
     @mock.patch.object(archive_node, 'replace')
-    @mock.patch('website.archiver.tasks.archive_callback.si')
+    @mock.patch('website.archiver.listeners.archive_callback')
     @mock.patch('website.archiver.tasks.make_copy_request.s')
     @mock.patch('website.archiver.tasks.celery.chain')
     @mock.patch('website.archiver.tasks.celery.group')
@@ -675,19 +678,16 @@ class TestArchiverTasks(ArchiverTestCase):
             addon_short_name='osfstorage',
             job_pk=self.archive_job._id,
         )
-        self.assertEqual(mock_chain.call_count, 2)
+        self.assertEqual(mock_chain.call_count, 1)
         mock_chain.assert_any_call([
             mock_archive_addon.return_value,
             mock_make_copy_request_s.return_value,
         ])
         mock_group.assert_called_once_with([mock_chain.return_value])
-        mock_chain.assert_any_call([
-            mock_group.return_value,
-            mock_archive_callback.return_value,
+        mock_chain.assert_called_once_with([
+            mock_archive_addon.return_value,
+            mock_make_copy_request_s.return_value
         ])
-        # The built chain must be handed to self.replace() so Celery actually
-        # executes it; a bare `return chain` would silently never run.
-        mock_replace.assert_called_once_with(mock_chain.return_value)
 
     @pytest.mark.usefixtures('mock_gravy_valet_get_verified_links')
     def test_archive_success(self):
@@ -1084,7 +1084,7 @@ class TestArchiverListeners(ArchiverTestCase):
         )
         self.dst.archive_job.save()
         with mock.patch('website.archiver.utils.handle_archive_fail') as mock_fail:
-            archive_callback(self.dst._id)
+            archive_callback(self.dst)
         assert not mock_fail.called
         assert mock_delay.called
 
@@ -1092,7 +1092,7 @@ class TestArchiverListeners(ArchiverTestCase):
     def test_archive_callback_done_success(self, mock_archive_success):
         self.dst.archive_job.update_target('osfstorage', ARCHIVER_SUCCESS)
         self.dst.archive_job.save()
-        archive_callback(self.dst._id)
+        archive_callback(self.dst)
 
     @mock.patch('website.archiver.tasks.archive_success.delay')
     def test_archive_callback_done_embargoed(self, mock_archive_success):
@@ -1106,13 +1106,13 @@ class TestArchiverListeners(ArchiverTestCase):
         self.dst.embargo_registration(self.user, end_date)
         self.dst.archive_job.update_target('osfstorage', ARCHIVER_SUCCESS)
         self.dst.save()
-        archive_callback(self.dst._id)
+        archive_callback(self.dst)
 
     def test_archive_callback_done_errors(self):
         self.dst.archive_job.update_target('osfstorage', ARCHIVER_FAILURE)
         self.dst.archive_job.save()
         with mock.patch('website.archiver.utils.handle_archive_fail') as mock_fail:
-            archive_callback(self.dst._id)
+            archive_callback(self.dst)
         call_args = mock_fail.call_args[0]
         assert call_args[0] == ARCHIVER_UNCAUGHT_ERROR
         assert call_args[1] == self.src
@@ -1128,7 +1128,7 @@ class TestArchiverListeners(ArchiverTestCase):
         child = reg.nodes[0]
         child.archive_job.update_target('osfstorage', ARCHIVER_SUCCESS)
         child.save()
-        archive_callback(child._id)
+        archive_callback(child)
         assert not child.archiving
 
     def test_archive_tree_finished_d1(self):
@@ -1196,13 +1196,27 @@ class TestArchiverListeners(ArchiverTestCase):
             node.archive_job.update_target('osfstorage', ARCHIVER_INITIATED)
         rchild.archive_job.update_target('osfstorage', ARCHIVER_SUCCESS)
         rchild.save()
-        archive_callback(rchild._id)
+        archive_callback(rchild)
         reg.archive_job.update_target('osfstorage', ARCHIVER_SUCCESS)
         reg.save()
-        archive_callback(reg._id)
+        archive_callback(reg)
         rchild2.archive_job.update_target('osfstorage', ARCHIVER_SUCCESS)
         rchild2.save()
-        archive_callback(rchild2._id)
+        archive_callback(rchild2)
+
+    @mock.patch('website.archiver.tasks.archive_success.delay')
+    def test_archive_callback_accepts_registration_instance(self, mock_archive_success):
+        self.dst.archive_job.update_target('osfstorage', ARCHIVER_SUCCESS)
+        self.dst.archive_job.save()
+
+        with mock.patch('website.archiver.tasks.Registration.load') as mock_load:
+            archive_callback(self.dst)
+
+        mock_load.assert_not_called()
+        mock_archive_success.assert_called_once_with(
+            dst_pk=self.dst.root._id,
+            job_pk=self.dst.root.archive_job._id,
+        )
 
 class TestArchiverScripts(ArchiverTestCase):
 
@@ -1338,7 +1352,7 @@ class TestArchiverBehavior(OsfTestCase):
             mock.patch('osf.models.ArchiveJob.archive_tree_finished', mock.Mock(return_value=True)),
             mock.patch('osf.models.ArchiveJob.success', mock.PropertyMock(return_value=True))
         ) as (mock_finished, mock_success):
-            archive_callback(reg._id)
+            archive_callback(reg)
         assert mock_update_search.call_count == 1
 
     @pytest.mark.enable_search
@@ -1352,7 +1366,7 @@ class TestArchiverBehavior(OsfTestCase):
                 mock.patch('osf.models.archive.ArchiveJob.archive_tree_finished', mock.Mock(return_value=True)),
                 mock.patch('osf.models.archive.ArchiveJob.success', mock.PropertyMock(return_value=False))
             ) as (mock_finished, mock_success):
-                archive_callback(reg._id)
+                archive_callback(reg)
 
     @mock.patch('osf.models.AbstractNode.update_search')
     def test_archiving_nodes_not_added_to_search_on_archive_incomplete(self, mock_update_search):
@@ -1360,7 +1374,7 @@ class TestArchiverBehavior(OsfTestCase):
         reg = factories.RegistrationFactory(project=proj)
         reg.save()
         with mock.patch('osf.models.ArchiveJob.archive_tree_finished', mock.Mock(return_value=False)):
-            archive_callback(reg._id)
+            archive_callback(reg)
         assert not mock_update_search.called
 
 
