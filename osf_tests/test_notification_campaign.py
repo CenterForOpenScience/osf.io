@@ -207,6 +207,29 @@ class TestBuildQuery:
 
         assert user_ids == {confirmed.id}
 
+    def test_exclude_requested_deactivation(self):
+        confirmed = UserFactory()
+        requested_deactivation = UserFactory(requested_deactivation=True)
+
+        query = build_query({
+            'operator': 'AND',
+            'children': [
+                {
+                    'field': 'id',
+                    'lookup': 'in',
+                    'value': f'{confirmed.id},{requested_deactivation.id}',
+                },
+                {
+                    'field': 'requested_deactivation',
+                    'lookup': 'exact',
+                    'value': False,
+                },
+            ],
+        })
+        user_ids = set(OSFUser.objects.filter(query).values_list('id', flat=True))
+
+        assert user_ids == {confirmed.id}
+
     def test_build_campaign_filter_query_ands_predefined_and_manual(self):
         confirmed = UserFactory()
         unconfirmed = UserFactory(date_confirmed=None, is_registered=False)

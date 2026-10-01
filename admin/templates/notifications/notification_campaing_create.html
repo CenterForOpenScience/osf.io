@@ -481,15 +481,20 @@ function buildFilters() {
             lookup: "isnull",
             value: false,
         };
+        const requested_deactivation = {
+            field: "requested_deactivation",
+            lookup: "exact",
+            value: false,
+        };
         if (filters.manual) {
             filters.manual = {
                 operator: "AND",
-                children: [filters.manual, confirmed],
+                children: [filters.manual, confirmed, requested_deactivation],
             };
         } else {
             filters.manual = {
                 operator: "AND",
-                children: [confirmed],
+                children: [confirmed, requested_deactivation],
             };
         }
     }
