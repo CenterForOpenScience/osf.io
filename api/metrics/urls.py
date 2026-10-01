@@ -30,6 +30,11 @@ urlpatterns = [
         name=views.CountedAuthUsageView.view_name,
     ),
     re_path(
+        r'^events/ssr_metrics/$',
+        views.SSRMetricsView.as_view(),
+        name=views.SSRMetricsView.view_name,
+    ),
+    re_path(
         r'^query/node_analytics/(?P<node_guid>[a-z0-9]+)/(?P<timespan>week|fortnight|month)/$',
         views.NodeAnalyticsQuery.as_view(),
         name=views.NodeAnalyticsQuery.view_name,
