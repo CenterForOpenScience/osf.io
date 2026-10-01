@@ -69,6 +69,11 @@ def repair_recovered_preprint_files(dry_run=False, user_id=None):
 
         auth = Auth(acting_user or donor.creator)
         latest_version = donor.primary_file.versions.order_by('-created').first()
+        if latest_version.purged:
+            logger.warning(f'{broken._id}: donor latest version {latest_version.id} is purged, skipping')
+            continue
+        # keep the donor's storage region, the copied blob does not move between buckets
+        broken.set_storage_region(latest_version.region_id)
         copied = copy_files(donor.primary_file, target_node=broken, identifier=latest_version.identifier)
         broken.set_primary_file(copied, auth=auth, save=True)
         logger.info(f'{broken._id}: attached primary_file {copied._id} (copied from {donor._id})')
