@@ -10,6 +10,11 @@
       "type": "string",
       "pattern": "10\\..+/.+"
     },
+    "contentURL": {
+      "description": "Content url that allows for identification outside of DOI.",
+      "type": "string",
+      "pattern": "https://osf.io+"
+    },
     "year": {
       "type": "string"
     },
@@ -47,15 +52,21 @@
   "type": "object",
   "properties": {
     "identifier": {
-      "description": "A persistent identifier that identifies a resource. Currently, only DOI is allowed.",
+      "description": "A persistent identifier that identifies a resource. Can use DOI or URL.",
       "type": "object",
       "properties": {
         "identifier": {
-          "$ref": "#/definitions/doi"
+          "DOI": {
+            "$ref": "#/definitions/doi"
+          },
+          "URL": {
+            "$ref": "#/definitions/contentURL"
+          }
         },
         "identifierType": {
           "enum": [
-            "DOI"
+            "DOI",
+            "URL"
           ]
         }
       },
