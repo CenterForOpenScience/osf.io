@@ -23,6 +23,7 @@ from website import settings as website_settings
 __all__ = (
     'OsfCountedUsageEvent',
     'RegistriesModerationEvent',
+    'SSRMetricsEvent',
 )
 
 
@@ -248,4 +249,18 @@ class RegistriesModerationEvent(djelme.EventRecord):
 
     class Meta:
         timeseries_recordtype_name = 'RegistriesModerationEvent'
+        timeseries_index_timedepth = MONTHLY
+
+
+class SSRMetricsEvent(djelme.EventRecord):
+    url: str
+    status: int
+    ttfb: int
+    isBot: bool
+    isComplete: bool
+    contentType: str | None
+    userAgent: str
+
+    class Meta:
+        timeseries_recordtype_name = 'SSRMetricsEvent'
         timeseries_index_timedepth = MONTHLY

@@ -19,6 +19,7 @@ from .public_item_usage import PublicItemUsageReporter
 from .user_count import UserCountReporter
 from .spam_count import SpamCountReporter
 from .private_spam_metrics import PrivateSpamMetricsReporter
+from .angular_ssr_metrics import AngularSSRMetricsReporter
 
 
 class AllDailyReporters(enum.Enum):
@@ -39,4 +40,5 @@ class AllMonthlyReporters(enum.Enum):
     INSTITUTIONAL_SUMMARY = InstitutionalSummaryMonthlyReporter
     ITEM_USAGE = PublicItemUsageReporter
     PRIVATE_SPAM_METRICS = PrivateSpamMetricsReporter
+    ANGULAR_SSR_METRICS = AngularSSRMetricsReporter
     # OSFSTORAGE_FILE_COUNT = MonthlyOsfstorageFileCountReporter
