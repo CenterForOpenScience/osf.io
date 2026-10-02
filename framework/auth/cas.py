@@ -272,6 +272,12 @@ def make_response_from_ticket(ticket, service_url):
     if cas_resp.authenticated:
         user, external_credential, action = get_user_from_cas_resp(cas_resp)
         user_updates = {}  # serialize updates to user to be applied async
+        if user and action == 'authenticate' and user.is_disabled:
+            print_cas_log(
+                msg=f'CAS response - refusing to authenticate disabled user: user=[{user._id}]',
+                level=LogLevel.WARN,
+            )
+            return redirect(get_logout_url(service_furl.url))
         # user found and authenticated
         if user and action == 'authenticate':
             print_cas_log(
