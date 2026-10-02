@@ -3,6 +3,7 @@ from flask import g
 
 from http.cookies import SimpleCookie
 from unittest import mock
+from urllib.parse import parse_qs, urlparse
 
 from framework.auth import Auth, authenticate, cas
 from framework.auth.utils import impute_names_model
@@ -289,6 +290,20 @@ class TestClaimViews(OsfTestCase):
             token=token,
         )
         assert res.request.path == expected
+
+    def test_user_logs_out_if_logged_in_user_is_the_claimed_user(self):
+        url = self.user.get_claim_url(self.project._primary_key)
+        g.current_session = None
+        self.app.set_cookie(settings.COOKIE_NAME, self.user.get_or_create_cookie().decode())
+        res = self.app.get(url)
+        assert res.status_code == 302
+        location = urlparse(res.location)
+        assert location.path == '/logout/'
+        return_url = parse_qs(location.query)['redirect_url'][0]
+        assert return_url.endswith(url)
+        res = self.app.get(res.location)
+        assert res.status_code == 302
+        assert res.location == cas.get_logout_url(service_url=return_url)
 
     @mock.patch('framework.auth.cas.make_response_from_ticket')
     def test_claim_user_when_user_is_registered_with_orcid(self, mock_response_from_ticket):
