@@ -15,9 +15,10 @@ class RecoverDeletedPreprintForm(forms.Form):
     description = forms.CharField(widget=forms.Textarea, required=False)
     file_guid = forms.CharField(
         required=False,
-        label='Source file GUID',
-        help_text='Optional: an existing file GUID; its latest version is copied into this '
-                  'version as the primary file.',
+        label='Source file or preprint GUID',
+        help_text='Optional: an existing file GUID, or a preprint GUID (e.g. abcde or abcde_v1) whose '
+                  'primary file is used. The latest version of the file is copied into this version '
+                  'as the primary file.',
     )
     ticket_reference = forms.CharField(
         max_length=255,

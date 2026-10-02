@@ -6,6 +6,7 @@ from django.contrib import messages
 from django.http import HttpResponse
 from django.utils import timezone
 from django.contrib.auth.mixins import PermissionRequiredMixin
+from django.core.exceptions import ValidationError
 from django.core.management import call_command
 
 from osf.management.commands.manage_switch_flags import manage_waffle
@@ -21,7 +22,8 @@ from django.urls import reverse
 from django.shortcuts import redirect
 from osf.metrics.utils import YearMonth
 from osf.metrics.reporters import AllMonthlyReporters, AllDailyReporters
-from osf.models import Preprint, Node, Registration
+from osf.models import Preprint, Node, Registration, StuckRegistrationReportConfig
+from osf.models.stuck_registration_report import StuckRegistrationReportCadence
 
 
 class ManagementCommands(TemplateView):
@@ -38,6 +40,8 @@ class ManagementCommands(TemplateView):
         _context['daily_reporter_keys'] = [
             _enum.name.lower() for _enum in AllDailyReporters
         ]
+        _context['stuck_registration_report'] = StuckRegistrationReportConfig.load()
+        _context['stuck_registration_report_cadences'] = StuckRegistrationReportCadence.choices
         return _context
 
 
@@ -48,8 +52,12 @@ class ManagementCommandPermissionView(View, PermissionRequiredMixin):
 class WaffleFlag(ManagementCommandPermissionView):
 
     def post(self, request, *args, **kwargs):
-        manage_waffle()
-        messages.success(request, 'Waffle flags have been successfully updated.')
+        preserve_everyone = request.POST.get('preserve_everyone') == 'on'
+        manage_waffle(preserve_everyone=preserve_everyone)
+        messages.success(
+            request,
+            'Waffle flags have been successfully updated.',
+        )
         return redirect(reverse('management:commands'))
 
 
@@ -232,6 +240,32 @@ class MigrateFunderNamesToRor(ManagementCommandPermissionView):
         return redirect(reverse('management:commands'))
 
 
+class StuckRegistrationReport(ManagementCommandPermissionView):
+
+    def post(self, request, *args, **kwargs):
+        try:
+            emails = StuckRegistrationReportConfig.parse_recipients(request.POST.get('report_emails', ''))
+        except ValidationError as exc:
+            messages.error(request, ' '.join(exc.messages) + ' Check your inputs and try again')
+            return redirect(reverse('management:commands'))
+
+        cadence = request.POST.get('report_cadence', '')
+        if cadence not in StuckRegistrationReportCadence.values:
+            messages.error(request, f'"{cadence}" is not a report cadence. Check your inputs and try again')
+            return redirect(reverse('management:commands'))
+
+        config = StuckRegistrationReportConfig.load()
+        config.emails = emails
+        config.cadence = cadence
+        config.save()
+        if emails:
+            messages.success(request, f"The {config.get_cadence_display().lower()} stuck registration report "
+                                      f"will be sent to {', '.join(emails)}.")
+        else:
+            messages.success(request, 'The stuck registration report will not be sent to anyone.')
+        return redirect(reverse('management:commands'))
+
+
 class RejectPendingCollectionSubmissions(ManagementCommandPermissionView):
 
     def post(self, request):
@@ -261,4 +295,12 @@ class RejectPendingNodeRequests(ManagementCommandPermissionView):
             'comment': comment,
         })
         messages.success(request, 'Pending project access requests have been queued for rejection.')
+        return redirect(reverse('management:commands'))
+
+
+class FixRestoredTrashedFiles(ManagementCommandPermissionView):
+
+    def post(self, request):
+        call_command('fix_restored_trashed_files')
+        messages.success(request, 'Restored trashed files have been successfully fixed.')
         return redirect(reverse('management:commands'))
