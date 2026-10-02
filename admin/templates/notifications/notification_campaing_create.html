@@ -173,7 +173,7 @@
                         Exclude unconfirmed accounts
                     </label>
                     <p class="help-block">
-                        When enabled, users who have not confirmed their accounts
+                        When enabled, users who have not confirmed their accounts or have requested deactivation
                         are excluded from the recipient list.
                     </p>
                 </div>
@@ -481,15 +481,20 @@ function buildFilters() {
             lookup: "isnull",
             value: false,
         };
+        const requested_deactivation = {
+            field: "requested_deactivation",
+            lookup: "exact",
+            value: false,
+        };
         if (filters.manual) {
             filters.manual = {
                 operator: "AND",
-                children: [filters.manual, confirmed],
+                children: [filters.manual, confirmed, requested_deactivation],
             };
         } else {
             filters.manual = {
                 operator: "AND",
-                children: [confirmed],
+                children: [confirmed, requested_deactivation],
             };
         }
     }
