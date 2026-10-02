@@ -212,6 +212,8 @@ class CrossRefClient(AbstractIdentifierClient):
             person.append(element.surname(name_parts['surname']))
             if name_parts.get('suffix'):
                 person.append(element.suffix(remove_control_characters(name_parts['suffix'])))
+            # Deactivated institutions are included on purpose: a DOI that already carries an
+            # institution's ROR id should keep it after the institution is turned off
             affiliations = [
                 element.institution(
                     element.institution_name(institution.name),
@@ -219,7 +221,7 @@ class CrossRefClient(AbstractIdentifierClient):
                         institution.ror_uri,
                         type='ror'
                     ),
-                ) for institution in contributor.get_affiliated_institutions() if institution.ror_uri
+                ) for institution in contributor.get_affiliated_institutions(include_deactivated=True) if institution.ror_uri
             ]
             if affiliations:
                 person.append(element.affiliations(*affiliations))

@@ -10,7 +10,7 @@ from framework.auth import Auth
 
 from tests.base import DbTestCase
 from osf_tests.factories import UserFactory, CommentFactory, ProjectFactory, PreprintFactory, RegistrationFactory, AuthUserFactory
-from osf.models import NotableDomain, SpamStatus, NotificationTypeEnum
+from osf.models import NotableDomain, SpamStatus, NotificationTypeEnum, OSFUser, AbstractNode, Preprint
 from tests.utils import capture_notifications
 from website import settings
 
@@ -28,10 +28,34 @@ def test_throttled_autoban():
             projects.append(proj)
     assert len(notifications['emits']) == 1
     assert notifications['emits'][0]['type'] == NotificationTypeEnum.USER_SPAM_BANNED
+    assert not any(e['type'] == NotificationTypeEnum.NODE_CONFIRMED_SPAM for e in notifications['emits'])
     user.reload()
     assert user.is_disabled
     for project in projects:
         assert not project.is_public
+
+
+@pytest.mark.django_db
+def test_user_confirm_spam_cascade_suppresses_content_notifications():
+    user = AuthUserFactory()
+    project = ProjectFactory(creator=user, is_public=True)
+    preprint = PreprintFactory(creator=user, is_public=True)
+
+    with capture_notifications() as notifications:
+        user.confirm_spam(save=True)
+
+    assert len(notifications['emits']) == 1
+    assert notifications['emits'][0]['type'] == NotificationTypeEnum.USER_SPAM_BANNED
+    assert not any(
+        e['type'] in (NotificationTypeEnum.NODE_CONFIRMED_SPAM, NotificationTypeEnum.PREPRINT_CONFIRMED_SPAM)
+        for e in notifications['emits']
+    )
+    user.reload()
+    assert user.is_disabled
+    project.reload()
+    assert not project.is_public
+    preprint.reload()
+    assert not preprint.is_public
 
 
 @pytest.mark.enable_implicit_clean
@@ -173,7 +197,35 @@ class TestSpamState:
         assert spammable_thing.is_ham
 
     def test_confirm_spam(self, spammable_thing):
-        spammable_thing.confirm_spam(save=True)
+        if isinstance(spammable_thing, OSFUser):
+            expected_type = NotificationTypeEnum.USER_SPAM_BANNED
+        elif isinstance(spammable_thing, Preprint):
+            expected_type = NotificationTypeEnum.PREPRINT_CONFIRMED_SPAM
+        elif isinstance(spammable_thing, AbstractNode):
+            expected_type = NotificationTypeEnum.NODE_CONFIRMED_SPAM
+        else:
+            expected_type = None
+
+        with capture_notifications(allow_none=expected_type is None) as notifications:
+            spammable_thing.confirm_spam(save=True)
+
+        assert spammable_thing.is_spam
+        if expected_type is None:
+            assert notifications['emits'] == []
+        else:
+            assert len(notifications['emits']) == 1
+            assert notifications['emits'][0]['type'] == expected_type
+
+    def test_confirm_spam_is_idempotent_for_notifications(self, spammable_thing):
+        with capture_notifications(allow_none=True) as notifications:
+            spammable_thing.confirm_spam(save=True)
+            spammable_thing.confirm_spam(save=True)
+
+        assert len(notifications['emits']) <= 1
+
+    def test_confirm_spam_notify_false_suppresses_emit(self, spammable_thing):
+        with capture_notifications(expect_none=True):
+            spammable_thing.confirm_spam(save=True, notify=False)
         assert spammable_thing.is_spam
 
     @pytest.mark.parametrize('assume_ham', (True, False))

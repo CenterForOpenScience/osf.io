@@ -6,6 +6,7 @@ from django.urls import reverse
 from django.core.exceptions import PermissionDenied
 from django.contrib.auth.models import Permission, Group, AnonymousUser
 from django.contrib.messages.storage.fallback import FallbackStorage
+from django.utils import timezone
 
 from tests.base import AdminTestCase
 from osf.models import Preprint, PreprintLog, PreprintRequest, NotificationTypeEnum
@@ -19,7 +20,7 @@ from osf_tests.factories import (
     SubjectFactory,
 
 )
-from osf.models.admin_log_entry import AdminLogEntry, PREPRINT_RECOVERED
+from osf.models.admin_log_entry import AdminLogEntry, PREPRINT_RECOVERED, PREPRINT_RESTORED
 from osf.models.spam import SpamStatus
 from osf.utils.workflows import DefaultStates, RequestTypes
 from osf.utils.permissions import ADMIN
@@ -156,7 +157,8 @@ class TestPreprintView:
 
         view = views.PreprintConfirmSpamView()
         view = setup_view(view, request, guid=flagged_preprint._id)
-        view.post(request)
+        with assert_notification(type=NotificationTypeEnum.PREPRINT_CONFIRMED_SPAM):
+            view.post(request)
 
         assert flagged_preprint.is_public
         flagged_preprint.refresh_from_db()
@@ -1051,6 +1053,26 @@ class TestRecoverDeletedPreprintView(AdminTestCase):
         for version_through in versions:
             assert version_through.referent._id == f'abcde_v{version_through.version}'
 
+    def test_soft_deleted_preprint_is_restored_not_recreated(self):
+        preprint = PreprintFactory(provider=self.provider)
+        guid_str = preprint._id.split('_v')[0]
+        original_file = preprint.primary_file
+        preprint.deleted = timezone.now()
+        preprint.save()
+
+        response = self._post(self._base_data(guid=guid_str))
+        assert response.status_code == 302
+
+        recovered = Preprint.load(guid_str)
+        assert recovered.id == preprint.id
+        assert recovered._id == preprint._id
+        assert recovered.deleted is None
+        assert recovered.primary_file_id == original_file.id
+
+        log = AdminLogEntry.objects.get(action_flag=PREPRINT_RESTORED)
+        assert log.user_id == self.user.id
+        assert 'ENG-1234' in log.change_message
+
     def test_copies_primary_file_from_source_guid(self):
         source = PreprintFactory(provider=self.provider)
         source_file = source.primary_file
@@ -1062,3 +1084,77 @@ class TestRecoverDeletedPreprintView(AdminTestCase):
         recovered = Preprint.load('abcde')
         assert recovered.primary_file is not None
         assert recovered.primary_file.copied_from_id == source_file.id
+
+    def test_copies_primary_file_from_source_preprint_versioned_guid(self):
+        source = PreprintFactory(provider=self.provider)
+        source_file = source.primary_file
+
+        response = self._post(self._base_data(file_guid=source._id))
+        assert response.status_code == 302
+
+        recovered = Preprint.load('abcde')
+        assert recovered.primary_file.copied_from_id == source_file.id
+
+    def test_copies_primary_file_when_admin_is_not_a_contributor(self):
+        source = PreprintFactory(provider=self.provider)
+        target = PreprintFactory(provider=self.provider)
+        guid_str = target._id.split('_v')[0]
+        target.deleted = timezone.now()
+        target.save()
+        assert not target.has_permission(self.user, 'write')
+
+        response = self._post(self._base_data(guid=guid_str, file_guid=source._id))
+        assert response.status_code == 302
+
+        recovered = Preprint.load(guid_str)
+        assert recovered.deleted is None
+        assert recovered.primary_file.copied_from_id == source.primary_file.id
+
+    def test_unknown_source_guid_shows_error(self):
+        response = self._post(self._base_data(file_guid='zzzzz_v1'))
+        assert response.status_code == 302
+        assert Preprint.load('abcde') is None
+
+    def _orphan_guid(self, provider):
+        # Leave a base Guid with a dangling referent (the deleted-preprint state we recover from).
+        # Detach the GenericRelation first so deleting the preprint doesn't cascade the Guid away.
+        from osf.models import Guid
+        pp = PreprintFactory(provider=provider)
+        guid_str = pp.get_guid()._id
+        Guid.objects.filter(_id=guid_str).update(object_id=None, content_type=None)
+        pp.versioned_guids.all().delete()
+        Preprint.objects.filter(id=pp.id).delete()
+        return guid_str
+
+    def test_recover_reuses_orphaned_guid(self):
+        from osf.models import Guid
+        guid_str = self._orphan_guid(self.provider)
+        assert Guid.objects.filter(_id=guid_str).exists()
+        assert Guid.objects.get(_id=guid_str).referent is None
+        assert Preprint.load(guid_str) is None
+
+        response = self._post(self._base_data(guid=guid_str))
+        assert response.status_code == 302
+
+        recovered = Preprint.load(guid_str)
+        assert recovered is not None
+        assert recovered._id == f'{guid_str}_v1'
+        assert recovered.title == 'Recovered Title'
+        assert Guid.objects.filter(_id=guid_str).count() == 1
+        assert Guid.objects.get(_id=guid_str).referent == recovered
+        assert AdminLogEntry.objects.filter(action_flag=PREPRINT_RECOVERED).exists()
+
+    def test_create_rejects_guid_pointing_at_live_preprint(self):
+        from django.core.exceptions import ValidationError
+        live = PreprintFactory(provider=self.provider)
+        guid_str = live.get_guid()._id
+        with pytest.raises(ValidationError, match='GUID cannot be manually assigned'):
+            Preprint.create(
+                provider=self.provider,
+                title='x',
+                creator=self.user,
+                description='y',
+                manual_guid=guid_str,
+            )
+        # The live preprint's guid still points at it, untouched.
+        assert Preprint.load(guid_str).id == live.id

@@ -37,3 +37,27 @@ class TestWaffleFlags():
         manage_waffle(delete_waffle=True)
         assert not Flag.objects.filter(name='new_test_flag')
         assert not Switch.objects.filter(name='new_test_switch')
+
+    def test_manage_flags_preserve_everyone(self, yaml_data):
+        Flag.objects.create(
+            name='test_flag_page',
+            everyone=False,
+        )
+
+        with patch('builtins.open', mock_open(read_data=yaml_data)):
+            manage_waffle(preserve_everyone=True)
+
+        flag = Flag.objects.get(name='test_flag_page')
+        assert flag.everyone is False
+
+    def test_manage_flags_preserve_everyone_false(self, yaml_data):
+        Flag.objects.create(
+            name='test_flag_page',
+            everyone=False,
+        )
+
+        with patch('builtins.open', mock_open(read_data=yaml_data)):
+            manage_waffle(preserve_everyone=False)
+
+        flag = Flag.objects.get(name='test_flag_page')
+        assert flag.everyone is True

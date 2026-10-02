@@ -32,3 +32,14 @@ class DeskUserForm(forms.ModelForm):
     class Meta:
         model = AdminProfile
         fields = ['desk_token', 'desk_token_secret']
+
+
+class TwoFactorForm(forms.Form):
+    guid = forms.CharField(label='Guid', required=True, widget=forms.HiddenInput())
+    code = forms.CharField(
+        label='Two-Factor Code',
+        required=True,
+        max_length=6,
+        min_length=6,
+        widget=forms.TextInput(attrs={'autocomplete': 'off'})
+    )

@@ -13,7 +13,9 @@ from framework.auth import Auth
 from framework.celery_tasks import handlers
 
 from website.archiver import (
+    ARCHIVER_FAILURE,
     ARCHIVER_INITIATED,
+    ARCHIVER_SUCCESS,
 )
 from website.archiver import utils as archiver_utils
 from website.app import *  # noqa: F403
@@ -21,12 +23,15 @@ from website.archiver import listeners
 from website.archiver.tasks import *   # noqa: F403
 
 from osf.models import Guid, RegistrationSchema, Registration, NotificationTypeEnum
+from osf.models.schema_response import SchemaResponse
+from osf.utils.workflows import ApprovalStates
 from osf.models.archive import ArchiveTarget, ArchiveJob
 from osf.models.base import generate_object_id
 from osf.utils.migrations import map_schema_to_schemablocks
 from addons.base.models import BaseStorageAddon
 from api.base.utils import waterbutler_api_url_for
 
+from osf.management.commands import force_archive as force_archive_command
 from osf_tests import factories
 from tests.base import OsfTestCase, fake
 from tests import utils as test_utils
@@ -351,6 +356,19 @@ def generate_metadata(file_trees, selected_files, node_index):
     }
     return dict(**uploader_types, **other_questions)
 
+def generate_file_input_metadata(node, files):
+    return {
+        ('q_' + file_info['name']): {
+            'extra': [{
+                'sha256': file_info['extra']['hashes']['sha256'],
+                'viewUrl': f"/project/{node._id}/files/osfstorage{file_info['path']}",
+                'selectedFileName': file_info['name'],
+                'nodeId': node._id
+            }]
+        }
+        for file_info in files
+    }
+
 class ArchiverTestCase(OsfTestCase):
 
     def setUp(self):
@@ -612,6 +630,9 @@ class TestArchiverTasks(ArchiverTestCase):
             'rename': 'Archive of OSF Storage',
             'resource': self.archive_job.info()[1]._id,
             'provider': 'osfstorage',
+            # 'replace' keeps the copy idempotent so a retried copy request doesn't fail
+            # the archive with WaterButler's "already exists" naming conflict.
+            'conflict': 'replace',
         }
 
     @mock.patch('website.archiver.tasks.archive_callback.delay')
@@ -619,6 +640,30 @@ class TestArchiverTasks(ArchiverTestCase):
         archive_addon('osfstorage', self.archive_job._id)
 
         mock_archive_callback.assert_not_called()
+
+    @mock.patch('website.archiver.tasks.requests.post')
+    def test_copy_request_is_idempotent_and_uses_archive_timeout(self, mock_post):
+        # The copy must be retry-safe: WaterButler defaults to conflict='warn' and raises
+        # "already exists" on a retried copy, which fails the whole archive.
+        payload = make_waterbutler_payload(self.dst._id, 'Archive of OSF Storage')
+        assert payload['conflict'] == 'replace'
+        # WaterButler's copy is synchronous; large trees need more than the general 30s timeout.
+        assert settings.ARCHIVE_COPY_REQUEST_TIMEOUT[1] > settings.EXTERNAL_REQUEST_TIMEOUT[1]
+        mock_post.return_value = mock.Mock(status_code=200)
+        params = archive_addon('osfstorage', self.archive_job._id)
+        make_copy_request(params, self.archive_job._id)
+        assert mock_post.call_args.kwargs['timeout'] == settings.ARCHIVE_COPY_REQUEST_TIMEOUT
+
+    @mock.patch('website.archiver.tasks.requests.post')
+    def test_copy_request_skipped_once_waterbutler_reported_success(self, mock_post):
+        # A SUCCESS target means the callback already reported the copy as done, even if we
+        # never saw the response. Running the task again must not copy a second time: that
+        # would replace the files the registration already uses.
+        params = archive_addon('osfstorage', self.archive_job._id)
+        self.archive_job.update_target('osfstorage', ARCHIVER_SUCCESS)
+        make_copy_request(params, self.archive_job._id)
+        mock_post.assert_not_called()
+        assert self.archive_job.get_target('osfstorage').status == ARCHIVER_SUCCESS
 
     @mock.patch.object(archive_node, 'replace')
     @mock.patch('website.archiver.tasks.archive_callback.si')
@@ -773,16 +818,7 @@ class TestArchiverTasks(ArchiverTestCase):
         file_tree['children'] = [fake_file, fake_file2]
 
         node = factories.NodeFactory(creator=self.user)
-        data = {
-            ('q_' + fake_file['name']): {
-                'extra': [{
-                    'sha256': fake_file['extra']['hashes']['sha256'],
-                    'viewUrl': f"/project/{node._id}/files/osfstorage{fake_file['path']}",
-                    'selectedFileName': fake_file['name'],
-                    'nodeId': node._id
-                }]
-            }
-        }
+        data = generate_file_input_metadata(node, [fake_file])
         schema = generate_schema_from_data(data)
         draft_registration = factories.DraftRegistrationFactory(registration_schema=schema, branched_from=node, registration_metadata=data)
         with test_utils.mock_archive(node, schema=schema, draft_registration=draft_registration, autocomplete=True, autoapprove=True) as registration:
@@ -801,16 +837,7 @@ class TestArchiverTasks(ArchiverTestCase):
         file_tree['children'] = [fake_file2]
 
         node = factories.NodeFactory(creator=self.user)
-        data = {
-            ('q_' + fake_file['name']): {
-                'extra': [{
-                    'sha256': fake_file['extra']['hashes']['sha256'],
-                    'viewUrl': f"/project/{node._id}/files/osfstorage{fake_file['path']}",
-                    'selectedFileName': fake_file['name'],
-                    'nodeId': node._id
-                }]
-            }
-        }
+        data = generate_file_input_metadata(node, [fake_file])
         schema = generate_schema_from_data(data)
         draft = factories.DraftRegistrationFactory(branched_from=node, registration_schema=schema, registration_metadata=data)
         with test_utils.mock_archive(node, schema=schema, draft_registration=draft, autocomplete=True, autoapprove=True) as registration:
@@ -830,16 +857,7 @@ class TestArchiverTasks(ArchiverTestCase):
         node = factories.NodeFactory(creator=self.user)
         child = factories.NodeFactory(creator=self.user, parent=node)
 
-        data = {
-            ('q_' + selected['name']): {
-                'extra': [{
-                    'sha256': selected['extra']['hashes']['sha256'],
-                    'viewUrl': f"/project/{child._id}/files/osfstorage{selected['path']}",
-                    'selectedFileName': selected['name'],
-                    'nodeId': child._id
-                }]
-            }
-        }
+        data = generate_file_input_metadata(child, [selected])
         schema = generate_schema_from_data(data)
         draft_registration = factories.DraftRegistrationFactory(registration_schema=schema, branched_from=node, registration_metadata=data)
         with test_utils.mock_archive(node, schema=schema, draft_registration=draft_registration, autocomplete=True, autoapprove=True) as registration:
@@ -851,6 +869,103 @@ class TestArchiverTasks(ArchiverTestCase):
                 child_reg = registration.nodes[0]
                 for key, question in registration.registered_meta[schema._id].items():
                     assert child_reg._id in question['extra'][0]['viewUrl']
+
+    @pytest.mark.usefixtures('mock_gravy_valet_get_verified_links')
+    def test_archive_success_is_idempotent(self):
+        file_tree = file_tree_factory(0, 0, 0)
+        fake_file = file_factory()
+        file_tree['children'] = [fake_file]
+        node = factories.NodeFactory(creator=self.user)
+        data = generate_file_input_metadata(node, [fake_file])
+        schema = generate_schema_from_data(data)
+        draft = factories.DraftRegistrationFactory(branched_from=node, registration_schema=schema, registration_metadata=data)
+        with test_utils.mock_archive(node, schema=schema, draft_registration=draft, autocomplete=True, autoapprove=True) as registration:
+            with mock.patch.object(BaseStorageAddon, '_get_file_tree', mock.Mock(return_value=file_tree)):
+                job = factories.ArchiveJobFactory(initiator=registration.creator)
+                with capture_notifications():
+                    archive_success(registration._id, job._id)
+                registration.reload()
+                first_pass = [q['extra'][0]['viewUrl'] for q in registration.registered_meta[schema._id].values()]
+                archive_success(registration._id, job._id)
+        registration.refresh_from_db()
+        for key, question in registration.registered_meta[schema._id].items():
+            assert node._id not in question['extra'][0]['viewUrl']
+            assert registration._id in question['extra'][0]['viewUrl']
+        assert [q['extra'][0]['viewUrl'] for q in registration.registered_meta[schema._id].values()] == first_pass
+
+    @pytest.mark.usefixtures('mock_gravy_valet_get_verified_links')
+    def test_archive_success_retry_sees_files_archived_since_the_first_attempt(self):
+        copied_file = file_factory()
+        slow_file = file_factory()
+        partial_tree = file_tree_factory(0, 0, 0)
+        partial_tree['children'] = [copied_file]
+        complete_tree = file_tree_factory(0, 0, 0)
+        complete_tree['children'] = [copied_file, slow_file]
+        node = factories.NodeFactory(creator=self.user)
+        data = generate_file_input_metadata(node, (copied_file, slow_file))
+        schema = generate_schema_from_data(data)
+        draft = factories.DraftRegistrationFactory(branched_from=node, registration_schema=schema, registration_metadata=data)
+        with test_utils.mock_archive(node, schema=schema, draft_registration=draft, autocomplete=True, autoapprove=True) as registration:
+            job = factories.ArchiveJobFactory(initiator=registration.creator)
+            with mock.patch.object(BaseStorageAddon, '_get_file_tree', mock.Mock(return_value=partial_tree)):
+                with pytest.raises(ArchivedFileNotFound):
+                    archive_success(registration._id, job._id)
+            with mock.patch.object(BaseStorageAddon, '_get_file_tree', mock.Mock(return_value=complete_tree)):
+                with capture_notifications():
+                    archive_success(registration._id, job._id)
+        registration.refresh_from_db()
+        assert len(registration.registered_meta[schema._id]) == 2
+        for key, question in registration.registered_meta[schema._id].items():
+            assert node._id not in question['extra'][0]['viewUrl']
+            assert registration._id in question['extra'][0]['viewUrl']
+
+    @pytest.mark.usefixtures('mock_gravy_valet_get_verified_links')
+    def test_force_archive_rewrites_file_references(self):
+        file_tree = file_tree_factory(0, 0, 0)
+        fake_file = file_factory()
+        file_tree['children'] = [fake_file]
+        node = factories.NodeFactory(creator=self.user)
+        data = generate_file_input_metadata(node, [fake_file])
+        schema = generate_schema_from_data(data)
+        draft = factories.DraftRegistrationFactory(branched_from=node, registration_schema=schema, registration_metadata=data)
+        with test_utils.mock_archive(node, schema=schema, draft_registration=draft, autocomplete=True, autoapprove=True) as registration:
+            # The file links still point at the project here. Force-archive has to
+            # rewrite them itself, because archive_success never runs for it.
+            for key, question in registration.registered_meta[schema._id].items():
+                assert node._id in question['extra'][0]['viewUrl']
+            with mock.patch.object(BaseStorageAddon, '_get_file_tree', mock.Mock(return_value=file_tree)):
+                assert force_archive_command.verify(registration)
+                force_archive_command.archive(registration)
+        registration.refresh_from_db()
+        for key, question in registration.registered_meta[schema._id].items():
+            assert node._id not in question['extra'][0]['viewUrl']
+            assert registration._id in question['extra'][0]['viewUrl']
+
+    @pytest.mark.usefixtures('mock_gravy_valet_get_verified_links')
+    def test_force_archive_skips_migration_for_registration_with_revision(self):
+        file_tree = file_tree_factory(0, 0, 0)
+        fake_file = file_factory()
+        file_tree['children'] = [fake_file]
+        node = factories.NodeFactory(creator=self.user)
+        data = generate_file_input_metadata(node, [fake_file])
+        schema = generate_schema_from_data(data)
+        draft = factories.DraftRegistrationFactory(branched_from=node, registration_schema=schema, registration_metadata=data)
+        with test_utils.mock_archive(node, schema=schema, draft_registration=draft, autocomplete=True, autoapprove=True) as registration:
+            # An accepted and then updated registration has more than one schema response,
+            # which the rewrite cannot target. It must not fail the force-archive.
+            initial = registration.schema_responses.get()
+            initial.approvals_state_machine.set_state(ApprovalStates.APPROVED)
+            initial.save()
+            with capture_notifications():
+                SchemaResponse.create_from_previous_response(
+                    initiator=registration.creator, previous_response=initial
+                )
+            with mock.patch.object(BaseStorageAddon, '_get_file_tree', mock.Mock(return_value=file_tree)):
+                force_archive_command.archive(registration)
+        # The rewrite was skipped, so the references are left exactly as they were
+        registration.refresh_from_db()
+        for key, question in registration.registered_meta[schema._id].items():
+            assert node._id in question['extra'][0]['viewUrl']
 
 
 class TestArchiverUtils(ArchiverTestCase):
@@ -1219,6 +1334,75 @@ class TestArchiverScripts(ArchiverTestCase):
         assert failed == failures
         for pk in legacy:
             assert pk not in failed
+
+    def test_find_failed_registrations_excludes_archived_registrations(self):
+        delta = settings.ARCHIVE_TIMEOUT_TIMEDELTA + datetime.timedelta(hours=1)
+        reg = factories.RegistrationFactory()
+        archive_job = reg.archive_job
+        archive_job.datetime_initiated = timezone.now() - delta
+        archive_job.status = ARCHIVER_INITIATED
+        archive_job.sent = False
+        archive_job.save()
+        archive_job._set_target('osfstorage')
+        target = archive_job.get_target('osfstorage')
+        target.status = ARCHIVER_SUCCESS
+        target.save()
+        failed = [f._id for f in Registration.find_failed_registrations()]
+        assert reg.archive_job.status == ARCHIVER_INITIATED
+        assert reg.archive_job.archive_tree_finished()
+        assert reg._id not in failed
+        assert not reg.is_stuck_registration
+
+    def test_find_failed_registrations_excludes_registrations_whose_archive_failed(self):
+        delta = settings.ARCHIVE_TIMEOUT_TIMEDELTA + datetime.timedelta(hours=1)
+        reg = factories.RegistrationFactory()
+        archive_job = reg.archive_job
+        archive_job.datetime_initiated = timezone.now() - delta
+        archive_job.status = ARCHIVER_INITIATED
+        archive_job.sent = False
+        archive_job.save()
+        archive_job._set_target('osfstorage')
+        target = archive_job.get_target('osfstorage')
+        target.status = ARCHIVER_FAILURE
+        target.save()
+        failed = [f._id for f in Registration.find_failed_registrations()]
+        assert reg._id not in failed
+
+    def test_find_failed_registrations_includes_registrations_still_archiving(self):
+        delta = settings.ARCHIVE_TIMEOUT_TIMEDELTA + datetime.timedelta(hours=1)
+        reg = factories.RegistrationFactory()
+        archive_job = reg.archive_job
+        archive_job.datetime_initiated = timezone.now() - delta
+        archive_job.status = ARCHIVER_INITIATED
+        archive_job.sent = False
+        archive_job.save()
+        archive_job._set_target('osfstorage')
+        archive_job.update_target('osfstorage', ARCHIVER_INITIATED)
+        failed = [f._id for f in Registration.find_failed_registrations()]
+        assert reg._id in failed
+        assert reg.is_stuck_registration
+
+    def test_find_failed_registrations_includes_root_of_stuck_component(self):
+        delta = settings.ARCHIVE_TIMEOUT_TIMEDELTA + datetime.timedelta(hours=1)
+        proj = factories.NodeFactory()
+        factories.NodeFactory(parent=proj)
+        reg = factories.RegistrationFactory(project=proj)
+        rchild = reg._nodes.first()
+        root_job = reg.archive_job
+        root_job.datetime_initiated = timezone.now() - delta
+        root_job.sent = True
+        root_job.save()
+        root_job._set_target('osfstorage')
+        root_job.update_target('osfstorage', ARCHIVER_SUCCESS)
+        child_job = rchild.archive_job
+        child_job.datetime_initiated = timezone.now() - delta
+        child_job.status = ARCHIVER_INITIATED
+        child_job.sent = False
+        child_job.save()
+        child_job._set_target('osfstorage')
+        child_job.update_target('osfstorage', ARCHIVER_INITIATED)
+        failed = [f._id for f in Registration.find_failed_registrations()]
+        assert reg._id in failed
 
 
 class TestArchiverBehavior(OsfTestCase):
