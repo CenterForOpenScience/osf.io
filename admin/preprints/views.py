@@ -51,7 +51,7 @@ from osf.models.admin_log_entry import (
     REJECT_WITHDRAWAL,
     UNFLAG_SPAM,
 )
-from osf.utils.workflows import DefaultStates
+from osf.utils.workflows import DefaultStates, ReviewTriggers
 from osf.utils.permissions import API_CONTRIBUTOR_PERMISSIONS
 from website.search import search
 from website.files.utils import copy_files
@@ -844,8 +844,10 @@ class PreprintUnwithdrawView(PreprintMixin, View):
             messages.error(request, f'Preprint {preprint._id} is not withdrawn')
             return redirect(self.get_success_url())
 
-        withdraw_action = preprint.actions.filter(to_state='withdrawn').last()
-        last_action = preprint.actions.last()
+        # A spam report is logged with to_state='withdrawn' too, so state alone can't tell it from
+        # the withdrawal. Match the withdrawal by trigger
+        withdraw_action = preprint.actions.filter(trigger=ReviewTriggers.WITHDRAW.value).last()
+        last_action = preprint.actions.exclude(trigger=ReviewTriggers.REPORT_SPAM.value).last()
 
         preprint.withdrawal_justification = ''
         preprint.date_withdrawn = None

@@ -2,7 +2,7 @@ from django.utils import timezone
 
 from osf.models.notification_type import NotificationTypeEnum
 from website.reviews import signals as reviews_signals
-from website.settings import DOMAIN, OSF_SUPPORT_EMAIL, OSF_CONTACT_EMAIL
+from website.settings import DOMAIN, OSF_ADMIN_URL, OSF_SUPPORT_EMAIL, OSF_CONTACT_EMAIL
 from osf.utils.workflows import RegistrationModerationTriggers
 
 def get_email_template_context(resource):
@@ -160,3 +160,28 @@ def notify_withdraw_registration(resource, action, *args, **kwargs):
             user=contributor,
             event_context=context
         )
+
+
+def notify_report_spam(resource, user, action, *args, **kwargs):
+    is_preprint = resource.provider.type == 'osf.preprintprovider'
+    document_type = resource.provider.preprint_word if is_preprint else 'registration'
+    creator = resource.creator
+    creator_admin_app_url = f'{OSF_ADMIN_URL.rstrip("/")}/users/{creator._id}/' if OSF_ADMIN_URL else ''
+    NotificationTypeEnum.DESK_MODERATOR_SPAM_REPORT.instance.emit(
+        destination_address=OSF_SUPPORT_EMAIL,
+        event_context={
+            'document_type': document_type,
+            'moderator__id': user._id,
+            'moderator_fullname': user.fullname,
+            'moderator_absolute_url': user.absolute_url,
+            'resource__id': resource._id,
+            'resource_title': resource.title,
+            'resource_absolute_url': resource.absolute_url,
+            'resource_creator__id': creator._id,
+            'resource_creator_fullname': creator.fullname,
+            'resource_creator_absolute_url': creator.absolute_url,
+            'creator_admin_app_url': creator_admin_app_url,
+            'provider_name': resource.provider.name,
+            'comment': action.comment,
+        },
+    )
