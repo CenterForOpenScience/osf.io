@@ -209,6 +209,7 @@ class TestBuildQuery:
 
     def test_exclude_requested_deactivation(self):
         confirmed = UserFactory()
+        unconfirmed = UserFactory(date_confirmed=None, is_registered=False)
         requested_deactivation = UserFactory(requested_deactivation=True)
 
         query = build_query({
@@ -217,7 +218,12 @@ class TestBuildQuery:
                 {
                     'field': 'id',
                     'lookup': 'in',
-                    'value': f'{confirmed.id},{requested_deactivation.id}',
+                    'value': f'{confirmed.id},{requested_deactivation.id},{unconfirmed.id}',
+                },
+                {
+                    'field': 'date_confirmed',
+                    'lookup': 'isnull',
+                    'value': False,
                 },
                 {
                     'field': 'requested_deactivation',

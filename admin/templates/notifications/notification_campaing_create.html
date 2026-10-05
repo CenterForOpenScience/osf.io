@@ -167,7 +167,7 @@
                     <label>
                         <input
                             type="checkbox"
-                            id="exclude-unconfirmed"
+                            id="exclude-unconfirmed-and-deactivation-requested"
                             checked
                         >
                         Exclude unconfirmed accounts
@@ -475,13 +475,13 @@ function buildFilters() {
         filters = {"manual": serializeGroup(root)};
     }
 
-    if (document.getElementById("exclude-unconfirmed").checked) {
+    if (document.getElementById("exclude-unconfirmed-and-deactivation-requested").checked) {
         const confirmed = {
             field: "date_confirmed",
             lookup: "isnull",
             value: false,
         };
-        const requested_deactivation = {
+        const has_not_requested_deactivation = {
             field: "requested_deactivation",
             lookup: "exact",
             value: false,
@@ -489,12 +489,12 @@ function buildFilters() {
         if (filters.manual) {
             filters.manual = {
                 operator: "AND",
-                children: [filters.manual, confirmed, requested_deactivation],
+                children: [filters.manual, confirmed, has_not_requested_deactivation],
             };
         } else {
             filters.manual = {
                 operator: "AND",
-                children: [confirmed, requested_deactivation],
+                children: [confirmed, has_not_requested_deactivation],
             };
         }
     }
