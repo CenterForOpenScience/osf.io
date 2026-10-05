@@ -623,7 +623,8 @@ class UserIdentitiesDetail(JSONAPIBaseView, generics.RetrieveDestroyAPIView, Use
             user.external_identity.pop(identity_id)
         except KeyError:
             raise NotFound('Requested external identity could not be found.')
-
+        if not user.has_usable_password():
+            user.set_password(str(uuid.uuid4()))
         user.save()
 
 
