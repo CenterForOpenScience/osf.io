@@ -166,7 +166,11 @@ def notify_report_spam(resource, user, action, *args, **kwargs):
     is_preprint = resource.provider.type == 'osf.preprintprovider'
     document_type = resource.provider.preprint_word if is_preprint else 'registration'
     creator = resource.creator
-    creator_admin_app_url = f'{OSF_ADMIN_URL.rstrip("/")}/users/{creator._id}/' if OSF_ADMIN_URL else ''
+    admin_app = OSF_ADMIN_URL.rstrip('/')
+    # link straight to the account page, where support go to disable it
+    creator_admin_app_url = f'{admin_app}/users/{creator._id}/' if admin_app else ''
+    admin_app_path = 'preprints' if is_preprint else 'nodes'
+    resource_admin_app_url = f'{admin_app}/{admin_app_path}/{resource._id}/' if admin_app else ''
     NotificationTypeEnum.DESK_MODERATOR_SPAM_REPORT.instance.emit(
         destination_address=OSF_SUPPORT_EMAIL,
         event_context={
@@ -181,6 +185,7 @@ def notify_report_spam(resource, user, action, *args, **kwargs):
             'resource_creator_fullname': creator.fullname,
             'resource_creator_absolute_url': creator.absolute_url,
             'creator_admin_app_url': creator_admin_app_url,
+            'resource_admin_app_url': resource_admin_app_url,
             'provider_name': resource.provider.name,
             'comment': action.comment,
         },

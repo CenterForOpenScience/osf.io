@@ -1,6 +1,5 @@
 <%inherit file="notify_base.mako" />
 
-## escape everything, the email lookup sets no default filters and the title and
 ## submitter name come from the account being reported
 
 <%def name="content()">
@@ -18,6 +17,10 @@
       Provider: ${provider_name | h}
     <br />
       Submitted by: <a href="${resource_creator_absolute_url | h}">${resource_creator_fullname | h}</a> [${resource_creator__id | h}]
+    % if resource_admin_app_url:
+    <br />
+      Review in admin: <a href="${resource_admin_app_url | h}">${resource_admin_app_url | h}</a>
+    % endif
     % if creator_admin_app_url:
     <br />
       Disable this account: <a href="${creator_admin_app_url | h}">${creator_admin_app_url | h}</a>

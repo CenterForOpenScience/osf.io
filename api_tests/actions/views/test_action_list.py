@@ -476,8 +476,9 @@ class TestReviewActionCreateRoot:
         assert emit['kwargs']['event_context']['comment'] == 'This is spam.'
         context = emit['kwargs']['event_context']
         assert context['resource_creator__id'] == preprint.creator._id
-        expected_admin_url = f'{OSF_ADMIN_URL.rstrip("/")}/users/{preprint.creator._id}/' if OSF_ADMIN_URL else ''
-        assert context['creator_admin_app_url'] == expected_admin_url
+        admin_app = OSF_ADMIN_URL.rstrip('/')
+        assert context['creator_admin_app_url'] == (f'{admin_app}/users/{preprint.creator._id}/' if admin_app else '')
+        assert context['resource_admin_app_url'] == (f'{admin_app}/preprints/{preprint._id}/' if admin_app else '')
         # report logged, preprint untouched
         preprint.refresh_from_db()
         assert preprint.machine_state == 'pending'

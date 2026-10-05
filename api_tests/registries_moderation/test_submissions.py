@@ -25,7 +25,7 @@ from django.contrib.auth.models import Group
 
 from osf.migrations import update_provider_auth_groups
 from tests.utils import capture_notifications
-from website.settings import OSF_SUPPORT_EMAIL
+from website.settings import OSF_ADMIN_URL, OSF_SUPPORT_EMAIL
 
 
 @pytest.mark.django_db
@@ -427,6 +427,10 @@ class TestRegistriesModerationSubmissions:
         assert emit['kwargs']['event_context']['moderator__id'] == moderator._id
         assert emit['kwargs']['event_context']['resource__id'] == registration._id
         assert emit['kwargs']['event_context']['comment'] == 'Spammiest registration Ive ever seen'
+        admin_app = OSF_ADMIN_URL.rstrip('/')
+        context = emit['kwargs']['event_context']
+        assert context['resource_admin_app_url'] == (f'{admin_app}/nodes/{registration._id}/' if admin_app else '')
+        assert context['creator_admin_app_url'] == (f'{admin_app}/users/{registration.creator._id}/' if admin_app else '')
         # report logged, registration untouched
         registration.refresh_from_db()
         assert registration.moderation_state == RegistrationModerationStates.PENDING.db_name
