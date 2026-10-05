@@ -167,13 +167,13 @@
                     <label>
                         <input
                             type="checkbox"
-                            id="exclude-unconfirmed"
+                            id="exclude-unconfirmed-and-deactivation-requested"
                             checked
                         >
                         Exclude unconfirmed accounts
                     </label>
                     <p class="help-block">
-                        When enabled, users who have not confirmed their accounts
+                        When enabled, users who have not confirmed their accounts or have requested deactivation
                         are excluded from the recipient list.
                     </p>
                 </div>
@@ -475,21 +475,26 @@ function buildFilters() {
         filters = {"manual": serializeGroup(root)};
     }
 
-    if (document.getElementById("exclude-unconfirmed").checked) {
+    if (document.getElementById("exclude-unconfirmed-and-deactivation-requested").checked) {
         const confirmed = {
             field: "date_confirmed",
             lookup: "isnull",
             value: false,
         };
+        const has_not_requested_deactivation = {
+            field: "requested_deactivation",
+            lookup: "exact",
+            value: false,
+        };
         if (filters.manual) {
             filters.manual = {
                 operator: "AND",
-                children: [filters.manual, confirmed],
+                children: [filters.manual, confirmed, has_not_requested_deactivation],
             };
         } else {
             filters.manual = {
                 operator: "AND",
-                children: [confirmed],
+                children: [confirmed, has_not_requested_deactivation],
             };
         }
     }
