@@ -5,6 +5,7 @@ import pytest
 import unittest
 
 from framework.auth import cas
+from website import settings
 
 from tests.base import OsfTestCase, fake
 from tests.utils import run_celery_tasks
@@ -272,7 +273,7 @@ class TestCASTicketAuthentication(OsfTestCase):
         service_url = 'http://localhost:5000/'
         resp = cas.make_response_from_ticket(fake.md5(), service_url)
         assert resp.status_code == 302
-        assert resp.location == cas.get_logout_url(service_url)
+        assert resp.location == cas.get_logout_url(settings.DOMAIN)
         mock_authenticate.assert_not_called()
 
     @pytest.mark.enable_enqueue_task
