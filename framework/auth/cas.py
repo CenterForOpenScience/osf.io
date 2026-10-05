@@ -274,12 +274,15 @@ def make_response_from_ticket(ticket, service_url):
         user_updates = {}  # serialize updates to user to be applied async
         # user found and authenticated
         if user and action == 'authenticate':
-            if user.is_disabled:
+            # When user is disabled or is confirmed spam, they may still have active CAS sessions from previous login.
+            # It must be cleared because authenticated CAS session doesn't check user status for OSF logins.
+            if user.is_disabled or user.is_spam:
                 print_cas_log(
-                    msg=f'CAS response - refusing to authenticate disabled user: user=[{user._id}]',
-                    level=LogLevel.WARN,
+                    msg=f'CAS response - refusing to authenticate a disabled or spammed user: '
+                        f'user=[{user._id}], disabled=[{user.is_disabled}], spam=[{user.is_spam}]',
+                    level=LogLevel.ERROR,
                 )
-                # Log out of CAS and land on the home page rather than `service_url`
+                # Log out of CAS and redirect to home page, which doesn't trigger any login attempt.
                 return redirect(get_logout_url(settings.DOMAIN))
             print_cas_log(
                 msg=f'CAS response - authenticating user: user=[{user._id}], '
