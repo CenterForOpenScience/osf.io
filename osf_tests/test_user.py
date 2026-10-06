@@ -44,7 +44,9 @@ from addons.osfstorage.settings import DEFAULT_REGION_ID
 from framework.auth.core import Auth
 from osf.utils.names import impute_names_model
 from osf.utils import permissions
-from osf.exceptions import ValidationError, BlockedEmailError, UserStateError, InstitutionAffiliationStateError
+from osf.exceptions import (
+    ValidationError, BlockedEmailError, UserStateError, InstitutionAffiliationStateError, OrcidRevocationError,
+)
 from osf.features import ENABLE_GV
 
 from .utils import capture_signals
@@ -2704,7 +2706,11 @@ class TestDisconnectExternalIdentity:
         user.disconnect_external_identity('ORCID', 'fake-orcid-id')
         user.save()
 
-        mock_retry_session.assert_called_once_with(retries=settings.ORCID_OAUTH_REVOKE_MAX_RETRIES)
+        mock_retry_session.assert_called_once_with(
+            retries=settings.ORCID_OAUTH_REVOKE_MAX_RETRIES,
+            status_forcelist=(429, 500, 502, 503, 504),
+            allowed_methods=frozenset({'POST'}),
+        )
         mock_session.post.assert_called_once()
         assert mock_session.post.call_args.kwargs['data']['token'] == 'fake-orcid-token'
         assert 'ORCID' not in user.external_identity
@@ -2714,19 +2720,19 @@ class TestDisconnectExternalIdentity:
     @mock.patch('osf.models.user.sentry.log_exception')
     @mock.patch('osf.models.user.sentry.log_message')
     @mock.patch('osf.models.user.requests_retry_session')
-    def test_disconnect_orcid_removes_token_even_when_revoke_fails(
+    def test_disconnect_orcid_keeps_identity_and_token_when_revoke_fails(
             self, mock_retry_session, mock_log_message, mock_log_exception, user):
         mock_session = mock.Mock()
         mock_session.post.side_effect = requests.exceptions.ConnectionError('boom')
         mock_retry_session.return_value = mock_session
 
-        # Should not raise -- disconnect proceeds locally even if ORCiD's API is unreachable.
-        user.disconnect_external_identity('ORCID', 'fake-orcid-id')
-        user.save()
+        with pytest.raises(OrcidRevocationError):
+            user.disconnect_external_identity('ORCID', 'fake-orcid-id')
 
-        assert 'ORCID' not in user.external_identity
-        assert 'ORCID' not in user.external_identity_tokens
+        assert user.external_identity['ORCID'] == {'fake-orcid-id': 'VERIFIED'}
+        assert user.external_identity_tokens['ORCID'] == {'fake-orcid-id': {'access_token': 'fake-orcid-token'}}
         assert mock_log_message.called
+        assert mock_log_exception.called
 
     def test_disconnect_non_orcid_identity_does_not_call_orcid_api(self, user):
         with mock.patch('osf.models.user.requests_retry_session') as mock_retry_session:

@@ -50,6 +50,11 @@ class UserStateError(OSFError):
     pass
 
 
+class OrcidRevocationError(OSFError):
+    """Raised when ORCiD fails to revoke an access token, e.g. when disconnecting an ORCiD identity."""
+    pass
+
+
 class InstitutionAffiliationStateError(OSFError):
     pass
 
