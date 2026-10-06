@@ -1,6 +1,7 @@
 from unittest import mock
 
 import pytest
+import requests
 
 from osf_tests.factories import AuthUserFactory
 from api.base.settings.defaults import API_BASE
@@ -113,6 +114,26 @@ class TestUserIdentitiesDetail:
             }
         }
         assert 'ORCID' not in user.external_identity_tokens
+
+    def test_delete_orcid_fails_and_keeps_data_when_revoke_fails(self, app, user, url):
+        user.external_identity_tokens = {
+            'ORCID': {'0000-0001-9143-4653': {'access_token': 'fake-orcid-token'}},
+        }
+        user.save()
+
+        with mock.patch('osf.models.user.requests_retry_session') as mock_retry_session:
+            mock_session = mock.Mock()
+            mock_session.post.return_value = mock.Mock(status_code=401, text='invalid_client')
+            mock_session.post.return_value.raise_for_status.side_effect = requests.exceptions.HTTPError('401')
+            mock_retry_session.return_value = mock_session
+
+            res = app.delete(url, auth=user.auth, expect_errors=True)
+
+        assert res.status_code == 503
+
+        user.refresh_from_db()
+        assert user.external_identity['ORCID'] == {'0000-0001-9143-4653': 'VERIFIED'}
+        assert user.external_identity_tokens['ORCID'] == {'0000-0001-9143-4653': {'access_token': 'fake-orcid-token'}}
 
     def test_delete_non_orcid_identity_does_not_call_orcid_api(self, app, user):
         url = f'/{API_BASE}users/{user._id}/settings/identities/LOTUS/'
