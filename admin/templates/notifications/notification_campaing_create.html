@@ -167,13 +167,13 @@
                     <label>
                         <input
                             type="checkbox"
-                            id="exclude-unconfirmed-and-deactivation-requested"
+                            id="exclude-unconfirmed-and-disabled-and-deactivation-requested"
                             checked
                         >
                         Exclude unconfirmed accounts
                     </label>
                     <p class="help-block">
-                        When enabled, users who have not confirmed their accounts or have requested deactivation
+                        When enabled, users who have not confirmed their accounts or are disabled or have requested deactivation
                         are excluded from the recipient list.
                     </p>
                 </div>
@@ -475,11 +475,16 @@ function buildFilters() {
         filters = {"manual": serializeGroup(root)};
     }
 
-    if (document.getElementById("exclude-unconfirmed-and-deactivation-requested").checked) {
+    if (document.getElementById("exclude-unconfirmed-and-disabled-and-deactivation-requested").checked) {
         const confirmed = {
             field: "date_confirmed",
             lookup: "isnull",
             value: false,
+        };
+        const not_disabled = {
+            field: "date_disabled",
+            lookup: "isnull",
+            value: true,
         };
         const has_not_requested_deactivation = {
             field: "requested_deactivation",
@@ -489,12 +494,12 @@ function buildFilters() {
         if (filters.manual) {
             filters.manual = {
                 operator: "AND",
-                children: [filters.manual, confirmed, has_not_requested_deactivation],
+                children: [filters.manual, confirmed, not_disabled, has_not_requested_deactivation],
             };
         } else {
             filters.manual = {
                 operator: "AND",
-                children: [confirmed, has_not_requested_deactivation],
+                children: [confirmed, not_disabled, has_not_requested_deactivation],
             };
         }
     }
