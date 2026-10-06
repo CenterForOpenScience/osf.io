@@ -486,15 +486,14 @@ class TestUserSignals:
         mock_publish_deactivated_user.assert_called_once_with(user)
 
     @mock.patch('osf.external.messages.celery_publishers.publish_merged_user')
-    def test_user_account_merged_signal(self, mock_publish_merged_user, user, old_user, django_capture_on_commit_callbacks):
+    def test_user_account_merged_signal(self, mock_publish_merged_user, user, old_user):
         # Connect a mock receiver to the signal for testing
         @receiver(user_account_merged)
         def mock_receiver(user, **kwargs):
             return mock_publish_merged_user(user)
 
         # Trigger the signal
-        with django_capture_on_commit_callbacks(execute=True):
-            user.merge_user(old_user)
+        user.merge_user(old_user)
 
         # Verify that the mock receiver was called
         mock_publish_merged_user.assert_called_once_with(old_user)
@@ -550,11 +549,10 @@ class TestUserSignals:
             mock_publish_user_status_change,
             user,
             old_user,
-            account_status_changes_exchange,
-            django_capture_on_commit_callbacks,
+            account_status_changes_exchange
     ):
         with mock.patch.object(settings, 'USE_CELERY', True):
-            with override_flag(features.ENABLE_GV, active=True), django_capture_on_commit_callbacks(execute=True):
+            with override_flag(features.ENABLE_GV, active=True):
                 user.merge_user(old_user)
 
         mock_publish_user_status_change().__enter__().publish.assert_called_once_with(
