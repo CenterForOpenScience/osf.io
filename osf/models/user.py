@@ -45,6 +45,7 @@ from osf.utils.requests import get_current_request, requests_retry_session
 from osf.exceptions import (
     reraise_django_validation_errors,
     UserStateError,
+    OrcidRevocationError,
     InvalidTagError,
     TagNotFoundError
 )
@@ -2314,29 +2315,33 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
                 self.external_identity.pop(provider, None)
 
     def _revoke_and_forget_orcid_token(self, orcid_id):
-        remaining_tokens = self.external_identity_tokens.get('ORCID', {})
-        token_entry = remaining_tokens.pop(orcid_id, None)
-        if not remaining_tokens:
+        tokens = self.external_identity_tokens.get('ORCID', {})
+        token_entry = tokens.get(orcid_id)
+        orcid_token = token_entry and (token_entry.get('access_token') or token_entry.get('refresh_token'))
+
+        if orcid_token:
+            logger.info(f'[ORCiD disconnect] Revoking ORCiD Access: user={self._id}, orcid_id={orcid_id}')
+            try:
+                self._send_orcid_revoke_request(
+                    orcid_id, orcid_token, context='ORCiD disconnect',
+                    session=requests_retry_session(
+                        retries=website_settings.ORCID_OAUTH_REVOKE_MAX_RETRIES,
+                        status_forcelist=(429, 500, 502, 503, 504),
+                        allowed_methods=frozenset({'POST'}),  # revoking an already revoked token is a no-op
+                    ),
+                )
+            except requests.exceptions.RequestException as e:
+                msg = f'[ORCiD disconnect] ORCiD Revocation Failed: user={self._id}, orcid_id={orcid_id}, error={e}'
+                logger.error(msg)
+                sentry.log_message(msg, level=logging.ERROR)
+                sentry.log_exception(e)
+                # Keep the token and identity so the user can retry; dropping them would make revocation impossible.
+                raise OrcidRevocationError(f'Fail to revoke ORCiD access: {e}')
+
+        # Only forget the token once revocation succeeded (or there was nothing to revoke).
+        tokens.pop(orcid_id, None)
+        if not tokens:
             self.external_identity_tokens.pop('ORCID', None)
-        if not token_entry:
-            return
-
-        orcid_token = token_entry.get('access_token') or token_entry.get('refresh_token')
-        if not orcid_token:
-            return
-
-        logger.info(f'[ORCiD disconnect] Revoking ORCiD Access: user={self._id}, orcid_id={orcid_id}')
-        try:
-            self._send_orcid_revoke_request(
-                orcid_id, orcid_token, context='ORCiD disconnect',
-                session=requests_retry_session(retries=website_settings.ORCID_OAUTH_REVOKE_MAX_RETRIES),
-            )
-        except requests.exceptions.RequestException as e:
-            # Best-effort: an unreachable ORCiD API shouldn't block a user from disconnecting locally.
-            msg = f'[ORCiD disconnect] ORCiD Revocation Failed: user={self._id}, orcid_id={orcid_id}, error={e}'
-            logger.error(msg)
-            sentry.log_message(msg, level=logging.ERROR)
-            sentry.log_exception(e)
 
     def _clear_identifying_information(self):
         # This doesn't remove identifying info, but ensures other users can't see the deleted user's profile etc.

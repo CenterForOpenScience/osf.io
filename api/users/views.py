@@ -13,7 +13,8 @@ from rest_framework.throttling import UserRateThrottle
 from api.addons.views import AddonSettingsMixin
 from api.base import permissions as base_permissions
 from api.users.permissions import UserMessagePermissions
-from api.base.exceptions import Conflict, UserGone
+from api.base.exceptions import Conflict, ServiceUnavailableError, UserGone
+from osf.exceptions import OrcidRevocationError
 from api.base.filters import ListFilterMixin, PreprintFilterMixin
 from api.base.parsers import (
     JSONAPIRelationshipParser,
@@ -626,8 +627,11 @@ class UserIdentitiesDetail(JSONAPIBaseView, generics.RetrieveDestroyAPIView, Use
         if not user.has_usable_password():
             user.set_password(str(uuid.uuid4()))
 
-        for identity_id in identity_ids:
-            user.disconnect_external_identity(provider, identity_id)
+        try:
+            for identity_id in identity_ids:
+                user.disconnect_external_identity(provider, identity_id)
+        except OrcidRevocationError:
+            raise ServiceUnavailableError(detail='Unable to revoke ORCiD access at this time. Please try again later.')
 
         user.save()
 
