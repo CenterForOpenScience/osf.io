@@ -861,8 +861,9 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
             # if both accounts are contributor of the same project
             if node.is_contributor(self) and node.is_contributor(user):
                 self_perms = Contributor(node=node, user=self).permission
-                permissions = API_CONTRIBUTOR_PERMISSIONS[max(API_CONTRIBUTOR_PERMISSIONS.index(user_perms), API_CONTRIBUTOR_PERMISSIONS.index(self_perms))]
-                node.set_permissions(user=self, permissions=permissions)
+                permissions = self._highest_permission(node, user, user_perms, self_perms)
+                if permissions:
+                    node.set_permissions(user=self, permissions=permissions)
 
                 visible1 = self._id in node.visible_contributor_ids
                 visible2 = user._id in node.visible_contributor_ids
@@ -872,9 +873,12 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
                 node.contributor_set.filter(user=user).delete()
             else:
                 node.contributor_set.filter(user=user).update(user=self)
-                node.add_permission(self, user_perms)
+                self._warn_if_no_permission(node, user, user_perms)
+                if user_perms:
+                    node.add_permission(self, user_perms)
 
-            node.remove_permission(user, user_perms)
+            if user_perms:
+                node.remove_permission(user, user_perms)
             node.save()
 
         # Skip bookmark collections
@@ -924,6 +928,22 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
             except Exception as e:
                 logger.exception(f'Failed to SHARE reindex preprint {preprint._id} during user merge: {e}')
 
+    def _warn_if_no_permission(self, resource, user, permission):
+        """Contributor rows without a permission group are inconsistent data. Keep them visible without failing the merge."""
+        if permission is None:
+            message = f'Merging user {user._id} into {self._id}: contributor of {resource._id} has no permission group'
+            logger.warning(message)
+            sentry.log_message(message)
+
+    def _highest_permission(self, resource, user, *permissions):
+        """Return the highest of `permissions`, ignoring missing (`None`) ones. `None` if none are set."""
+        if any(permission is None for permission in permissions):
+            self._warn_if_no_permission(resource, user, None)
+        known = [permission for permission in permissions if permission is not None]
+        if not known:
+            return None
+        return API_CONTRIBUTOR_PERMISSIONS[max(API_CONTRIBUTOR_PERMISSIONS.index(permission) for permission in known)]
+
     def _merge_users_preprints(self, user):
         """
         Preprints use guardian.  The PreprintContributor table stores order and bibliographic information.
@@ -942,9 +962,10 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
                 self_contributor = PreprintContributor.objects.get(preprint=preprint, user=self)
                 self_perms = self_contributor.permission
 
-                max_perms_index = max(API_CONTRIBUTOR_PERMISSIONS.index(self_perms), API_CONTRIBUTOR_PERMISSIONS.index(user_perms))
                 # Add the highest of `self` perms or `user` perms to `self`
-                preprint.set_permissions(user=self, permissions=API_CONTRIBUTOR_PERMISSIONS[max_perms_index])
+                highest_perms = self._highest_permission(preprint, user, self_perms, user_perms)
+                if highest_perms:
+                    preprint.set_permissions(user=self, permissions=highest_perms)
 
                 if not self_contributor.visible and user_contributor.visible:
                     # if `self` is not visible, but `user` is visible, make `self` visible.
@@ -956,12 +977,15 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
                 # `self` is not a contributor, but `user` is.  Transfer `user` permissions and
                 # contributor information to `self`.  Remove permissions from `user`.
                 preprint.contributor_set.filter(user=user).update(user=self)
-                preprint.add_permission(self, user_perms)
+                self._warn_if_no_permission(preprint, user, user_perms)
+                if user_perms:
+                    preprint.add_permission(self, user_perms)
 
             if preprint.creator == user:
                 preprint.creator = self
 
-            preprint.remove_permission(user, user_perms)
+            if user_perms:
+                preprint.remove_permission(user, user_perms)
             preprint.save()
 
     @property
@@ -994,9 +1018,10 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
                 self_contributor = DraftRegistrationContributor.objects.get(draft_registration=draft_reg, user=self)
                 self_perms = self_contributor.permission
 
-                max_perms_index = max(API_CONTRIBUTOR_PERMISSIONS.index(self_perms), API_CONTRIBUTOR_PERMISSIONS.index(user_perms))
                 # Add the highest of `self` perms or `user` perms to `self`
-                draft_reg.set_permissions(user=self, permissions=API_CONTRIBUTOR_PERMISSIONS[max_perms_index])
+                highest_perms = self._highest_permission(draft_reg, user, self_perms, user_perms)
+                if highest_perms:
+                    draft_reg.set_permissions(user=self, permissions=highest_perms)
 
                 if not self_contributor.visible and user_contributor.visible:
                     # if `self` is not visible, but `user` is visible, make `self` visible.
@@ -1008,12 +1033,15 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
                 # `self` is not a contributor, but `user` is.  Transfer `user` permissions and
                 # contributor information to `self`.  Remove permissions from `user`.
                 draft_reg.contributor_set.filter(user=user).update(user=self)
-                draft_reg.add_permission(self, user_perms)
+                self._warn_if_no_permission(draft_reg, user, user_perms)
+                if user_perms:
+                    draft_reg.add_permission(self, user_perms)
 
             if draft_reg.initiator == user:
                 draft_reg.initiator = self
 
-            draft_reg.remove_permission(user, user_perms)
+            if user_perms:
+                draft_reg.remove_permission(user, user_perms)
             draft_reg.save()
 
     @property
