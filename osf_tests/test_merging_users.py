@@ -16,10 +16,14 @@ from osf_tests.factories import (
     ProjectFactory,
     UnregUserFactory,
     ExternalAccountFactory,
+    PreprintFactory,
+    DraftRegistrationFactory,
 )
 from importlib import import_module
 from django.conf import settings as django_conf_settings
 from osf.models import UserSessionMap, NotificationTypeEnum
+from osf.utils import permissions
+from osf.utils.permissions import READ, WRITE
 from tests.utils import run_celery_tasks, capture_notifications
 from waffle.testutils import override_flag
 from osf.features import ENABLE_GV
@@ -328,3 +332,73 @@ class TestUserMerging(OsfTestCase):
         assert len(notifications['emits']) == 1
         assert notifications['emits'][0]['type'] == NotificationTypeEnum.USER_CONFIRM_MERGE
         assert notifications['emits'][0]['kwargs']['destination_address'] == target_email
+
+    def _contributor_resources(self):
+        other_user = UserFactory()
+        project = ProjectFactory(creator=other_user)
+        preprint = PreprintFactory(creator=other_user)
+        draft_registration = DraftRegistrationFactory(initiator=other_user)
+        return other_user, [project, preprint, draft_registration]
+
+    def test_merge_with_contributor_missing_permission_group(self):
+        other_user, resources = self._contributor_resources()
+        for resource in resources:
+            resource.add_contributor(self.user, permissions=READ, save=True)
+            resource.remove_permission(self.user, READ)
+            assert resource.contributor_set.get(user=self.user).permission is None
+
+        self.user.merge_user(other_user)
+
+        other_user.reload()
+        assert other_user.merged_by == self.user
+        for resource in resources:
+            assert resource.is_contributor(self.user)
+            assert not resource.is_contributor(other_user)
+            assert resource.contributor_set.get(user=self.user).permission == permissions.ADMIN
+
+    def test_merge_with_merged_user_contributor_missing_permission_group(self):
+        other_user, resources = self._contributor_resources()
+        for resource in resources:
+            resource.add_contributor(self.user, permissions=WRITE, save=True)
+            resource.remove_permission(other_user, permissions.ADMIN)
+            assert resource.contributor_set.get(user=other_user).permission is None
+
+        self.user.merge_user(other_user)
+
+        other_user.reload()
+        assert other_user.merged_by == self.user
+        for resource in resources:
+            assert resource.is_contributor(self.user)
+            assert not resource.is_contributor(other_user)
+            assert resource.contributor_set.get(user=self.user).permission == WRITE
+
+    @mock.patch('framework.sentry.log_message')
+    def test_merge_when_neither_user_has_permission_group(self, mock_log_message):
+        other_user, resources = self._contributor_resources()
+        for resource in resources:
+            resource.add_contributor(self.user, permissions=READ, save=True)
+            resource.remove_permission(self.user, READ)
+            resource.remove_permission(other_user, permissions.ADMIN)
+
+        self.user.merge_user(other_user)
+
+        other_user.reload()
+        assert other_user.merged_by == self.user
+        for resource in resources:
+            assert resource.is_contributor(self.user)
+            assert not resource.is_contributor(other_user)
+            assert resource.contributor_set.get(user=self.user).permission is None
+        assert mock_log_message.called
+
+    def test_merge_user_only_contributor_with_missing_permission_group(self):
+        other_user, resources = self._contributor_resources()
+        for resource in resources:
+            resource.remove_permission(other_user, permissions.ADMIN)
+
+        self.user.merge_user(other_user)
+
+        other_user.reload()
+        assert other_user.merged_by == self.user
+        for resource in resources:
+            assert resource.is_contributor(self.user)
+            assert not resource.is_contributor(other_user)
