@@ -4,7 +4,7 @@ from django.core.management.base import BaseCommand
 
 from addons.osfstorage import settings as osfstorage_settings
 from addons.osfstorage.models import Region
-from osf.models import Preprint
+from osf.models import FileVersion, Preprint
 from osf.models.admin_log_entry import AdminLogEntry, PREPRINT_RECOVERED, PREPRINT_RESTORED
 
 logger = logging.getLogger(__name__)
@@ -21,10 +21,14 @@ def find_recovered_preprints(guids=None):
         object_ids = list(
             AdminLogEntry.objects.filter(
                 action_flag__in=[PREPRINT_RECOVERED, PREPRINT_RESTORED],
-            ).values_list('object_id', flat=True).distinct()
+            ).order_by().values_list('object_id', flat=True).distinct()  # order_by() clears the default ordering that defeats distinct()
         )
     for object_id in object_ids:
-        preprint = Preprint.load(object_id)
+        try:
+            preprint = Preprint.load(object_id)
+        except ValueError:
+            logger.warning(f'{object_id}: not a valid preprint guid, skipping')
+            continue
         if preprint is None:
             logger.warning(f'{object_id}: preprint not found, skipping')
             continue
@@ -66,7 +70,9 @@ def repair_preprint_regions(preprints, dry_run=False, client=None):
             continue
         stats['checked'] += 1
 
+        latest_region_id = None  # region the newest version has, or will have once repaired (also in a dry run)
         for version in primary_file.versions.select_related('region').order_by('created'):
+            latest_region_id = version.region_id
             if version.purged:
                 logger.warning(f'{preprint._id}: version {version.identifier} (FV {version.id}) is purged, skipping')
                 stats['unresolved'] += 1
@@ -76,6 +82,7 @@ def repair_preprint_regions(preprints, dry_run=False, client=None):
                 logger.warning(f'{preprint._id}: version {version.identifier} (FV {version.id}) unresolved: {reason}')
                 stats['unresolved'] += 1
                 continue
+            latest_region_id = true_region.id
             if version.region_id == true_region.id:
                 continue
             logger.info(
@@ -84,15 +91,15 @@ def repair_preprint_regions(preprints, dry_run=False, client=None):
             )
             stats['versions_fixed'] += 1
             if not dry_run:
-                version.region = true_region
-                version.save()
+                # Queryset update on purpose: `FileVersion.save()` runs full_clean(), and the `location` written by
+                # Waterbutler in prod (`bucket`, no `folder`) fails `validate_location`. Only the region changes here.
+                FileVersion.objects.filter(pk=version.pk).update(region=true_region)
 
-        latest = primary_file.versions.select_related('region').order_by('-created').first()
-        if latest and latest.region_id and latest.region_id != preprint.region_id:
-            logger.info(f'{preprint._id}: preprint region {preprint.region_id} -> {latest.region_id}')
+        if latest_region_id and latest_region_id != preprint.region_id:
+            logger.info(f'{preprint._id}: preprint region {preprint.region_id} -> {latest_region_id}')
             stats['preprints_fixed'] += 1
             if not dry_run:
-                preprint.set_storage_region(latest.region_id)
+                preprint.set_storage_region(latest_region_id)
 
     return stats
 

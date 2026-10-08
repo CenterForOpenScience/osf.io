@@ -3,6 +3,7 @@ from unittest import mock
 
 from addons.osfstorage import settings as osfstorage_settings
 from osf.management.commands.repair_recovered_preprint_regions import repair_preprint_regions
+from osf.models import FileVersion
 from osf_tests.factories import PreprintFactory, RegionFactory
 
 
@@ -28,12 +29,16 @@ class TestRepairRecoveredPreprintRegions:
 
     def _break(self, preprint, blob_bucket, wrong_region):
         version = preprint.primary_file.versions.order_by('-created').first()
-        version.location = {
-            'service': 'cloud', osfstorage_settings.WATERBUTLER_RESOURCE: blob_bucket, 'object': 'a' * 64,
+        # shape of a prod location: written by Waterbutler with `bucket` and no `folder`, so it fails
+        # `validate_location` and can't go through FileVersion.save()
+        location = {
+            'host': 'wb-pod', 'bucket': blob_bucket, 'object': 'a' * 64, 'address': None,
+            'service': 'googlecloud', 'version': '0.0.1', 'provider': 'googlecloud',
         }
-        version.region = wrong_region
-        version.save()
+        assert osfstorage_settings.WATERBUTLER_RESOURCE not in location
+        FileVersion.objects.filter(pk=version.pk).update(location=location, region=wrong_region)
         type(preprint).objects.filter(id=preprint.id).update(region=wrong_region)
+        version.refresh_from_db()
         preprint.reload()
         return version
 
