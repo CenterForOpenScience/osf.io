@@ -518,6 +518,10 @@ class Preprint(DirtyFieldsMixin, VersionedGuidMixin, IdentifierMixin, Reviewable
         guid_version.save()
         preprint.save(guid_ready=True, first_save=True, set_creator_as_contributor=False)
 
+        # The new version's file is copied from the previous version, so keep the same storage region
+        # rather than the acting user's default (the blob does not move between regions on copy).
+        preprint.set_storage_region(latest_version.region_id)
+
         # Add contributors
         for contributor in latest_version.contributor_set.all():
             try:
@@ -1073,6 +1077,19 @@ class Preprint(DirtyFieldsMixin, VersionedGuidMixin, IdentifierMixin, Reviewable
         user_settings = self.creator.get_addon('osfstorage')
         self.region_id = user_settings.default_region_id
         self.save()
+
+    def set_storage_region(self, region_id):
+        """Point this preprint at the storage region that actually holds its files.
+
+        Waterbutler takes the bucket from the file version's region, and files copied from another
+        preprint keep their blobs in the source region, so recreated versions must share that region
+        instead of the creating user's default. Uses a queryset update because `save()` refuses a
+        non-initial version that has no primary file yet.
+        """
+        if not region_id or region_id == self.region_id:
+            return
+        self.region_id = region_id
+        Preprint.objects.filter(pk=self.pk).update(region_id=region_id)
 
     def _add_creator_as_contributor(self):
         self.add_contributor(self.creator, permissions=ADMIN, visible=True, log=False, save=True)

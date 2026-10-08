@@ -94,17 +94,25 @@ def requests_retry_session(
     backoff_factor=0.3,
     status_forcelist=(500, 502, 504),
     session=None,
+    allowed_methods=None,
 ):
     """
     https://www.peterbe.com/plog/best-practice-with-retries-with-requests
+
+    Note: urllib3 only retries idempotent methods on read errors and status codes by default (POST is excluded).
+    Pass ``allowed_methods`` to opt in for requests that are safe to repeat.
     """
     session = session or requests.Session()
+    retry_kwargs = {}
+    if allowed_methods is not None:
+        retry_kwargs['allowed_methods'] = allowed_methods
     retry = Retry(
         total=retries,
         read=retries,
         connect=retries,
         backoff_factor=backoff_factor,
         status_forcelist=status_forcelist,
+        **retry_kwargs,
     )
     adapter = HTTPAdapter(max_retries=retry)
     session.mount('http://', adapter)

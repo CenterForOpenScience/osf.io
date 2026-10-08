@@ -13,7 +13,8 @@ from rest_framework.throttling import UserRateThrottle
 from api.addons.views import AddonSettingsMixin
 from api.base import permissions as base_permissions
 from api.users.permissions import UserMessagePermissions
-from api.base.exceptions import Conflict, UserGone
+from api.base.exceptions import Conflict, ServiceUnavailableError, UserGone
+from osf.exceptions import OrcidRevocationError
 from api.base.filters import ListFilterMixin, PreprintFilterMixin
 from api.base.parsers import (
     JSONAPIRelationshipParser,
@@ -618,13 +619,20 @@ class UserIdentitiesDetail(JSONAPIBaseView, generics.RetrieveDestroyAPIView, Use
 
     def perform_destroy(self, instance):
         user = self.get_user()
-        identity_id = self.kwargs['identity_id']
+        provider = self.kwargs['identity_id']
         try:
-            user.external_identity.pop(identity_id)
+            identity_ids = list(user.external_identity[provider].keys())
         except KeyError:
             raise NotFound('Requested external identity could not be found.')
         if not user.has_usable_password():
             user.set_password(str(uuid.uuid4()))
+
+        try:
+            for identity_id in identity_ids:
+                user.disconnect_external_identity(provider, identity_id)
+        except OrcidRevocationError:
+            raise ServiceUnavailableError(detail='Unable to revoke ORCiD access at this time. Please try again later.')
+
         user.save()
 
 
