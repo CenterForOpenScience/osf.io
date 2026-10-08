@@ -355,6 +355,7 @@ class TestModeratedFlows():
 
         registration.refresh_from_db()
         assert registration.moderation_state == end_state.db_name
+        assert not registration.is_deleted
 
     @pytest.mark.parametrize('sanction_object', [registration_approval, embargo, retraction])
     def test_admin_cannot_give_moderator_approval(self, sanction_object, provider):
