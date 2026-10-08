@@ -2633,7 +2633,7 @@ class ShareIndexMixin(models.Model):
         if isinstance(self, OsfStorageFile):
             self.save(update_fields=['has_been_indexed', 'date_last_indexed'], skip_search=True)
         else:
-            self.save(update_fields=['has_been_indexed'])
+            self.save(update_fields=['has_been_indexed', 'date_last_indexed'])
 
     class Meta:
         abstract = True

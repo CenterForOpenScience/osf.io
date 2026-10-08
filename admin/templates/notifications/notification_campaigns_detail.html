@@ -299,9 +299,18 @@
                 </table>
             {% endif %}
 
+            {% if metadata.filters.exclude_non_contributors %}
+                <table class="table table-bordered">
+                    <tr>
+                        <th style="width:250px;">Exclude non-contributors</th>
+                        <td>Only contributors on at least one project or component</td>
+                    </tr>
+                </table>
+            {% endif %}
+
             {% if metadata.filters.manual %}
                 {% include "notifications/campaign_filter_group.html" with group=metadata.filters.manual is_root=True %}
-            {% elif not "predefined" in metadata.filters %}
+            {% elif not "predefined" in metadata.filters and not metadata.filters.exclude_non_contributors %}
                 <p class="text-muted">No filters configured.</p>
             {% endif %}
 
