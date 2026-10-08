@@ -2,8 +2,14 @@
 
 We follow the CalVer (https://calver.org/) versioning scheme: YY.MINOR.MICRO.
 
+26.25.0 (2026-10-08)
+====================
+
+- PB&S Release: PBS-26-19
+
 26.24.0 (2026-10-01)
 ===================
+
 - Support for angular-ssr metrics
 
 26.23.0 (2026-09-23)
