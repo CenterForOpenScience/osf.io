@@ -240,11 +240,11 @@ class DraftMixin:
         self.check_branched_from(draft)
 
         if self.request.method not in drf_permissions.SAFE_METHODS:
-            if draft.registered_node and not draft.registered_node.is_deleted:
+            if draft.has_active_registration:
                 raise PermissionDenied('This draft has already been registered and cannot be modified.')
 
         else:
-            if draft.registered_node and not draft.registered_node.is_deleted:
+            if draft.has_active_registration:
                 redirect_url = draft.registered_node.absolute_api_v2_url
                 self.headers['location'] = redirect_url
                 raise PermanentlyMovedError(detail='Draft has already been registered')

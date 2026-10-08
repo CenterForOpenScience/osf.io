@@ -1,7 +1,9 @@
 import pytest
 import datetime
+from unittest import mock
 
 from api.base.settings.defaults import API_BASE
+from framework.auth import Auth
 
 from api.providers.workflows import Workflows
 from osf.utils.workflows import NodeRequestTypes, RegistrationModerationTriggers, RegistrationModerationStates
@@ -14,7 +16,8 @@ from osf_tests.factories import (
     NodeRequestFactory,
     EmbargoFactory,
     RetractionFactory,
-    ProjectFactory
+    ProjectFactory,
+    SubjectFactory,
 )
 
 
@@ -351,6 +354,58 @@ class TestRegistriesModerationSubmissions:
         assert resp.json['data']['attributes']['trigger'] == RegistrationModerationTriggers.REJECT_SUBMISSION.db_name
         registration.refresh_from_db()
         assert registration.moderation_state == RegistrationModerationStates.REJECTED.db_name
+        assert not registration.is_deleted
+
+    def test_moderator_can_view_rejected_registration(self, app, registration, moderator, moderator_wrong_provider, registration_actions_url, actions_payload_base):
+        registration.require_approval(user=registration.creator)
+        with capture_notifications():
+            registration.registration_approval.accept()
+
+        actions_payload_base['data']['attributes']['trigger'] = RegistrationModerationTriggers.REJECT_SUBMISSION.db_name
+        actions_payload_base['data']['relationships']['target']['data']['id'] = registration._id
+        with capture_notifications():
+            resp = app.post_json_api(registration_actions_url, actions_payload_base, auth=moderator.auth)
+        assert resp.status_code == 201
+
+        registration_url = f'/{API_BASE}registrations/{registration._id}/'
+        assert app.get(registration_url, auth=moderator.auth).status_code == 200
+        resp = app.get(f'{registration_url}schema_responses/', auth=moderator.auth)
+        assert [entry['id'] for entry in resp.json['data']] == [registration.schema_responses.last()._id]
+
+        # Rejected registrations stay private for everyone else
+        assert app.get(registration_url, auth=moderator_wrong_provider.auth, expect_errors=True).status_code == 403
+        assert app.get(registration_url, auth=AuthUserFactory().auth, expect_errors=True).status_code == 403
+        assert app.get(registration_url, expect_errors=True).status_code == 401
+
+    def test_rejected_submission_draft_is_returned_for_resubmission(self, app, registration, reg_creator, moderator, registration_actions_url, actions_payload_base):
+        registration.require_approval(user=registration.creator)
+        with capture_notifications():
+            registration.registration_approval.accept()
+
+        actions_payload_base['data']['attributes']['trigger'] = RegistrationModerationTriggers.REJECT_SUBMISSION.db_name
+        actions_payload_base['data']['relationships']['target']['data']['id'] = registration._id
+        with capture_notifications():
+            resp = app.post_json_api(registration_actions_url, actions_payload_base, auth=moderator.auth)
+        assert resp.status_code == 201
+
+        # The draft is back in the author's drafts and can be edited
+        draft = registration.draft_registration.get()
+        assert draft in reg_creator.draft_registrations_active
+        draft_url = f'/{API_BASE}draft_registrations/{draft._id}/'
+        assert app.get(draft_url, auth=reg_creator.auth).status_code == 200
+        payload = {'data': {'type': 'draft_registrations', 'id': draft._id, 'attributes': {'title': 'Fixed title'}}}
+        assert app.patch_json_api(draft_url, payload, auth=reg_creator.auth).status_code == 200
+
+        # Resubmitting creates a new registration, the rejected one stays as it is
+        draft.subjects.add(SubjectFactory())
+        with mock.patch('framework.celery_tasks.handlers.enqueue_task'):
+            resubmitted = draft.register(Auth(reg_creator), save=True)
+        draft.refresh_from_db()
+        registration.refresh_from_db()
+        assert draft.registered_node == resubmitted
+        assert draft not in reg_creator.draft_registrations_active
+        assert registration.moderation_state == RegistrationModerationStates.REJECTED.db_name
+        assert not registration.is_deleted
 
     def test_registries_moderation_post_embargo(self, app, embargo_registration, moderator, provider, embargo_registration_actions_url, actions_payload_base, reg_creator):
         assert embargo_registration.moderation_state == RegistrationModerationStates.INITIAL.db_name
@@ -387,6 +442,7 @@ class TestRegistriesModerationSubmissions:
         assert resp.json['data']['attributes']['trigger'] == RegistrationModerationTriggers.REJECT_SUBMISSION.db_name
         embargo_registration.refresh_from_db()
         assert embargo_registration.moderation_state == RegistrationModerationStates.REJECTED.db_name
+        assert not embargo_registration.is_deleted
 
     @pytest.mark.usefixtures('mock_gravy_valet_get_verified_links')
     def test_registries_moderation_post_withdraw_accept(self, app, retract_registration, moderator, retract_registration_actions_url, actions_payload_base, provider):
@@ -627,6 +683,7 @@ class TestRegistriesModerationSubmissions:
         assert resp.json['data']['attributes']['trigger'] == RegistrationModerationTriggers.REJECT_SUBMISSION.db_name
         registration.refresh_from_db()
         assert registration.moderation_state == RegistrationModerationStates.REJECTED.db_name
+        assert not registration.is_deleted
 
         # ham the project creator
         user.confirm_ham(save=True)

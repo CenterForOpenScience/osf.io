@@ -6,6 +6,7 @@ from framework.exceptions import PermissionsError
 from osf.exceptions import UserNotAffiliatedError, DraftRegistrationStateError, NodeStateError
 from osf.models import RegistrationSchema, DraftRegistration, DraftRegistrationContributor, NodeLicense, Node, NodeLog
 from osf.utils.permissions import ADMIN, READ, WRITE
+from osf.utils.workflows import RegistrationModerationStates
 from osf_tests.test_node import TestNodeEditableFieldsMixin, TestTagging, TestNodeSubjects
 from osf_tests.test_node_license import TestNodeLicenses
 from django.utils import timezone
@@ -191,6 +192,36 @@ class TestDraftRegistrations:
         assert draft in project.draft_registrations_active.all()
         assert draft2 in project.draft_registrations_active.all()
         assert finished_draft not in project.draft_registrations_active.all()
+
+    def test_draft_registrations_includes_drafts_of_moderator_rejected_registrations(self):
+        project = factories.ProjectFactory()
+        rejected_registration = factories.RegistrationFactory(project=project)
+        rejected_registration.moderation_state = RegistrationModerationStates.REJECTED.db_name
+        rejected_registration.save()
+
+        draft = factories.DraftRegistrationFactory(branched_from=project, user=project.creator)
+        draft.registered_node = rejected_registration
+        draft.save()
+
+        assert draft in project.draft_registrations_active.all()
+        assert draft in project.creator.draft_registrations_active.all()
+
+    def test_has_active_registration(self):
+        project = factories.ProjectFactory()
+        draft = factories.DraftRegistrationFactory(branched_from=project)
+        assert not draft.has_active_registration
+
+        registration = factories.RegistrationFactory(project=project)
+        draft.registered_node = registration
+        assert draft.has_active_registration
+
+        registration.moderation_state = RegistrationModerationStates.REJECTED.db_name
+        assert not draft.has_active_registration
+
+        registration.moderation_state = RegistrationModerationStates.ACCEPTED.db_name
+        registration.is_deleted = True
+        registration.deleted = timezone.now()
+        assert not draft.has_active_registration
 
     def test_draft_registration_url(self):
         project = factories.ProjectFactory()
