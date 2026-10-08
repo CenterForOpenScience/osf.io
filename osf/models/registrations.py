@@ -1162,6 +1162,25 @@ class DraftRegistration(ObjectIDMixin, RegistrationResponseMixin, DirtyFieldsMix
         return isinstance(self.branched_from, Node)
 
     @property
+    def has_active_registration(self):
+        """
+        Check whether this draft has an active registration, so it can no longer be edited.
+        A registration that was deleted or rejected by a moderator is not active: its draft is
+        returned to the contributors for resubmission.
+        """
+        registration = self.registered_node
+        if registration is None:
+            # Not registered yet
+            return False
+        if registration.is_deleted:
+            # Rejected by a contributor or failed to archive
+            return False
+        if registration.moderation_state == RegistrationModerationStates.REJECTED.db_name:
+            # Rejected by a moderator
+            return False
+        return True
+
+    @property
     def url(self):
         return self.URL_TEMPLATE.format(
             draft_id=self._id

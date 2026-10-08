@@ -97,8 +97,7 @@ def validate_registration_choice(registration_choice):
         )
 
 def check_draft_state(draft):
-    registered_and_deleted = draft.registered_node and draft.registered_node.is_deleted
-    if draft.registered_node and not registered_and_deleted:
+    if draft.has_active_registration:
         raise HTTPError(http_status.HTTP_403_FORBIDDEN, data={
             'message_short': 'This draft has already been registered',
             'message_long': 'This draft has already been registered and cannot be modified.'
@@ -192,7 +191,7 @@ def delete_draft_registration(auth, node, draft, *args, **kwargs):
     :return: None
     :rtype: NoneType
     """
-    if draft.registered_node and not draft.registered_node.is_deleted:
+    if draft.has_active_registration:
         raise HTTPError(
             http_status.HTTP_403_FORBIDDEN,
             data={
