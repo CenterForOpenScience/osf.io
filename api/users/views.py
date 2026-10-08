@@ -1,3 +1,4 @@
+import uuid
 import pytz
 from urllib.parse import urlencode
 
@@ -69,6 +70,7 @@ from api.users.serializers import (
     ExternalLoginSerialiser,
     ConfirmEmailTokenSerializer,
     SanctionTokenSerializer,
+    UserResendConfirmationSerializer,
 )
 from django.contrib.auth.models import AnonymousUser
 from django.http import JsonResponse
@@ -621,7 +623,8 @@ class UserIdentitiesDetail(JSONAPIBaseView, generics.RetrieveDestroyAPIView, Use
             user.external_identity.pop(identity_id)
         except KeyError:
             raise NotFound('Requested external identity could not be found.')
-
+        if not user.has_usable_password():
+            user.set_password(str(uuid.uuid4()))
         user.save()
 
 
@@ -733,6 +736,8 @@ class ExternalLogin(JSONAPIBaseView, generics.CreateAPIView):
         session = request.session
         external_id_provider = session.get('auth_user_external_id_provider', None)
         external_id = session.get('auth_user_external_id', None)
+        external_id_access_token = session.get('auth_user_external_id_access_token', None)
+        external_id_refresh_token = session.get('auth_user_external_id_refresh_token', None)
         fullname = session.get('auth_user_fullname', None) or request.data.get('auth_user_fullname', None)
 
         accepted_terms_of_service = request.data.get('accepted_terms_of_service', False)
@@ -762,10 +767,11 @@ class ExternalLogin(JSONAPIBaseView, generics.CreateAPIView):
                     user.external_identity[external_id_provider].update(external_identity[external_id_provider])
             else:
                 user.external_identity.update(external_identity)
-            if not user.accepted_terms_of_service and accepted_terms_of_service:
+            if accepted_terms_of_service and not user.has_accepted_current_terms_of_service:
                 user.accepted_terms_of_service = timezone.now()
             # 2. add unconfirmed email and send confirmation email
             user.add_unconfirmed_email(clean_email, external_identity=external_identity)
+            user.save_external_identity_tokens(external_id, external_id_access_token, external_id_refresh_token)
             user.save()
             send_confirm_email_async(
                 user,
@@ -781,13 +787,14 @@ class ExternalLogin(JSONAPIBaseView, generics.CreateAPIView):
             accepted_terms_of_service = timezone.now() if accepted_terms_of_service else None
             user = OSFUser.create_unconfirmed(
                 username=clean_email,
-                password=None,
+                password=str(uuid.uuid4()),
                 fullname=fullname,
                 external_identity=external_identity,
                 campaign=None,
                 accepted_terms_of_service=accepted_terms_of_service,
             )
             # TODO: [#OSF-6934] update social fields, verified social fields cannot be modified
+            user.save_external_identity_tokens(external_id, external_id_access_token, external_id_refresh_token)
             user.save()
             # 3. send confirmation email
             send_confirm_email_async(
@@ -935,6 +942,70 @@ class ResetPassword(JSONAPIBaseView, generics.ListCreateAPIView):
             content_type='application/vnd.api+json; application/json',
         )
 
+class ResendConfirmation(JSONAPIBaseView, generics.ListCreateAPIView):
+    """
+      View for handling resend confirmation URL requests.
+
+      POST:
+      - Takes an email as a query parameter.
+      - If the email is not provided or invalid, returns a validation error.
+      - If the user has recently requested a resend URL, returns a throttling error.
+      """
+    permission_classes = (
+        drf_permissions.AllowAny,
+    )
+    serializer_class = UserResendConfirmationSerializer
+    view_category = 'users'
+    view_name = 'request-resend-confirmation'
+    throttle_classes = (NonCookieAuthThrottle, BurstRateThrottle, RootAnonThrottle, SendEmailThrottle)
+
+    def post(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        email = request.data.get('email', None)
+        if not email:
+            raise ValidationError('Request must include email in query params.')
+
+        status_message = language.RESEND_CONFIRMATION_SUCCESS_STATUS_MESSAGE.format(email=email)
+        # check if the user exists
+        user_obj = get_user(email=email)
+
+        if user_obj:
+            # rate limit resend_confirmation_post
+            if not throttle_period_expired(user_obj.email_last_sent, settings.SEND_EMAIL_THROTTLE):
+                return Response(
+                    {
+                        'message': language.THROTTLE_RESEND_CONFIRMATION_ERROR_MESSAGE,
+                        'kind': 'error',
+                    },
+                    status=status.HTTP_429_TOO_MANY_REQUESTS,
+                )
+            else:
+                if not user_obj.email_verifications:
+                    # already confirmed
+                    status_message = language.RESEND_CONFIRMATION_ALREADY_CONFIRMED_ERROR_MESSAGE.format(email=email)
+                    return Response(
+                        {
+                            'message': status_message,
+                            'kind': 'error',
+                        },
+                        status=status.HTTP_400_BAD_REQUEST,
+                    )
+                send_confirm_email_async(
+                    user=user_obj,
+                    email=user_obj.username,
+                    renew=True,
+                )
+                user_obj.email_last_sent = timezone.now()
+                user_obj.save()
+
+        return Response(
+            status=status.HTTP_200_OK,
+            data={
+                'message': status_message,
+                'kind': 'success',
+            },
+        )
 
 class UserSettings(JSONAPIBaseView, generics.RetrieveUpdateAPIView, UserMixin):
     permission_classes = (

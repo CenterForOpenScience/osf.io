@@ -5,6 +5,7 @@ import pytest
 import unittest
 
 from framework.auth import cas
+from website import settings
 
 from tests.base import OsfTestCase, fake
 from tests.utils import run_celery_tasks
@@ -258,6 +259,36 @@ class TestCASTicketAuthentication(OsfTestCase):
         assert resp.status_code == 302
         assert mock_service_validate.call_count == 1
         assert mock_get_user_from_cas_resp.call_count == 1
+
+    @mock.patch('framework.auth.cas.authenticate')
+    @mock.patch('framework.auth.cas.get_user_from_cas_resp')
+    @mock.patch('framework.auth.cas.CasClient.service_validate')
+    def test_make_response_from_ticket_disabled_user_gets_no_session(
+        self, mock_service_validate, mock_get_user_from_cas_resp, mock_authenticate
+    ):
+        self.user.deactivate_account()
+        mock_service_validate.return_value = make_successful_response(self.user)
+        mock_get_user_from_cas_resp.return_value = (self.user, None, 'authenticate')
+        service_url = 'http://localhost:5000/'
+        resp = cas.make_response_from_ticket(fake.md5(), service_url)
+        assert resp.status_code == 302
+        assert resp.location == cas.get_logout_url(settings.DOMAIN)
+        mock_authenticate.assert_not_called()
+
+    @mock.patch('framework.auth.cas.authenticate')
+    @mock.patch('framework.auth.cas.get_user_from_cas_resp')
+    @mock.patch('framework.auth.cas.CasClient.service_validate')
+    def test_make_response_from_ticket_spammed_user_gets_no_session(
+        self, mock_service_validate, mock_get_user_from_cas_resp, mock_authenticate
+    ):
+        self.user.confirm_spam()
+        mock_service_validate.return_value = make_successful_response(self.user)
+        mock_get_user_from_cas_resp.return_value = (self.user, None, 'authenticate')
+        service_url = 'http://localhost:5000/'
+        resp = cas.make_response_from_ticket(fake.md5(), service_url)
+        assert resp.status_code == 302
+        assert resp.location == cas.get_logout_url(settings.DOMAIN)
+        mock_authenticate.assert_not_called()
 
     @pytest.mark.enable_enqueue_task
     @pytest.mark.enable_search

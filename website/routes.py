@@ -55,7 +55,7 @@ from api.waffle.utils import flag_is_active
 
 
 def set_status_message(user):
-    if user and not user.accepted_terms_of_service:
+    if user and not user.has_accepted_current_terms_of_service:
         status.push_status_message(
             message=language.TERMS_OF_SERVICE.format(api_domain=settings.API_DOMAIN,
                                                      user_id=user._id,
@@ -561,23 +561,6 @@ def make_url_map(app):
             'post',
             auth_views.reset_password_institution_post,
             OsfWebRenderer('public/resetpassword.mako', render_mako_string, trust=False)
-        ),
-
-        # resend confirmation get
-        Rule(
-            '/resend/',
-            'get',
-            auth_views.resend_confirmation_get,
-            OsfWebRenderer('resend.mako', render_mako_string, trust=False)
-        ),
-
-        # resend confirmation post
-        Rule(
-            '/resend/',
-            'post',
-            auth_views.resend_confirmation_post,
-            OsfWebRenderer('resend.mako', render_mako_string, trust=False)
-
         ),
 
         # oauth user email get
