@@ -8,7 +8,7 @@ from django.utils import timezone
 from framework.auth import Auth
 from osf.models import GuidMetadataRecord, Outcome
 from osf.utils.outcomes import ArtifactTypes
-from osf_tests.factories import AuthUserFactory, IdentifierFactory, RegistrationFactory
+from osf_tests.factories import AuthUserFactory, IdentifierFactory, ProjectFactory, RegistrationFactory
 from tests.base import OsfTestCase
 from tests.test_addons import assert_urls_equal
 from website import settings
@@ -204,7 +204,7 @@ class TestDataCiteClient:
         assert f'<creatorName nameType="Personal">{invisible_contrib.fullname}</creatorName>' not in metadata_xml
 
     def test_datacite_format_related_resources(self, datacite_client):
-        registration = RegistrationFactory(is_public=True, has_doi=True, article_doi='10.pub/lication')
+        registration = RegistrationFactory(project=ProjectFactory(is_public=True, article_doi='10.pub/lication'), is_public=True, has_doi=True)
         outcome = Outcome.objects.for_registration(registration, create=True)
         data_artifact = outcome.artifact_metadata.create(
             identifier=IdentifierFactory(category='doi'), artifact_type=ArtifactTypes.DATA, finalized=True
@@ -242,7 +242,7 @@ class TestDataCiteClient:
         _assert_unordered_list_of_dicts_equal(metadata_dict['relatedIdentifiers'], expected_relationships)
 
     def test_datacite_format_related_resources__ignores_duplicate_pids(self, datacite_client):
-        registration = RegistrationFactory(is_public=True, has_doi=True)
+        registration = RegistrationFactory(project=ProjectFactory(is_public=True), has_doi=True)
         outcome = Outcome.objects.for_registration(registration, create=True)
         identifier = IdentifierFactory(category='doi')
         outcome.artifact_metadata.create(
@@ -269,7 +269,7 @@ class TestDataCiteClient:
         _assert_unordered_list_of_dicts_equal(metadata_dict['relatedIdentifiers'], expected_relationships)
 
     def test_datacite_format_related_resources__ignores_inactive_resources(self, datacite_client):
-        registration = RegistrationFactory(is_public=True, has_doi=True)
+        registration = RegistrationFactory(project=ProjectFactory(is_public=True), is_public=True, has_doi=True)
         outcome = Outcome.objects.for_registration(registration, create=True)
         active_artifact = outcome.artifact_metadata.create(
             identifier=IdentifierFactory(category='doi'), artifact_type=ArtifactTypes.DATA, finalized=True
@@ -299,6 +299,14 @@ class TestDataCiteClient:
             },
         ]
         _assert_unordered_list_of_dicts_equal(metadata_dict['relatedIdentifiers'], expected_relationships)
+
+    def test_datacite_format_related_resources__ignores_private_projects(self, datacite_client):
+        registration = RegistrationFactory(project=ProjectFactory(is_public=False), is_public=True, has_doi=True)
+        outcome = Outcome.objects.for_registration(registration, create=True)
+
+        metadata_dict = datacite_client.build_metadata(registration, as_xml=False)
+
+        assert metadata_dict['relatedIdentifiers'] == []
 
     def _set_funding_info(self, registration, funding_info):
         metadata_record = GuidMetadataRecord.objects.for_guid(registration._id)
