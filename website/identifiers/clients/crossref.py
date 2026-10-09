@@ -45,6 +45,13 @@ class CrossRefClient(AbstractIdentifierClient):
         prefix = preprint.provider.doi_prefix
         return settings.DOI_FORMAT.format(prefix=prefix, guid=preprint.get_guid()._id)
 
+    def _get_latest_published_version(self, preprint):
+        latest = preprint.get_preprint_versions(
+            date_published__isnull=False,
+            include_rejected=False,
+        ).first()
+        return latest or preprint
+
     def build_metadata(self, preprint, include_relation=True, include_unversioned_doi=False):
         """Return the crossref metadata XML document for a given preprint as a string for DOI minting purposes
 
@@ -80,7 +87,8 @@ class CrossRefClient(AbstractIdentifierClient):
             body.append(self.build_posted_content(preprint, element, include_relation))
 
         if include_unversioned_doi:
-            body.append(self.build_unversioned_posted_content(preprints[0], element))
+            latest = self._get_latest_published_version(preprints[0])
+            body.append(self.build_unversioned_posted_content(latest, element))
 
         root = element.doi_batch(
             head,
@@ -90,7 +98,7 @@ class CrossRefClient(AbstractIdentifierClient):
         root.attrib['{%s}schemaLocation' % XSI] = CROSSREF_SCHEMA_LOCATION
         return lxml.etree.tostring(root)
 
-    def build_posted_content(self, preprint, element, include_relation, doi_override=None, resource_override=None):
+    def build_posted_content(self, preprint, element, include_relation, doi_override=None, resource_override=None, include_version_relations=True):
         """Build the <posted_content> element for a single preprint
         preprint - preprint to build posted_content for
         element - namespace element to use when building parts of the XML structure
@@ -148,7 +156,7 @@ class CrossRefClient(AbstractIdentifierClient):
         preprint_versions = preprint.get_preprint_versions(
             versioned_guids__version__lt=preprint.version,
             include_rejected=False,
-        ) if include_relation else []
+        ) if include_version_relations else []
         if preprint_versions:
             for previous_version in preprint_versions:
 
@@ -185,6 +193,7 @@ class CrossRefClient(AbstractIdentifierClient):
             preprint,
             element,
             include_relation=False,
+            include_version_relations=False,
             doi_override=self.build_unversioned_doi(preprint),
             resource_override=settings.DOMAIN + base_guid,
         )

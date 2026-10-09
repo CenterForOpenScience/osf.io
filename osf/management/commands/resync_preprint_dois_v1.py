@@ -19,7 +19,6 @@ logger = logging.getLogger(__name__)
 class ResyncPassResult:
     total: int
     queued: int
-    skipped: int
     errored: int
 
     @property
@@ -80,9 +79,11 @@ def get_preprints_needing_v1_doi(provider_id=None):
     ).exclude(
         id__in=already_versioned_ids
     ).exclude(
+        Q(provider__doi_prefix__isnull=True) | Q(provider__doi_prefix='')
+    ).exclude(
         tags__name='qatest',
         tags__system=True,
-    ).select_related('provider').distinct().order_by('id')
+   ).distinct().order_by('id')
 
     if provider_id:
         qs = qs.filter(provider___id=provider_id)
@@ -103,17 +104,8 @@ def resync_preprint_dois_v1(dry_run=True, batch_size=1000, provider_id=None, cap
     preprints_iterable = _batch_for_pass(preprints_to_update, dry_run, batch_size, capacity)
 
     queued = 0
-    skipped = 0
     errored = 0
     for preprint in preprints_iterable:
-        if not preprint.provider.doi_prefix:
-            logger.warning(
-                f'Skipping preprint {preprint._id}: '
-                f'provider {preprint.provider._id} has no DOI prefix'
-            )
-            skipped += 1
-            continue
-
         if dry_run:
             logger.info(f'[DRY RUN] Would resync DOI for preprint {preprint._id}')
             queued += 1
@@ -130,9 +122,9 @@ def resync_preprint_dois_v1(dry_run=True, batch_size=1000, provider_id=None, cap
 
     logger.info(
         f'{"[DRY RUN] " if dry_run else ""}'
-        f'Done: {queued} preprints queued, {skipped} skipped (no DOI prefix), {errored} errored'
+        f'Done: {queued} preprints queued, {errored} errored'
     )
-    result = ResyncPassResult(total=total, queued=queued, skipped=skipped, errored=errored)
+    result = ResyncPassResult(total=total, queued=queued, errored=errored)
     if not dry_run and batch_size:
         logger.info(
             f'Estimated remaining after this batch: ~{result.remaining}. '
@@ -170,9 +162,11 @@ def get_preprints_needing_unversioned_doi(provider_id=None):
     ).exclude(
         id__in=already_has_unversioned
     ).exclude(
+        Q(provider__doi_prefix__isnull=True) | Q(provider__doi_prefix='')
+    ).exclude(
         tags__name='qatest',
         tags__system=True,
-    ).select_related('provider').distinct().order_by('id')
+    ).distinct().order_by('id')
 
     if provider_id:
         qs = qs.filter(provider___id=provider_id)
@@ -193,17 +187,8 @@ def register_missing_unversioned_dois(dry_run=True, batch_size=1000, provider_id
     preprints_iterable = _batch_for_pass(preprints_to_update, dry_run, batch_size, capacity)
 
     queued = 0
-    skipped = 0
     errored = 0
     for preprint in preprints_iterable:
-        if not preprint.provider.doi_prefix:
-            logger.warning(
-                f'Skipping preprint {preprint._id}: '
-                f'provider {preprint.provider._id} has no DOI prefix'
-            )
-            skipped += 1
-            continue
-
         if dry_run:
             logger.info(f'[DRY RUN] Would register unversioned DOI for preprint {preprint._id}')
             queued += 1
@@ -220,9 +205,9 @@ def register_missing_unversioned_dois(dry_run=True, batch_size=1000, provider_id
 
     logger.info(
         f'{"[DRY RUN] " if dry_run else ""}'
-        f'Unversioned DOI pass done: {queued} queued, {skipped} skipped, {errored} errored'
+        f'Unversioned DOI pass done: {queued} queued, {errored} errored'
     )
-    result = ResyncPassResult(total=total, queued=queued, skipped=skipped, errored=errored)
+    result = ResyncPassResult(total=total, queued=queued, errored=errored)
     if not dry_run and batch_size:
         logger.info(
             f'Estimated unversioned remaining after this batch: ~{result.remaining}. '
