@@ -83,7 +83,7 @@ def get_preprints_needing_v1_doi(provider_id=None):
     ).exclude(
         tags__name='qatest',
         tags__system=True,
-   ).distinct().order_by('id')
+    ).distinct().order_by('id')
 
     if provider_id:
         qs = qs.filter(provider___id=provider_id)
