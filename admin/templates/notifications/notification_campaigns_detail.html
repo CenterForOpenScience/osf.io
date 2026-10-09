@@ -62,11 +62,28 @@
             <strong>Last activity:</strong> {{ last_activity_ago }} ago
         {% endif %}
     </div>
+    {% if awaiting_delivery %}
+    <div class="alert alert-info">
+        <strong>Awaiting delivery:</strong>
+        All recipients have been submitted to SendGrid.
+        Waiting for delivery confirmation ({{ awaiting }} awaiting).
+    </div>
+    {% endif %}
     <div class="progress">
 
         <div class="progress-bar progress-bar-success"
             style="width: {{ sent_percent }}%;">
             {{ notification_campaign.sent_count }}
+        </div>
+
+        <div class="progress-bar progress-bar-info"
+            style="width: {{ awaiting_percent }}%;">
+            {{ awaiting }}
+        </div>
+
+        <div class="progress-bar progress-bar-warning"
+            style="width: {{ queued_percent }}%;">
+            {{ queued }}
         </div>
 
         <div class="progress-bar progress-bar-danger"
@@ -86,6 +103,16 @@
     <tr>
         <th style="width:250px;">Processed</th>
         <td>{{ processed }} / {{ notification_campaign.recipient_count }}</td>
+    </tr>
+
+    <tr>
+        <th>Queued</th>
+        <td>{{ queued }}</td>
+    </tr>
+
+    <tr>
+        <th>Awaiting Delivery</th>
+        <td>{{ awaiting }}</td>
     </tr>
 
     <tr>
