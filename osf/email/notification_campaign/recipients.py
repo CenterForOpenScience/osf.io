@@ -2,13 +2,13 @@ import logging
 import uuid
 from itertools import batched
 
-from django.db.models import BooleanField, Count, OuterRef, Q, Subquery
+from django.db.models import BooleanField, Count, OuterRef, Q, Subquery, Exists
 from django.db.models.functions import Coalesce
 from django.utils import timezone
 
 from framework import sentry
 from framework.celery_tasks import app as celery_app
-from osf.models import Email, OSFUser, UserActivityCounter
+from osf.models import Email, OSFUser, UserActivityCounter, Contributor
 from osf.models.notification_campaign import (
     NotificationCampaign,
     NotificationCampaignRecipient,
@@ -37,6 +37,15 @@ counter_subquery = (
     .filter(_id=OuterRef('guids___id'))
     .values('total')[:1]
 )
+
+
+# Matches users who contribute to at least one project or component
+# Counts: projects and components at any nesting depth - all share the osf.node type
+# Does not count: registrations, draft nodes, and preprints, whose contributors live in a
+# separate table entirely
+# not filtered on: contributor permissions, whether the project is public, and
+# whether the node is deleted or spam-flagged
+project_contributor_subquery = Contributor.objects.filter(user_id=OuterRef('pk'), node__type='osf.node')
 
 
 def build_query(node):
@@ -85,13 +94,15 @@ def build_query(node):
 
 
 def build_campaign_filter_query(filters):
-    """AND together optional predefined and manual filter clauses."""
+    """AND together optional predefined, manual and contributor filter clauses."""
     filters = filters or {}
     query = Q()
     if predefined := filters.get('predefined'):
         query &= Q(**FILTER_PRESETS.get(predefined, {}))
     if manual := filters.get('manual'):
         query &= build_query(manual)
+    if filters.get('exclude_non_contributors'):
+        query &= Q(Exists(project_contributor_subquery))
     return query
 
 

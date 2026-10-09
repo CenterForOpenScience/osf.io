@@ -167,14 +167,29 @@
                     <label>
                         <input
                             type="checkbox"
-                            id="exclude-unconfirmed"
+                            id="exclude-unconfirmed-and-disabled-and-deactivation-requested"
                             checked
                         >
-                        Exclude unconfirmed accounts
+                        Exclude unconfirmed, disabled, and deactivation requested users
                     </label>
                     <p class="help-block">
-                        When enabled, users who have not confirmed their accounts
+                        When enabled, users who have not confirmed their accounts or are disabled or have requested deactivation
                         are excluded from the recipient list.
+                    </p>
+                </div>
+
+                <div class="form-group" style="margin-top:15px;">
+                    <label>
+                        <input
+                            type="checkbox"
+                            id="exclude-non-contributors"
+                        >
+                        Exclude non-contributors
+                    </label>
+                    <p class="help-block">
+                        When enabled, only users who are contributors on at least one
+                        project or component (at any nesting level) are kept in the
+                        recipient list. Registrations and preprints do not count.
                     </p>
                 </div>
 
@@ -474,23 +489,37 @@ function buildFilters() {
         filters = {"manual": serializeGroup(root)};
     }
 
-    if (document.getElementById("exclude-unconfirmed").checked) {
+    if (document.getElementById("exclude-unconfirmed-and-disabled-and-deactivation-requested").checked) {
         const confirmed = {
             field: "date_confirmed",
             lookup: "isnull",
             value: false,
         };
+        const not_disabled = {
+            field: "date_disabled",
+            lookup: "isnull",
+            value: true,
+        };
+        const has_not_requested_deactivation = {
+            field: "requested_deactivation",
+            lookup: "exact",
+            value: false,
+        };
         if (filters.manual) {
             filters.manual = {
                 operator: "AND",
-                children: [filters.manual, confirmed],
+                children: [filters.manual, confirmed, not_disabled, has_not_requested_deactivation],
             };
         } else {
             filters.manual = {
                 operator: "AND",
-                children: [confirmed],
+                children: [confirmed, not_disabled, has_not_requested_deactivation],
             };
         }
+    }
+
+    if (document.getElementById("exclude-non-contributors").checked) {
+        filters.exclude_non_contributors = true;
     }
 
     return filters;

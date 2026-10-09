@@ -511,6 +511,21 @@ class EmbargoManager(models.Manager):
             .order_by('end_date')
         )
 
+    def stuck_completed(self):
+        """Embargoes marked COMPLETED whose registration never actually went public.
+
+        This is the signature left behind when `terminate_embargo` raises after the
+        embargo's state has already been flipped to COMPLETED (e.g. a spam check
+        failure during `Node.set_privacy`), so the registration is stuck private
+        with no active embargo to retry.
+        """
+        return (
+            self.filter(state=self.model.COMPLETED)
+            .filter(registrations__is_deleted=False, registrations__is_public=False)
+            .distinct()
+            .order_by('end_date')
+        )
+
 
 class Embargo(SanctionCallbackMixin, EmailApprovableSanction):
     """Embargo object for registrations waiting to go public."""
