@@ -15,6 +15,7 @@ from admin.notifications.views import (
     NotificationCampaignCreateView,
     NotificationCampaignDetail,
     NotificationCampaignsList,
+    NotificationCampaignsRecipientsPreview,
     StartNotificationCampaign,
     DeleteNotificationCampaign,
 )
@@ -23,7 +24,7 @@ from osf.models import NotificationType
 from osf.models.notification_campaign import (
     NotificationCampaign,
 )
-from osf_tests.factories import AuthUserFactory
+from osf_tests.factories import AuthUserFactory, ProjectFactory
 from tests.base import AdminTestCase
 from website import settings
 
@@ -272,17 +273,14 @@ class TestNotificationCampaignCreateView(AdminTestCase):
         )
         request.user = self.user
         patch_messages(request)
-
         form = NotificationCampaignCreateForm(data=request.POST)
         assert form.is_valid()
-
         view = setup_form_view(
             NotificationCampaignCreateView(),
             request,
             form,
         )
         view.form_valid(form)
-
         campaign = NotificationCampaign.objects.get(name='My Campaign')
         assert campaign.created_by == self.user
         assert campaign.metadata['execution'] == {
@@ -297,6 +295,29 @@ class TestNotificationCampaignCreateView(AdminTestCase):
         assert campaign.metadata['sendgrid_bulk'] is True
         assert campaign.metadata['filters'] == {'predefined': 'active'}
         assert campaign.metadata['context'] == {'greeting': 'hi'}
+
+    def test_form_valid_persists_exclude_non_contributors_in_filters(self):
+        request = RequestFactory().post(
+            reverse('notifications:notification_campaigns_create'),
+            data=_valid_form_data(
+                self.notification_type,
+                filters=json.dumps({
+                    'predefined': 'active',
+                    'exclude_non_contributors': True,
+                }),
+            ),
+        )
+        request.user = self.user
+        patch_messages(request)
+        form = NotificationCampaignCreateForm(data=request.POST)
+        assert form.is_valid()
+        view = setup_form_view(NotificationCampaignCreateView(), request, form)
+        view.form_valid(form)
+        campaign = NotificationCampaign.objects.get(name='My Campaign')
+        assert campaign.metadata['filters'] == {
+            'predefined': 'active',
+            'exclude_non_contributors': True,
+        }
 
     @mock.patch('admin.notifications.views._render_email_html', side_effect=Exception('bad template'))
     def test_form_valid_rejects_unrenderable_context(self, mock_render):
@@ -322,6 +343,40 @@ class TestNotificationCampaignCreateView(AdminTestCase):
         assert 'context' in form.errors
         assert 'Failed to render template' in form.errors['context'][0]
         assert not NotificationCampaign.objects.filter(name='My Campaign').exists()
+
+
+class TestNotificationCampaignsRecipientsPreview(AdminTestCase):
+
+    def setUp(self):
+        super().setUp()
+        self.user = AuthUserFactory()
+        grant_permission(self.user, 'view_osfuser')
+        self.contributor = AuthUserFactory()
+        self.non_contributor = AuthUserFactory()
+        ProjectFactory(creator=self.contributor)
+
+    def test_preview_excludes_non_contributors_when_the_option_is_on(self):
+        filters = {
+            'manual': {
+                'operator': 'AND',
+                'children': [
+                    {
+                        'field': 'id',
+                        'lookup': 'in',
+                        'value': f'{self.contributor.id},{self.non_contributor.id}',
+                    },
+                ],
+            },
+            'exclude_non_contributors': True,
+        }
+        request = RequestFactory().get(
+            reverse('notifications:notification_campaigns_recipients_preview'),
+            data={'filters': json.dumps(filters)},
+        )
+        request.user = self.user
+        view = NotificationCampaignsRecipientsPreview()
+        view.setup(request)
+        assert list(view.get_queryset().values_list('id', flat=True)) == [self.contributor.id]
 
 
 class TestNotificationCampaignAdminPermissions(AdminTestCase):

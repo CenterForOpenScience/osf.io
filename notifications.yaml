@@ -128,7 +128,7 @@ notification_types:
     __docs__: 'Sign up confirmation emails for OSF, native campaigns and branded campaigns'
     object_content_type_model_name: osfuser
     template: 'website/templates/initial_confirm.html.mako'
-    tests: ['tests/test_resend_confirmation.py', 'tests/test_auth.py']
+    tests: ['api_tests/users/views/test_user_resend_confirmation.py', 'tests/test_auth.py']
 
   - name: user_request_deactivation
     subject: '[via OSF] Deactivation Request'

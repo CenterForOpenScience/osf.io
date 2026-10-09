@@ -1449,6 +1449,17 @@ class TestArchiverBehavior(OsfTestCase):
             archive_callback(reg._id)
         assert not mock_update_search.called
 
+    @mock.patch('osf.models.AbstractNode.update_search')
+    @mock.patch('osf.models.Registration.load')
+    def test_archive_callback_retry(self, mock_load, mock_update_search):
+        proj = factories.ProjectFactory()
+        reg = factories.RegistrationFactory(project=proj)
+        reg.save()
+        with mock.patch('osf.models.ArchiveJob.archive_tree_finished', mock.Mock(return_value=True)):
+            archive_callback('random')
+
+        assert mock_load.call_count == 3
+
 
 class TestArchiveTarget(OsfTestCase):
 

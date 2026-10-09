@@ -16,6 +16,7 @@ from osf_tests.factories import (
     RegionFactory,
     PrivateLinkFactory,
 )
+from website import settings as website_settings
 from website.views import find_bookmark_collection
 
 
@@ -1126,6 +1127,87 @@ class TestUserUpdate:
         user_one.reload()
         assert res.status_code == 200
         assert user_one.accepted_terms_of_service is None
+
+    def test_accepted_tos_false_when_acceptance_predates_latest_update(
+            self, app, user_one, url_user_one):
+        user_one.accepted_terms_of_service = dt.datetime(2018, 5, 24, tzinfo=dt.timezone.utc)
+        user_one.save()
+        res = app.get(url_user_one, auth=user_one.auth)
+        assert res.status_code == 200
+        assert res.json['data']['attributes']['accepted_terms_of_service'] is False
+
+    def test_terms_update_invalidates_older_acceptance(
+            self, app, user_one, url_user_one):
+        accepted = dt.datetime(2020, 1, 1, tzinfo=dt.timezone.utc)
+        user_one.accepted_terms_of_service = accepted
+        user_one.save()
+        res = app.get(url_user_one, auth=user_one.auth)
+        assert res.json['data']['attributes']['accepted_terms_of_service'] is True
+        with mock.patch.object(
+            website_settings,
+            'LATEST_TERMS_OF_SERVICE_UPDATE',
+            dt.datetime(2026, 1, 1, tzinfo=dt.timezone.utc),
+        ):
+            res = app.get(url_user_one, auth=user_one.auth)
+            assert res.json['data']['attributes']['accepted_terms_of_service'] is False
+        user_one.reload()
+        assert user_one.accepted_terms_of_service == accepted
+
+    def test_update_accepted_tos_records_re_acceptance_after_terms_change(
+            self, app, user_one, url_user_one):
+        stale_acceptance = dt.datetime(2020, 1, 1, tzinfo=dt.timezone.utc)
+        user_one.accepted_terms_of_service = stale_acceptance
+        user_one.save()
+        with mock.patch.object(
+            website_settings,
+            'LATEST_TERMS_OF_SERVICE_UPDATE',
+            dt.datetime(2026, 1, 1, tzinfo=dt.timezone.utc),
+        ):
+            res = app.patch_json_api(
+                url_user_one,
+                {
+                    'data': {
+                        'id': user_one._id,
+                        'type': 'users',
+                        'attributes': {
+                            'accepted_terms_of_service': True,
+                        }
+                    }
+                },
+                auth=user_one.auth
+            )
+            assert res.status_code == 200
+            assert res.json['data']['attributes']['accepted_terms_of_service'] is True
+        user_one.reload()
+        assert user_one.accepted_terms_of_service > stale_acceptance
+
+    def test_update_accepted_tos_keeps_timestamp_of_current_acceptance(
+            self, app, user_one, url_user_one):
+        accepted = dt.datetime(2026, 1, 2, tzinfo=dt.timezone.utc)
+        user_one.accepted_terms_of_service = accepted
+        user_one.save()
+        with mock.patch.object(
+            website_settings,
+            'LATEST_TERMS_OF_SERVICE_UPDATE',
+            dt.datetime(2026, 1, 1, tzinfo=dt.timezone.utc),
+        ):
+            res = app.patch_json_api(
+                url_user_one,
+                {
+                    'data': {
+                        'id': user_one._id,
+                        'type': 'users',
+                        'attributes': {
+                            'accepted_terms_of_service': True,
+                        }
+                    }
+                },
+                auth=user_one.auth
+            )
+            assert res.status_code == 200
+            assert res.json['data']['attributes']['accepted_terms_of_service'] is True
+        user_one.reload()
+        assert user_one.accepted_terms_of_service == accepted
 
     def test_update_allow_indexing_sets_field(
             self, app, user_one, url_user_one):
