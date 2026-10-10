@@ -276,7 +276,7 @@ class Institution(DirtyFieldsMixin, Loggable, ObjectIDMixin, BaseModel, Guardian
                 self.sso_availability = SSOAvailability.HIDDEN.value
 
             self.save()
-            # Django mangers aren't used when querying on related models. Thus, we can query
+            # Django managers aren't used when querying on related models. Thus, we can query
             # affiliated users and send notification emails after the institution has been deactivated.
             self._send_deactivation_email()
         else:

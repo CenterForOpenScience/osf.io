@@ -1,4 +1,4 @@
-"""Views fo the node settings page."""
+"""Views of the node settings page."""
 from flask import request
 import logging
 

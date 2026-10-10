@@ -53,7 +53,7 @@ class ParseCrossRefConfirmation(APIView):
                         # Sets preprint_doi_created and saves the preprint
                         preprint.set_identifier_values(doi=doi, save=True)
                     # Double records returned when possible matching DOI is found in crossref
-                    elif 'possible preprint/vor pair' not in msg.lower():
+                    elif 'possible preprint/for pair' not in msg.lower():
                         # Directly updates the identifier
                         preprint.set_identifier_value(category='doi', value=doi)
 

@@ -538,8 +538,8 @@ class TestResourceDetailPATCHBehavior:
 @pytest.mark.django_db
 class TestResourceDetailDELETEPermissions:
 
-    # Don't bother exhaustive Registration state checking for DELETEing.
-    # If the Resource exists and the Registration isn't WITHDRAWN or DELETED, the Resource should be DELETEable
+    # Don't bother exhaustive Registration state checking for deleting.
+    # If the Resource exists and the Registration isn't WITHDRAWN or DELETED, the Resource should be deletable
     @pytest.mark.parametrize('user_role', UserRoles.write_roles())
     def test_status_code__user_can_write(self, app, user_role):
         test_artifact, test_auth, _ = configure_test_preconditions(user_role=user_role)

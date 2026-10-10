@@ -86,7 +86,7 @@ def find_inactive_users_without_enqueued_or_sent_no_login():
             Q(no_login_email_last_sent__lt=F('date_last_login'))
         )
     )
-    # Exlude users who already have a pending/started/retrying EmailTask for no-login
+    # Exclude users who already have a pending/started/retrying EmailTask for no-login
     base_q = base_q.exclude(
         emailtask__task_id__startswith=NO_LOGIN_PREFIX,
         emailtask__status__in=['PENDING', 'STARTED', 'RETRY']

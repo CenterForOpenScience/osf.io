@@ -152,7 +152,7 @@ def paginate(items, total, page, size):
 
 def index():
     """This route is handled by Angular now and web flow should not reach it at all.
-    There is alo no direct call of this view other than via `website/routes`. However,
+    There is also no direct call of this view other than via `website/routes`. However,
     we kept this view to use `web_url_for()` to build correct URL to go to Angular.
     """
     sentry.log_message('View "index" should not have been directly called or reached')
@@ -161,7 +161,7 @@ def index():
 
 def dashboard():
     """ This route is handled by Angular now and web flow should not reach it at all.
-    There is alo no direct call of this view other than via `website/routes`. However,
+    There is also no direct call of this view other than via `website/routes`. However,
     we kept this view to use `web_url_for()` to build correct URL to go to Angular.
     """
     sentry.log_message('View "dashboard" should not have been directly called or reached')
@@ -170,7 +170,7 @@ def dashboard():
 
 def my_projects():
     """ This route is handled by Angular now and web flow should not reach it at all.
-    There is alo no direct call of this view other than via `website/routes`. However,
+    There is also no direct call of this view other than via `website/routes`. However,
     we kept this view to use `web_url_for()` to build correct URL to go to Angular.
     """
     sentry.log_message('View "my_projects" should not have been directly called or reached')

@@ -10,7 +10,7 @@
     titled <a href="${registration_link}">${reviewable_title}</a>
     </p>
     <p>
-    If all admins contributors appove, the registration will be made public as part of the
+    If all admins contributors approve, the registration will be made public as part of the
     <a href="${domain}/registries/${reviewable_provider__id if reviewable_provider__id else 'osf'}">${reviewable_provider_name if reviewable_provider__id else "OSF Registry"}</a>.
     </p>
     <p>

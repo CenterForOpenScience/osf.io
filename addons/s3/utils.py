@@ -97,7 +97,7 @@ def bucket_exists(access_key, secret_key, bucket_name):
 
 def can_list(access_key, secret_key):
     """Return whether or not a user can list
-    all buckets accessable by this keys
+    all buckets accessible by this keys
     """
     # Bail out early as boto does not handle getting
     # Called with (None, None)
