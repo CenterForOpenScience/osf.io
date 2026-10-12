@@ -128,6 +128,7 @@ class RegistrationModerationStates(ModerationEnum):
             cls.EMBARGO.db_name,
             cls.PENDING_EMBARGO_TERMINATION.db_name,
             cls.PENDING_WITHDRAW.db_name,
+            cls.REJECTED.db_name,
         ]
 
 

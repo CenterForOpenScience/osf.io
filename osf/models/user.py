@@ -65,6 +65,7 @@ from osf.utils.fields import NonNaiveDateTimeField, LowercaseEmailField, ensure_
 from osf.utils.names import impute_names
 from osf.utils.requests import check_select_for_update
 from osf.utils.permissions import API_CONTRIBUTOR_PERMISSIONS, MANAGER, MEMBER, ADMIN
+from osf.utils.workflows import RegistrationModerationStates
 from website import settings as website_settings
 from website import filters
 from website.project import new_bookmark_collection
@@ -971,7 +972,11 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         """
 
         return self.draft_registrations.filter(
-            (models.Q(registered_node__isnull=True) | models.Q(registered_node__deleted__isnull=False)),
+            (
+                models.Q(registered_node__isnull=True)
+                | models.Q(registered_node__deleted__isnull=False)
+                | models.Q(registered_node__moderation_state=RegistrationModerationStates.REJECTED.db_name)
+            ),
             branched_from__deleted__isnull=True,
             deleted__isnull=True,
         )
