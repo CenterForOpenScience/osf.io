@@ -31,6 +31,7 @@ class NotificationTypeEnum(str, Enum):
     DESK_ARCHIVE_JOB_FILE_NOT_FOUND = 'desk_archive_job_file_not_found'
     DESK_ARCHIVE_JOB_UNCAUGHT_ERROR = 'desk_archive_job_uncaught_error'
     DESK_CROSSREF_ERROR = 'desk_crossref_error'
+    DESK_MODERATOR_SPAM_REPORT = 'desk_moderator_spam_report'
 
     # User notifications
     USER_PENDING_VERIFICATION = 'user_pending_verification'

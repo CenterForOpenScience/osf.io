@@ -20,11 +20,12 @@ from osf_tests.factories import (
 
 from tests.base import get_default_metaschema
 
-from osf.models import NodeRequest
+from osf.models import NodeRequest, NotificationTypeEnum
 from django.contrib.auth.models import Group
 
 from osf.migrations import update_provider_auth_groups
 from tests.utils import capture_notifications
+from website.settings import OSF_ADMIN_URL, OSF_SUPPORT_EMAIL
 
 
 @pytest.mark.django_db
@@ -405,6 +406,73 @@ class TestRegistriesModerationSubmissions:
         assert resp.json['data']['attributes']['trigger'] == RegistrationModerationTriggers.ACCEPT_WITHDRAWAL.db_name
         retract_registration.refresh_from_db()
         assert retract_registration.moderation_state == RegistrationModerationStates.WITHDRAWN.db_name
+
+    def test_registries_moderation_post_report_spam(self, app, registration, moderator, registration_actions_url, actions_payload_base, reg_creator):
+        registration.require_approval(user=registration.creator)
+        with capture_notifications():
+            registration.registration_approval.accept()
+        registration.refresh_from_db()
+        assert registration.moderation_state == RegistrationModerationStates.PENDING.db_name
+        actions_payload_base['data']['attributes']['trigger'] = RegistrationModerationTriggers.REPORT_SPAM.db_name
+        actions_payload_base['data']['attributes']['comment'] = 'Spammiest registration Ive ever seen'
+        actions_payload_base['data']['relationships']['target']['data']['id'] = registration._id
+        with capture_notifications() as notifications:
+            resp = app.post_json_api(registration_actions_url, actions_payload_base, auth=moderator.auth)
+        assert resp.status_code == 201
+        assert resp.json['data']['attributes']['trigger'] == RegistrationModerationTriggers.REPORT_SPAM.db_name
+        assert len(notifications['emits']) == 1
+        emit = notifications['emits'][0]
+        assert emit['type'] == NotificationTypeEnum.DESK_MODERATOR_SPAM_REPORT
+        assert emit['kwargs']['destination_address'] == OSF_SUPPORT_EMAIL
+        assert emit['kwargs']['event_context']['moderator__id'] == moderator._id
+        assert emit['kwargs']['event_context']['resource__id'] == registration._id
+        assert emit['kwargs']['event_context']['comment'] == 'Spammiest registration Ive ever seen'
+        admin_app = OSF_ADMIN_URL.rstrip('/')
+        context = emit['kwargs']['event_context']
+        assert context['resource_admin_app_url'] == (f'{admin_app}/nodes/{registration._id}/' if admin_app else '')
+        assert context['creator_admin_app_url'] == (f'{admin_app}/users/{registration.creator._id}/' if admin_app else '')
+        # report logged, registration untouched
+        registration.refresh_from_db()
+        assert registration.moderation_state == RegistrationModerationStates.PENDING.db_name
+        assert registration.spam_status is None
+        action = registration.actions.get(trigger=RegistrationModerationTriggers.REPORT_SPAM.db_name)
+        assert action.from_state == action.to_state == RegistrationModerationStates.PENDING.db_name
+
+    def test_registries_moderation_post_report_spam_forbidden(self, app, registration, moderator_wrong_provider, reg_creator, registration_actions_url, actions_payload_base):
+        registration.require_approval(user=registration.creator)
+        with capture_notifications():
+            registration.registration_approval.accept()
+        actions_payload_base['data']['attributes']['trigger'] = RegistrationModerationTriggers.REPORT_SPAM.db_name
+        actions_payload_base['data']['relationships']['target']['data']['id'] = registration._id
+        # A moderator for another provider can't report
+        resp = app.post_json_api(
+            registration_actions_url,
+            actions_payload_base,
+            auth=moderator_wrong_provider.auth,
+            expect_errors=True
+        )
+        assert resp.status_code == 403
+        resp = app.post_json_api(
+            registration_actions_url,
+            actions_payload_base,
+            auth=reg_creator.auth,
+            expect_errors=True
+        )
+        assert resp.status_code == 403
+        assert not registration.actions.filter(trigger=RegistrationModerationTriggers.REPORT_SPAM.db_name).exists()
+
+    def test_registries_moderation_post_report_spam_invalid_state(self, app, registration, moderator, registration_actions_url, actions_payload_base):
+        assert registration.moderation_state == RegistrationModerationStates.INITIAL.db_name
+        actions_payload_base['data']['attributes']['trigger'] = RegistrationModerationTriggers.REPORT_SPAM.db_name
+        actions_payload_base['data']['relationships']['target']['data']['id'] = registration._id
+        resp = app.post_json_api(
+            registration_actions_url,
+            actions_payload_base,
+            auth=moderator.auth,
+            expect_errors=True
+        )
+        assert resp.status_code == 409
+        assert not registration.actions.filter(trigger=RegistrationModerationTriggers.REPORT_SPAM.db_name).exists()
 
     def test_registries_moderation_post_withdraw_reject(self, app, retract_registration, moderator, retract_registration_actions_url, actions_payload_base, provider):
         with capture_notifications():

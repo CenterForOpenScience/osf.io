@@ -163,6 +163,8 @@ USE_CDN_FOR_CLIENT_LIBS = True
 FROM_EMAIL = 'openscienceframework-noreply@osf.io'
 # support email
 OSF_SUPPORT_EMAIL = 'support@osf.io'
+# admin app base url
+OSF_ADMIN_URL = os.environ.get('OSF_ADMIN_URL', 'https://admin.osf.io')
 # contact email
 OSF_CONTACT_EMAIL = 'contact@osf.io'
 

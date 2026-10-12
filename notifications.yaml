@@ -734,6 +734,13 @@ notification_types:
     template: 'website/templates/crossref_doi_error.html.mako'
     tests: []
 
+  - name: desk_moderator_spam_report
+    subject: 'Spam reported by moderator {moderator__id} for {resource__id}'
+    __docs__: Sent to support desk when a moderator reports a submission as spam.
+    object_content_type_model_name: desk
+    template: 'website/templates/moderator_spam_report.html.mako'
+    tests: ['api_tests/actions/views/test_action_list.py', 'api_tests/preprints/views/test_preprint_actions.py', 'api_tests/registries_moderation/test_submissions.py']
+
 
 
   ### Draft Registration

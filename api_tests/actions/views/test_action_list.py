@@ -9,6 +9,7 @@ from osf_tests.factories import (
 )
 from osf.utils import permissions as osf_permissions
 from tests.utils import capture_notifications
+from website.settings import OSF_ADMIN_URL, OSF_SUPPORT_EMAIL
 
 
 @pytest.mark.django_db
@@ -409,3 +410,98 @@ class TestReviewActionCreateRoot:
             expect_errors=True
         )
         assert res.status_code == 409
+
+    def test_report_spam_permissions_unauthorized(self, app, url, preprint):
+        preprint.machine_state = 'pending'
+        preprint.save()
+        res = app.post_json_api(
+            url,
+            self.create_payload(preprint._id, trigger='report_spam'),
+            expect_errors=True
+        )
+        assert res.status_code == 401
+
+    def test_report_spam_permissions_forbidden(self, app, url, preprint, node_admin):
+        preprint.machine_state = 'pending'
+        preprint.save()
+        report_payload = self.create_payload(preprint._id, trigger='report_spam')
+        # A random user can't report spam
+        res = app.post_json_api(
+            url,
+            report_payload,
+            auth=AuthUserFactory().auth,
+            expect_errors=True
+        )
+        assert res.status_code == 403
+        # Neither can a moderator for a different provider
+        another_moderator = AuthUserFactory()
+        another_moderator.groups.add(
+            PreprintProviderFactory().get_group('moderator')
+        )
+        res = app.post_json_api(
+            url,
+            report_payload,
+            auth=another_moderator.auth,
+            expect_errors=True
+        )
+        assert res.status_code == 403
+        res = app.post_json_api(
+            url,
+            report_payload,
+            auth=node_admin.auth,
+            expect_errors=True
+        )
+        assert res.status_code == 403
+
+    def test_report_spam_notifies_support(self, app, url, preprint, moderator):
+        preprint.machine_state = 'pending'
+        preprint.save()
+        report_payload = self.create_payload(
+            preprint._id,
+            trigger='report_spam',
+            comment='This is spam.'
+        )
+        with capture_notifications() as notifications:
+            res = app.post_json_api(url, report_payload, auth=moderator.auth)
+        assert res.status_code == 201
+        assert res.json['data']['attributes']['trigger'] == 'report_spam'
+        assert res.json['data']['attributes']['from_state'] == 'pending'
+        assert res.json['data']['attributes']['to_state'] == 'pending'
+        assert len(notifications['emits']) == 1
+        emit = notifications['emits'][0]
+        assert emit['type'] == NotificationTypeEnum.DESK_MODERATOR_SPAM_REPORT
+        assert emit['kwargs']['destination_address'] == OSF_SUPPORT_EMAIL
+        assert emit['kwargs']['event_context']['moderator__id'] == moderator._id
+        assert emit['kwargs']['event_context']['resource__id'] == preprint._id
+        assert emit['kwargs']['event_context']['comment'] == 'This is spam.'
+        context = emit['kwargs']['event_context']
+        assert context['resource_creator__id'] == preprint.creator._id
+        admin_app = OSF_ADMIN_URL.rstrip('/')
+        assert context['creator_admin_app_url'] == (f'{admin_app}/users/{preprint.creator._id}/' if admin_app else '')
+        assert context['resource_admin_app_url'] == (f'{admin_app}/preprints/{preprint._id}/' if admin_app else '')
+        # report logged, preprint untouched
+        preprint.refresh_from_db()
+        assert preprint.machine_state == 'pending'
+        assert preprint.spam_status is None
+        assert preprint.actions.filter(trigger='report_spam').count() == 1
+
+    def test_report_spam_invalid_state_returns_409(self, app, url, preprint, moderator):
+        assert preprint.machine_state == 'initial'
+        res = app.post_json_api(
+            url,
+            self.create_payload(preprint._id, trigger='report_spam'),
+            auth=moderator.auth,
+            expect_errors=True
+        )
+        assert res.status_code == 409
+        assert not preprint.actions.filter(trigger='report_spam').exists()
+
+    def test_report_spam_is_repeatable(self, app, url, preprint, moderator):
+        preprint.machine_state = 'pending'
+        preprint.save()
+        report_payload = self.create_payload(preprint._id, trigger='report_spam')
+        with capture_notifications() as notifications:
+            assert app.post_json_api(url, report_payload, auth=moderator.auth).status_code == 201
+            assert app.post_json_api(url, report_payload, auth=moderator.auth).status_code == 201
+        assert len(notifications['emits']) == 2
+        assert preprint.actions.filter(trigger='report_spam').count() == 2
