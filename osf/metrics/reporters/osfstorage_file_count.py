@@ -27,6 +27,11 @@ logging.basicConfig(level=logging.INFO)
 
 def osfstorage_file_qs(node_queryset, preprint_queryset, *, created_before=None, only_public=False):
     """get a queryset for non-deleted osfstorage files belonging to a public, non-spam osf object
+
+    built as two disjoint per-content-type queries unioned on pk, rather than one query
+    or'd across content types -- postgres cannot plan `(content_type=a and id in subq_a)
+    or (content_type=b and id in subq_b)` as two independent semi-joins; one branch ends
+    up re-executed as an unhashed per-row subplan (ENG-12211/ENG-12212).
     """
     from addons.osfstorage.models import OsfStorageFile
     if only_public:
@@ -35,18 +40,18 @@ def osfstorage_file_qs(node_queryset, preprint_queryset, *, created_before=None,
     if created_before:
         node_queryset = node_queryset.filter(created__lt=created_before)
         preprint_queryset = preprint_queryset.filter(created__lt=created_before)
-    _target_node_q = Q(
-        target_object_id__in=node_queryset.values('pk'),
+
+    _base_file_qs = OsfStorageFile.objects.filter(deleted__isnull=True, purged__isnull=True)
+    _node_file_qs = _base_file_qs.filter(
         target_content_type=ContentType.objects.get_for_model(AbstractNode),
+        target_object_id__in=node_queryset.values('pk'),
     )
-    _target_preprint_q = Q(
-        target_object_id__in=preprint_queryset.values('pk'),
+    _preprint_file_qs = _base_file_qs.filter(
         target_content_type=ContentType.objects.get_for_model(Preprint),
+        target_object_id__in=preprint_queryset.values('pk'),
     )
-    _file_qs = (
-        OsfStorageFile.objects
-        .filter(deleted__isnull=True, purged__isnull=True)
-        .filter(_target_node_q | _target_preprint_q)
+    _file_qs = OsfStorageFile.objects.filter(
+        pk__in=_node_file_qs.values('pk').union(_preprint_file_qs.values('pk')),
     )
     if created_before:
         _file_qs = _file_qs.filter(created__lt=created_before)
@@ -74,7 +79,7 @@ class MonthlyOsfstorageFileCountReporter(MonthlyReporter):
         _month_end = self.yearmonth.month_end()
         _node_qs = (
             AbstractNode.objects
-            .filter(deleted__isnull=True)
+            .filter(is_deleted=False)
             .exclude(spam_status=SpamStatus.SPAM)
         )
         _preprint_qs = (
