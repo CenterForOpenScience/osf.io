@@ -34,6 +34,7 @@ from api.metrics.serializers import (
     UserVisitsSerializer,
     UniqueUserVisitsSerializer,
     CountedAuthUsageSerializer,
+    SSRMetricsSerializer,
 )
 from api.metrics.utils import (
     parse_date_range,
@@ -61,6 +62,7 @@ from osf.metrics.monthly_reports import (
     BaseMonthlyReport,
     MonthlyPublicItemUsageReport,
     MonthlySpamSummaryReport,
+    MonthlyAngularSSRMetricsReport,
     MonthlyOsfstorageFileCountReport,
 )
 from osf.metrics.openapi import get_metrics_openapi_json_dict
@@ -80,6 +82,7 @@ _BACKCOMPAT_VIEWABLE_REPORTS = {
     'storage_addon_usage': DailyStorageAddonUsageReport,
     'user_summary': DailyUserSummaryReport,
     'spam_summary': MonthlySpamSummaryReport,
+    'angular_ssr_metrics': MonthlyAngularSSRMetricsReport,
     'new_user_domains': DailyNewUserDomainReport,
     'items_usage': MonthlyPublicItemUsageReport,
 }
@@ -422,6 +425,19 @@ class CountedAuthUsageView(JSONAPIBaseView):
             pageview_info=serializer.validated_data.get('pageview_info'),
         ):
             return HttpResponse(status=204)
+        serializer.save()
+        return HttpResponse(status=201)
+
+
+class SSRMetricsView(JSONAPIBaseView):
+    view_category = 'metrics'
+    view_name = 'ssr-metrics'
+
+    serializer_class = SSRMetricsSerializer
+
+    def post(self, request, *args, **kwargs):
+        serializer = self.serializer_class(data=request.data)
+        serializer.is_valid(raise_exception=True)
         serializer.save()
         return HttpResponse(status=201)
 

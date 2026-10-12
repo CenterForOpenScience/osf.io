@@ -5,10 +5,12 @@ from api.base.settings.defaults import API_BASE
 from api.base.utils import hashids
 from osf_tests.factories import (
     AuthUserFactory,
+    ProjectFactory,
     UserFactory,
 )
 from osf.models import Email, NotableDomain, NotificationTypeEnum
 from framework.auth.views import auth_email_logout
+from osf.utils.permissions import READ
 from tests.utils import capture_notifications
 
 @pytest.fixture()
@@ -578,6 +580,30 @@ class TestUserEmailDetail:
         assert res.json['data']['attributes']['verified'] is True
         assert res.json['data']['attributes']['confirmed'] is True
         assert res.json['data']['attributes']['is_merge'] is False
+
+    def test_updating_verified_for_merge_contributor_without_permission_group(self, app, user_one, user_two, payload):
+        """Regression: merging used to fail with `ValueError: None is not in list` (HTTP 500)
+        when both accounts were contributors on a project and one had no permission group."""
+        project = ProjectFactory(creator=user_two)
+        project.add_contributor(user_one, permissions=READ, save=True)
+        project.remove_permission(user_one, READ)
+        assert project.contributor_set.get(user=user_one).permission is None
+
+        payload['data']['attributes'] = {'verified': True}
+        token = user_one.add_unconfirmed_email(user_two.username)
+        user_one.email_verifications[token]['confirmed'] = True
+        user_one.save()
+        url = f'/{API_BASE}users/{user_one._id}/settings/emails/{token}/'
+
+        res = app.patch_json_api(url, payload, auth=user_one.auth, expect_errors=True)
+
+        assert res.status_code == 200
+        assert res.json['data']['attributes']['verified'] is True
+        user_two.reload()
+        assert user_two.merged_by == user_one
+        assert project.is_contributor(user_one)
+        assert not project.is_contributor(user_two)
+        assert project.contributor_set.get(user=user_one).permission == 'admin'
 
     @mock.patch('api.users.views.send_confirm_email_async')
     def test_resend_confirmation_email(self, mock_send_confirm_email_async, app, user_one, unconfirmed_url, confirmed_url):

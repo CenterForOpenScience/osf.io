@@ -1,3 +1,4 @@
+import uuid
 import logging
 from rest_framework import status as http_status
 
@@ -438,6 +439,8 @@ def delete_external_identity(auth, **kwargs):
             auth.user.external_identity[service].pop(identity)
             if len(auth.user.external_identity[service]) == 0:
                 auth.user.external_identity.pop(service)
+            if not auth.user.has_usable_password():
+                auth.user.set_password(str(uuid.uuid4()))
             auth.user.save()
             return
 

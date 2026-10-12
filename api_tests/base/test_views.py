@@ -15,6 +15,7 @@ from api.metrics.views import (
     RegistriesModerationMetricsView,
     CountedAuthUsageView,
     MetricsOpenapiView,
+    SSRMetricsView,
 )
 from api.users.views import (
     ClaimUser,
@@ -23,10 +24,12 @@ from api.users.views import (
     ExternalLoginConfirmEmailView,
     ExternalLogin,
     ConfirmEmailView,
-    SanctionResponseView
+    SanctionResponseView,
+    ResendConfirmation
 )
 from api.registrations.views import RegistrationCallbackView
 from api.wb.views import MoveFileMetadataView, CopyFileMetadataView
+from api.sendgrid.views import SendGridEventWebhook
 from rest_framework.permissions import IsAuthenticatedOrReadOnly, IsAuthenticated
 from api.base.permissions import TokenHasScope
 from website.settings import DEBUG_MODE
@@ -64,6 +67,7 @@ class TestApiBaseViews(ApiTestCase):
             ClaimUser,
             CopyFileMetadataView,
             CountedAuthUsageView,
+            SSRMetricsView,
             MoveFileMetadataView,
             ParseCrossRefConfirmation,
             RawMetricsView,
@@ -74,7 +78,9 @@ class TestApiBaseViews(ApiTestCase):
             ConfirmEmailView,
             ExternalLogin,
             RegistrationCallbackView,
-            SanctionResponseView
+            SanctionResponseView,
+            SendGridEventWebhook,
+            ResendConfirmation
         ]
 
     def test_root_returns_200(self):

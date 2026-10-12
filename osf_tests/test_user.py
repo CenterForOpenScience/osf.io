@@ -449,7 +449,7 @@ class TestOSFUser:
         assert not draft_five.is_contributor(user2)
 
     @mock.patch('api.share.utils.update_share')
-    def test_merge_user_triggers_share_reindex(self, mock_update_share):
+    def test_merge_user_triggers_share_reindex(self, mock_update_share, django_capture_on_commit_callbacks):
         from osf.models import Preprint
 
         user = AuthUserFactory()
@@ -463,7 +463,8 @@ class TestOSFUser:
         preprint_two = PreprintFactory(title='preprint_two')
         preprint_two.add_contributor(user2)
 
-        user.merge_user(user2)
+        with django_capture_on_commit_callbacks(execute=True):
+            user.merge_user(user2)
 
         # Verify update_share was called for both nodes
         nodes_reindexed = [
@@ -1101,6 +1102,38 @@ class TestIsActive:
         assert user.is_active is False
 
 
+class TestHasAcceptedCurrentTermsOfService:
+
+    def test_is_false_when_never_accepted(self):
+        user = UserFactory(accepted_terms_of_service=None)
+        assert user.has_accepted_current_terms_of_service is False
+
+    def test_is_false_when_acceptance_predates_latest_update(self):
+        user = UserFactory(accepted_terms_of_service=dt.datetime(2018, 5, 24, tzinfo=dt.timezone.utc))
+        assert user.has_accepted_current_terms_of_service is False
+
+    def test_is_true_when_acceptance_follows_latest_update(self):
+        user = UserFactory(accepted_terms_of_service=timezone.now())
+        assert user.has_accepted_current_terms_of_service is True
+
+    def test_moving_latest_update_forward_invalidates_acceptance_without_clearing_it(self):
+        accepted = dt.datetime(2020, 1, 1, tzinfo=dt.timezone.utc)
+        user = UserFactory(accepted_terms_of_service=accepted)
+        assert user.has_accepted_current_terms_of_service is True
+        with mock.patch.object(
+            settings,
+            'LATEST_TERMS_OF_SERVICE_UPDATE',
+            dt.datetime(2026, 1, 1, tzinfo=dt.timezone.utc),
+        ):
+            assert user.has_accepted_current_terms_of_service is False
+        user.reload()
+        assert user.accepted_terms_of_service == accepted
+
+    def test_unset_configured_date_leaves_acceptance_current(self):
+        user = UserFactory(accepted_terms_of_service=dt.datetime(2018, 5, 24, tzinfo=dt.timezone.utc))
+        with mock.patch.object(settings, 'LATEST_TERMS_OF_SERVICE_UPDATE', None):
+            assert user.has_accepted_current_terms_of_service is True
+
 class TestAddUnconfirmedEmail:
 
     @mock.patch('website.security.random_string')
@@ -1496,22 +1529,24 @@ class TestMergingUsers:
         assert master.emails.filter(address='joseph123@hotmail.com').exists()
 
     @mock.patch('website.mailchimp_utils.get_mailchimp_api')
-    def test_send_user_merged_signal(self, mock_get_mailchimp_api, dupe, merge_dupe):
+    def test_send_user_merged_signal(self, mock_get_mailchimp_api, dupe, merge_dupe, django_capture_on_commit_callbacks):
         dupe.mailchimp_mailing_lists['foo'] = True
         dupe.save()
 
         with capture_signals() as mock_signals:
-            merge_dupe()
+            with django_capture_on_commit_callbacks(execute=True):
+                merge_dupe()
             assert mock_signals.signals_sent() == {user_account_merged}
 
     @pytest.mark.enable_enqueue_task
     @mock.patch('website.mailchimp_utils.unsubscribe_mailchimp_async')
     @mock.patch('website.mailchimp_utils.get_mailchimp_api')
-    def test_merged_user_unsubscribed_from_mailing_lists(self, mock_mailchimp_api, mock_unsubscribe, dupe, merge_dupe, email_subscriptions_enabled):
+    def test_merged_user_unsubscribed_from_mailing_lists(self, mock_mailchimp_api, mock_unsubscribe, dupe, merge_dupe, email_subscriptions_enabled, django_capture_on_commit_callbacks):
         list_name = settings.MAILCHIMP_GENERAL_LIST
         dupe.mailchimp_mailing_lists[list_name] = True
         dupe.save()
-        merge_dupe()
+        with django_capture_on_commit_callbacks(execute=True):
+            merge_dupe()
         assert mock_unsubscribe.called
 
     def test_inherits_projects_contributed_by_dupe(self, dupe, master, merge_dupe):
@@ -1692,6 +1727,7 @@ class TestDisablingUsers(OsfTestCase):
 
         assert not SessionStore().exists(session_key=session1.session_key)
         assert not SessionStore().exists(session_key=session2.session_key)
+        assert not UserSessionMap.objects.filter(user=self.user).exists()
 
 
 class TestRemoveExternalIdentity(OsfTestCase):
@@ -2342,6 +2378,47 @@ class TestUserGdprDelete:
         assert user.deleted is not None
         mock_post.assert_called_once()
         assert mock_post.call_args.kwargs['data']['token'] == 'fake-orcid-token'
+
+    def test_gdpr_delete_removes_sessions(self, user, django_capture_on_commit_callbacks):
+        session1 = SessionStore()
+        session1.create()
+        UserSessionMap.objects.create(user=user, session_key=session1.session_key)
+
+        session2 = SessionStore()
+        session2.create()
+        UserSessionMap.objects.create(user=user, session_key=session2.session_key)
+
+        with django_capture_on_commit_callbacks(execute=True):
+            user.gdpr_delete()
+
+        assert not SessionStore().exists(session_key=session1.session_key)
+        assert not SessionStore().exists(session_key=session2.session_key)
+        assert not UserSessionMap.objects.filter(user=user).exists()
+
+    @mock.patch('osf.models.user.requests.post')
+    def test_gdpr_delete_revokes_all_orcid_ids_when_multiple_present(self, mock_post, user):
+        # A merge with a user who had a different verified ORCID can leave more than one entry behind.
+        mock_post.return_value = mock.Mock(status_code=200)
+        user.external_identity = {
+            'ORCID': {'fake-orcid-id': 'VERIFIED', 'other-orcid-id': 'VERIFIED'},
+        }
+        user.external_identity_tokens = {
+            'ORCID': {
+                'fake-orcid-id': {'access_token': 'fake-orcid-token'},
+                'other-orcid-id': {'access_token': 'other-orcid-token'},
+            },
+        }
+        user.save()
+
+        user.gdpr_delete()
+
+        assert user.deleted is not None
+        assert user.is_disabled
+        assert user.external_identity == {}
+        assert user.external_identity_tokens == {}
+        assert mock_post.call_count == 2
+        revoked_tokens = {call.kwargs['data']['token'] for call in mock_post.call_args_list}
+        assert revoked_tokens == {'fake-orcid-token', 'other-orcid-token'}
 
     @mock.patch('osf.models.user.requests.post')
     def test_gdpr_delete_orcid_identity_without_token_blocks_delete(self, mock_post, user):

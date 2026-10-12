@@ -22,7 +22,7 @@ from osf_tests.factories import (
 )
 from osf.models.admin_log_entry import AdminLogEntry, PREPRINT_RECOVERED, PREPRINT_RESTORED
 from osf.models.spam import SpamStatus
-from osf.utils.workflows import DefaultStates, RequestTypes
+from osf.utils.workflows import DefaultStates, RequestTypes, ReviewTriggers
 from osf.utils.permissions import ADMIN
 
 from admin_tests.utilities import setup_view, setup_log_view, handle_post_view_request
@@ -757,6 +757,36 @@ class TestPreprintWithdrawalRequests:
 
         preprint.refresh_from_db()
         assert preprint.machine_state == DefaultStates.ACCEPTED.value
+
+    def test_can_unwithdraw_preprint_reported_as_spam(self, submitter, admin):
+        provider = PreprintProviderFactory(reviews_workflow='pre-moderation')
+        preprint = PreprintFactory(project=NodeFactory(creator=submitter), provider=provider)
+
+        withdrawal_request = PreprintRequestFactory(
+            creator=admin,
+            target=preprint,
+            request_type=RequestTypes.WITHDRAWAL.value,
+            machine_state=DefaultStates.INITIAL.value)
+        withdrawal_request.run_submit(admin)
+        with capture_notifications():
+            withdrawal_request.run_accept(admin, withdrawal_request.comment)
+        assert preprint.machine_state == 'withdrawn'
+
+        moderator = AuthUserFactory()
+        moderator.groups.add(provider.get_group('moderator'))
+        with capture_notifications():
+            preprint.run_report_spam(user=moderator, comment='Spam account')
+
+        request_unwithdraw = RequestFactory().post(reverse('preprints:unwithdraw', kwargs={'guid': preprint._id}))
+        request_unwithdraw.user = admin
+        response_unwithdraw = views.PreprintUnwithdrawView.as_view()(request_unwithdraw, guid=preprint._id)
+        assert response_unwithdraw.status_code == 302
+
+        preprint.refresh_from_db()
+        assert preprint.machine_state == DefaultStates.ACCEPTED.value
+        # the withdrawal is gone, the report is still there
+        assert preprint.actions.filter(trigger=ReviewTriggers.REPORT_SPAM.value).count() == 1
+        assert not preprint.actions.filter(trigger=ReviewTriggers.WITHDRAW.value).exists()
 
     def test_permissions_errors(self, user, submitter):
         # with auth, no permissions

@@ -70,6 +70,7 @@ from osf.utils.fields import NonNaiveDateTimeField, LowercaseEmailField, ensure_
 from osf.utils.names import impute_names
 from osf.utils.requests import check_select_for_update
 from osf.utils.permissions import API_CONTRIBUTOR_PERMISSIONS, MANAGER, MEMBER, ADMIN
+from osf.utils.workflows import RegistrationModerationStates
 from website import settings as website_settings
 from website import filters
 from website.project import new_bookmark_collection
@@ -478,6 +479,22 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         return bool(self.date_confirmed)
 
     @property
+    def has_accepted_current_terms_of_service(self):
+        """
+        Check whether this user's acceptance of the Terms of Use is relevant and set.
+        If acceptance recorded before LATEST_TERMS_OF_SERVICE_UPDATE date, the
+        user counts as not having accepted until they accept again. The previously stored timestamp is not cleared, and
+        will be updated if the user accept new terms of service version
+        """
+        if not self.accepted_terms_of_service:
+            return False
+        latest_update = website_settings.LATEST_TERMS_OF_SERVICE_UPDATE
+        if not latest_update:
+            # No terms update configured
+            return True
+        return self.accepted_terms_of_service >= latest_update
+
+    @property
     def is_merged(self):
         """Whether or not this account has been merged into another account.
         """
@@ -760,6 +777,24 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         if self == user:
             raise ValueError('Cannot merge a user into itself')
 
+        try:
+            with transaction.atomic():
+                nodes_to_reindex, preprints_to_reindex = self._merge_user(user)
+        except Exception as exc:
+            logger.exception(f'Failed to merge user {user._id} into {self._id}; the merge was rolled back')
+            sentry.log_exception(exc)
+            self.refresh_from_db()
+            user.refresh_from_db()
+            raise
+
+        # Side effects outside the database only run once the merge is committed
+        transaction.on_commit(lambda: self._after_merge_user(user, nodes_to_reindex, preprints_to_reindex))
+
+    def _merge_user(self, user):
+        """Database part of `merge_user`. Must run inside a transaction.
+
+        :return: nodes and preprints of `user` to reindex in SHARE after the merge is committed
+        """
         # Capture content to SHARE reindex BEFORE merge transfers contributors
         # After merge, user.contributed and user.preprints will be empty
         nodes_to_reindex = list(user.contributed)
@@ -850,8 +885,9 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
             # if both accounts are contributor of the same project
             if node.is_contributor(self) and node.is_contributor(user):
                 self_perms = Contributor(node=node, user=self).permission
-                permissions = API_CONTRIBUTOR_PERMISSIONS[max(API_CONTRIBUTOR_PERMISSIONS.index(user_perms), API_CONTRIBUTOR_PERMISSIONS.index(self_perms))]
-                node.set_permissions(user=self, permissions=permissions)
+                permissions = self._highest_permission(node, user, user_perms, self_perms)
+                if permissions:
+                    node.set_permissions(user=self, permissions=permissions)
 
                 visible1 = self._id in node.visible_contributor_ids
                 visible2 = user._id in node.visible_contributor_ids
@@ -861,9 +897,12 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
                 node.contributor_set.filter(user=user).delete()
             else:
                 node.contributor_set.filter(user=user).update(user=self)
-                node.add_permission(self, user_perms)
+                self._warn_if_no_permission(node, user, user_perms)
+                if user_perms:
+                    node.add_permission(self, user_perms)
 
-            node.remove_permission(user, user_perms)
+            if user_perms:
+                node.remove_permission(user, user_perms)
             node.save()
 
         # Skip bookmark collections
@@ -886,8 +925,6 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         self._merge_user_draft_registrations(user)
 
         # finalize the merge
-        remove_sessions_for_user(user)
-
         # - username is set to the GUID so the merging user can set it primary
         #   in the future (note: it cannot be set to None due to non-null constraint)
         user.set_unusable_username()
@@ -897,6 +934,12 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         user.merged_by = self
 
         user.save()
+
+        return nodes_to_reindex, preprints_to_reindex
+
+    def _after_merge_user(self, user, nodes_to_reindex, preprints_to_reindex):
+        """Side effects of `merge_user` outside the database, run after the merge is committed."""
+        remove_sessions_for_user(user)
         signals.user_account_merged.send(user)
 
         from api.share.utils import update_share
@@ -912,6 +955,22 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
                 update_share(preprint)
             except Exception as e:
                 logger.exception(f'Failed to SHARE reindex preprint {preprint._id} during user merge: {e}')
+
+    def _warn_if_no_permission(self, resource, user, permission):
+        """Contributor rows without a permission group are inconsistent data. Keep them visible without failing the merge."""
+        if permission is None:
+            message = f'Merging user {user._id} into {self._id}: contributor of {resource._id} has no permission group'
+            logger.warning(message)
+            sentry.log_message(message)
+
+    def _highest_permission(self, resource, user, *permissions):
+        """Return the highest of `permissions`, ignoring missing (`None`) ones. `None` if none are set."""
+        if any(permission is None for permission in permissions):
+            self._warn_if_no_permission(resource, user, None)
+        known = [permission for permission in permissions if permission is not None]
+        if not known:
+            return None
+        return API_CONTRIBUTOR_PERMISSIONS[max(API_CONTRIBUTOR_PERMISSIONS.index(permission) for permission in known)]
 
     def _merge_users_preprints(self, user):
         """
@@ -931,9 +990,10 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
                 self_contributor = PreprintContributor.objects.get(preprint=preprint, user=self)
                 self_perms = self_contributor.permission
 
-                max_perms_index = max(API_CONTRIBUTOR_PERMISSIONS.index(self_perms), API_CONTRIBUTOR_PERMISSIONS.index(user_perms))
                 # Add the highest of `self` perms or `user` perms to `self`
-                preprint.set_permissions(user=self, permissions=API_CONTRIBUTOR_PERMISSIONS[max_perms_index])
+                highest_perms = self._highest_permission(preprint, user, self_perms, user_perms)
+                if highest_perms:
+                    preprint.set_permissions(user=self, permissions=highest_perms)
 
                 if not self_contributor.visible and user_contributor.visible:
                     # if `self` is not visible, but `user` is visible, make `self` visible.
@@ -945,12 +1005,15 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
                 # `self` is not a contributor, but `user` is.  Transfer `user` permissions and
                 # contributor information to `self`.  Remove permissions from `user`.
                 preprint.contributor_set.filter(user=user).update(user=self)
-                preprint.add_permission(self, user_perms)
+                self._warn_if_no_permission(preprint, user, user_perms)
+                if user_perms:
+                    preprint.add_permission(self, user_perms)
 
             if preprint.creator == user:
                 preprint.creator = self
 
-            preprint.remove_permission(user, user_perms)
+            if user_perms:
+                preprint.remove_permission(user, user_perms)
             preprint.save()
 
     @property
@@ -960,7 +1023,11 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         """
 
         return self.draft_registrations.filter(
-            (models.Q(registered_node__isnull=True) | models.Q(registered_node__deleted__isnull=False)),
+            (
+                models.Q(registered_node__isnull=True)
+                | models.Q(registered_node__deleted__isnull=False)
+                | models.Q(registered_node__moderation_state=RegistrationModerationStates.REJECTED.db_name)
+            ),
             branched_from__deleted__isnull=True,
             deleted__isnull=True,
         )
@@ -983,9 +1050,10 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
                 self_contributor = DraftRegistrationContributor.objects.get(draft_registration=draft_reg, user=self)
                 self_perms = self_contributor.permission
 
-                max_perms_index = max(API_CONTRIBUTOR_PERMISSIONS.index(self_perms), API_CONTRIBUTOR_PERMISSIONS.index(user_perms))
                 # Add the highest of `self` perms or `user` perms to `self`
-                draft_reg.set_permissions(user=self, permissions=API_CONTRIBUTOR_PERMISSIONS[max_perms_index])
+                highest_perms = self._highest_permission(draft_reg, user, self_perms, user_perms)
+                if highest_perms:
+                    draft_reg.set_permissions(user=self, permissions=highest_perms)
 
                 if not self_contributor.visible and user_contributor.visible:
                     # if `self` is not visible, but `user` is visible, make `self` visible.
@@ -997,12 +1065,15 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
                 # `self` is not a contributor, but `user` is.  Transfer `user` permissions and
                 # contributor information to `self`.  Remove permissions from `user`.
                 draft_reg.contributor_set.filter(user=user).update(user=self)
-                draft_reg.add_permission(self, user_perms)
+                self._warn_if_no_permission(draft_reg, user, user_perms)
+                if user_perms:
+                    draft_reg.add_permission(self, user_perms)
 
             if draft_reg.initiator == user:
                 draft_reg.initiator = self
 
-            draft_reg.remove_permission(user, user_perms)
+            if user_perms:
+                draft_reg.remove_permission(user, user_perms)
             draft_reg.save()
 
     @property
@@ -2120,6 +2191,10 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
 
             # Finally delete the user's info.
             self._clear_identifying_information()
+
+            # Revoke all sessions (and their `UserSessionMap` entries) once the deletion is committed, so that
+            # a GDPR deleted user can't come back with a live cookie, including sessions created mid-deletion.
+            transaction.on_commit(lambda: remove_sessions_for_user(self))
 
     def _validate_and_remove_resource_for_gdpr_delete(self, resources, hard_delete):
         """

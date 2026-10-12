@@ -511,6 +511,21 @@ class EmbargoManager(models.Manager):
             .order_by('end_date')
         )
 
+    def stuck_completed(self):
+        """Embargoes marked COMPLETED whose registration never actually went public.
+
+        This is the signature left behind when `terminate_embargo` raises after the
+        embargo's state has already been flipped to COMPLETED (e.g. a spam check
+        failure during `Node.set_privacy`), so the registration is stuck private
+        with no active embargo to retry.
+        """
+        return (
+            self.filter(state=self.model.COMPLETED)
+            .filter(registrations__is_deleted=False, registrations__is_public=False)
+            .distinct()
+            .order_by('end_date')
+        )
+
 
 class Embargo(SanctionCallbackMixin, EmailApprovableSanction):
     """Embargo object for registrations waiting to go public."""
@@ -672,6 +687,9 @@ class Embargo(SanctionCallbackMixin, EmailApprovableSanction):
                 'embargo_id': self._id,
             },
             auth=Auth(user) if user else Auth(self.initiated_by))
+        # Registrations rejected by a moderator are kept in the REJECTED moderation state
+        if self.approval_stage is ApprovalStates.MODERATOR_REJECTED:
+            return
         # Remove backref to parent project if embargo was for a new registration
         if not self.for_existing_registration:
             parent_registration.delete_registration_tree(save=True)
@@ -1037,7 +1055,9 @@ class RegistrationApproval(SanctionCallbackMixin, EmailApprovableSanction):
         NodeLog = apps.get_model('osf.NodeLog')
 
         registered_from = self.target_registration.registered_from
-        self.target_registration.delete_registration_tree(save=True)
+        # Registrations rejected by a moderator are kept in the REJECTED moderation state
+        if self.approval_stage is not ApprovalStates.MODERATOR_REJECTED:
+            self.target_registration.delete_registration_tree(save=True)
         registered_from.add_log(
             action=NodeLog.REGISTRATION_APPROVAL_CANCELLED,
             params={

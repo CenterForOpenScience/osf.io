@@ -975,6 +975,18 @@ class ReviewableMixin(MachineableMixin):
         """
         return self._run_transition(self.TriggersClass.WITHDRAW.value, user=user, comment=comment)
 
+    def run_report_spam(self, user, comment):
+        """Run the 'report_spam' state transition and create a corresponding Action.
+
+        send email to support so they can look at the submitter's account. Doesn't touch the
+        submission itself, report_abuse is the one that flags and hides it.
+
+        Params:
+            user: The moderator making the report.
+            comment: Text describing why.
+        """
+        return self._run_transition(self.TriggersClass.REPORT_SPAM.value, user=user, comment=comment)
+
 
 class GuardianMixin(models.Model):
     """ Helper for managing object-level permissions with django-guardian
@@ -2633,7 +2645,7 @@ class ShareIndexMixin(models.Model):
         if isinstance(self, OsfStorageFile):
             self.save(update_fields=['has_been_indexed', 'date_last_indexed'], skip_search=True)
         else:
-            self.save(update_fields=['has_been_indexed'])
+            self.save(update_fields=['has_been_indexed', 'date_last_indexed'])
 
     class Meta:
         abstract = True

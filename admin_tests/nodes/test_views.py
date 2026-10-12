@@ -1307,3 +1307,32 @@ class TestEmbargoReportView(AdminTestCase):
 
         context = self.view.get_context_data()
         assert embargo not in context['overdue_page']
+
+    def test_stuck_completed_in_report(self):
+        embargo = EmbargoFactory(
+            approve=True,
+            end_date=timezone.now() - timezone.timedelta(days=1),
+        )
+        embargo.state = Sanction.COMPLETED
+        embargo.save()
+        registration = embargo.registrations.first()
+        registration.is_public = False
+        registration.save()
+
+        context = self.view.get_context_data()
+        assert embargo in context['stuck_completed_page']
+        assert embargo not in context['overdue_page']
+
+    def test_public_completed_embargo_excluded_from_stuck_completed(self):
+        embargo = EmbargoFactory(
+            approve=True,
+            end_date=timezone.now() - timezone.timedelta(days=1),
+        )
+        embargo.state = Sanction.COMPLETED
+        embargo.save()
+        registration = embargo.registrations.first()
+        registration.is_public = True
+        registration.save()
+
+        context = self.view.get_context_data()
+        assert embargo not in context['stuck_completed_page']

@@ -1,9 +1,9 @@
 import logging
 import uuid
-from osf.models import NotificationType, NotificationTypeEnum, OSFUser, UserActivityCounter, Email
+from osf.models import NotificationType, NotificationTypeEnum, OSFUser, UserActivityCounter, Email, Contributor
 from osf.models.spam import SpamStatus
 from django.db import transaction
-from django.db.models import OuterRef, Subquery, Case, When, Value, CharField, Count, Q, BooleanField, TextField
+from django.db.models import OuterRef, Subquery, Case, When, Value, CharField, Count, Q, BooleanField, TextField, Exists
 from django.db.models.functions import Coalesce
 from framework.celery_tasks import app as celery_app
 from django.utils import timezone
@@ -40,6 +40,15 @@ counter_subquery = (
     .filter(_id=OuterRef('guids___id'))
     .values('total')[:1]
 )
+
+
+# Matches users who contribute to at least one project or component
+# Counts: projects and components at any nesting depth - all share the osf.node type
+# Does not count: registrations, draft nodes, and preprints, whose contributors live in a
+# separate table entirely
+# not filtered on: contributor permissions, whether the project is public, and
+# whether the node is deleted or spam-flagged
+project_contributor_subquery = Contributor.objects.filter(user_id=OuterRef('pk'), node__type='osf.node')
 
 
 class NotificationCampaignTask(celery_app.Task):
@@ -121,13 +130,15 @@ def build_query(node):
 
 
 def build_campaign_filter_query(filters):
-    """AND together optional predefined and manual filter clauses."""
+    """AND together optional predefined, manual and contributor filter clauses."""
     filters = filters or {}
     query = Q()
     if predefined := filters.get('predefined'):
         query &= Q(**FILTER_PRESETS.get(predefined, {}))
     if manual := filters.get('manual'):
         query &= build_query(manual)
+    if filters.get('exclude_non_contributors'):
+        query &= Q(Exists(project_contributor_subquery))
     return query
 
 @celery_app.task(name='email.create_campaign_recipients')

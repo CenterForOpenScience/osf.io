@@ -545,16 +545,23 @@ def force_archive(self, registration_id, permissible_addons, allow_unconfigured=
         return f'{exc.__class__.__name__}: {str(exc)}'
 
 
-@celery_app.task
+@celery_app.task(bind=True, base=ArchiverTask, ignore_result=False, max_retries=3, default_retry_delay=60 * 5, acks_late=True)
 @logged('archive_callback')
-def archive_callback(dst_id):
+def archive_callback(self, dst_id):
     """Blinker task for updates to the archive task. When the tree of ArchiveJob
     instances is complete, proceed to send success or failure mails
 
     :param dst: registration Node
     """
-    dst = Registration.load(dst_id)
-    root = dst.root
+    try:
+        dst = Registration.load(dst_id)
+        root = dst.root
+    except AttributeError as err:
+        sentry.log_message(
+            f'Archive callback failed to fetch registration with guid {dst_id}',
+        )
+        raise self.retry(exc=err)
+
     root_job = root.archive_job
     if not root_job.archive_tree_finished():
         return

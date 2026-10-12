@@ -207,6 +207,32 @@ class TestRecatalogMetadata:
         _expected_osfids = set(_iter_osfids(_all_items))
         assert _expected_osfids == _actual_osfids()
 
+    def test_mark_indexing_success_saves_date_last_indexed(
+        self,
+        preprints,
+        registrations,
+        projects,
+        files,
+        users
+    ):
+        project = projects[0]
+        preprint = preprints[0]
+        registration = registrations[0]
+        user = users[0]
+        file = files[0]
+        objects = [project, preprint, registration, user, file]
+
+        def new_mocked_now(*args, **kwargs):
+            return datetime.datetime(2020, 10, 10, 0, 0, 0, 0)
+
+        with mock.patch('django.utils.timezone.now') as mocked_now:
+            mocked_now.side_effect = new_mocked_now
+            for share_object in objects:
+                share_object.mark_indexing_success()
+
+        for share_object in objects:
+            assert share_object.date_last_indexed == datetime.datetime(2020, 10, 10, 0, 0, 0, 0)
+
 
 ###
 # local utils
