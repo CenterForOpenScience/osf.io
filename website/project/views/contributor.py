@@ -832,6 +832,8 @@ def claim_user_form(auth, **kwargs):
 
     # If user is logged in, redirect to 're-enter password' page
     if auth.logged_in:
+        if auth.user._id == uid:
+            return redirect(web_url_for('auth_logout', redirect_url=request.url))
         return redirect(web_url_for('claim_user_registered',
             uid=uid, pid=pid, token=token))
 
