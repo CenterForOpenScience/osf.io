@@ -1,14 +1,17 @@
-from django.db import transaction
+import logging
+
+from django.db import InterfaceError, OperationalError, transaction
 from django.db.models import Case, TextField, Value, When
 
 from framework.celery_tasks import app as celery_app
 from osf.models.notification_campaign import (
-    NotificationCampaign,
     NotificationCampaignRecipient,
     NotificationCampaignRecipientStatus,
 )
 
 from .base import NotificationCampaignTask
+
+logger = logging.getLogger(__name__)
 
 # Flattened onto SendGrid Event Webhook payloads via personalization custom_args.
 CAMPAIGN_CUSTOM_ARG_KEYS = ('campaign_id', 'campaign_recipient_id', 'sent_at')
@@ -42,25 +45,36 @@ def _classify_sendgrid_failure(event):
     return None
 
 
-def _classify_sendgrid_events(events, recipients):
-    """Classify SendGrid events into success/failure/skipped categories."""
+def _parse_campaign_event(event):
+    """Return ``(campaign_id, recipient_id, sent_at)`` as ints, or None for a malformed event."""
+    if not isinstance(event, dict):
+        return None
+    try:
+        return (
+            int(event['campaign_id']),
+            int(event['campaign_recipient_id']),
+            int(event['sent_at']),
+        )
+    except (KeyError, TypeError, ValueError):
+        return None
+
+
+def _classify_sendgrid_events(parsed_events, recipients):
+    """Classify parsed SendGrid events into success/failure/skipped categories.
+
+    ``parsed_events`` is a list of ``(event, campaign_id, recipient_pk, sent_at)``.
+    """
     successed = set()
     failed = dict()
     skipped = dict()
 
-    for event in events:
-        recipient_pk = event.get('campaign_recipient_id')
-        if recipient_pk is None:
-            continue
-
-        recipient = recipients.get(int(recipient_pk))
-        if recipient is None:
-            continue
-
+    for event, campaign_id, recipient_pk, sent_at in parsed_events:
+        recipient = recipients.get(recipient_pk)
         if (
-            recipient.sent_at is None
-            or str(recipient.campaign_id) != str(event.get('campaign_id', ''))
-            or str(recipient.sent_at) != str(event.get('sent_at', ''))
+            recipient is None
+            or recipient.sent_at is None
+            or recipient.campaign_id != campaign_id
+            or recipient.sent_at != sent_at
         ):
             continue
 
@@ -86,7 +100,20 @@ def _classify_sendgrid_events(events, recipients):
     return successed, failed, skipped
 
 
-@celery_app.task(bind=True, base=NotificationCampaignTask, name='email.process_sendgrid_campaign_events')
+# Safe to retry / redeliver: updates are status-guarded and atomic, so replaying the
+# same events is a no-op. Retry only transient DB errors (connection drops, deadlocks).
+@celery_app.task(
+    bind=True,
+    base=NotificationCampaignTask,
+    name='email.process_sendgrid_campaign_events',
+    autoretry_for=(OperationalError, InterfaceError),
+    retry_backoff=True,
+    retry_backoff_max=60,
+    retry_jitter=True,
+    max_retries=5,
+    acks_late=True,
+    reject_on_worker_lost=True,
+)
 def process_sendgrid_campaign_events(self, events):
     """Update campaign recipients from filtered SendGrid Event Webhook events.
 
@@ -105,19 +132,21 @@ def process_sendgrid_campaign_events(self, events):
     (including a prior ``FAILED``/``SKIPPED`` from an earlier webhook) so a
     confirmed delivery is never left failed (and retried).
     """
-    campaign_ids = {
-        int(campaign_id)
-        for event in events
-        if (campaign_id := event.get('campaign_id')) is not None
-    }
-    if not campaign_ids:
+    parsed_events = []
+    for event in events:
+        parsed = _parse_campaign_event(event)
+        if parsed is not None:
+            parsed_events.append((event, *parsed))
+    if len(parsed_events) != len(events):
+        # Count only: events carry recipient email addresses.
+        logger.warning(
+            f'Skipped {len(events) - len(parsed_events)} malformed SendGrid campaign event(s) '
+            f'of {len(events)} received'
+        )
+    if not parsed_events:
         return
 
-    recipient_ids = {
-        int(recipient_id)
-        for event in events
-        if (recipient_id := event.get('campaign_recipient_id')) is not None
-    }
+    recipient_ids = {recipient_pk for _, _, recipient_pk, _ in parsed_events}
     recipients_by_id = {
         recipient.id: recipient
         for recipient in NotificationCampaignRecipient.objects.filter(
@@ -127,18 +156,11 @@ def process_sendgrid_campaign_events(self, events):
     if not recipients_by_id:
         return
 
-    success_ids, failed, skipped = _classify_sendgrid_events(events, recipients_by_id)
+    success_ids, failed, skipped = _classify_sendgrid_events(parsed_events, recipients_by_id)
     if not success_ids and not failed and not skipped:
         return
 
     with transaction.atomic():
-        # Lock campaign rows so concurrent webhook/batch syncs cannot overwrite
-        # counters with a stale aggregate snapshot.
-        campaigns = list(
-            NotificationCampaign.objects.select_for_update()
-            .filter(id__in=campaign_ids)
-            .order_by('id')
-        )
         if success_ids:
             NotificationCampaignRecipient.objects.filter(
                 id__in=success_ids,
@@ -182,6 +204,3 @@ def process_sendgrid_campaign_events(self, events):
                     output_field=TextField(),
                 ),
             )
-
-        for campaign in campaigns:
-            self.sync_campaign_stats(campaign)
