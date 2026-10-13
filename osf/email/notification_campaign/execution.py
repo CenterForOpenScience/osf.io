@@ -1,7 +1,6 @@
 import logging
 from datetime import timedelta
 
-from django.db import transaction
 from django.db.models import Case, CharField, Subquery, When
 from django.utils import timezone
 
@@ -138,6 +137,10 @@ def dispatch_campaign(self, campaign_id, run_id, restart_failed=False, restart_s
         logger.error(message)
         sentry.log_message(message)
         return
+
+    # Refresh counters once per dispatch interval (covers SENT without webhook and
+    # FAILED/SKIPPED set by batches) instead of re-aggregating after every batch.
+    self.sync_campaign_stats(campaign)
 
     queued_batches_count = NotificationCampaignRecipient.objects.filter(
         campaign=campaign,
@@ -361,11 +364,6 @@ def send_campaign_batch(
                 sentry.log_message(message)
         if recipient_records:
             NotificationCampaignRecipient.objects.bulk_update(recipient_records, ['status', 'error_message', 'sent_at'])
-
-    # Lock the campaign row so concurrent batches cannot overwrite counters with a stale aggregate snapshot
-    with transaction.atomic():
-        notification_campaign = NotificationCampaign.objects.select_for_update().get(pk=campaign_id)
-        self.sync_campaign_stats(notification_campaign)
 
     batch_finished_at = timezone.now()
     batch_run_time = (batch_finished_at - batch_started_at).total_seconds()

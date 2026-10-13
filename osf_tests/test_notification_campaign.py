@@ -851,7 +851,7 @@ class TestSendCampaignBatch:
         recipient.refresh_from_db()
         running_campaign.refresh_from_db()
         assert recipient.status == NotificationCampaignRecipientStatus.SENT
-        assert running_campaign.sent_count == 1
+        assert get_campaign_recipient_stats(running_campaign.id)['sent_count'] == 1
         mock_send_email.assert_called_once()
 
     @mock.patch('osf.email.notification_campaign.execution.send_email', side_effect=Exception('send failed'))
@@ -874,7 +874,7 @@ class TestSendCampaignBatch:
         running_campaign.refresh_from_db()
         assert recipient.status == NotificationCampaignRecipientStatus.FAILED
         assert 'send failed' in recipient.error_message
-        assert running_campaign.failed_count == 1
+        assert get_campaign_recipient_stats(running_campaign.id)['failed_count'] == 1
 
     def test_send_campaign_batch_skips_invalid_email_addresses(self, running_campaign):
         user = UserFactory()
@@ -898,8 +898,8 @@ class TestSendCampaignBatch:
         running_campaign.refresh_from_db()
         assert recipient.status == NotificationCampaignRecipientStatus.SKIPPED
         assert recipient.error_message == 'Invalid email address'
-        assert running_campaign.failed_count == 1
-        assert running_campaign.sent_count == 0
+        assert get_campaign_recipient_stats(running_campaign.id)['failed_count'] == 1
+        assert get_campaign_recipient_stats(running_campaign.id)['sent_count'] == 0
 
     @mock.patch('osf.email.notification_campaign.execution.send_email_with_send_grid')
     def test_send_campaign_batch_sendgrid_bulk_success(self, mock_sendgrid, running_campaign):
@@ -929,8 +929,8 @@ class TestSendCampaignBatch:
         assert custom_args['sent_at'] == str(recipient.sent_at)
         assert recipient.status == NotificationCampaignRecipientStatus.AWAITING_DELIVERY
         assert recipient.sent_at is not None
-        assert running_campaign.sent_count == 0
-        assert running_campaign.failed_count == 0
+        assert get_campaign_recipient_stats(running_campaign.id)['sent_count'] == 0
+        assert get_campaign_recipient_stats(running_campaign.id)['failed_count'] == 0
         assert get_campaign_recipient_stats(running_campaign.id)['awaiting_count'] == 1
         assert get_campaign_recipient_stats(running_campaign.id)['queued_count'] == 0
 
@@ -1002,8 +1002,8 @@ class TestSendCampaignBatch:
         recipient.refresh_from_db()
         running_campaign.refresh_from_db()
         assert recipient.status == NotificationCampaignRecipientStatus.FAILED
-        assert running_campaign.failed_count == 1
-        assert running_campaign.sent_count == 0
+        assert get_campaign_recipient_stats(running_campaign.id)['failed_count'] == 1
+        assert get_campaign_recipient_stats(running_campaign.id)['sent_count'] == 0
 
     @mock.patch('osf.email.notification_campaign.execution.sentry.log_message')
     def test_send_campaign_batch_logs_when_time_window_exceeded(self, mock_sentry, running_campaign):
@@ -1169,10 +1169,9 @@ class TestSendCampaignBatch:
         recipient.refresh_from_db()
         running_campaign.refresh_from_db()
         assert recipient.status == NotificationCampaignRecipientStatus.SENT
-        assert running_campaign.sent_count == 1
-        assert running_campaign.failed_count == 0
+        assert get_campaign_recipient_stats(running_campaign.id)['sent_count'] == 1
+        assert get_campaign_recipient_stats(running_campaign.id)['failed_count'] == 0
         mock_send_email.assert_called_once()
-
 
 class TestNotificationCampaignCancel:
 
@@ -1424,8 +1423,7 @@ class TestProcessSendgridCampaignEvents:
         recipient.refresh_from_db()
         assert recipient.status == NotificationCampaignRecipientStatus.SENT
         assert recipient.error_message is None
-        campaign.refresh_from_db()
-        assert campaign.sent_count == 1
+        assert get_campaign_recipient_stats(campaign.id)['sent_count'] == 1
         assert get_campaign_recipient_stats(campaign.id)['awaiting_count'] == 0
         assert get_campaign_recipient_stats(campaign.id)['queued_count'] == 0
 
@@ -1444,8 +1442,7 @@ class TestProcessSendgridCampaignEvents:
         recipient.refresh_from_db()
         assert recipient.status == NotificationCampaignRecipientStatus.SKIPPED
         assert recipient.error_message == '550 user unknown'
-        campaign.refresh_from_db()
-        assert campaign.failed_count == 1  # SKIPPED counts in failed_count
+        assert get_campaign_recipient_stats(campaign.id)['failed_count'] == 1  # SKIPPED counts in failed_count
         assert get_campaign_recipient_stats(campaign.id)['awaiting_count'] == 0
         assert get_campaign_recipient_stats(campaign.id)['queued_count'] == 0
 
@@ -1477,8 +1474,7 @@ class TestProcessSendgridCampaignEvents:
         recipient.refresh_from_db()
         assert recipient.status == NotificationCampaignRecipientStatus.FAILED
         assert recipient.error_message == 'mailbox temporarily unavailable'
-        campaign.refresh_from_db()
-        assert campaign.failed_count == 1
+        assert get_campaign_recipient_stats(campaign.id)['failed_count'] == 1
         assert get_campaign_recipient_stats(campaign.id)['awaiting_count'] == 0
         assert get_campaign_recipient_stats(campaign.id)['queued_count'] == 0
 

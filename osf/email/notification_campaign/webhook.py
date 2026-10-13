@@ -1,9 +1,8 @@
-from django.db import transaction
+from django.db import InterfaceError, OperationalError, transaction
 from django.db.models import Case, TextField, Value, When
 
 from framework.celery_tasks import app as celery_app
 from osf.models.notification_campaign import (
-    NotificationCampaign,
     NotificationCampaignRecipient,
     NotificationCampaignRecipientStatus,
 )
@@ -86,7 +85,20 @@ def _classify_sendgrid_events(events, recipients):
     return successed, failed, skipped
 
 
-@celery_app.task(bind=True, base=NotificationCampaignTask, name='email.process_sendgrid_campaign_events')
+# Safe to retry / redeliver: updates are status-guarded and atomic, so replaying the
+# same events is a no-op. Retry only transient DB errors (connection drops, deadlocks).
+@celery_app.task(
+    bind=True,
+    base=NotificationCampaignTask,
+    name='email.process_sendgrid_campaign_events',
+    autoretry_for=(OperationalError, InterfaceError),
+    retry_backoff=True,
+    retry_backoff_max=60,
+    retry_jitter=True,
+    max_retries=5,
+    acks_late=True,
+    reject_on_worker_lost=True,
+)
 def process_sendgrid_campaign_events(self, events):
     """Update campaign recipients from filtered SendGrid Event Webhook events.
 
@@ -105,14 +117,6 @@ def process_sendgrid_campaign_events(self, events):
     (including a prior ``FAILED``/``SKIPPED`` from an earlier webhook) so a
     confirmed delivery is never left failed (and retried).
     """
-    campaign_ids = {
-        int(campaign_id)
-        for event in events
-        if (campaign_id := event.get('campaign_id')) is not None
-    }
-    if not campaign_ids:
-        return
-
     recipient_ids = {
         int(recipient_id)
         for event in events
@@ -132,13 +136,6 @@ def process_sendgrid_campaign_events(self, events):
         return
 
     with transaction.atomic():
-        # Lock campaign rows so concurrent webhook/batch syncs cannot overwrite
-        # counters with a stale aggregate snapshot.
-        campaigns = list(
-            NotificationCampaign.objects.select_for_update()
-            .filter(id__in=campaign_ids)
-            .order_by('id')
-        )
         if success_ids:
             NotificationCampaignRecipient.objects.filter(
                 id__in=success_ids,
@@ -182,6 +179,3 @@ def process_sendgrid_campaign_events(self, events):
                     output_field=TextField(),
                 ),
             )
-
-        for campaign in campaigns:
-            self.sync_campaign_stats(campaign)

@@ -73,7 +73,7 @@
 
         <div class="progress-bar progress-bar-success"
             style="width: {{ sent_percent }}%;">
-            {{ notification_campaign.sent_count }}
+            {{ sent_count }}
         </div>
 
         <div class="progress-bar progress-bar-info"
@@ -88,7 +88,7 @@
 
         <div class="progress-bar progress-bar-danger"
             style="width: {{ failed_percent }}%;">
-            {{ notification_campaign.failed_count }}
+            {{ failed_count }}
         </div>
 
         <div class="progress-bar progress-bar-default"
@@ -102,7 +102,7 @@
 <table class="table table-bordered">
     <tr>
         <th style="width:250px;">Processed</th>
-        <td>{{ processed }} / {{ notification_campaign.recipient_count }}</td>
+        <td>{{ processed }} / {{ recipient_count }}</td>
     </tr>
 
     <tr>

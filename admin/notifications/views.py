@@ -395,6 +395,16 @@ class NotificationCampaignDetail(PermissionRequiredMixin, DetailView):
         stats = get_campaign_recipient_stats(notification_campaign.id)
         queued = stats['queued_count']
         awaiting = stats['awaiting_count']
+        # Recipient rows are the source of truth while they exist; the stored counters
+        # are a snapshot for campaigns whose recipients were purged.
+        if stats['recipient_count']:
+            recipient_count = stats['recipient_count']
+            sent_count = stats['sent_count']
+            failed_count = stats['failed_count']
+        else:
+            recipient_count = notification_campaign.recipient_count
+            sent_count = notification_campaign.sent_count
+            failed_count = notification_campaign.failed_count
 
         context = {
             'notification_campaign': notification_campaign,
@@ -404,11 +414,11 @@ class NotificationCampaignDetail(PermissionRequiredMixin, DetailView):
                 ('Created By', notification_campaign.created_by),
                 ('Developer reminder ', 'Sent' if notification_campaign.developer_reminder_sent else ''),
                 ('Status', notification_campaign.get_status_display()),
-                ('Recipients', notification_campaign.recipient_count),
-                ('Sent', notification_campaign.sent_count),
+                ('Recipients', recipient_count),
+                ('Sent', sent_count),
                 ('Queued', queued),
                 ('Awaiting Delivery', awaiting),
-                ('Failed', notification_campaign.failed_count),
+                ('Failed', failed_count),
                 ('Retries', notification_campaign.retries),
                 ('Created', notification_campaign.created_at),
                 ('Started', notification_campaign.started_at),
@@ -441,9 +451,9 @@ class NotificationCampaignDetail(PermissionRequiredMixin, DetailView):
         }
 
         if notification_campaign.status != NotificationCampaignStatus.CREATED:
-            processed = notification_campaign.sent_count + notification_campaign.failed_count
+            processed = sent_count + failed_count
             pending = max(
-                notification_campaign.recipient_count - processed - queued - awaiting,
+                recipient_count - processed - queued - awaiting,
                 0,
             )
             awaiting_delivery = (
@@ -454,20 +464,20 @@ class NotificationCampaignDetail(PermissionRequiredMixin, DetailView):
             )
 
             sent_percent = (
-                notification_campaign.sent_count / notification_campaign.recipient_count * 100
-                if notification_campaign.recipient_count else 0
+                sent_count / recipient_count * 100
+                if recipient_count else 0
             )
             failed_percent = (
-                notification_campaign.failed_count / notification_campaign.recipient_count * 100
-                if notification_campaign.recipient_count else 0
+                failed_count / recipient_count * 100
+                if recipient_count else 0
             )
             queued_percent = (
-                queued / notification_campaign.recipient_count * 100
-                if notification_campaign.recipient_count else 0
+                queued / recipient_count * 100
+                if recipient_count else 0
             )
             awaiting_percent = (
-                awaiting / notification_campaign.recipient_count * 100
-                if notification_campaign.recipient_count else 0
+                awaiting / recipient_count * 100
+                if recipient_count else 0
             )
 
             pending_percent = max(
@@ -495,11 +505,14 @@ class NotificationCampaignDetail(PermissionRequiredMixin, DetailView):
             if notification_campaign.updated_at:
                 last_activity_ago = timezone.now() - notification_campaign.updated_at
             if processed:
-                failure_rate = notification_campaign.failed_count / processed * 100
+                failure_rate = failed_count / processed * 100
             else:
                 failure_rate = 0
 
             context.update({
+                'recipient_count': recipient_count,
+                'sent_count': sent_count,
+                'failed_count': failed_count,
                 'processed': processed,
                 'pending': pending,
                 'queued': queued,

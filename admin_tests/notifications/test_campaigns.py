@@ -23,8 +23,11 @@ from admin_tests.utilities import setup_form_view
 from osf.models import NotificationType
 from osf.models.notification_campaign import (
     NotificationCampaign,
+    NotificationCampaignRecipient,
+    NotificationCampaignRecipientStatus,
+    NotificationCampaignStatus,
 )
-from osf_tests.factories import AuthUserFactory, ProjectFactory
+from osf_tests.factories import AuthUserFactory, ProjectFactory, UserFactory
 from tests.base import AdminTestCase
 from website import settings
 
@@ -514,3 +517,75 @@ class TestNotificationCampaignDeleteView(AdminTestCase):
         response = DeleteNotificationCampaign.as_view()(request, pk=self.campaign.pk)
         assert response.status_code == 302
         assert not NotificationCampaign.objects.filter(pk=self.campaign.pk).exists()
+
+
+class TestNotificationCampaignDetailCounters(AdminTestCase):
+
+    def setUp(self):
+        super().setUp()
+        self.user = AuthUserFactory()
+        grant_permission(self.user, 'change_notificationcampaign')
+        notification_type, _ = NotificationType.objects.get_or_create(
+            name='blank',
+            defaults={'subject': 'Test', 'template': 'Hello'},
+        )
+        # Stored counters deliberately differ from recipient rows.
+        self.campaign = NotificationCampaign.objects.create(
+            name='Campaign',
+            notification_type=notification_type,
+            status=NotificationCampaignStatus.COMPLETED,
+            recipient_count=10,
+            sent_count=7,
+            failed_count=3,
+            metadata={'filters': {}, 'context': {}, 'execution': {}},
+        )
+
+    def _context(self):
+        request = RequestFactory().get(
+            reverse('notifications:notification_campaigns_detail', kwargs={'pk': self.campaign.pk})
+        )
+        request.user = self.user
+        response = NotificationCampaignDetail.as_view()(request, pk=self.campaign.pk)
+        assert response.status_code == 200
+        return response.context_data
+
+    def _add_recipient(self, status):
+        NotificationCampaignRecipient.objects.create(
+            campaign=self.campaign,
+            user=UserFactory(),
+            status=status,
+        )
+
+    def test_uses_live_recipient_stats_when_recipients_exist(self):
+        self._add_recipient(NotificationCampaignRecipientStatus.SENT)
+        self._add_recipient(NotificationCampaignRecipientStatus.SKIPPED)
+        self._add_recipient(NotificationCampaignRecipientStatus.AWAITING_DELIVERY)
+
+        context = self._context()
+
+        assert (context['recipient_count'], context['sent_count'], context['failed_count']) == (3, 1, 1)
+        assert context['awaiting'] == 1
+        assert context['processed'] == 2
+        assert context['pending'] == 0
+
+    def test_falls_back_to_stored_counters_when_recipients_purged(self):
+        context = self._context()
+
+        assert (context['recipient_count'], context['sent_count'], context['failed_count']) == (10, 7, 3)
+        assert context['processed'] == 10
+        assert context['pending'] == 0
+
+    @mock.patch('osf.email.notification_campaign.start_notification_campaign.delay')
+    def test_restart_does_not_reset_displayed_counters(self, mock_delay):
+        self._add_recipient(NotificationCampaignRecipientStatus.SENT)
+        self._add_recipient(NotificationCampaignRecipientStatus.FAILED)
+        self._add_recipient(NotificationCampaignRecipientStatus.SKIPPED)
+
+        for flags in ({'restart_failed': True}, {'restart_stuck': True}):
+            self.campaign.start(**flags)  # resets stored failed_count to 0
+            self.campaign.refresh_from_db()
+            assert self.campaign.failed_count == 0
+
+            context = self._context()
+
+            assert (context['recipient_count'], context['sent_count'], context['failed_count']) == (3, 1, 2)
