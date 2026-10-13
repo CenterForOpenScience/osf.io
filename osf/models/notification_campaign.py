@@ -13,8 +13,11 @@ class NotificationCampaignStatus(models.TextChoices):
     ENDED = 'ended', 'Ended'
 
 class NotificationCampaignRecipientStatus(models.TextChoices):
+    # Batch assigned; Celery send task in flight (counts toward max_queued_batches).
     QUEUED = 'queued', 'Queued'
     PENDING = 'pending', 'Pending'
+    # SendGrid accepted the message; waiting on Event Webhook delivery/failure.
+    AWAITING_DELIVERY = 'awaiting_delivery', 'Awaiting Delivery'
     SENT = 'sent', 'Sent'
     FAILED = 'failed', 'Failed'
     SKIPPED = 'skipped', 'Skipped'
@@ -131,6 +134,14 @@ class NotificationCampaignRecipient(models.Model):
 
     activity_score = models.IntegerField(default=0)
     batch_id = models.UUIDField(null=True, blank=True, db_index=True)
+    # Unix seconds when mail was handed to SendGrid for this send attempt. Mirrored
+    # into SendGrid custom_args as ``sent_at`` and matched on inbound webhooks so
+    # delayed events from a prior attempt (e.g. after restart_failed) are ignored.
+    sent_at = models.PositiveBigIntegerField(
+        null=True,
+        blank=True,
+        db_column='sent_at_big_int',
+    )
 
     class Meta:
         unique_together = ('campaign', 'user')
