@@ -106,6 +106,7 @@ from osf.models import (
 )
 from osf.utils.tokens import TokenHandler
 from osf.utils.tokens.handlers import sanction_handler
+from osf.utils.workflows import RegistrationModerationStates
 from website import settings, language
 from website.project.views.contributor import send_claim_email, send_claim_registered_email
 from website.util.metrics import CampaignClaimedTags, CampaignSourceTags
@@ -485,7 +486,10 @@ class UserRegistrations(JSONAPIBaseView, generics.ListAPIView, UserMixin, NodesF
             **resource_annotations.make_open_practice_badge_annotations(),
         )
         # OSF group members not copied to registration.  Only registration contributors need to be checked here.
-        return qs.filter(contributor__user__id=user.id)
+        # Registrations rejected by a moderator are returned to contributors as drafts, so they are not listed here.
+        return qs.filter(contributor__user__id=user.id).exclude(
+            moderation_state=RegistrationModerationStates.REJECTED.db_name,
+        )
 
     # overrides ListAPIView
     def get_queryset(self):

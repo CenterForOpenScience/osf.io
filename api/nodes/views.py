@@ -173,6 +173,7 @@ from osf.models import (
 )
 from addons.osfstorage.models import Region
 from osf.utils.permissions import ADMIN, WRITE_NODE
+from osf.utils.workflows import RegistrationModerationStates
 from website import settings
 
 # This is used to rethrow v1 exceptions as v2
@@ -776,7 +777,10 @@ class NodeRegistrationsList(JSONAPIBaseView, generics.ListCreateAPIView, NodeMix
     # overrides ListCreateAPIView
     # TODO: Filter out withdrawals by default
     def get_queryset(self):
-        nodes = self.get_node().registrations_all.annotate(
+        # Registrations rejected by a moderator are returned to contributors as drafts, so they are not listed here
+        nodes = self.get_node().registrations_all.exclude(
+            moderation_state=RegistrationModerationStates.REJECTED.db_name,
+        ).annotate(
             revision_state=registration_annotations.REVISION_STATE,
             **resource_annotations.make_open_practice_badge_annotations(),
         )

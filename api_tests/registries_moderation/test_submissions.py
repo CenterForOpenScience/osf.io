@@ -408,6 +408,44 @@ class TestRegistriesModerationSubmissions:
         assert registration.moderation_state == RegistrationModerationStates.REJECTED.db_name
         assert not registration.is_deleted
 
+    def test_rejected_submission_is_not_listed_for_contributors(self, app, registration, reg_creator, moderator, provider, registration_actions_url, actions_payload_base):
+        user_registrations_url = f'/{API_BASE}users/{reg_creator._id}/registrations/'
+        node_registrations_url = f'/{API_BASE}nodes/{registration.registered_from._id}/registrations/'
+        rejected_tab_url = f'/{API_BASE}providers/registrations/{provider._id}/registrations/?filter[reviews_state]=rejected'
+
+        def listed_ids(url, user):
+            return [entry['id'] for entry in app.get(url, auth=user.auth).json['data']]
+
+        def registration_count(url, user):
+            resp = app.get(f'{url}?related_counts=True', auth=user.auth)
+            return resp.json['data']['relationships']['registrations']['links']['related']['meta']['count']
+
+        def assert_counts_match_lists():
+            user_url = f'/{API_BASE}users/{reg_creator._id}/'
+            node_url = f'/{API_BASE}nodes/{registration.registered_from._id}/'
+            assert registration_count(user_url, reg_creator) == len(listed_ids(user_registrations_url, reg_creator))
+            assert registration_count(node_url, reg_creator) == len(listed_ids(node_registrations_url, reg_creator))
+
+        registration.require_approval(user=registration.creator)
+        with capture_notifications():
+            registration.registration_approval.accept()
+        assert registration._id in listed_ids(user_registrations_url, reg_creator)
+        assert registration._id in listed_ids(node_registrations_url, reg_creator)
+        assert_counts_match_lists()
+
+        actions_payload_base['data']['attributes']['trigger'] = RegistrationModerationTriggers.REJECT_SUBMISSION.db_name
+        actions_payload_base['data']['relationships']['target']['data']['id'] = registration._id
+        with capture_notifications():
+            resp = app.post_json_api(registration_actions_url, actions_payload_base, auth=moderator.auth)
+        assert resp.status_code == 201
+
+        # Contributors get the draft back instead of seeing the rejected registration among submitted
+        assert registration._id not in listed_ids(user_registrations_url, reg_creator)
+        assert registration._id not in listed_ids(node_registrations_url, reg_creator)
+        assert_counts_match_lists()
+        # Moderators still see it under the Rejected tab
+        assert registration._id in listed_ids(rejected_tab_url, moderator)
+
     def test_registries_moderation_post_embargo(self, app, embargo_registration, moderator, provider, embargo_registration_actions_url, actions_payload_base, reg_creator):
         assert embargo_registration.moderation_state == RegistrationModerationStates.INITIAL.db_name
         with capture_notifications():
