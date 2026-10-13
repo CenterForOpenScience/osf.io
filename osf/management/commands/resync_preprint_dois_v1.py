@@ -2,12 +2,12 @@ import logging
 from dataclasses import dataclass
 
 from django.contrib.contenttypes.models import ContentType
-from django.core.management.base import BaseCommand
+from django.core.management.base import BaseCommand, CommandError
 from django.db.models import Q
 from django.utils import timezone
 
 from framework.celery_tasks import app
-from osf.models import Preprint, Identifier
+from osf.models import Preprint, PreprintProvider, Identifier
 from osf.models.base import VersionedGuidMixin
 from osf.management.commands.sync_doi_metadata import async_request_identifier_update
 from website import settings
@@ -256,6 +256,8 @@ class Command(BaseCommand):
     help = (
         'Resync DOIs for version-1 preprints that are missing the versioned DOI suffix (_v1), '
         'and register missing unversioned DOIs. '
+        'Use --provider <provider_id> (e.g. socarxiv) to restrict the run to a single preprint provider; '
+        'without it, all providers are processed. '
         'With --dry_run, previews the backlog synchronously and exits. '
         'Otherwise, starts the resync_preprint_dois_v1_task dispatcher once: it queues an initial '
         'batch (bounded by --batch_size and the shared in-flight capacity, see '
@@ -292,6 +294,9 @@ class Command(BaseCommand):
         dry_run = options['dry_run']
         batch_size = options['batch_size']
         provider_id = options['provider_id']
+
+        if provider_id and not PreprintProvider.objects.filter(_id=provider_id).exists():
+            raise CommandError(f'Unknown preprint provider: {provider_id}')
 
         if dry_run:
             # Synchronous preview of both passes; nothing gets queued or dispatched.

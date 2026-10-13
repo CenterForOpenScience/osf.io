@@ -98,6 +98,10 @@ class CrossRefClient(AbstractIdentifierClient):
         root.attrib['{%s}schemaLocation' % XSI] = CROSSREF_SCHEMA_LOCATION
         return lxml.etree.tostring(root)
 
+    @staticmethod
+    def _doi_suffix(doi):
+        return doi.split('/', 1)[-1].lower()
+
     def build_posted_content(self, preprint, element, include_relation, doi_override=None, resource_override=None, include_version_relations=True):
         """Build the <posted_content> element for a single preprint
         preprint - preprint to build posted_content for
@@ -175,7 +179,7 @@ class CrossRefClient(AbstractIdentifierClient):
             posted_content.append(relations_program)
 
         minted_doi = preprint.get_identifier_value('doi')
-        if minted_doi and minted_doi == self.build_unversioned_doi(preprint):
+        if minted_doi and self._doi_suffix(minted_doi) == self._doi_suffix(self.build_unversioned_doi(preprint)):
             minted_doi = None
         doi = doi_override or minted_doi or self.build_doi(preprint)
         resource_url = resource_override if resource_override is not None else settings.DOMAIN + preprint._id

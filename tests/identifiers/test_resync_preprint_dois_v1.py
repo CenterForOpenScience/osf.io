@@ -2,6 +2,7 @@ import pytest
 from datetime import timedelta
 from unittest import mock
 from django.core.management import call_command
+from django.core.management.base import CommandError
 from django.utils import timezone
 
 from osf.models import Preprint
@@ -319,6 +320,14 @@ class TestResyncPreprintDoisV1Command:
 
         mock_v1_pass.assert_called_once_with(dry_run=True, batch_size=25, provider_id=preprint.provider._id)
         mock_unversioned_pass.assert_called_once_with(dry_run=True, batch_size=25, provider_id=preprint.provider._id)
+        mock_apply_async.assert_not_called()
+
+    @pytest.mark.parametrize('dry_run', [True, False])
+    @mock.patch('osf.management.commands.resync_preprint_dois_v1.resync_preprint_dois_v1_task.apply_async')
+    def test_unknown_provider_raises_and_dispatches_nothing(self, mock_apply_async, dry_run, preprint):
+        with pytest.raises(CommandError, match='Unknown preprint provider: not-a-provider'):
+            call_command('resync_preprint_dois_v1', dry_run=dry_run, provider_id='not-a-provider')
+
         mock_apply_async.assert_not_called()
 
     @mock.patch('osf.management.commands.resync_preprint_dois_v1.async_request_identifier_update')
