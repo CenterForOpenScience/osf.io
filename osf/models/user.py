@@ -25,6 +25,7 @@ from django.db import models, transaction
 from django.db.models import Count, Exists, OuterRef
 from django.db.models.signals import post_save
 from django.utils import timezone
+from django.utils.crypto import get_random_string
 
 from framework import sentry
 from framework.auth import Auth, signals, utils
@@ -2289,40 +2290,33 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         """Unlinks a single external identity (e.g. ORCID) from this user, best-effort revoking
         its token with the provider and killing the user's sessions.
 
+        If this leaves the user with no way to log in, a random usable password is set so the
+        account stays active (the user can recover via password reset).
+
         Raises KeyError if `external_id` is not connected to this user under `provider`.
+        Raises UserStateError if the ORCiD token revocation fails; the user is left unchanged.
         """
         # Raises KeyError if the identity isn't actually connected -- callers rely on this.
+        self.external_identity[provider][external_id]
+
+        token_entry = self.external_identity_tokens.get(provider, {}).get(external_id)
+        if provider == 'ORCID' and token_entry and (token_entry.get('access_token') or token_entry.get('refresh_token')):
+            # Revoke first: a failure must abort the removal before anything is mutated.
+            self._revoke_orcid_token(external_id, token_entry, '[Remove external identity]')
+
         del self.external_identity[provider][external_id]
         if not self.external_identity[provider]:
             del self.external_identity[provider]
 
-        token_entry = self.external_identity_tokens.get(provider, {}).pop(external_id, None)
+        self.external_identity_tokens.get(provider, {}).pop(external_id, None)
         if provider in self.external_identity_tokens and not self.external_identity_tokens[provider]:
             del self.external_identity_tokens[provider]
 
-        if provider == 'ORCID' and token_entry:
-            orcid_token = token_entry.get('access_token') or token_entry.get('refresh_token')
-            if orcid_token:
-                try:
-                    response = requests.post(
-                        website_settings.ORCID_OAUTH_REVOKE_URL,
-                        data={
-                            'client_id': website_settings.ORCID_OAUTH_CLIENT_ID,
-                            'client_secret': website_settings.ORCID_OAUTH_CLIENT_SECRET,
-                            'token': orcid_token,
-                        },
-                        timeout=website_settings.ORCID_OAUTH_REVOKE_REQUEST_TIMEOUT,
-                    )
-                    response.raise_for_status()
-                    logger.info(f'[Remove external identity] ORCiD access revoked: '
-                                f'user={self._id}, orcid_id={external_id}')
-                except requests.exceptions.RequestException as e:
-                    # Local unlink must still succeed even if the remote revoke call fails.
-                    msg = (f'[Remove external identity] Failed to revoke ORCiD access: '
-                           f'user={self._id}, orcid_id={external_id}, error={e}')
-                    logger.error(msg)
-                    sentry.log_message(msg, level=logging.ERROR)
-                    sentry.log_exception(e)
+        has_verified_identity = any(
+            status == 'VERIFIED' for ids in self.external_identity.values() for status in ids.values()
+        )
+        if not self.has_usable_password() and not has_verified_identity:
+            self.set_password(get_random_string(32), notify=False)
 
         remove_sessions_for_user(self)
 
@@ -2366,32 +2360,38 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
             return
 
         for orcid_id in sorted(revocable_ids):
-            token_entry = tokens_identity_ids[orcid_id]
-            # We only need to revoke with either access token or refresh token
-            orcid_token = token_entry.get('access_token') or token_entry.get('refresh_token')
-            logger.info(f'[GDPR delete] Revoking ORCiD Access: user={self._id}, orcid_id={orcid_id}')
-            # Note: no need to retry as for now since this is only triggered manually by OSF admin
-            # TODO: however, need to add retry when we add revocation when user disconnect ORCiD
-            try:
-                response = requests.post(
-                    website_settings.ORCID_OAUTH_REVOKE_URL,
-                    data={
-                        'client_id': website_settings.ORCID_OAUTH_CLIENT_ID,
-                        'client_secret': website_settings.ORCID_OAUTH_CLIENT_SECRET,
-                        'token': orcid_token,
-                    },
-                    timeout=website_settings.ORCID_OAUTH_REVOKE_REQUEST_TIMEOUT,
-                )
-                logger.info(f'[GDPR delete] ORCiD Revocation Response: user={self._id}, orcid_id={orcid_id}, '
-                            f'status_code={response.status_code}, response_text={response.text}')
-                response.raise_for_status()
-            except requests.exceptions.RequestException as e:
-                msg = f'[GDPR delete] ORCiD Revocation Failed: user={self._id}, orcid_id={orcid_id}, error={e}'
-                logger.error(msg)
-                sentry.log_message(msg, level=logging.ERROR)
-                sentry.log_exception(e)
-                raise UserStateError(f'Fail to revoke ORCiD access: {e}')
+            self._revoke_orcid_token(orcid_id, tokens_identity_ids[orcid_id], '[GDPR delete]')
             # NOTE: The actual identities/tokens removal happens in `_clear_identifying_information()`.
+
+    def _revoke_orcid_token(self, orcid_id, token_entry, log_prefix):
+        """Revokes a single ORCiD token entry via the ORCiD API.
+
+        Raises UserStateError if the revocation request fails.
+        """
+        # We only need to revoke with either access token or refresh token
+        orcid_token = token_entry.get('access_token') or token_entry.get('refresh_token')
+        logger.info(f'{log_prefix} Revoking ORCiD Access: user={self._id}, orcid_id={orcid_id}')
+        # Note: no need to retry as for now since this is only triggered manually by OSF admin
+        # TODO: however, need to add retry when we add revocation when user disconnect ORCiD
+        try:
+            response = requests.post(
+                website_settings.ORCID_OAUTH_REVOKE_URL,
+                data={
+                    'client_id': website_settings.ORCID_OAUTH_CLIENT_ID,
+                    'client_secret': website_settings.ORCID_OAUTH_CLIENT_SECRET,
+                    'token': orcid_token,
+                },
+                timeout=website_settings.ORCID_OAUTH_REVOKE_REQUEST_TIMEOUT,
+            )
+            logger.info(f'{log_prefix} ORCiD Revocation Response: user={self._id}, orcid_id={orcid_id}, '
+                        f'status_code={response.status_code}, response_text={response.text}')
+            response.raise_for_status()
+        except requests.exceptions.RequestException as e:
+            msg = f'{log_prefix} ORCiD Revocation Failed: user={self._id}, orcid_id={orcid_id}, error={e}'
+            logger.error(msg)
+            sentry.log_message(msg, level=logging.ERROR)
+            sentry.log_exception(e)
+            raise UserStateError(f'Fail to revoke ORCiD access: {e}')
 
     def _clear_identifying_information(self):
         # This doesn't remove identifying info, but ensures other users can't see the deleted user's profile etc.
