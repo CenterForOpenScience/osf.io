@@ -25,6 +25,7 @@ from django.db import models, transaction
 from django.db.models import Count, Exists, OuterRef
 from django.db.models.signals import post_save
 from django.utils import timezone
+from django.utils.crypto import get_random_string
 
 from framework import sentry
 from framework.auth import Auth, signals, utils
@@ -46,6 +47,7 @@ from osf.exceptions import (
     reraise_django_validation_errors,
     UserStateError,
     OrcidRevocationError,
+    OrcidTokenMissingError,
     InvalidTagError,
     TagNotFoundError
 )
@@ -2307,19 +2309,9 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
             return
 
         for orcid_id in sorted(revocable_ids):
-            token_entry = tokens_identity_ids[orcid_id]
-            # We only need to revoke with either access token or refresh token
-            orcid_token = token_entry.get('access_token') or token_entry.get('refresh_token')
-            logger.info(f'[GDPR delete] Revoking ORCiD Access: user={self._id}, orcid_id={orcid_id}')
-            # Note: no need to retry as for now since this is only triggered manually by OSF admin
-            try:
-                self._send_orcid_revoke_request(orcid_id, orcid_token, context='GDPR delete')
-            except requests.exceptions.RequestException as e:
-                msg = f'[GDPR delete] ORCiD Revocation Failed: user={self._id}, orcid_id={orcid_id}, error={e}'
-                logger.error(msg)
-                sentry.log_message(msg, level=logging.ERROR)
-                sentry.log_exception(e)
-                raise UserStateError(f'Fail to revoke ORCiD access: {e}')
+            # Note: no need to retry as it is only triggered manually by OSF admin
+            self._revoke_orcid_token(orcid_id, tokens_identity_ids[orcid_id], '[GDPR delete]')
+            # NOTE: The actual identities/tokens removal happens in `_clear_identifying_information()`.
 
     def _send_orcid_revoke_request(self, orcid_id, orcid_token, context, session=None):
         session = session or requests
@@ -2337,44 +2329,71 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         response.raise_for_status()
         return response
 
-    def disconnect_external_identity(self, provider, identity_id):
-        if provider == website_settings.EXTERNAL_IDENTITY_PROFILE.get('OrcidProfile'):
-            self._revoke_and_forget_orcid_token(identity_id)
+    def remove_external_identity(self, provider, external_id, remove_sessions=True):
+        """Unlinks a single external identity (e.g. ORCID) from this user. For ORCiD, the token is revoked
+        with the provider first and is required.
 
-        identity = self.external_identity.get(provider)
-        if identity:
-            identity.pop(identity_id, None)
-            if not identity:
-                self.external_identity.pop(provider, None)
+        If this leaves the user with no way to log in, a random usable password is set so the
+        account stays active (the user can recover via password reset).
 
-    def _revoke_and_forget_orcid_token(self, orcid_id):
-        tokens = self.external_identity_tokens.get('ORCID', {})
-        token_entry = tokens.get(orcid_id)
-        orcid_token = token_entry and (token_entry.get('access_token') or token_entry.get('refresh_token'))
+        Raises KeyError if `external_id` is not connected to this user under `provider`.
+        Raises OrcidTokenMissingError if the ORCiD identity has no token to revoke, and OrcidRevocationError
+        if the ORCiD token revocation fails. Both are UserStateError; the user is left unchanged.
+        """
+        # Raises KeyError if the identity isn't actually connected -- callers rely on this.
+        self.external_identity[provider][external_id]
 
-        if orcid_token:
-            logger.info(f'[ORCiD disconnect] Revoking ORCiD Access: user={self._id}, orcid_id={orcid_id}')
-            try:
-                self._send_orcid_revoke_request(
-                    orcid_id, orcid_token, context='ORCiD disconnect',
-                    session=requests_retry_session(
-                        retries=website_settings.ORCID_OAUTH_REVOKE_MAX_RETRIES,
-                        status_forcelist=(429, 500, 502, 503, 504),
-                        allowed_methods=frozenset({'POST'}),  # revoking an already revoked token is a no-op
-                    ),
-                )
-            except requests.exceptions.RequestException as e:
-                msg = f'[ORCiD disconnect] ORCiD Revocation Failed: user={self._id}, orcid_id={orcid_id}, error={e}'
+        if provider == website_settings.EXTERNAL_IDENTITY_PROFILE['OrcidProfile']:
+            token_entry = self.external_identity_tokens.get(provider, {}).get(external_id)
+            if not (token_entry and (token_entry.get('access_token') or token_entry.get('refresh_token'))):
+                msg = f'[Remove external identity] Missing ORCiD token: user={self._id}, orcid_id={external_id}'
                 logger.error(msg)
                 sentry.log_message(msg, level=logging.ERROR)
-                sentry.log_exception(e)
-                # Keep the token and identity so the user can retry; dropping them would make revocation impossible.
-                raise OrcidRevocationError(f'Fail to revoke ORCiD access: {e}')
+                raise OrcidTokenMissingError('ORCiD identity has no token to revoke; sign in via ORCiD and try again.')
+            # Revoke first: a failure must abort the removal before anything is mutated.
+            # Retries are safe since revoking an already revoked token is a no-op.
+            self._revoke_orcid_token(
+                external_id, token_entry, '[Remove external identity]',
+                session=requests_retry_session(
+                    retries=website_settings.ORCID_OAUTH_REVOKE_MAX_RETRIES,
+                    status_forcelist=(429, 500, 502, 503, 504),
+                    allowed_methods=frozenset({'POST'}),
+                ),
+            )
 
-        # Only forget the token once revocation succeeded (or there was nothing to revoke).
-        tokens.pop(orcid_id, None)
-        if not tokens:
-            self.external_identity_tokens.pop('ORCID', None)
+        del self.external_identity[provider][external_id]
+        if not self.external_identity[provider]:
+            del self.external_identity[provider]
+
+        self.external_identity_tokens.get(provider, {}).pop(external_id, None)
+        if provider in self.external_identity_tokens and not self.external_identity_tokens[provider]:
+            del self.external_identity_tokens[provider]
+
+        has_verified_identity = any(
+            status == 'VERIFIED' for ids in self.external_identity.values() for status in ids.values()
+        )
+        if not self.has_usable_password() and not has_verified_identity:
+            self.set_password(get_random_string(32), notify=False)
+
+        if remove_sessions:
+            remove_sessions_for_user(self)
+
+    def _revoke_orcid_token(self, orcid_id, token_entry, log_prefix, session=None):
+        """Revokes a single ORCiD token entry via the ORCiD API.
+
+        Raises OrcidRevocationError if the revocation request fails.
+        """
+        # We only need to revoke with either access token or refresh token
+        orcid_token = token_entry.get('access_token') or token_entry.get('refresh_token')
+        logger.info(f'{log_prefix} Revoking ORCiD Access: user={self._id}, orcid_id={orcid_id}')
+        try:
+            self._send_orcid_revoke_request(orcid_id, orcid_token, context=log_prefix, session=session)
+        except requests.exceptions.RequestException as e:
+            msg = f'{log_prefix} ORCiD Revocation Failed: user={self._id}, orcid_id={orcid_id}, error={e}'
+            logger.error(msg)
+            sentry.log_message(msg, level=logging.ERROR)
+            sentry.log_exception(e)
+            raise OrcidRevocationError(f'Fail to revoke ORCiD access: {e}')
 
     def _clear_identifying_information(self):
         # This doesn't remove identifying info, but ensures other users can't see the deleted user's profile etc.
