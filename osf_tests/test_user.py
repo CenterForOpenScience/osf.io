@@ -1781,15 +1781,46 @@ class TestRemoveExternalIdentity(OsfTestCase):
         assert not SessionStore().exists(session_key=session.session_key)
 
     @mock.patch('osf.models.user.requests.post')
-    def test_remove_external_identity_survives_revoke_failure(self, mock_post):
+    def test_remove_external_identity_fails_when_revoke_fails(self, mock_post):
         mock_post.side_effect = requests.exceptions.ConnectionError('boom')
 
-        # Local unlink + session kill must still happen even if ORCID's revoke call fails.
+        session = SessionStore()
+        session.create()
+        UserSessionMap.objects.create(user=self.user, session_key=session.session_key)
+
+        with pytest.raises(UserStateError):
+            self.user.remove_external_identity('ORCID', '0000-0000-0000-0001')
+
+        # Nothing is changed when the remote revoke fails.
+        assert self.user.external_identity == {'ORCID': {'0000-0000-0000-0001': 'VERIFIED'}}
+        assert self.user.external_identity_tokens == {
+            'ORCID': {'0000-0000-0000-0001': {'access_token': 'fake-token'}},
+        }
+        assert SessionStore().exists(session_key=session.session_key)
+
+    @mock.patch('osf.models.user.requests.post')
+    def test_remove_external_identity_sets_usable_password_when_only_login_method(self, mock_post):
+        mock_post.return_value = mock.Mock(status_code=200)
+        self.user.set_unusable_password()
+        self.user.save()
+        assert self.user.is_active
+
         self.user.remove_external_identity('ORCID', '0000-0000-0000-0001')
         self.user.save()
 
-        assert self.user.external_identity == {}
-        assert self.user.external_identity_tokens == {}
+        assert self.user.has_usable_password()
+        assert self.user.is_active
+
+    @mock.patch('osf.models.user.requests.post')
+    def test_remove_external_identity_keeps_existing_password(self, mock_post):
+        mock_post.return_value = mock.Mock(status_code=200)
+        self.user.set_password('a-Strong-pa55word!', notify=False)
+        self.user.save()
+        password_hash = self.user.password
+
+        self.user.remove_external_identity('ORCID', '0000-0000-0000-0001')
+
+        assert self.user.password == password_hash
 
     def test_remove_external_identity_leaves_other_identities_for_same_provider(self):
         self.user.external_identity['ORCID']['0000-0000-0000-0002'] = 'VERIFIED'
