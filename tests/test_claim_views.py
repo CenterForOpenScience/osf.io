@@ -291,20 +291,6 @@ class TestClaimViews(OsfTestCase):
         )
         assert res.request.path == expected
 
-    def test_user_logs_out_if_logged_in_user_is_the_claimed_user(self):
-        url = self.user.get_claim_url(self.project._primary_key)
-        g.current_session = None
-        self.app.set_cookie(settings.COOKIE_NAME, self.user.get_or_create_cookie().decode())
-        res = self.app.get(url)
-        assert res.status_code == 302
-        location = urlparse(res.location)
-        assert location.path == '/logout/'
-        return_url = parse_qs(location.query)['redirect_url'][0]
-        assert return_url.endswith(url)
-        res = self.app.get(res.location)
-        assert res.status_code == 302
-        assert res.location == cas.get_logout_url(service_url=return_url)
-
     @mock.patch('framework.auth.cas.make_response_from_ticket')
     def test_claim_user_when_user_is_registered_with_orcid(self, mock_response_from_ticket):
         # TODO: check in qa url encoding
@@ -472,21 +458,24 @@ class TestClaimViews(OsfTestCase):
             uid=self.user._id,
             token='badtoken',
         )
-        res = self.app.get(url, auth=self.referrer.auth)
+        res = self.app.get(url, auth=AuthUserFactory().auth)
         assert res.status_code == 400
 
-    def test_cannot_claim_user_with_user_who_is_already_contributor(self):
-        # user who is already a contirbutor to the project
+    def test_logged_in_contributor_is_logged_out_and_redirected_to_claim_form(self):
+        # user who is already a contributor to the project
         contrib = AuthUserFactory()
         self.project.add_contributor(contrib, auth=Auth(self.project.creator))
         self.project.save()
         # Claiming user goes to claim url, but contrib is already logged in
         url = self.user.get_claim_url(self.project._primary_key)
-        res = self.app.get(
-            url,
-            auth=contrib.auth, follow_redirects=True)
-        # Response is a 400
-        assert res.status_code == 400
+        res = self.app.get(url, auth=contrib.auth)
+        assert res.status_code == 302
+        res = self.app.get(res.location, auth=contrib.auth)
+        assert res.status_code == 302
+        location = urlparse(res.location)
+        assert location.path == '/logout/'
+        return_url = parse_qs(location.query)['redirect_url'][0]
+        assert return_url.endswith(url)
 
     def test_claim_user_with_project_id_adds_corresponding_claimed_tag_to_user(self):
         assert OsfClaimedTags.Osf.value not in self.user.system_tags
