@@ -32,8 +32,9 @@
                                         This revokes the connected {{ identity.provider }} access and unlinks it from
                                         this user.
                                         {% if identity.only_login_method %}
-                                            This is the user's only login method &mdash; removing it will lock
-                                            them out until they set a password or link another identity.
+                                            This is the user's only login method &mdash; a random password will be
+                                            set so the account stays active; the user must use "Forgot password"
+                                            to log in again.
                                         {% endif %}
                                         {% csrf_token %}
                                     </div>

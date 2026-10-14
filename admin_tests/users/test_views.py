@@ -2,6 +2,7 @@ from unittest import mock
 from furl import furl
 import pytz
 import pytest
+import requests
 from datetime import datetime, timedelta
 
 from django.test import RequestFactory
@@ -279,6 +280,20 @@ class TestRemoveExternalIdentity(AdminTestCase):
         assert self.user.external_identity_tokens == {}
         self.mock_post.assert_called_once()
         assert AdminLogEntry.objects.count() == count + 1
+
+    def test_revoke_failure_aborts_removal(self):
+        patch_messages(self.request)
+        self.mock_post.side_effect = requests.exceptions.ConnectionError('boom')
+        count = AdminLogEntry.objects.count()
+
+        self.setup_view.post(self.request)
+
+        self.user.reload()
+        assert self.user.external_identity == {'ORCID': {'0000-0000-0000-0001': 'VERIFIED'}}
+        assert self.user.external_identity_tokens == {
+            'ORCID': {'0000-0000-0000-0001': {'access_token': 'fake-token'}},
+        }
+        assert AdminLogEntry.objects.count() == count
 
     def test_unknown_identity_is_a_no_op(self):
         patch_messages(self.request)

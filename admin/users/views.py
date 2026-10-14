@@ -457,7 +457,11 @@ class UserRemoveExternalIdentityView(UserMixin, View):
             messages.warning(request, f'{provider} identity {external_id} is not linked to this user.')
             return redirect(self.get_success_url())
 
-        user.remove_external_identity(provider, external_id)
+        try:
+            user.remove_external_identity(provider, external_id)
+        except UserStateError as e:
+            messages.error(request, f'Failed to remove {provider} identity {external_id}: {e}')
+            return redirect(self.get_success_url())
         user.save()
 
         update_admin_log(
