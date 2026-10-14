@@ -45,6 +45,7 @@ from osf.models import (
 from website.project import new_private_link
 from website.project.model import NodeUpdateError
 from osf.utils import permissions as osf_permissions
+from osf.utils.workflows import RegistrationModerationStates
 
 
 class RegistrationProviderRelationshipField(RelationshipField):
@@ -703,8 +704,9 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
 
     def get_registration_count(self, obj):
         auth = get_user_auth(self.context['request'])
-        registrations = [node for node in obj.registrations_all if node.can_view(auth)]
-        return len(registrations)
+        # registrations rejected by a moderator are not listed
+        registrations = obj.registrations_all.exclude(moderation_state=RegistrationModerationStates.REJECTED.db_name)
+        return len([node for node in registrations if node.can_view(auth)])
 
     def get_draft_registration_count(self, obj):
         auth = get_user_auth(self.context['request'])
