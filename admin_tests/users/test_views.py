@@ -295,6 +295,19 @@ class TestRemoveExternalIdentity(AdminTestCase):
         }
         assert AdminLogEntry.objects.count() == count
 
+    def test_missing_token_aborts_removal(self):
+        patch_messages(self.request)
+        self.user.external_identity_tokens = {}
+        self.user.save()
+        count = AdminLogEntry.objects.count()
+
+        self.setup_view.post(self.request)
+
+        self.user.reload()
+        assert self.user.external_identity == {'ORCID': {'0000-0000-0000-0001': 'VERIFIED'}}
+        self.mock_post.assert_not_called()
+        assert AdminLogEntry.objects.count() == count
+
     def test_unknown_identity_is_a_no_op(self):
         patch_messages(self.request)
         setup_view = setup_log_view(
