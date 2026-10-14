@@ -46,6 +46,8 @@ from osf.utils.requests import get_current_request
 from osf.exceptions import (
     reraise_django_validation_errors,
     UserStateError,
+    OrcidRevocationError,
+    OrcidTokenMissingError,
     InvalidTagError,
     TagNotFoundError
 )
@@ -2288,19 +2290,25 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
 
     def remove_external_identity(self, provider, external_id):
         """Unlinks a single external identity (e.g. ORCID) from this user, best-effort revoking
-        its token with the provider and killing the user's sessions.
+        its token with the provider (required for ORCiD) and killing the user's sessions.
 
         If this leaves the user with no way to log in, a random usable password is set so the
         account stays active (the user can recover via password reset).
 
         Raises KeyError if `external_id` is not connected to this user under `provider`.
-        Raises UserStateError if the ORCiD token revocation fails; the user is left unchanged.
+        Raises OrcidTokenMissingError if the ORCiD identity has no token to revoke, and OrcidRevocationError
+        if the ORCiD token revocation fails. Both are UserStateError; the user is left unchanged.
         """
         # Raises KeyError if the identity isn't actually connected -- callers rely on this.
         self.external_identity[provider][external_id]
 
-        token_entry = self.external_identity_tokens.get(provider, {}).get(external_id)
-        if provider == 'ORCID' and token_entry and (token_entry.get('access_token') or token_entry.get('refresh_token')):
+        if provider == 'ORCID':
+            token_entry = self.external_identity_tokens.get(provider, {}).get(external_id)
+            if not (token_entry and (token_entry.get('access_token') or token_entry.get('refresh_token'))):
+                msg = f'[Remove external identity] Missing ORCiD token: user={self._id}, orcid_id={external_id}'
+                logger.error(msg)
+                sentry.log_message(msg, level=logging.ERROR)
+                raise OrcidTokenMissingError('ORCiD identity has no token to revoke; sign in via ORCiD and try again.')
             # Revoke first: a failure must abort the removal before anything is mutated.
             self._revoke_orcid_token(external_id, token_entry, '[Remove external identity]')
 
@@ -2366,7 +2374,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
     def _revoke_orcid_token(self, orcid_id, token_entry, log_prefix):
         """Revokes a single ORCiD token entry via the ORCiD API.
 
-        Raises UserStateError if the revocation request fails.
+        Raises OrcidRevocationError if the revocation request fails.
         """
         # We only need to revoke with either access token or refresh token
         orcid_token = token_entry.get('access_token') or token_entry.get('refresh_token')
@@ -2391,7 +2399,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
             logger.error(msg)
             sentry.log_message(msg, level=logging.ERROR)
             sentry.log_exception(e)
-            raise UserStateError(f'Fail to revoke ORCiD access: {e}')
+            raise OrcidRevocationError(f'Fail to revoke ORCiD access: {e}')
 
     def _clear_identifying_information(self):
         # This doesn't remove identifying info, but ensures other users can't see the deleted user's profile etc.

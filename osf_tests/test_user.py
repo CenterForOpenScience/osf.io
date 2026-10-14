@@ -46,7 +46,10 @@ from addons.osfstorage.settings import DEFAULT_REGION_ID
 from framework.auth.core import Auth
 from osf.utils.names import impute_names_model
 from osf.utils import permissions
-from osf.exceptions import ValidationError, BlockedEmailError, UserStateError, InstitutionAffiliationStateError
+from osf.exceptions import (
+    ValidationError, BlockedEmailError, UserStateError, InstitutionAffiliationStateError,
+    OrcidRevocationError, OrcidTokenMissingError,
+)
 from osf.features import ENABLE_GV
 
 from .utils import capture_signals
@@ -1797,6 +1800,24 @@ class TestRemoveExternalIdentity(OsfTestCase):
             'ORCID': {'0000-0000-0000-0001': {'access_token': 'fake-token'}},
         }
         assert SessionStore().exists(session_key=session.session_key)
+
+    @mock.patch('osf.models.user.requests.post')
+    def test_remove_external_identity_fails_when_orcid_token_missing(self, mock_post):
+        self.user.external_identity_tokens = {}
+        self.user.save()
+
+        with pytest.raises(OrcidTokenMissingError):
+            self.user.remove_external_identity('ORCID', '0000-0000-0000-0001')
+
+        mock_post.assert_not_called()
+        assert self.user.external_identity == {'ORCID': {'0000-0000-0000-0001': 'VERIFIED'}}
+
+    @mock.patch('osf.models.user.requests.post')
+    def test_remove_external_identity_revoke_failure_raises_orcid_revocation_error(self, mock_post):
+        mock_post.side_effect = requests.exceptions.ConnectionError('boom')
+
+        with pytest.raises(OrcidRevocationError):
+            self.user.remove_external_identity('ORCID', '0000-0000-0000-0001')
 
     @mock.patch('osf.models.user.requests.post')
     def test_remove_external_identity_sets_usable_password_when_only_login_method(self, mock_post):
