@@ -56,8 +56,8 @@ def attach_handlers(app, settings):
     # Add callback handlers to application
     add_handlers(app, django_handlers.handlers)
     add_handlers(app, celery_task_handlers.handlers)
-    add_handlers(app, transaction_handlers.handlers)
     add_handlers(app, postcommit_handlers.handlers)
+    add_handlers(app, transaction_handlers.handlers)
     add_handlers(app, csrf_handlers.handlers)
 
     # Attach handler for checking view-only link keys.
