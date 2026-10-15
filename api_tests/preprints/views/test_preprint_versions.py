@@ -9,7 +9,7 @@ from framework.auth.core import Auth
 from osf.models import Preprint
 from osf.utils import permissions
 from osf.utils.workflows import DefaultStates, RequestTypes
-from osf_tests.factories import ProjectFactory, PreprintFactory, AuthUserFactory, PreprintRequestFactory
+from osf_tests.factories import ProjectFactory, PreprintFactory, AuthUserFactory, PreprintRequestFactory, SubjectFactory
 from tests.base import ApiTestCase
 from tests.utils import capture_notifications
 
@@ -225,9 +225,10 @@ class TestPreprintVersionsListCreate(ApiTestCase):
         res = self.app.post_json_api(self.pre_mode_version_create_url, auth=self.user.auth, expect_errors=True)
         assert res.status_code == 409
 
-    def test_return_409_if_try_to_edit_old_versions(self):
+    def test_edit_old_version_after_new_version_is_accepted(self):
         res = self.app.post_json_api(self.post_mod_version_create_url, auth=self.user.auth)
         new_version = Preprint.load(res.json['data']['id'])
+        new_version_title = new_version.title
         filename = 'preprint_file.txt'
         preprint_file = OsfStorageFile.create(
             target_object_id=new_version.id,
@@ -247,13 +248,17 @@ class TestPreprintVersionsListCreate(ApiTestCase):
         with capture_notifications():
             new_version.run_accept(self.moderator, 'comment')
         assert new_version.machine_state == 'accepted'
+        assert not self.post_mod_preprint.is_latest_version
         res = self.app.patch_json_api(
             self.post_mod_preprint_update_url,
             self.post_mod_preprint_update_payload,
             auth=self.user.auth,
-            expect_errors=True
         )
-        assert res.status_code == 409
+        assert res.status_code == 200
+        self.post_mod_preprint.reload()
+        new_version.reload()
+        assert self.post_mod_preprint.title == 'new_title'
+        assert new_version.title == new_version_title
 
     def test_reuse_version_if_unfinished_version_exists(self):
         res = self.app.post_json_api(self.post_mod_version_create_url, auth=self.user.auth)
@@ -902,3 +907,211 @@ class TestPreprintVersionsListRetrieve(ApiTestCase):
         res_2 = self.app.get(versions_url_valid_version, auth=self.creator.auth)
         assert res_2.status_code == 200
         assert len(res_1.json['data']) == len(res_2.json['data'])
+
+
+class TestPreprintPreviousVersionUpdate(ApiTestCase):
+    """
+    Previous versions follow the same edit permissions as the latest version: ADMIN contributors can edit
+    metadata and contributors, WRITE contributors can edit metadata only and READ contributors cannot edit.
+    """
+
+    def setUp(self):
+        super().setUp()
+        self.creator = AuthUserFactory()
+        self.admin_contrib = AuthUserFactory()
+        self.write_contrib = AuthUserFactory()
+        self.read_contrib = AuthUserFactory()
+        self.non_contrib = AuthUserFactory()
+        self.preprint_v1 = PreprintFactory(
+            reviews_workflow='post-moderation',
+            is_published=True,
+            creator=self.creator
+        )
+        self.preprint_v1.add_contributor(self.admin_contrib, permissions=permissions.ADMIN)
+        self.preprint_v1.add_contributor(self.write_contrib, permissions=permissions.WRITE)
+        self.preprint_v1.add_contributor(self.read_contrib, permissions=permissions.READ)
+        with capture_notifications():
+            self.preprint_v2 = PreprintFactory.create_version(
+                create_from=self.preprint_v1,
+                creator=self.creator,
+                set_doi=False
+            )
+        assert not self.preprint_v1.is_latest_version
+        assert self.preprint_v2.is_latest_version
+
+        self.v1_url = f'/{API_BASE}preprints/{self.preprint_v1._id}/'
+        self.v1_contributors_url = f'{self.v1_url}contributors/'
+        self.v1_subjects_url = f'{self.v1_url}relationships/subjects/'
+
+    def update_payload(self, **attributes):
+        return {
+            'data': {
+                'id': self.preprint_v1._id,
+                'type': 'preprints',
+                'attributes': attributes,
+            }
+        }
+
+    def add_contributor_payload(self, user):
+        return {
+            'data': {
+                'type': 'contributors',
+                'attributes': {
+                    'bibliographic': True,
+                    'permission': permissions.WRITE,
+                },
+                'relationships': {
+                    'users': {
+                        'data': {
+                            'id': user._id,
+                            'type': 'users',
+                        }
+                    }
+                }
+            }
+        }
+
+    def update_contributor_payload(self, user, **attributes):
+        return {
+            'data': {
+                'id': f'{self.preprint_v1._id}-{user._id}',
+                'type': 'contributors',
+                'attributes': attributes,
+            }
+        }
+
+    def test_admin_and_write_can_edit_metadata_of_previous_version(self):
+        v2_title = self.preprint_v2.title
+        for user in [self.creator, self.admin_contrib, self.write_contrib]:
+            title = f'Corrected title by {user._id}'
+            res = self.app.patch_json_api(
+                self.v1_url,
+                self.update_payload(title=title, description='Corrected abstract', tags=['corrected']),
+                auth=user.auth
+            )
+            assert res.status_code == 200
+            assert res.json['data']['attributes']['title'] == title
+
+            self.preprint_v1.reload()
+            assert self.preprint_v1.title == title
+            assert self.preprint_v1.description == 'Corrected abstract'
+            assert list(self.preprint_v1.tags.values_list('name', flat=True)) == ['corrected']
+
+        self.preprint_v2.reload()
+        assert self.preprint_v2.title == v2_title
+        assert not self.preprint_v2.tags.filter(name='corrected').exists()
+
+    def test_admin_and_write_can_edit_subjects_of_previous_version(self):
+        subject = SubjectFactory()
+        for user in [self.admin_contrib, self.write_contrib]:
+            res = self.app.patch_json_api(
+                self.v1_subjects_url,
+                {'data': [{'type': 'subjects', 'id': subject._id}]},
+                auth=user.auth
+            )
+            assert res.status_code == 200
+            assert list(self.preprint_v1.subjects.values_list('_id', flat=True)) == [subject._id]
+        assert not self.preprint_v2.subjects.filter(_id=subject._id).exists()
+
+    def test_read_and_non_contributors_cannot_edit_previous_version(self):
+        original_title = self.preprint_v1.title
+        for user in [self.read_contrib, self.non_contrib]:
+            res = self.app.patch_json_api(
+                self.v1_url,
+                self.update_payload(title='Not allowed'),
+                auth=user.auth,
+                expect_errors=True
+            )
+            assert res.status_code == 403
+
+            res = self.app.patch_json_api(
+                self.v1_subjects_url,
+                {'data': [{'type': 'subjects', 'id': SubjectFactory()._id}]},
+                auth=user.auth,
+                expect_errors=True
+            )
+            assert res.status_code == 403
+
+        res = self.app.patch_json_api(self.v1_url, self.update_payload(title='Not allowed'), expect_errors=True)
+        assert res.status_code == 401
+
+        self.preprint_v1.reload()
+        assert self.preprint_v1.title == original_title
+
+    def test_admin_can_edit_contributors_of_previous_version(self):
+        new_contrib = AuthUserFactory()
+        with capture_notifications():
+            res = self.app.post_json_api(
+                self.v1_contributors_url,
+                self.add_contributor_payload(new_contrib),
+                auth=self.admin_contrib.auth
+            )
+        assert res.status_code == 201
+        assert self.preprint_v1.is_contributor(new_contrib)
+        assert not self.preprint_v2.is_contributor(new_contrib)
+
+        res = self.app.patch_json_api(
+            f'{self.v1_contributors_url}{self.read_contrib._id}/',
+            self.update_contributor_payload(self.read_contrib, permission=permissions.WRITE, index=0),
+            auth=self.admin_contrib.auth
+        )
+        assert res.status_code == 200
+        assert self.preprint_v1.has_permission(self.read_contrib, permissions.WRITE)
+        assert self.preprint_v1.get_contributor_order()[0] == self.preprint_v1.preprintcontributor_set.get(user=self.read_contrib).id
+        assert not self.preprint_v2.has_permission(self.read_contrib, permissions.WRITE)
+
+        # bulk update, as sent by the preprint edit flow
+        res = self.app.patch_json_api(
+            self.v1_contributors_url,
+            {'data': [self.update_contributor_payload(self.write_contrib, permission=permissions.READ)['data']]},
+            auth=self.admin_contrib.auth,
+            bulk=True
+        )
+        assert res.status_code == 200
+        assert not self.preprint_v1.has_permission(self.write_contrib, permissions.WRITE)
+        assert self.preprint_v2.has_permission(self.write_contrib, permissions.WRITE)
+
+        res = self.app.delete_json_api(
+            f'{self.v1_contributors_url}{new_contrib._id}/',
+            auth=self.admin_contrib.auth
+        )
+        assert res.status_code == 204
+        assert not self.preprint_v1.is_contributor(new_contrib)
+
+    def test_write_and_read_cannot_edit_contributors_of_previous_version(self):
+        new_contrib = AuthUserFactory()
+        for user in [self.write_contrib, self.read_contrib]:
+            res = self.app.post_json_api(
+                self.v1_contributors_url,
+                self.add_contributor_payload(new_contrib),
+                auth=user.auth,
+                expect_errors=True
+            )
+            assert res.status_code == 403
+
+            res = self.app.patch_json_api(
+                f'{self.v1_contributors_url}{self.admin_contrib._id}/',
+                self.update_contributor_payload(self.admin_contrib, permission=permissions.READ),
+                auth=user.auth,
+                expect_errors=True
+            )
+            assert res.status_code == 403
+
+            res = self.app.patch_json_api(
+                self.v1_contributors_url,
+                {'data': [self.update_contributor_payload(self.admin_contrib, permission=permissions.READ)['data']]},
+                auth=user.auth,
+                expect_errors=True,
+                bulk=True
+            )
+            assert res.status_code == 403
+
+            res = self.app.delete_json_api(
+                f'{self.v1_contributors_url}{self.admin_contrib._id}/',
+                auth=user.auth,
+                expect_errors=True
+            )
+            assert res.status_code == 403
+
+        assert not self.preprint_v1.is_contributor(new_contrib)
+        assert self.preprint_v1.has_permission(self.admin_contrib, permissions.ADMIN)
