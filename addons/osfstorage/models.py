@@ -325,8 +325,10 @@ class OsfStorageFile(OsfStorageFileNode, File):
     def update_region_from_latest_version(self, destination_parent):
         most_recent_fileversion = self.versions.select_related('region').order_by('-created').first()
         if most_recent_fileversion and most_recent_fileversion.region != destination_parent.target.osfstorage_region:
+            # Queryset update: only the region changes, and save() would run full_clean() on `location`, which
+            # fails `validate_location` for Waterbutler-written locations (`bucket`, no `folder`) in prod.
             most_recent_fileversion.region = destination_parent.target.osfstorage_region
-            most_recent_fileversion.save()
+            FileVersion.objects.filter(pk=most_recent_fileversion.pk).update(region=most_recent_fileversion.region)
 
     def create_version(self, creator, location, metadata=None):
         if check_select_for_update():

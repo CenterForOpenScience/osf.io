@@ -1110,6 +1110,45 @@ class TestRecoverDeletedPreprintView(AdminTestCase):
         assert recovered.deleted is None
         assert recovered.primary_file.copied_from_id == source.primary_file.id
 
+    def _source_in_other_region(self):
+        from osf_tests.factories import RegionFactory
+        other_region = RegionFactory()
+        source = PreprintFactory(provider=self.provider)
+        Preprint.objects.filter(id=source.id).update(region=other_region)
+        source.primary_file.versions.update(region=other_region)
+        return source, other_region
+
+    def test_recovered_preprint_uses_region_of_source_file(self):
+        source, other_region = self._source_in_other_region()
+        assert self.user.get_addon('osfstorage').default_region_id != other_region.id
+
+        response = self._post(self._base_data(file_guid=source._id))
+        assert response.status_code == 302
+
+        recovered = Preprint.load('abcde')
+        assert recovered.region_id == other_region.id
+        copied_versions = recovered.primary_file.versions.all()
+        assert copied_versions
+        for version in copied_versions:
+            assert version.region_id == other_region.id
+            assert version.location == source.primary_file.versions.get(identifier=version.identifier).location
+        assert not source.primary_file.versions.exclude(region=other_region).exists()
+
+    def test_second_recovered_version_keeps_region_of_previous_version(self):
+        source, other_region = self._source_in_other_region()
+        assert self._post(self._base_data(file_guid=source._id)).status_code == 302
+        assert self._post(self._base_data()).status_code == 302
+
+        assert Preprint.load('abcde_v2').region_id == other_region.id
+
+    def test_purged_source_version_is_rejected(self):
+        source = PreprintFactory(provider=self.provider)
+        source.primary_file.versions.update(purged=timezone.now())
+
+        response = self._post(self._base_data(file_guid=source._id))
+        assert response.status_code == 302
+        assert Preprint.load('abcde') is None
+
     def test_unknown_source_guid_shows_error(self):
         response = self._post(self._base_data(file_guid='zzzzz_v1'))
         assert response.status_code == 302

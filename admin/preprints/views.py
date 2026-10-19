@@ -289,6 +289,9 @@ class RecoverDeletedPreprintView(PermissionRequiredMixin, FormView):
         latest_version = source_file.versions.order_by('-created').first()
         if latest_version is None:
             raise ValueError(f'File "{file_guid}" has no versions to copy.')
+        if latest_version.purged:
+            raise ValueError(f'File "{file_guid}" latest version was purged from storage and cannot be copied.')
+        preprint.set_storage_region(latest_version.region_id)
         copied = copy_files(source_file, target_node=preprint, identifier=latest_version.identifier)
         preprint.set_primary_file(copied, auth=self.request, save=True, ignore_permission=True)
 
