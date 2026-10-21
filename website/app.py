@@ -56,6 +56,10 @@ def attach_handlers(app, settings):
     # Add callback handlers to application
     add_handlers(app, django_handlers.handlers)
     add_handlers(app, celery_task_handlers.handlers)
+    # flask uses LIFO run of handlers, so we actually run transaction handlers
+    # before postcommit handlers to avoid case when postcommit handler
+    # updates registration data before transaction is committed.
+    # postcommit and transaction handlers must not be swapped
     add_handlers(app, postcommit_handlers.handlers)
     add_handlers(app, transaction_handlers.handlers)
     add_handlers(app, csrf_handlers.handlers)
