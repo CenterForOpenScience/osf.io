@@ -1,7 +1,7 @@
 from django.db import transaction
 from django.db.models import F
 from django.core.exceptions import PermissionDenied, ValidationError
-from django.http import HttpResponse, JsonResponse
+from django.http import Http404, HttpResponse, JsonResponse
 from django.contrib import messages
 from django.contrib.auth.mixins import PermissionRequiredMixin
 from django.shortcuts import redirect
@@ -36,6 +36,9 @@ from osf.models import (
     PreprintProvider,
     Guid,
     BaseFileNode,
+    File,
+    TrashedFileNode,
+    Identifier,
 )
 
 from osf.models.admin_log_entry import (
@@ -62,6 +65,8 @@ class PreprintMixin(PermissionRequiredMixin):
 
     def get_object(self):
         preprint = Preprint.load(self.kwargs['guid'])
+        if preprint is None:
+            raise Http404(f'Preprint not found: {self.kwargs["guid"]}')
         # Django template does not like attributes with underscores for some reason
         preprint.guid = preprint._id
         return preprint
@@ -289,16 +294,29 @@ class RecoverDeletedPreprintView(PermissionRequiredMixin, FormView):
         latest_version = source_file.versions.order_by('-created').first()
         if latest_version is None:
             raise ValueError(f'File "{file_guid}" has no versions to copy.')
+        is_trashed = isinstance(source_file, TrashedFileNode)
+        if is_trashed and source_file.purged:
+            raise ValueError(f'File "{file_guid}" was deleted and its contents were purged, so it cannot be copied.')
         copied = copy_files(source_file, target_node=preprint, identifier=latest_version.identifier)
+        if is_trashed:
+            # `copy_files` clones the source as-is, so a copy of a trashed file is itself trashed and can't be a
+            # primary file. Restore the copy only; the original stays deleted.
+            copied.deleted = None
+            copied.deleted_on = None
+            copied.recast(copied._resolve_class(File)._typedmodels_type)
+            copied.save()
+            copied = BaseFileNode.objects.get(pk=copied.pk)
         preprint.set_primary_file(copied, auth=self.request, save=True, ignore_permission=True)
 
     def form_valid(self, form):
         data = form.cleaned_data
         guid = data['guid']
         file_guid = data['file_guid'].strip()
+        use_new_guid = data['use_new_guid']
+        original_doi = data['original_doi']
         try:
             with transaction.atomic():
-                existing = Preprint.load(guid)
+                existing = None if use_new_guid else Preprint.load(guid)
                 if existing and existing.deleted:
                     existing.deleted = None
                     existing.save()
@@ -321,19 +339,38 @@ class RecoverDeletedPreprintView(PermissionRequiredMixin, FormView):
                         'and resync CrossRef. Run again on the same GUID to add the next version.'
                     )
                 else:
+                    if original_doi and Identifier.objects.filter(category='doi', value=original_doi).exists():
+                        raise ValueError(f'DOI "{original_doi}" is already attached to another object.')
+                    occupant = None if use_new_guid else getattr(Guid.load(guid), 'referent', None)
+                    if occupant is not None:
+                        raise ValueError(
+                            f'GUID "{guid}" is already used by {type(occupant).__name__} (pk={occupant.pk}). '
+                            'Tick "GUID is taken" to recover the preprint under a new GUID.'
+                        )
                     version = Preprint.create(
                         provider=data['provider'],
                         title=data['title'],
                         creator=self.request.user,
                         description=data['description'],
-                        manual_guid=guid,
+                        manual_guid=None if use_new_guid else guid,
+                        manual_doi=original_doi or None,
                     )
                     action_flag = PREPRINT_RECOVERED
-                    log_message = f'Preprint {version._id} recreated after deletion (ref: {data["ticket_reference"]}).'
-                    success_message = (
-                        f'Recreated preprint version {version._id}. Set contributors/metadata, then publish '
-                        'and resync CrossRef. Run again on the same GUID to add the next version.'
-                    )
+                    if not use_new_guid:
+                        log_message = f'Preprint {version._id} recreated after deletion (ref: {data["ticket_reference"]}).'
+                        success_message = (
+                            f'Recreated preprint version {version._id}. Set contributors/metadata, then publish '
+                            'and resync CrossRef. Run again on the same GUID to add the next version.'
+                        )
+                    else:
+                        success_message = (
+                            f'Recreated preprint version {version._id} under a NEW GUID ({guid} is taken). Use the new GUID '
+                            'for further versions. Set contributors/metadata, then publish and resync CrossRef.'
+                        )
+                        log_message = (
+                            f'Preprint {version._id} recreated under a new GUID because {guid} is taken '
+                            f'(ref: {data["ticket_reference"]}).'
+                        )
                 if file_guid:
                     self._copy_primary_file(version, file_guid)
                 update_admin_log(
