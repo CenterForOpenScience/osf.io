@@ -9,7 +9,7 @@ from django.contrib.messages.storage.fallback import FallbackStorage
 from django.utils import timezone
 
 from tests.base import AdminTestCase
-from osf.models import Preprint, PreprintLog, PreprintRequest, NotificationTypeEnum
+from osf.models import Preprint, PreprintLog, PreprintRequest, NotificationTypeEnum, BaseFileNode
 from framework.auth import Auth
 from osf_tests.factories import (
     AuthUserFactory,
@@ -1188,3 +1188,56 @@ class TestRecoverDeletedPreprintView(AdminTestCase):
             )
         # The live preprint's guid still points at it, untouched.
         assert Preprint.load(guid_str).id == live.id
+
+    def test_taken_guid_is_rejected_with_occupant_and_nothing_created(self):
+        taken_guid = self.user._id
+        before = Preprint.objects.count()
+        response = self._post(self._base_data(guid=taken_guid))
+        assert response.status_code == 302
+        assert response.url == reverse('preprints:recover')
+        assert Preprint.objects.count() == before
+        assert Preprint.load(taken_guid) is None
+
+    def test_taken_guid_recovers_under_new_guid_with_original_doi(self):
+        taken_guid = self.user._id
+        doi = '10.31219/osf.io/abcde_v1'
+        response = self._post(self._base_data(guid=taken_guid, use_new_guid=True, original_doi=doi))
+        assert response.status_code == 302
+
+        recovered = Preprint.objects.get(title='Recovered Title')
+        assert recovered.get_guid()._id != taken_guid
+        assert recovered.get_identifier_value('doi') == doi
+        assert AdminLogEntry.objects.filter(action_flag=PREPRINT_RECOVERED, object_id=recovered._id).exists()
+        # The other object keeps its GUID.
+        assert self.user.guids.first()._id == taken_guid
+
+    def test_original_doi_already_in_use_is_rejected(self):
+        existing = PreprintFactory(provider=self.provider)
+        existing.set_identifier_values('10.31219/osf.io/dupe1', save=True)
+        before = Preprint.objects.count()
+        response = self._post(self._base_data(use_new_guid=True, original_doi='10.31219/osf.io/dupe1'))
+        assert response.status_code == 302
+        assert Preprint.objects.count() == before
+
+    def test_copies_trashed_source_file_as_active_file(self):
+        source = PreprintFactory(provider=self.provider)
+        source_file = source.primary_file
+        file_guid = source_file.get_guid(create=True)._id
+        source_file.delete()
+
+        response = self._post(self._base_data(file_guid=file_guid))
+        assert response.status_code == 302
+
+        recovered = Preprint.load('abcde')
+        assert recovered.primary_file is not None
+        assert not recovered.primary_file.is_deleted
+        assert recovered.primary_file.deleted_on is None
+        # The original stays trashed.
+        assert BaseFileNode.objects.get(pk=source_file.pk).is_deleted
+
+    def test_get_object_raises_404_for_unknown_guid(self):
+        from django.http import Http404
+        view = views.PreprintMixin()
+        view.kwargs = {'guid': 'zzzzz'}
+        with pytest.raises(Http404):
+            view.get_object()
