@@ -2,7 +2,7 @@ from django.conf.urls import include
 from django.urls import re_path
 from django.contrib import admin
 from admin.base.settings import ADMIN_BASE, DEBUG
-from admin.base import views
+from admin.base import celery_panel, views
 
 base_pattern = f'^{ADMIN_BASE}'
 
@@ -12,6 +12,7 @@ urlpatterns = [
         base_pattern,
         include([
             re_path(r'^$', views.home, name='home'),
+            re_path(r'^admin/dj-celery-panel/$', celery_panel.overview),
             re_path(r'^admin/dj-celery-panel/', include('dj_celery_panel.urls')),
             re_path(r'^admin/', admin.site.urls),
             re_path(r'^provider_asset_files/', include('admin.provider_asset_files.urls', namespace='provider_asset_files')),

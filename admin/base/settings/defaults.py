@@ -93,10 +93,9 @@ INSTALLED_APPS = (
     # OSF
     'osf',
 
-    # Addons
-    'addons.osfstorage',
-    'addons.wiki',
-    'addons.twofactor',
+    # Addons: the same as in the API settings (INSTALLED_APPS from the star import above) that the Celery
+    # worker runs with, so admin can import every task module in CeleryConfig.imports
+    *(app for app in INSTALLED_APPS if app.startswith('addons.')),
 
     # Internal apps
     'admin.common_auth',
@@ -120,9 +119,8 @@ DJ_CELERY_PANEL_SETTINGS = {
 MIGRATION_MODULES = {
     'osf': None,
     'reviews': None,
-    'addons_osfstorage': None,
-    'addons_wiki': None,
-    'addons_twofactor': None,
+    # Addon migrations depend on osf ones, so they must be disabled too
+    **{app.replace('.', '_'): None for app in INSTALLED_APPS if app.startswith('addons.')},
 }
 
 USE_TZ = True
