@@ -190,6 +190,25 @@
                         {{ user.is_staff }}
                     </td>
                 </tr>
+                <tr>
+                    <td>Allows SHARE indexing</td>
+                    <td>
+                        {% if user.allow_indexing is False %}
+                            No (opted out)
+                        {% elif user.allow_indexing %}
+                            Yes (opted in)
+                        {% else %}
+                            Yes (default, no preference set)
+                        {% endif %}
+                        {% if perms.osf.change_osfuser %}
+                            <form method="post" action="{% url 'users:share-indexing' guid=user.guid %}" style="display: inline;">
+                                {% csrf_token %}
+                                <input type="hidden" name="allow_indexing" value="{% if user.allow_indexing is False %}true{% else %}false{% endif %}" />
+                                <input class="btn btn-default" type="submit" value="{% if user.allow_indexing is False %}Opt in to SHARE indexing{% else %}Opt out of SHARE indexing{% endif %}" />
+                            </form>
+                        {% endif %}
+                    </td>
+                </tr>
                 {% include "nodes/add_system_tags.html" with resource=user %}
                 {% include "nodes/spam_status.html" with resource=user %}
                 <tr>
