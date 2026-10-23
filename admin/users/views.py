@@ -35,6 +35,7 @@ from osf.models.admin_log_entry import (
     USER_REMOVED,
     USER_RESTORED,
     USER_GDPR_DELETED,
+    USER_SHARE_INDEXING_CHANGED,
     CONFIRM_SPAM,
     CONFIRM_HAM,
     UNFLAG_SPAM,
@@ -581,6 +582,33 @@ class UserReindexElastic(UserMixin, View):
 
 
 class UserShareReindex(UserMixin, View):
+    """ Allows authorized users to reindex a user record (without projects and preprints) in SHARE.
+    """
+    permission_required = 'osf.change_osfuser'
+
+    def post(self, request, *args, **kwargs):
+        from api.share.utils import update_share
+        user = self.get_object()
+        update_share(user)
+        messages.success(
+            request,
+            'Reindex request has been sent to SHARE. '
+            'Changes typically appear in OSF Search within about 5 minutes, '
+            'subject to background queue load and SHARE availability.'
+        )
+        update_admin_log(
+            user_id=self.request.user.id,
+            object_id=user._id,
+            object_repr='User',
+            message=f'User Reindexed (SHARE): {user._id}',
+            action_flag=REINDEX_SHARE
+        )
+        return redirect(self.get_success_url())
+
+
+class UserShareReindexContent(UserMixin, View):
+    """ Allows authorized users to reindex all projects and preprints of a user in SHARE.
+    """
     permission_required = 'osf.change_osfuser'
 
     def post(self, request, *args, **kwargs):
@@ -615,6 +643,33 @@ class UserShareReindex(UserMixin, View):
             action_flag=REINDEX_SHARE
         )
 
+        return redirect(self.get_success_url())
+
+
+class UserUpdateShareIndexing(UserMixin, View):
+    """ Allows authorized users to opt a user in to or out of SHARE indexing on the user's request.
+    """
+    permission_required = 'osf.change_osfuser'
+
+    def post(self, request, *args, **kwargs):
+        user = self.get_object()
+        allow_indexing = request.POST.get('allow_indexing')
+        if allow_indexing not in ('true', 'false'):
+            messages.error(request, 'Invalid SHARE indexing preference.')
+            return redirect(self.get_success_url())
+
+        user.allow_indexing = allow_indexing == 'true'
+        user.save()
+
+        status = 'opted in to' if user.allow_indexing else 'opted out of'
+        messages.success(request, f'User has been {status} SHARE indexing.')
+        update_admin_log(
+            user_id=self.request.user.id,
+            object_id=user._id,
+            object_repr='User',
+            message=f'User {user._id} {status} SHARE indexing',
+            action_flag=USER_SHARE_INDEXING_CHANGED
+        )
         return redirect(self.get_success_url())
 
 

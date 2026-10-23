@@ -5,6 +5,7 @@ from django.views.generic import ListView, View
 from osf.models import Guid
 from urllib.parse import urlencode
 from api.share.utils import get_not_indexed_guids_for_resource_with_no_indexed_guid, task__reindex_failed_or_not_indexed_resource_into_share
+from website.settings import CeleryConfig
 
 class FailedShareIndexedGuidList(PermissionRequiredMixin, ListView):
     paginate_by = 25
@@ -46,7 +47,7 @@ class FailedShareIndexedGuidReindex(PermissionRequiredMixin, View):
     def post(self, request, *args, **kwargs):
         resource_type = self.kwargs.get('resource_type')
         # reindex 100_000 guids in background task for specific resource_type and resource is public
-        task__reindex_failed_or_not_indexed_resource_into_share.delay(resource_type)
+        task__reindex_failed_or_not_indexed_resource_into_share.apply_async(args=(resource_type,), queue=CeleryConfig.task_low_queue)
         base_url = reverse('share_reindex:list')
         query_string = urlencode({'type': resource_type, 'status': 'indexing'})
         return redirect(f"{base_url}?{query_string}")
