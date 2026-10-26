@@ -691,6 +691,7 @@ class CeleryConfig:
         'osf.management.commands.delete_withdrawn_or_failed_registration_files',
         'osf.management.commands.restart_stuck_registrations',
         'osf.email.notification_campaign',
+        'osf.celery_stress_test.tasks'
     )
 
     # Modules that need metrics and release requirements
