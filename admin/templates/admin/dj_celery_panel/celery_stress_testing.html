@@ -1,0 +1,494 @@
+{% extends "admin/dj_celery_panel/base.html" %}
+{% load i18n static dcr_icons %}
+
+{% block panel_page_content %}
+<div class="dcr-page-header">
+  <div class="dcr-page-header__main">
+    <div class="dcr-page-header__icon dcr-icon-color--success">
+      {% dcr_icon "cog" %}
+    </div>
+    <div class="dcr-page-header__body">
+      <h1 class="dcr-page-header__title">{% trans "Stress Testing" %}</h1>
+      <p class="dcr-page-header__subtitle">
+        {% trans "Run stress tests on your Celery workers to evaluate their performance and stability under load." %}
+      </p>
+    </div>
+  </div>
+</div>
+
+<form method="post" id="stress-test-form">
+  {% csrf_token %}
+
+  {% if form.non_field_errors %}
+    <div class="dcr-alert dcr-alert--danger">
+      {{ form.non_field_errors }}
+    </div>
+  {% endif %}
+
+  {# Global configuration #}
+  <section class="dcr-card">
+    <div class="dcr-card__header">
+      <h2 class="dcr-card__title">{% trans "Global Configuration" %}</h2>
+      <p class="dcr-card__subtitle">
+        {% trans "Configure the duration and maximum publishing rate for the entire test suite." %}
+      </p>
+    </div>
+
+    <div class="dcr-card__body">
+      <div class="stress-test-grid">
+        <div class="stress-test-field">
+          <label for="{{ form.total_duration.id_for_label }}">
+            {% trans "Total duration (seconds)" %}
+          </label>
+          {{ form.total_duration }}
+          {% if form.total_duration.help_text %}
+            <small>{{ form.total_duration.help_text }}</small>
+          {% endif %}
+          {{ form.total_duration.errors }}
+        </div>
+
+        <div class="stress-test-field">
+          <label for="{{ form.max_total_rate.id_for_label }}">
+            {% trans "Maximum total rate (tasks/second)" %}
+          </label>
+          {{ form.max_total_rate }}
+          {% if form.max_total_rate.help_text %}
+            <small>{{ form.max_total_rate.help_text }}</small>
+          {% endif %}
+          {{ form.max_total_rate.errors }}
+        </div>
+      </div>
+    </div>
+  </section>
+
+  {# Workload configuration #}
+  <section class="stress-test-workloads">
+    <div class="stress-test-section-header">
+      <div>
+        <h2>{% trans "Workloads" %}</h2>
+        <p>
+          {% trans "Define the workloads to publish to your Celery queues." %}
+        </p>
+      </div>
+
+      <button type="button" class="dcr-btn dcr-btn--secondary" id="add-workload">
+        {% trans "Add workload" %}
+      </button>
+      <div class="dcr-text-muted dcr-mt-sm">
+        {{ workload_formset.max_num }}
+      </div>
+    </div>
+
+    {{ workload_formset.management_form }}
+
+    {% if workload_formset.non_form_errors %}
+      <div class="dcr-alert dcr-alert--danger">
+        {{ workload_formset.non_form_errors }}
+      </div>
+    {% endif %}
+
+    <div id="workload-list">
+      {% for workload_form in workload_formset %}
+        <article class="dcr-card workload-card">
+          <div class="dcr-card__header workload-card__header">
+            <div>
+              <h3 class="dcr-card__title">
+                {% blocktrans with number=forloop.counter %}
+                  Workload {{ number }}
+                {% endblocktrans %}
+              </h3>
+              <p class="dcr-card__subtitle">
+                {% trans "Configure the workload type, destination queue, and publishing rate." %}
+              </p>
+            </div>
+
+            <button
+              type="button"
+              class="dcr-btn dcr-btn--secondary remove-workload"
+            >
+              {% trans "Remove" %}
+            </button>
+          </div>
+
+          <div class="dcr-card__body">
+            {{ workload_form.id }}
+
+            {% if workload_form.non_field_errors %}
+              <div class="dcr-alert dcr-alert--danger">
+                {{ workload_form.non_field_errors }}
+              </div>
+            {% endif %}
+
+            <div class="stress-test-grid">
+              <div class="stress-test-field">
+                <label for="{{ workload_form.name.id_for_label }}">
+                  {% trans "Name" %}
+                </label>
+                {{ workload_form.name }}
+                {{ workload_form.name.errors }}
+              </div>
+
+              <div class="stress-test-field">
+                <label for="{{ workload_form.mode.id_for_label }}">
+                  {% trans "Workload mode" %}
+                </label>
+                {{ workload_form.mode }}
+                {{ workload_form.mode.errors }}
+              </div>
+
+              <div class="stress-test-field">
+                <label for="{{ workload_form.queue.id_for_label }}">
+                  {% trans "Celery queue" %}
+                </label>
+                {{ workload_form.queue }}
+                {{ workload_form.queue.errors }}
+              </div>
+
+              <div class="stress-test-field">
+                <label for="{{ workload_form.rate.id_for_label }}">
+                  {% trans "Publishing rate (tasks/second)" %}
+                </label>
+                {{ workload_form.rate }}
+                {{ workload_form.rate.errors }}
+              </div>
+            </div>
+
+            <div class="workload-args">
+              <h4>{% trans "Workload Arguments" %}</h4>
+
+              <div class="stress-test-grid workload-args-io">
+                <div class="stress-test-field">
+                  <label for="{{ workload_form.io_seconds.id_for_label }}">
+                    {% trans "Simulated I/O duration (seconds)" %}
+                  </label>
+                  {{ workload_form.io_seconds }}
+                  {{ workload_form.io_seconds.errors }}
+                  <small>
+                    {% trans "Time spent waiting in I/O and mixed modes." %}
+                  </small>
+                </div>
+              </div>
+
+              <div class="stress-test-grid workload-args-cpu">
+                <div class="stress-test-field">
+                  <label for="{{ workload_form.cpu_iterations.id_for_label }}">
+                    {% trans "CPU iterations" %}
+                  </label>
+                  {{ workload_form.cpu_iterations }}
+                  {{ workload_form.cpu_iterations.errors }}
+                  <small>
+                    {% trans "Number of calculation iterations in CPU and mixed modes." %}
+                  </small>
+                </div>
+              </div>
+            </div>
+          </div>
+        </article>
+      {% empty %}
+        <p class="dcr-empty-state">
+          {% trans "No workloads configured. Add a workload to get started." %}
+        </p>
+      {% endfor %}
+    </div>
+  </section>
+
+  {# Hidden template used by JavaScript to add new workloads #}
+  <template id="empty-workload-form">
+    <article class="dcr-card workload-card">
+      <div class="dcr-card__header workload-card__header">
+        <div>
+          <h3 class="dcr-card__title">{% trans "New Workload" %}</h3>
+          <p class="dcr-card__subtitle">
+            {% trans "Configure the workload type, destination queue, and publishing rate." %}
+          </p>
+        </div>
+
+        <button
+          type="button"
+          class="dcr-btn dcr-btn--secondary remove-workload"
+        >
+          {% trans "Remove" %}
+        </button>
+      </div>
+
+      <div class="dcr-card__body">
+        {% with workload_form=workload_formset.empty_form %}
+          {{ workload_form.id }}
+
+          <div class="stress-test-grid">
+            <div class="stress-test-field">
+              <label for="{{ workload_form.name.id_for_label }}">
+                {% trans "Name" %}
+              </label>
+              {{ workload_form.name }}
+            </div>
+
+            <div class="stress-test-field">
+              <label for="{{ workload_form.mode.id_for_label }}">
+                {% trans "Workload mode" %}
+              </label>
+              {{ workload_form.mode }}
+            </div>
+
+            <div class="stress-test-field">
+              <label for="{{ workload_form.queue.id_for_label }}">
+                {% trans "Celery queue" %}
+              </label>
+              {{ workload_form.queue }}
+            </div>
+
+            <div class="stress-test-field">
+              <label for="{{ workload_form.rate.id_for_label }}">
+                {% trans "Publishing rate (tasks/second)" %}
+              </label>
+              {{ workload_form.rate }}
+            </div>
+          </div>
+
+          <div class="workload-args">
+            <h4>{% trans "Workload Arguments" %}</h4>
+
+            <div class="stress-test-grid workload-args-io">
+              <div class="stress-test-field">
+                <label for="{{ workload_form.io_seconds.id_for_label }}">
+                  {% trans "Simulated I/O duration (seconds)" %}
+                </label>
+                {{ workload_form.io_seconds }}
+              </div>
+            </div>
+
+            <div class="stress-test-grid workload-args-cpu">
+              <div class="stress-test-field">
+                <label for="{{ workload_form.cpu_iterations.id_for_label }}">
+                  {% trans "CPU iterations" %}
+                </label>
+                {{ workload_form.cpu_iterations }}
+              </div>
+            </div>
+          </div>
+        {% endwith %}
+      </div>
+    </article>
+  </template>
+
+  <div class="stress-test-actions">
+    <button type="submit" class="dcr-btn dcr-btn--primary">
+      {% trans "Start Test Suite" %}
+    </button>
+  </div>
+</form>
+
+<style>
+  .stress-test-workloads {
+    margin-top: 2rem;
+  }
+
+  .stress-test-section-header,
+  .workload-card__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+  }
+
+  .stress-test-section-header {
+    margin-bottom: 1rem;
+  }
+
+  .stress-test-section-header h2,
+  .workload-card__header h3 {
+    margin-top: 0;
+    margin-bottom: 0.35rem;
+  }
+
+  .stress-test-section-header p,
+  .workload-card__header p {
+    margin-top: 0;
+    opacity: 0.75;
+  }
+
+  .stress-test-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1rem 1.5rem;
+  }
+
+  .stress-test-field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+    min-width: 0;
+  }
+
+  .stress-test-field input,
+  .stress-test-field select {
+    box-sizing: border-box;
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .stress-test-field small {
+    opacity: 0.75;
+  }
+
+  .stress-test-field ul.errorlist {
+    margin: 0;
+    padding-left: 1.25rem;
+    color: #ba2121;
+  }
+
+  .workload-card {
+    margin-bottom: 1rem;
+  }
+
+  .workload-args {
+    margin-top: 1.5rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--border-color, #ddd);
+  }
+
+  .workload-args h4 {
+    margin-top: 0;
+  }
+
+  .stress-test-actions {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 1.5rem;
+  }
+
+  .dcr-empty-state {
+    padding: 1rem;
+    opacity: 0.75;
+  }
+
+  @media (max-width: 700px) {
+    .stress-test-grid {
+      grid-template-columns: minmax(0, 1fr);
+    }
+
+    .stress-test-section-header,
+    .workload-card__header {
+      align-items: flex-start;
+    }
+  }
+</style>
+
+<script>
+  (() => {
+    const form = document.getElementById("stress-test-form");
+    const workloadList = document.getElementById("workload-list");
+    const addButton = document.getElementById("add-workload");
+    const template = document.getElementById("empty-workload-form");
+    const totalForms = document.getElementById("id_form-TOTAL_FORMS");
+    const maxForms = document.getElementById("id_form-MAX_NUM_FORMS");
+
+
+    if (!form || !workloadList || !addButton || !template || !totalForms) {
+      return;
+    }
+
+    const maxWorkloads = maxForms && maxForms.value
+      ? Number(maxForms.value)
+      : Infinity;
+
+    function updateWorkloadCard(card, index) {
+      const title = card.querySelector(".dcr-card__title");
+
+      if (title) {
+        title.textContent = `Workload ${index + 1}`;
+      }
+
+      const modeSelect = card.querySelector('[name$="-mode"]');
+      const ioArguments = card.querySelector(".workload-args-io");
+      const cpuArguments = card.querySelector(".workload-args-cpu");
+
+      function updateArguments() {
+        const mode = modeSelect ? modeSelect.value : "mixed";
+
+        if (ioArguments) {
+          ioArguments.hidden = mode === "cpu";
+        }
+
+        if (cpuArguments) {
+          cpuArguments.hidden = mode === "io";
+        }
+      }
+
+      if (modeSelect && !modeSelect.dataset.bound) {
+        modeSelect.addEventListener("change", updateArguments);
+        modeSelect.dataset.bound = "true";
+      }
+
+      updateArguments();
+    }
+
+    function refreshCards() {
+      const cards = workloadList.querySelectorAll(".workload-card");
+
+      cards.forEach((card, index) => {
+        updateWorkloadCard(card, index);
+      });
+
+      addButton.disabled = cards.length >= maxWorkloads;
+    }
+
+    addButton.addEventListener("click", () => {
+      const index = Number(totalForms.value);
+
+      if (workloadList.querySelectorAll(".workload-card").length >= maxWorkloads) {
+        return;
+      }
+
+      const html = template.innerHTML.replace(/__prefix__/g, index);
+      const wrapper = document.createElement("div");
+      wrapper.innerHTML = html.trim();
+
+      const card = wrapper.firstElementChild;
+      workloadList.appendChild(card);
+
+      totalForms.value = index + 1;
+      refreshCards();
+    });
+
+    workloadList.addEventListener("click", (event) => {
+      const button = event.target.closest(".remove-workload");
+
+      if (!button) {
+        return;
+      }
+
+      const card = button.closest(".workload-card");
+
+      if (!card) {
+        return;
+      }
+
+      card.remove();
+
+      // Reindex surviving forms so Django receives contiguous formset indexes.
+      const cards = workloadList.querySelectorAll(".workload-card");
+
+      cards.forEach((card, index) => {
+        card.querySelectorAll("input, select, textarea, label").forEach((element) => {
+          ["name", "id", "for"].forEach((attribute) => {
+            const value = element.getAttribute(attribute);
+
+            if (value) {
+              element.setAttribute(
+                attribute,
+                value.replace(/workloads-\d+-/g, `workloads-${index}-`)
+              );
+            }
+          });
+        });
+      });
+
+      totalForms.value = cards.length;
+      refreshCards();
+    });
+
+    refreshCards();
+  })();
+</script>
+{% endblock %}

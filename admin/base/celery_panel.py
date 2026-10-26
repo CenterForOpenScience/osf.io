@@ -1,11 +1,28 @@
 from collections import defaultdict
 from functools import cache
 
+from django.contrib import messages
+from django.shortcuts import redirect, render
+from django.views.decorators.http import require_http_methods
 from dj_celery_panel import views
 from dj_celery_panel.celery_utils import CeleryQueuesInspectBackend, QueueDetailPage, QueueListPage
+from dj_celery_panel.conf import panel_config
 
 from framework.celery_tasks import app as celery_app
 from website.settings import CeleryConfig
+from osf.celery_stress_test.tasks import start_celery_stress_test
+from .forms import CeleryStressTestForm, WorkloadForm
+from django.forms import formset_factory
+
+
+WorkloadFormSet = formset_factory(
+    WorkloadForm,
+    extra=1,
+    can_delete=True,
+    max_num=10,
+    min_num=1,
+    validate_max=True,
+)
 
 
 @cache
@@ -118,3 +135,64 @@ class RoutedTasksQueuesBackend(CeleryQueuesInspectBackend):
                 for entry in sorted(set(getattr(CeleryConfig, attr)) - prefixes):
                     unmatched_entries[router.route({}, entry)['queue'].name].append(entry)
         return unmatched_entries
+
+
+@panel_config.permission_required('celery_stress_test')
+@require_http_methods(['GET', 'POST'])
+def celery_stress_test_view(request):
+    """
+    Configure and start a Celery stress test.
+    """
+    context = panel_config.get_context(
+        request,
+        current_tab='celery_stress_test',
+    )
+
+    if request.method == 'POST':
+        form = CeleryStressTestForm(request.POST)
+        workload_formset = WorkloadFormSet(request.POST)
+
+        if form.is_valid() and workload_formset.is_valid():
+            config = {
+                **form.cleaned_data,
+                'workloads': [
+                    workload_form.cleaned_data
+                    for workload_form in workload_formset
+                    if workload_form.cleaned_data
+                    and not workload_form.cleaned_data.get('DELETE', False)
+                ],
+            }
+
+            if not config['workloads']:
+                messages.error(
+                    request,
+                    'Please configure at least one workload.',
+                )
+            else:
+                try:
+                    result = start_celery_stress_test.delay(config)
+                except Exception:
+                    messages.error(
+                        request,
+                        'Failed to start the stress test. Please try again.',
+                    )
+                else:
+                    messages.success(
+                        request,
+                        f"Stress test submitted successfully. Task ID: {result.id}",
+                    )
+                    return redirect(request.path)
+    else:
+        form = CeleryStressTestForm()
+        workload_formset = WorkloadFormSet()
+
+    context.update({
+        'form': form,
+        'workload_formset': workload_formset,
+    })
+
+    return render(
+        request,
+        'admin/dj_celery_panel/celery_stress_testing.html',
+        context,
+    )
