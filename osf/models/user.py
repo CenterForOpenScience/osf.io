@@ -2310,7 +2310,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
                 sentry.log_message(msg, level=logging.ERROR)
                 raise OrcidTokenMissingError('ORCiD identity has no token to revoke; sign in via ORCiD and try again.')
             # Revoke first: a failure must abort the removal before anything is mutated.
-            self._revoke_orcid_token(external_id, token_entry, '[Remove external identity]')
+            self._revoke_orcid_token_for_one_id(external_id, token_entry, '[Remove external identity]')
 
         del self.external_identity[provider][external_id]
         if not self.external_identity[provider]:
@@ -2368,10 +2368,10 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
             return
 
         for orcid_id in sorted(revocable_ids):
-            self._revoke_orcid_token(orcid_id, tokens_identity_ids[orcid_id], '[GDPR delete]')
+            self._revoke_orcid_token_for_one_id(orcid_id, tokens_identity_ids[orcid_id], '[GDPR delete]')
             # NOTE: The actual identities/tokens removal happens in `_clear_identifying_information()`.
 
-    def _revoke_orcid_token(self, orcid_id, token_entry, log_prefix):
+    def _revoke_orcid_token_for_one_id(self, orcid_id, token_entry, log_prefix):
         """Revokes a single ORCiD token entry via the ORCiD API.
 
         Raises OrcidRevocationError if the revocation request fails.
