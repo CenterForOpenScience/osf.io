@@ -5,7 +5,7 @@ import osf.utils.fields
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('osf', '0056_merge_20260918'),
+        ('osf', '0058_preprint_deleted_spam_created_index'),
     ]
 
     operations = [
