@@ -4,7 +4,7 @@ import html
 from urllib.parse import urljoin
 
 from django.core.exceptions import ValidationError
-from django.db import models
+from django.db import models, transaction
 from django.db.models import Exists, OuterRef
 from django.db.models.signals import post_save
 from django.contrib.contenttypes.models import ContentType
@@ -582,6 +582,8 @@ class Registration(AbstractNode):
         self.save()
         return approval
 
+    # Roll back the COMPLETED embargo if making the registration public fails
+    @transaction.atomic
     def terminate_embargo(self, forced=False):
         """Handles the completion of an Embargoed registration.
         Adds a log to the registered_from Node.
