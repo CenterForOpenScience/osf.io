@@ -26,6 +26,7 @@ from admin_tests.utilities import setup_view, setup_log_view, setup_form_view
 
 from admin.users import views
 from admin.users.forms import UserSearchForm, MergeUserForm
+from api_tests.share._utils import mock_update_share
 from osf.models.admin_log_entry import AdminLogEntry
 from tests.utils import assert_notification, capture_notifications
 from osf.models.notification_type import NotificationTypeEnum
@@ -682,6 +683,7 @@ class TestUserReindex(AdminTestCase):
     def setUp(self):
         super().setUp()
         self.request = RequestFactory().post('/fake_path')
+        patch_messages(self.request)
 
         self.user = AuthUserFactory()
 
@@ -694,6 +696,70 @@ class TestUserReindex(AdminTestCase):
 
         assert mock_reindex_elastic.called
         assert AdminLogEntry.objects.count() == count + 1
+
+    def test_reindex_user_share_sends_only_user_record(self):
+        ProjectFactory(creator=self.user, is_public=True)
+        PreprintFactory(creator=self.user)
+        count = AdminLogEntry.objects.count()
+        view = views.UserShareReindex()
+        view = setup_log_view(view, self.request, guid=self.user._id)
+        with mock_update_share() as _shmock:
+            view.post(self.request)
+            _shmock.assert_called_once_with(self.user)
+        assert AdminLogEntry.objects.count() == count + 1
+
+    def test_reindex_user_share_content(self):
+        project = ProjectFactory(creator=self.user)
+        preprint = PreprintFactory(creator=self.user)
+        count = AdminLogEntry.objects.count()
+        view = views.UserShareReindexContent()
+        view = setup_log_view(view, self.request, guid=self.user._id)
+        with mock_update_share() as _shmock:
+            view.post(self.request)
+        reindexed = [_call.args[0] for _call in _shmock.call_args_list]
+        assert project in reindexed
+        assert preprint in reindexed
+        assert self.user not in reindexed
+        assert AdminLogEntry.objects.count() == count + 1
+
+
+class TestUserUpdateShareIndexing(AdminTestCase):
+    def setUp(self):
+        super().setUp()
+        self.user = AuthUserFactory()
+
+    def post_allow_indexing(self, value):
+        request = RequestFactory().post('/fake_path', {'allow_indexing': value})
+        patch_messages(request)
+        view = views.UserUpdateShareIndexing()
+        view = setup_log_view(view, request, guid=self.user._id)
+        with mock_update_share() as _shmock:
+            view.post(request)
+        self.user.refresh_from_db()
+        return _shmock
+
+    def test_opt_out(self):
+        count = AdminLogEntry.objects.count()
+        _shmock = self.post_allow_indexing('false')
+        assert self.user.allow_indexing is False
+        _shmock.assert_called_once_with(self.user)
+        assert AdminLogEntry.objects.count() == count + 1
+
+    def test_opt_in(self):
+        self.user.allow_indexing = False
+        self.user.save()
+        count = AdminLogEntry.objects.count()
+        _shmock = self.post_allow_indexing('true')
+        assert self.user.allow_indexing is True
+        _shmock.assert_called_once_with(self.user)
+        assert AdminLogEntry.objects.count() == count + 1
+
+    def test_invalid_value(self):
+        count = AdminLogEntry.objects.count()
+        _shmock = self.post_allow_indexing('maybe')
+        assert self.user.allow_indexing is None
+        _shmock.assert_not_called()
+        assert AdminLogEntry.objects.count() == count
 
 
 class TestUserMerge(AdminTestCase):

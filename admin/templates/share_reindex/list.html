@@ -30,7 +30,7 @@
     </div>
     <div class="col-md-3">
         <a data-toggle="modal" data-target="#confirmReindexShareNodes" class="btn btn-primary">
-            SHARE Reindex All {{selected_resource_type}}
+            {% if selected_resource_type == 'users' %}Reindex All Users{% else %}SHARE Reindex All {{selected_resource_type}}{% endif %}
         </a>
 
         <div class="modal" id="confirmReindexShareNodes">
@@ -99,7 +99,7 @@
 
         {% if selected_resource_type != 'files' %}
             <td>
-                <a data-toggle="modal" data-target="#confirmReindexShareNode-{{ item.first_guid }}" class="btn btn-primary">SHARE Reindex</a>
+                <a data-toggle="modal" data-target="#confirmReindexShareNode-{{ item.first_guid }}" class="btn btn-primary">{% if selected_resource_type == 'users' %}Reindex User{% else %}SHARE Reindex{% endif %}</a>
             </td>
             <div class="modal" id="confirmReindexShareNode-{{ item.first_guid }}">
                 <div class="modal-dialog">
@@ -107,7 +107,7 @@
                         <form class="well" method="post" action="{% url resource_guid_reindex guid=item.first_guid %}">
                             <div class="modal-header">
                                 <button type="button" class="close" data-dismiss="modal">x</button>
-                                <h3>Are you sure you want to reindex this node (SHARE)? {{ item.first_guid }}</h3>
+                                <h3>Are you sure you want to reindex this {% if selected_resource_type == 'users' %}user{% else %}node{% endif %} (SHARE)? {{ item.first_guid }}</h3>
                             </div>
                             {% csrf_token %}
                             <div class="modal-footer">
