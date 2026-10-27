@@ -20,10 +20,11 @@ from website import settings
 from django.contrib.auth.mixins import PermissionRequiredMixin
 
 
-class InternetArchiveView(TemplateView, PermissionRequiredMixin):
+class InternetArchiveView(PermissionRequiredMixin, TemplateView):
     """Basic form to trigger various management commands"""
 
     template_name = 'internet_archive/internet_archive.html'
+    raise_exception = True
     permission_required = 'osf.change_node'
 
     def get_context_data(self, **kwargs):
@@ -34,7 +35,7 @@ class InternetArchiveView(TemplateView, PermissionRequiredMixin):
         return context
 
 
-class SendToPigeon(FormView, PermissionRequiredMixin):
+class SendToPigeon(PermissionRequiredMixin, FormView):
 
     form_class = ArchiveRegistrationWithPigeonForm
     raise_exception = True
@@ -52,7 +53,11 @@ class SendToPigeon(FormView, PermissionRequiredMixin):
         return reverse('internet_archive:internet_archive')
 
 
-class CreateIASubcollections(View, PermissionRequiredMixin):
+class CreateIASubcollections(PermissionRequiredMixin, View):
+
+    raise_exception = True
+    permission_required = 'osf.change_node'
+
     def post(self, request, *args, **kwargs):
         populate_internet_archives_collections(settings.ID_VERSION)
         messages.success(
@@ -62,7 +67,7 @@ class CreateIASubcollections(View, PermissionRequiredMixin):
         return redirect(reverse('internet_archive:internet_archive'))
 
 
-class CheckIAMetadata(FormView, PermissionRequiredMixin):
+class CheckIAMetadata(PermissionRequiredMixin, FormView):
 
     form_class = ArchiveRegistrationWithPigeonForm
     raise_exception = True
@@ -86,7 +91,7 @@ class CheckIAMetadata(FormView, PermissionRequiredMixin):
         return reverse('internet_archive:internet_archive')
 
 
-class SyncIAMetadata(FormView, PermissionRequiredMixin):
+class SyncIAMetadata(PermissionRequiredMixin, FormView):
 
     form_class = ArchiveRegistrationWithPigeonForm
     raise_exception = True

@@ -1,11 +1,12 @@
 from django.shortcuts import redirect
 from django.views.generic import TemplateView
 from django.contrib import messages
+from django.contrib.auth.mixins import PermissionRequiredMixin
 from osf.models import RegistrationProvider, OSFUser, CollectionProvider, NotificationTypeEnum
 from website.settings import DOMAIN
 
 
-class AddAdminOrModerator(TemplateView):
+class AddAdminOrModerator(PermissionRequiredMixin, TemplateView):
     permission_required = 'osf.change_registrationprovider'
     template_name = 'registration_providers/edit_moderators.html'
     provider_class = RegistrationProvider
@@ -71,7 +72,7 @@ class AddAdminOrModerator(TemplateView):
         return redirect(f'{self.url_namespace}:add_admin_or_moderator', provider_id=provider.id)
 
 
-class RemoveAdminsAndModerators(TemplateView):
+class RemoveAdminsAndModerators(PermissionRequiredMixin, TemplateView):
     permission_required = 'osf.change_registrationprovider'
     template_name = 'registration_providers/edit_moderators.html'
     provider_class = RegistrationProvider
