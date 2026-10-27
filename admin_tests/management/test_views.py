@@ -1,4 +1,5 @@
 import pytest
+from django.contrib.auth.models import Permission
 from django.contrib.messages.storage.fallback import FallbackStorage
 from django.test import RequestFactory
 
@@ -12,9 +13,15 @@ pytestmark = pytest.mark.django_db
 Cadence = StuckRegistrationReportCadence
 
 
+def management_user():
+    user = AuthUserFactory()
+    user.user_permissions.add(Permission.objects.get(codename='view_management'))
+    return user
+
+
 def post(view, data):
     request = RequestFactory().post('/fake_path', data)
-    request.user = AuthUserFactory()
+    request.user = management_user()
     setattr(request, 'session', 'session')
     setattr(request, '_messages', FallbackStorage(request))
     response = view.as_view()(request)
