@@ -20,7 +20,7 @@ def remove_collection_read_write_groups(dry_run=False, batch_size=10000):
     """Delete the collections_<id>_read and collections_<id>_write groups.
 
     Collections only create an admin group now, and nothing ever added users to the
-    read/write groups. A group that does have members is skipped and logged.
+    read/write groups. A group that does have members is skipped and logged (there shouldn't be any).
     Returns (deleted, skipped_with_members).
     """
     groups = Group.objects.filter(name__regex=COLLECTION_READ_WRITE_GROUP_REGEX)
@@ -32,9 +32,9 @@ def remove_collection_read_write_groups(dry_run=False, batch_size=10000):
         logger.warning(f'Skipping {name}: it has members')
 
     if dry_run:
-        to_delete = groups.exclude(_has_members()).count()
-        logger.info(f'[DRY RUN] Would delete {to_delete} collection read/write groups')
-        return to_delete, len(with_members)
+        number_of_deleted_groups = groups.exclude(_has_members()).count()
+        logger.info(f'[DRY RUN] Would delete {number_of_deleted_groups} collection read/write groups')
+        return number_of_deleted_groups, len(with_members)
 
     deleted = 0
     last_id = 0
@@ -46,12 +46,10 @@ def remove_collection_read_write_groups(dry_run=False, batch_size=10000):
             break
         last_id = batch_ids[-1]
         with transaction.atomic():
-            # Emptiness is re-checked here so a group that gained a member since the
-            # batch was selected is left alone
             _, per_model = Group.objects.filter(id__in=batch_ids).exclude(_has_members()).delete()
-        batch_deleted = per_model.get('auth.Group', 0)
-        deleted += batch_deleted
-        logger.info(f'Deleted {batch_deleted} groups (total {deleted}, last id {last_id})')
+        number_this_batch = per_model.get('auth.Group', 0)
+        deleted += number_this_batch
+        logger.info(f'Deleted {number_this_batch} groups (total {deleted}, last id {last_id})')
 
     logger.info(f'Deleted {deleted} collection read/write groups, skipped {len(with_members)} with members')
     return deleted, len(with_members)
