@@ -26,11 +26,13 @@ from osf.models import Preprint, Node, Registration, StuckRegistrationReportConf
 from osf.models.stuck_registration_report import StuckRegistrationReportCadence
 
 
-class ManagementCommands(TemplateView):
+class ManagementCommands(PermissionRequiredMixin, TemplateView):
     '''Basic form to trigger various management commands'''
 
     template_name = 'management/commands.html'
     object_type = 'management'
+    permission_required = 'osf.view_management'
+    raise_exception = True
 
     def get_context_data(self, **kwargs):
         _context = super().get_context_data(**kwargs)
@@ -45,9 +47,10 @@ class ManagementCommands(TemplateView):
         return _context
 
 
-class ManagementCommandPermissionView(View, PermissionRequiredMixin):
+class ManagementCommandPermissionView(PermissionRequiredMixin, View):
 
     permission_required = 'osf.view_management'
+    raise_exception = True
 
 class WaffleFlag(ManagementCommandPermissionView):
 
