@@ -25,9 +25,8 @@ logger = logging.getLogger(__name__)
 
 
 class Collection(DirtyFieldsMixin, GuidMixin, BaseModel, GuardianMixin):
+    # Only the creator is ever granted access, so only an admin group is created
     groups = {
-        'read': ('read_collection', ),
-        'write': ('read_collection', 'write_collection', ),
         'admin': ('read_collection', 'write_collection', 'admin_collection', )
     }
     group_format = 'collections_{self.id}_{group}'
@@ -160,7 +159,7 @@ class Collection(DirtyFieldsMixin, GuidMixin, BaseModel, GuardianMixin):
         return ret
 
     def has_permission(self, user, perm):
-        return user.has_perms(self.groups[perm], self)
+        return user.has_perm(f'{perm}_collection', self)
 
     def collect_object(
             self, obj, collector, collected_type=None, status=None, volume=None,
