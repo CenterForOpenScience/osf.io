@@ -1,5 +1,7 @@
 import pytest
+from django.contrib.contenttypes.models import ContentType
 
+from addons.osfstorage.models import OsfStorageFile
 from api.base.settings.defaults import API_BASE
 from api_tests.preprints.filters.test_filters import PreprintsListFilteringMixin
 from api_tests.preprints.views.test_preprint_list_mixin import PreprintIsPublishedListMixin, PreprintIsValidListMixin
@@ -10,7 +12,10 @@ from osf_tests.factories import (
     PreprintProviderFactory,
 )
 from django.utils import timezone
+from framework.auth.core import Auth
+from osf.models import Preprint
 from osf.utils import permissions
+from tests.utils import capture_notifications
 
 
 @pytest.mark.django_db
@@ -320,3 +325,67 @@ class TestUserPreprintIsValidList(PreprintIsValidListMixin):
         # admin
         res = app.get(url, auth=user_admin_contrib.auth)
         assert len(res.json['data']) == 0
+
+
+@pytest.mark.django_db
+class TestUserPreprintsVersions:
+    """Each preprint version has its own contributors; the list shows one version per preprint"""
+
+    @pytest.fixture()
+    def admin(self):
+        return AuthUserFactory()
+
+    @pytest.fixture()
+    def contributor(self):
+        return AuthUserFactory()
+
+    @pytest.fixture()
+    def url(self):
+        return f'/{API_BASE}users/me/preprints/'
+
+    @pytest.fixture()
+    def preprint_v1(self, admin):
+        return PreprintFactory(creator=admin)
+
+    @pytest.fixture()
+    def preprint_v2(self, preprint_v1, admin):
+        return PreprintFactory.create_version(create_from=preprint_v1, creator=admin, set_doi=False)
+
+    def _ids(self, app, url, user):
+        res = app.get(url, auth=user.auth)
+        assert res.status_code == 200
+        return [each['id'] for each in res.json['data']]
+
+    def test_contributor_on_all_versions_sees_latest_version_only(self, app, url, admin, preprint_v1, preprint_v2):
+        assert self._ids(app, url, admin) == [preprint_v2._id]
+
+    def test_contributor_only_on_previous_version_sees_that_version(
+            self, app, url, admin, contributor, preprint_v1, preprint_v2):
+        preprint_v1.add_contributor(contributor, permissions.WRITE, auth=Auth(admin), save=True)
+        assert self._ids(app, url, contributor) == [preprint_v1._id]
+        preprint_v2.add_contributor(contributor, permissions.WRITE, auth=Auth(admin), save=True)
+        assert self._ids(app, url, contributor) == [preprint_v2._id]
+
+    def test_previous_version_listed_for_other_users(
+            self, app, admin, contributor, preprint_v1, preprint_v2):
+        preprint_v1.add_contributor(contributor, permissions.READ, auth=Auth(admin), save=True)
+        url = f'/{API_BASE}users/{contributor._id}/preprints/'
+        assert self._ids(app, url, AuthUserFactory()) == [preprint_v1._id]
+        assert [each['id'] for each in app.get(url).json['data']] == [preprint_v1._id]
+
+    def test_pending_new_version_is_not_listed(self, app, url, admin):
+        preprint_v1 = PreprintFactory(creator=admin, reviews_workflow='pre-moderation')
+        preprint_v2, _ = Preprint.create_version(preprint_v1._id, Auth(admin))
+        primary_file = OsfStorageFile.create(
+            target_object_id=preprint_v2.id,
+            target_content_type=ContentType.objects.get_for_model(preprint_v2),
+            path='/preprint_file.txt',
+            name='preprint_file.txt',
+            materialized_path='/preprint_file.txt',
+        )
+        primary_file.save()
+        preprint_v2.set_primary_file(primary_file, auth=Auth(admin), save=True)
+        with capture_notifications():
+            preprint_v2.run_submit(admin)
+        assert preprint_v2.machine_state == 'pending'
+        assert self._ids(app, url, admin) == [preprint_v1._id]
