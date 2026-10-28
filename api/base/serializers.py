@@ -196,6 +196,14 @@ class HideIfRegistration(ConditionalField):
         return not isinstance(self.field, RelationshipField)
 
 
+class HideIfViewOnlyLink(ConditionalField):
+    """Hide the field when the request uses a view-only link."""
+
+    def should_hide(self, instance):
+        request = self.context.get('request')
+        return bool(request and request.query_params.get('view_only'))
+
+
 class HideIfDisabled(ConditionalField):
     """
     If the user is disabled, returns None for attribute fields, or skips

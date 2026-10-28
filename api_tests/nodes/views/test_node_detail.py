@@ -572,6 +572,16 @@ class TestNodeDetail:
         res = app.get(f'{url_public}?view_only={private_link.key}', auth=user.auth)
         assert [permissions.READ] == res.json['data']['attributes']['current_user_permissions']
 
+    def test_preprints_relationship_hidden_for_view_only_link(self, app, url_public, project_public):
+        private_link = PrivateLinkFactory(anonymous=False)
+        private_link.nodes.add(project_public)
+        private_link.save()
+
+        response = app.get(f'{url_public}?view_only={private_link.key}')
+
+        assert response.status_code == 200
+        assert 'preprints' not in response.json['data']['relationships']
+
     def test_spammed_node_detail_gone(self, app, user, project_public, url_public):
         project_public.confirm_spam(save=True, train_spam_services=False)
         res = app.get(url_public, expect_errors=True)
