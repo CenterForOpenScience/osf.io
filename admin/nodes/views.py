@@ -166,7 +166,10 @@ class NodeView(NodeMixin, GuidView):
         return context
 
 
-class NodeRemoveNotificationView(View):
+class NodeRemoveNotificationView(PermissionRequiredMixin, View):
+    permission_required = 'osf.delete_notificationsubscription'
+    raise_exception = True
+
     def post(self, request, *args, **kwargs):
         selected_ids = request.POST.getlist('selected_notifications')
         if selected_ids:
@@ -178,7 +181,10 @@ class NodeRemoveNotificationView(View):
         return redirect('nodes:node', guid=kwargs.get('guid'))
 
 
-class NodeUpdateModerationStateView(View):
+class NodeUpdateModerationStateView(NodeMixin, View):
+    permission_required = 'osf.change_node'
+    raise_exception = True
+
     def post(self, request, *args, **kwargs):
         guid = kwargs.get('guid')
         node = AbstractNode.load(guid)

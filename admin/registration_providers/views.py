@@ -330,7 +330,7 @@ class ShareSourceRegistrationProvider(PermissionRequiredMixin, View):
         return redirect(reverse_lazy('registration_providers:detail', kwargs={'registration_provider_id': provider.id}))
 
 
-class ChangeSchema(TemplateView):
+class ChangeSchema(PermissionRequiredMixin, TemplateView):
     permission_required = 'osf.change_registrationprovider'
     template_name = 'registration_providers/change_schema.html'
 
