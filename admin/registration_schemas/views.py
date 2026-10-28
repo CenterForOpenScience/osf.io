@@ -51,7 +51,7 @@ class RegistrationSchemaDetailView(FormView, PermissionRequiredMixin, TemplateVi
         return reverse_lazy('registration_schemas:detail', kwargs={'registration_schema_id': self.get_object().id})
 
 
-class RegistrationSchemaCreateView(FormView, PermissionRequiredMixin):
+class RegistrationSchemaCreateView(PermissionRequiredMixin, FormView):
     """
     Allows authorized users to create a Registration Schema.
     """
@@ -111,7 +111,7 @@ class RegistrationSchemaCreateView(FormView, PermissionRequiredMixin):
         return blocks
 
 
-class RegistrationSchemaDeleteView(DeleteView, PermissionRequiredMixin):
+class RegistrationSchemaDeleteView(PermissionRequiredMixin, DeleteView):
     """
     Allows authorized users to delete a Registration Schema.
     """
