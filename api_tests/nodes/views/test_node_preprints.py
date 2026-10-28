@@ -9,6 +9,7 @@ from osf_tests.factories import (
     AuthUserFactory,
     ProjectFactory,
     PreprintProviderFactory,
+    PrivateLinkFactory,
 )
 from osf.utils import permissions
 
@@ -103,6 +104,16 @@ class TestNodePreprintsListFiltering(PreprintsListFilteringMixin):
         res = app.get(url, auth=user.auth)
         actual = [preprint['id'] for preprint in res.json['data']]
         assert set(expected) == set(actual)
+
+    def test_view_only_link_cannot_fetch_node_preprints(self, app, project_one):
+        view_only_link = PrivateLinkFactory()
+        view_only_link.nodes.add(project_one)
+        view_only_link.save()
+        url = f'/{API_BASE}nodes/{project_one._id}/preprints/?view_only={view_only_link.key}'
+
+        response = app.get(url, expect_errors=True)
+
+        assert response.status_code == 403
 
 
 class TestNodePreprintIsPublishedList(PreprintIsPublishedListMixin):
