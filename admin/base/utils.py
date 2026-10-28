@@ -33,6 +33,15 @@ def osf_staff_check(user):
     return user and user.is_authenticated and user.is_staff
 
 
+def login_not_required(view_func):
+    """Let a view through AdminLoginRequiredMiddleware without a logged-in staff user.
+
+    For class-based views, decorate ``dispatch`` with ``method_decorator``.
+    """
+    view_func.login_required = False
+    return view_func
+
+
 def get_subject_rules(subjects_selected):
     """
     Take a list of subjects, and parse them into rules consistent with preprint provider
