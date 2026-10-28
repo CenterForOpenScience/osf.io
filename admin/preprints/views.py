@@ -38,7 +38,6 @@ from osf.models import (
     BaseFileNode,
     File,
     TrashedFileNode,
-    Identifier,
 )
 
 from osf.models.admin_log_entry import (
@@ -312,11 +311,9 @@ class RecoverDeletedPreprintView(PermissionRequiredMixin, FormView):
         data = form.cleaned_data
         guid = data['guid']
         file_guid = data['file_guid'].strip()
-        use_new_guid = data['use_new_guid']
-        original_doi = data['original_doi']
         try:
             with transaction.atomic():
-                existing = None if use_new_guid else Preprint.load(guid)
+                existing = Preprint.load(guid)
                 if existing and existing.deleted:
                     existing.deleted = None
                     existing.save()
@@ -339,38 +336,25 @@ class RecoverDeletedPreprintView(PermissionRequiredMixin, FormView):
                         'and resync CrossRef. Run again on the same GUID to add the next version.'
                     )
                 else:
-                    if original_doi and Identifier.objects.filter(category='doi', value=original_doi).exists():
-                        raise ValueError(f'DOI "{original_doi}" is already attached to another object.')
-                    occupant = None if use_new_guid else getattr(Guid.load(guid), 'referent', None)
+                    occupant = getattr(Guid.load(guid), 'referent', None)
                     if occupant is not None:
                         raise ValueError(
-                            f'GUID "{guid}" is already used by {type(occupant).__name__} (pk={occupant.pk}). '
-                            'Tick "GUID is taken" to recover the preprint under a new GUID.'
+                            f'GUID "{guid}" is used by {type(occupant).__name__} (pk={occupant.pk}); '
+                            'a user with the remove_guid permission must remove and reassign it in the Guids panel first.'
                         )
                     version = Preprint.create(
                         provider=data['provider'],
                         title=data['title'],
                         creator=self.request.user,
                         description=data['description'],
-                        manual_guid=None if use_new_guid else guid,
-                        manual_doi=original_doi or None,
+                        manual_guid=guid,
                     )
                     action_flag = PREPRINT_RECOVERED
-                    if not use_new_guid:
-                        log_message = f'Preprint {version._id} recreated after deletion (ref: {data["ticket_reference"]}).'
-                        success_message = (
-                            f'Recreated preprint version {version._id}. Set contributors/metadata, then publish '
-                            'and resync CrossRef. Run again on the same GUID to add the next version.'
-                        )
-                    else:
-                        success_message = (
-                            f'Recreated preprint version {version._id} under a NEW GUID ({guid} is taken). Use the new GUID '
-                            'for further versions. Set contributors/metadata, then publish and resync CrossRef.'
-                        )
-                        log_message = (
-                            f'Preprint {version._id} recreated under a new GUID because {guid} is taken '
-                            f'(ref: {data["ticket_reference"]}).'
-                        )
+                    log_message = f'Preprint {version._id} recreated after deletion (ref: {data["ticket_reference"]}).'
+                    success_message = (
+                        f'Recreated preprint version {version._id}. Set contributors/metadata, then publish '
+                        'and resync CrossRef. Run again on the same GUID to add the next version.'
+                    )
                 if file_guid:
                     self._copy_primary_file(version, file_guid)
                 update_admin_log(

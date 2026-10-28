@@ -7,7 +7,7 @@ from django.contrib.contenttypes.fields import GenericForeignKey, GenericRelatio
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import MultipleObjectsReturned
 from django.core.exceptions import ValidationError as DjangoValidationError
-from django.db import connections, models
+from django.db import connections, models, transaction
 from django.db.models import ForeignKey, UniqueConstraint
 from django.db.models.query import QuerySet
 from django.db.models.signals import post_save
@@ -52,6 +52,47 @@ def generate_guid(length=5):
         # it's not, check and see if it's already in the database
         if not Guid.objects.filter(_id=guid_id).exists():
             return guid_id
+
+
+class GuidReassignError(ValueError):
+    pass
+
+
+def reassign_guid(guid):
+    """Give the object behind ``guid`` a new guid and free the old id string.
+
+    The ``Guid`` row is repointed (not deleted) so rows that reference it, such as collection
+    submissions and metadata records, are kept. Preprints are not supported.
+
+    :param guid: ``Guid`` instance or guid string
+    :return: ``(old_id, new_id, referent)``
+    """
+    from osf.models import AbstractNode, Collection, OSFUser
+    from website.search import search
+
+    guid_str = guid._id if isinstance(guid, Guid) else guid
+    with transaction.atomic():
+        guid_obj = Guid.objects.select_for_update().filter(_id=guid_str).first()
+        if guid_obj is None:
+            raise GuidReassignError(f'Guid "{guid_str}" does not exist.')
+        referent = guid_obj.referent
+        if referent is None:
+            raise GuidReassignError(f'Guid "{guid_str}" has no object attached to it.')
+        if isinstance(referent, VersionedGuidMixin) or not isinstance(referent, (AbstractNode, OSFUser, Collection)):
+            raise GuidReassignError(f'Guids of {type(referent).__name__} objects cannot be reassigned.')
+
+        old_id = guid_obj._id
+        new_id = generate_guid()
+        Guid.objects.filter(pk=guid_obj.pk).update(_id=new_id)
+
+        referent.__dict__.pop('_id', None)
+        getattr(referent, '_prefetched_objects_cache', {}).pop('guids', None)
+
+        if isinstance(referent, AbstractNode):
+            transaction.on_commit(lambda: search.update_node(referent))
+        elif isinstance(referent, OSFUser):
+            transaction.on_commit(lambda: search.update_user(referent))
+    return old_id, new_id, referent
 
 
 def generate_object_id():
@@ -290,6 +331,7 @@ class Guid(BaseModel):
         index_together = (
             ('content_type', 'object_id', 'created'),
         )
+        permissions = [('remove_guid', 'Can remove and reassign guids')]
 
 
 class GuidVersionsThrough(BaseModel):

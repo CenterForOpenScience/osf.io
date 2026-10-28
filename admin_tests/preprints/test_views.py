@@ -21,6 +21,7 @@ from osf_tests.factories import (
 
 )
 from osf.models.admin_log_entry import AdminLogEntry, PREPRINT_RECOVERED, PREPRINT_RESTORED
+from osf.models.base import reassign_guid
 from osf.models.spam import SpamStatus
 from osf.utils.workflows import DefaultStates, RequestTypes, ReviewTriggers
 from osf.utils.permissions import ADMIN
@@ -1198,26 +1199,18 @@ class TestRecoverDeletedPreprintView(AdminTestCase):
         assert Preprint.objects.count() == before
         assert Preprint.load(taken_guid) is None
 
-    def test_taken_guid_recovers_under_new_guid_with_original_doi(self):
-        taken_guid = self.user._id
-        doi = '10.31219/osf.io/abcde_v1'
-        response = self._post(self._base_data(guid=taken_guid, use_new_guid=True, original_doi=doi))
-        assert response.status_code == 302
-
-        recovered = Preprint.objects.get(title='Recovered Title')
-        assert recovered.get_guid()._id != taken_guid
-        assert recovered.get_identifier_value('doi') == doi
-        assert AdminLogEntry.objects.filter(action_flag=PREPRINT_RECOVERED, object_id=recovered._id).exists()
-        # The other object keeps its GUID.
-        assert self.user.guids.first()._id == taken_guid
-
-    def test_original_doi_already_in_use_is_rejected(self):
-        existing = PreprintFactory(provider=self.provider)
-        existing.set_identifier_values('10.31219/osf.io/dupe1', save=True)
+    def test_taken_guid_can_be_recovered_after_reassigning_it(self):
+        taken_guid = NodeFactory()._id
         before = Preprint.objects.count()
-        response = self._post(self._base_data(use_new_guid=True, original_doi='10.31219/osf.io/dupe1'))
-        assert response.status_code == 302
+        self._post(self._base_data(guid=taken_guid))
         assert Preprint.objects.count() == before
+        assert Preprint.load(taken_guid) is None
+
+        reassign_guid(taken_guid)
+        response = self._post(self._base_data(guid=taken_guid))
+
+        assert response.status_code == 302
+        assert Preprint.load(taken_guid)._id == f'{taken_guid}_v1'
 
     def test_copies_trashed_source_file_as_active_file(self):
         source = PreprintFactory(provider=self.provider)
