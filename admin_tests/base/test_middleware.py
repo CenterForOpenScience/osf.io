@@ -90,3 +90,10 @@ class TestAdminLoginRequiredMiddlewareEnabled:
         client.force_login(user)
         response = client.get('/nodes/')
         assert response.status_code == 403
+
+    def test_anonymous_request_to_middleware_check_is_redirected_to_login(self, client):
+        # /middleware_check/ route has no permission checks of its own
+        # only AdminLoginRequiredMiddleware keeps it private
+        response = client.get('/middleware_check/')
+        assert response.status_code == 302
+        assert response.url == f'{LOGIN_REDIRECT_PREFIX}/middleware_check/'
