@@ -212,7 +212,9 @@ class DeleteRegistrationProvider(PermissionRequiredMixin, DeleteView):
         return super().get_context_data(*args, **kwargs)
 
 
-class CannotDeleteProvider(TemplateView):
+class CannotDeleteProvider(PermissionRequiredMixin, TemplateView):
+    permission_required = 'osf.delete_registrationprovider'
+    raise_exception = True
     template_name = 'registration_providers/cannot_delete.html'
 
     def get_context_data(self, **kwargs):
