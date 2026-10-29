@@ -4,13 +4,19 @@ from django.shortcuts import render
 from django.views.generic import DetailView
 from django.views.defaults import page_not_found
 
-from admin.base.utils import osf_staff_check
+from admin.base.utils import get_unprotected_url_patterns, osf_staff_check
 
 
 @user_passes_test(osf_staff_check)
 def home(request):
     context = {}
     return render(request, 'home.html', context)
+
+
+@user_passes_test(osf_staff_check)
+def unprotected_views(request):
+    context = {'unprotected_url_patterns': get_unprotected_url_patterns()}
+    return render(request, 'unprotected_views.html', context)
 
 
 class GuidView(DetailView):

@@ -3,42 +3,17 @@ from django.contrib.auth.models import AnonymousUser, Permission
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import PermissionDenied
 from django.test import RequestFactory
-from django.urls import URLPattern, URLResolver, get_resolver, resolve, reverse
+from django.urls import resolve, reverse
 
 from admin.base import settings as admin_settings
 from admin.base.middleware import AdminLoginRequiredMiddleware
 from admin.common_auth.views import LoginView
+from admin_tests.utilities import all_admin_views, as_view_func, protected_views, public_views
 from osf.models import AbstractNode, OSFUser
 from osf_tests.factories import AuthUserFactory
 
 pytestmark = pytest.mark.django_db
 
-
-def get_all_views(url_patterns, views=None, module=None):
-    if views is None:
-        views = set()
-    for pattern in url_patterns:
-        if isinstance(pattern, URLResolver):
-            get_all_views(pattern.url_patterns, views, module=module)
-        elif isinstance(pattern, URLPattern):
-            # Handle function-based and class-based views
-            view = pattern.callback
-            if hasattr(view, 'view_class'):
-                view = view.view_class
-            if module and not view.__module__.startswith(f'{module}.'):
-                continue
-            views.add(view)
-    return views
-
-
-def as_view_func(view):
-    return view.as_view() if isinstance(view, type) else view
-
-
-ALL_ADMIN_VIEWS = get_all_views(get_resolver('admin.base.urls').url_patterns, module='admin')
-PUBLIC_VIEWS = {LoginView}
-# Sorted so every xdist worker collects the same tests in the same order
-PROTECTED_VIEWS = sorted(ALL_ADMIN_VIEWS - PUBLIC_VIEWS, key=lambda view: (view.__name__, view.__module__))
 LOGIN_REDIRECT_PREFIX = f"{reverse('auth:login', urlconf='admin.base.urls')}?next="
 
 
@@ -59,13 +34,13 @@ def staff_user(**kwargs):
 @pytest.mark.urls('admin.base.urls')
 class TestAdminLoginRequiredMiddleware:
 
-    @pytest.mark.parametrize('view', PROTECTED_VIEWS)
+    @pytest.mark.parametrize('view', protected_views())
     def test_anonymous_user_is_sent_to_login(self, view):
         response = process_view(as_view_func(view), AnonymousUser())
         assert response.status_code == 302
         assert response.url.startswith(LOGIN_REDIRECT_PREFIX)
 
-    @pytest.mark.parametrize('view', PROTECTED_VIEWS)
+    @pytest.mark.parametrize('view', protected_views())
     def test_non_staff_user_is_denied(self, view):
         with pytest.raises(PermissionDenied):
             process_view(as_view_func(view), OSFUser(is_active=True, is_staff=False))
@@ -82,8 +57,8 @@ class TestAdminLoginRequiredMiddleware:
         assert process_view(as_view_func(LoginView), AnonymousUser()) is None
 
     def test_only_login_is_public(self):
-        public = {view for view in ALL_ADMIN_VIEWS if not getattr(as_view_func(view), 'login_required', True)}
-        assert public == PUBLIC_VIEWS
+        public = {view for view in all_admin_views() if not getattr(as_view_func(view), 'login_required', True)}
+        assert public == public_views()
 
 
 @pytest.mark.urls('admin.base.urls')

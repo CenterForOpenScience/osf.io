@@ -4,7 +4,7 @@ Utility functions and classes
 from osf.models import Subject, NodeLicense, Brand, CedarMetadataTemplate
 
 from django.core.exceptions import ValidationError, PermissionDenied
-from django.urls import reverse
+from django.urls import URLPattern, URLResolver, get_resolver, reverse
 from django.core.validators import RegexValidator, _lazy_re_compile
 from django.utils.http import urlencode
 from django.utils.translation import gettext_lazy as _
@@ -40,6 +40,29 @@ def login_not_required(view_func):
     """
     view_func.login_required = False
     return view_func
+
+
+def get_unprotected_url_patterns(url_patterns=None, route_prefix='/', name_prefix=''):
+    """List the URL patterns that AdminLoginRequiredMiddleware lets through without a logged-in staff user.
+
+    Each entry is a dict with the pattern's ``route``, namespaced URL ``name`` and the dotted path of its ``view``.
+    """
+    if url_patterns is None:
+        url_patterns = get_resolver().url_patterns
+    unprotected = []
+    for pattern in url_patterns:
+        route = route_prefix + str(pattern.pattern).lstrip('^').removesuffix('$')
+        if isinstance(pattern, URLResolver):
+            namespace = f'{name_prefix}{pattern.namespace}:' if pattern.namespace else name_prefix
+            unprotected += get_unprotected_url_patterns(pattern.url_patterns, route, namespace)
+        elif isinstance(pattern, URLPattern) and not getattr(pattern.callback, 'login_required', True):
+            view = getattr(pattern.callback, 'view_class', pattern.callback)
+            unprotected.append({
+                'route': route,
+                'name': f'{name_prefix}{pattern.name}' if pattern.name else '',
+                'view': f'{view.__module__}.{view.__qualname__}',
+            })
+    return unprotected
 
 
 def get_subject_rules(subjects_selected):
