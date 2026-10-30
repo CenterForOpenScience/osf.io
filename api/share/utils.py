@@ -225,7 +225,7 @@ def task__reindex_failed_or_not_indexed_resource_into_share(resource_type: str, 
 
 
 def get_not_indexed_guids_for_resource_with_no_indexed_guid(resource_type: str, only_oldest_guid: bool = True):
-    from osf.models import Guid, Registration, Preprint, Node, OSFUser
+    from osf.models import Guid, Registration, Preprint, Node, OSFUser, SpamStatus
     from addons.osfstorage.models import OsfStorageFile
     common_not_indexed_public_resource_extract_query = (
         Q(is_public=True) & Q(deleted__isnull=True) &
@@ -235,7 +235,7 @@ def get_not_indexed_guids_for_resource_with_no_indexed_guid(resource_type: str, 
         'projects': (Node, common_not_indexed_public_resource_extract_query, ('first_guid', 'date_last_indexed', 'title')),
         'preprints': (Preprint, common_not_indexed_public_resource_extract_query & Q(is_published=True), ('first_guid', 'date_last_indexed', 'title')),
         'registries': (Registration, common_not_indexed_public_resource_extract_query, ('first_guid', 'date_last_indexed', 'title')),
-        'users': (OSFUser, Q(is_active=True) & Q(deleted__isnull=True) & ~Q(allow_indexing=False) & (Q(has_been_indexed=False) | Q(has_been_indexed__isnull=True)), ('first_guid', 'fullname', 'date_last_indexed')),
+        'users': (OSFUser, Q(is_active=True) & Q(deleted__isnull=True) & ~Q(allow_indexing=False) & ~Q(spam_status=SpamStatus.SPAM) & (Q(has_been_indexed=False) | Q(has_been_indexed__isnull=True)), ('first_guid', 'fullname', 'date_last_indexed')),
         'files': (OsfStorageFile, Q(deleted__isnull=True), ('first_guid', 'name', 'date_last_indexed')),
     }
     resource_model, query, values_to_return = resource_mapper.get(resource_type, 'projects')

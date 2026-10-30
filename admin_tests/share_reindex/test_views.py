@@ -5,6 +5,7 @@ from django.test import RequestFactory
 
 from admin.share_reindex import views
 from admin_tests.utilities import setup_view
+from osf.models import SpamStatus
 from osf_tests.factories import AuthUserFactory, UserFactory
 from website.settings import CeleryConfig
 
@@ -29,6 +30,15 @@ class TestFailedShareIndexedGuidList:
         listed_guids = {item['first_guid'] for item in view.get_queryset()}
         assert {default_user._id, opted_in_user._id} <= listed_guids
         assert opted_out_user._id not in listed_guids
+
+    def test_users_list_hides_spam_users(self, req):
+        default_user = UserFactory()
+        spam_user = UserFactory(spam_status=SpamStatus.SPAM)
+        assert spam_user.is_active
+        view = setup_view(views.FailedShareIndexedGuidList(), req)
+        listed_guids = {item['first_guid'] for item in view.get_queryset()}
+        assert {default_user._id} <= listed_guids
+        assert spam_user._id not in listed_guids
 
 
 @pytest.mark.urls('admin.base.urls')
