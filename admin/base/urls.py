@@ -3,8 +3,12 @@ from django.urls import re_path
 from django.contrib import admin
 from admin.base.settings import ADMIN_BASE, DEBUG
 from admin.base import views
+from admin.common_auth.views import LoginView
 
 base_pattern = f'^{ADMIN_BASE}'
+
+# Route Django admin's login through our LoginView so it enforces two-factor auth
+admin.site.login = LoginView.as_view()
 
 urlpatterns = [
     ### ADMIN ###
