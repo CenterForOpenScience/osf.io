@@ -8,7 +8,7 @@ from api.base.exceptions import (
     InvalidModelValueError,
 )
 from api.base.serializers import (
-    VersionedDateTimeField, HideIfRegistration, HideIfViewOnlyLink, IDField,
+    VersionedDateTimeField, HideIfRegistration, IDField,
     JSONAPISerializer, JSONAPIListSerializer, LinksField,
     NodeFileHyperLinkField, RelationshipField,
     ShowIfVersion, TargetTypeField, TypeField,
@@ -239,7 +239,6 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
         'node_links',
         'parent',
         'preprint',
-        'preprints',
         'public',
         'region',
         'registration',
@@ -1103,15 +1102,6 @@ class NodeDetailSerializer(NodeSerializer):
     Overrides NodeSerializer to make id required.
     """
     id = IDField(source='_id', required=True)
-
-    preprints = HideIfViewOnlyLink(
-        HideIfRegistration(
-            RelationshipField(
-                related_view='nodes:node-preprints',
-                related_view_kwargs={'node_id': '<_id>'},
-            ),
-        ),
-    )
 
 
 class NodeForksSerializer(NodeSerializer):
