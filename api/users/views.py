@@ -4,7 +4,7 @@ from urllib.parse import urlencode
 
 from django.apps import apps
 from django.db import IntegrityError
-from django.db.models import F
+from django.db.models import F, OuterRef, Subquery
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_protect
 from guardian.shortcuts import get_objects_for_user
@@ -94,6 +94,7 @@ from osf.models import (
     Contributor,
     ExternalAccount,
     Guid,
+    GuidVersionsThrough,
     AbstractNode,
     Preprint,
     Node,
@@ -106,6 +107,7 @@ from osf.models import (
 )
 from osf.utils.tokens import TokenHandler
 from osf.utils.tokens.handlers import sanction_handler
+from osf.utils.workflows import RegistrationModerationStates
 from website import settings, language
 from website.project.views.contributor import send_claim_email, send_claim_registered_email
 from website.util.metrics import CampaignClaimedTags, CampaignSourceTags
@@ -394,7 +396,24 @@ class UserPreprints(JSONAPIBaseView, generics.ListAPIView, UserMixin, PreprintFi
 
         # Permissions on the list objects are handled by the query
         default_qs = Preprint.objects.filter(_contributors__guids___id=target_user._id).exclude(machine_state='initial')
-        return self.preprints_queryset(default_qs, auth_user, allow_contribs=False, latest_only=True)
+        visible_qs = self.preprints_queryset(default_qs, auth_user, allow_contribs=False)
+
+        # A preprint can have several versions, and each version has its own contributors
+        # Show one version per preprint: the newest one the user is a contributor
+        main_link_version_number = Subquery(
+            GuidVersionsThrough.objects.filter(
+                guid_id=OuterRef('versioned_guids__guid_id'),
+                object_id=OuterRef('versioned_guids__guid__object_id'),
+            ).values('version')[:1],
+        )
+        user_versions = Preprint.objects.filter(
+            id__in=visible_qs.values('id'),
+            versioned_guids__version__lte=main_link_version_number,
+        )
+        newest_user_versions = user_versions.order_by(
+            'versioned_guids__guid_id', '-versioned_guids__version',
+        ).distinct('versioned_guids__guid_id')
+        return Preprint.objects.filter(id__in=newest_user_versions.values('id'))
 
     def get_queryset(self):
         return self.get_queryset_from_request()
@@ -485,7 +504,10 @@ class UserRegistrations(JSONAPIBaseView, generics.ListAPIView, UserMixin, NodesF
             **resource_annotations.make_open_practice_badge_annotations(),
         )
         # OSF group members not copied to registration.  Only registration contributors need to be checked here.
-        return qs.filter(contributor__user__id=user.id)
+        # Registrations rejected by a moderator are returned to contributors as drafts, so they are not listed here.
+        return qs.filter(contributor__user__id=user.id).exclude(
+            moderation_state=RegistrationModerationStates.REJECTED.db_name,
+        )
 
     # overrides ListAPIView
     def get_queryset(self):

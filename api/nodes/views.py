@@ -173,6 +173,7 @@ from osf.models import (
 )
 from addons.osfstorage.models import Region
 from osf.utils.permissions import ADMIN, WRITE_NODE
+from osf.utils.workflows import RegistrationModerationStates
 from website import settings
 
 # This is used to rethrow v1 exceptions as v2
@@ -240,11 +241,11 @@ class DraftMixin:
         self.check_branched_from(draft)
 
         if self.request.method not in drf_permissions.SAFE_METHODS:
-            if draft.registered_node and not draft.registered_node.is_deleted:
+            if draft.has_active_registration:
                 raise PermissionDenied('This draft has already been registered and cannot be modified.')
 
         else:
-            if draft.registered_node and not draft.registered_node.is_deleted:
+            if draft.has_active_registration:
                 redirect_url = draft.registered_node.absolute_api_v2_url
                 self.headers['location'] = redirect_url
                 raise PermanentlyMovedError(detail='Draft has already been registered')
@@ -776,7 +777,10 @@ class NodeRegistrationsList(JSONAPIBaseView, generics.ListCreateAPIView, NodeMix
     # overrides ListCreateAPIView
     # TODO: Filter out withdrawals by default
     def get_queryset(self):
-        nodes = self.get_node().registrations_all.annotate(
+        # Registrations rejected by a moderator are returned to contributors as drafts, so they are not listed here
+        nodes = self.get_node().registrations_all.exclude(
+            moderation_state=RegistrationModerationStates.REJECTED.db_name,
+        ).annotate(
             revision_state=registration_annotations.REVISION_STATE,
             **resource_annotations.make_open_practice_badge_annotations(),
         )

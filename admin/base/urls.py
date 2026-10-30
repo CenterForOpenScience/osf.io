@@ -12,6 +12,9 @@ urlpatterns = [
         base_pattern,
         include([
             re_path(r'^$', views.home, name='home'),
+            re_path(r'^unprotected_views/$', views.unprotected_views, name='unprotected_views'),
+            re_path(r'^middleware_check/$', views.admin_auth_middleware_check, name='middleware_check'),
+            re_path(r'^admin/dj-celery-panel/', include('dj_celery_panel.urls')),
             re_path(r'^admin/', admin.site.urls),
             re_path(r'^provider_asset_files/', include('admin.provider_asset_files.urls', namespace='provider_asset_files')),
             re_path(r'^institution_asset_files/', include('admin.institution_asset_files.urls', namespace='institution_asset_files')),

@@ -715,7 +715,7 @@ def claim_user_registered(auth, node, **kwargs):
     View that prompts user to enter their password in order to claim being a contributor on a project.
     A user must be logged in.
     """
-
+    uid, pid, token = kwargs['uid'], kwargs['pid'], kwargs['token']
     current_user = auth.user
     current_session = get_session()
 
@@ -723,14 +723,10 @@ def claim_user_registered(auth, node, **kwargs):
     if not current_user:
         return redirect(sign_out_url)
 
-    # Logged in user should not be a contributor the project
+    # Logged in user should not be a contributor the project. If logged in user, log out user and redirect to claim form
     if hasattr(node, 'is_contributor') and node.is_contributor(current_user):
-        data = {
-            'message_short': 'Already a contributor',
-            'message_long': ('The logged-in user is already a contributor to this '
-                'project. Would you like to <a href="{}">log out</a>?').format(sign_out_url)
-        }
-        raise HTTPError(http_status.HTTP_400_BAD_REQUEST, data=data)
+        claim_form_url = web_url_for('claim_user_form', uid=uid, pid=pid, token=token, _absolute=True)
+        return redirect(web_url_for('auth_logout', redirect_url=claim_form_url))
 
     # Logged in user is already a member of the OSF Group
     if hasattr(node, 'is_member') and node.is_member(current_user):
@@ -741,7 +737,6 @@ def claim_user_registered(auth, node, **kwargs):
         }
         raise HTTPError(http_status.HTTP_400_BAD_REQUEST, data=data)
 
-    uid, pid, token = kwargs['uid'], kwargs['pid'], kwargs['token']
     unreg_user = OSFUser.load(uid)
     if not verify_claim_token(unreg_user, token, pid=node._primary_key):
         error_data = {

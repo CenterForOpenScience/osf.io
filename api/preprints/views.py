@@ -74,36 +74,6 @@ from api.subjects.views import BaseResourceSubjectsList, SubjectRelationshipBase
 from api.base.metrics import UsageMetricsViewMixin
 
 
-class PreprintOldVersionsImmutableMixin:
-    """Override method to reject modify requests for old preprint versions (except for withdrawal)"""
-
-    @staticmethod
-    def is_edit_allowed(preprint):
-        if preprint.is_latest_version or preprint.machine_state == DefaultStates.INITIAL.value:
-            return True
-        if preprint.provider.reviews_workflow == Workflows.PRE_MODERATION.value:
-            if preprint.machine_state == DefaultStates.PENDING.value or preprint.machine_state == DefaultStates.REJECTED.value:
-                return True
-        return False
-
-    def handle_request(self, request, method, *args, **kwargs):
-        preprint = self.get_preprint(check_object_permissions=False)
-        if PreprintOldVersionsImmutableMixin.is_edit_allowed(preprint):
-            return method(request, *args, **kwargs)
-        message = f'User cannot edit previous versions of a preprint: [_id={preprint._id}]'
-        sentry.log_message(message)
-        raise Conflict(detail=message)
-
-    def update(self, request, *args, **kwargs):
-        return self.handle_request(request, super().update, *args, **kwargs)
-
-    def create(self, request, *args, **kwargs):
-        return self.handle_request(request, super().create, *args, **kwargs)
-
-    def destroy(self, request, *args, **kwargs):
-        return self.handle_request(request, super().destroy, *args, **kwargs)
-
-
 class PreprintMixin(NodeMixin):
     serializer_class = PreprintSerializer
     preprint_lookup_url_kwarg = 'preprint_id'
@@ -266,7 +236,7 @@ class PreprintVersionsList(JSONAPIBaseView, generics.ListCreateAPIView, Preprint
         return super().create(request, *args, **kwargs)
 
 
-class PreprintDetail(PreprintOldVersionsImmutableMixin, UsageMetricsViewMixin, JSONAPIBaseView, generics.RetrieveUpdateAPIView, PreprintMixin, WaterButlerMixin):
+class PreprintDetail(UsageMetricsViewMixin, JSONAPIBaseView, generics.RetrieveUpdateAPIView, PreprintMixin, WaterButlerMixin):
     """See [documentation for this endpoint](https://developer.osf.io/#operation/preprints_read).
 
     Note: The resource now exposes a `versions` relationship pointing to
@@ -307,7 +277,7 @@ class PreprintDetail(PreprintOldVersionsImmutableMixin, UsageMetricsViewMixin, J
         res['legacy_type_allowed'] = True
         return res
 
-class PreprintNodeRelationship(PreprintOldVersionsImmutableMixin, JSONAPIBaseView, generics.RetrieveUpdateAPIView, PreprintMixin):
+class PreprintNodeRelationship(JSONAPIBaseView, generics.RetrieveUpdateAPIView, PreprintMixin):
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
@@ -335,7 +305,7 @@ class PreprintNodeRelationship(PreprintOldVersionsImmutableMixin, JSONAPIBaseVie
         return obj
 
 
-class PreprintCitationDetail(PreprintOldVersionsImmutableMixin, JSONAPIBaseView, generics.RetrieveAPIView, PreprintMixin):
+class PreprintCitationDetail(JSONAPIBaseView, generics.RetrieveAPIView, PreprintMixin):
     """See [documentation for this endpoint](https://developer.osf.io/#operation/preprints_citation_list).
     """
     permission_classes = (
@@ -445,7 +415,7 @@ class PreprintIdentifierList(IdentifierList, PreprintMixin):
         return self.get_preprint(check_object_permissions=check_object_permissions)
 
 
-class PreprintContributorsList(PreprintOldVersionsImmutableMixin, NodeContributorsList, PreprintMixin):
+class PreprintContributorsList(NodeContributorsList, PreprintMixin):
     permission_classes = (
         AdminOrPublic,
         drf_permissions.IsAuthenticatedOrReadOnly,
@@ -489,7 +459,7 @@ class PreprintContributorsList(PreprintOldVersionsImmutableMixin, NodeContributo
         return context
 
 
-class PreprintContributorDetail(PreprintOldVersionsImmutableMixin, NodeContributorDetail, PreprintMixin):
+class PreprintContributorDetail(NodeContributorDetail, PreprintMixin):
 
     permission_classes = (
         ContributorDetailPermissions,
@@ -581,7 +551,7 @@ class PreprintSubjectsList(BaseResourceSubjectsList, PreprintMixin):
         return self.get_preprint()
 
 
-class PreprintSubjectsRelationship(PreprintOldVersionsImmutableMixin, SubjectRelationshipBaseView, PreprintMixin):
+class PreprintSubjectsRelationship(SubjectRelationshipBaseView, PreprintMixin):
     """See [documentation for this endpoint](https://developer.osf.io/#operation/preprint_subjects_list).
     """
     permission_classes = (
@@ -801,7 +771,7 @@ class PreprintInstitutionsList(JSONAPIBaseView, generics.ListAPIView, ListFilter
         return self.get_resource().get_affiliated_institutions()
 
 
-class PreprintInstitutionsRelationship(PreprintOldVersionsImmutableMixin, JSONAPIBaseView, generics.RetrieveUpdateAPIView, PreprintMixin):
+class PreprintInstitutionsRelationship(JSONAPIBaseView, generics.RetrieveUpdateAPIView, PreprintMixin):
     """ """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,

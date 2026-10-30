@@ -59,7 +59,7 @@ from osf.external.gravy_valet import (
 from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
 from osf.utils.fields import NonNaiveDateTimeField
 from osf.utils.requests import get_request_and_user_id, string_type_request_headers, get_current_request
-from osf.utils.workflows import CollectionSubmissionStates
+from osf.utils.workflows import CollectionSubmissionStates, RegistrationModerationStates
 from osf.utils import sanitize
 from website import language, settings
 from website.citations.utils import datetime_to_csl
@@ -680,7 +680,11 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         return DraftRegistration.objects.filter(
             models.Q(branched_from=self) &
             models.Q(deleted__isnull=True) &
-            (models.Q(registered_node=None) | models.Q(registered_node__deleted__isnull=False)),
+            (
+                models.Q(registered_node=None)
+                | models.Q(registered_node__deleted__isnull=False)
+                | models.Q(registered_node__moderation_state=RegistrationModerationStates.REJECTED.db_name)
+            ),
         )
 
     @property

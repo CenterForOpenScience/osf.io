@@ -136,10 +136,14 @@ class TestSchemaResponseDetailGETPermissions:
         if role == 'non-contributor':
             return 403
 
-        # Moderators can GET PENDING_MODERATION and APPROVED SchemaResponses on
+        # Moderators can GET PENDING_MODERATION, APPROVED and MODERATOR_REJECTED SchemaResponses on
         # public or private registrations that are part of a moderated registry
         if role == 'moderator':
-            moderator_visible_states = [ApprovalStates.PENDING_MODERATION, ApprovalStates.APPROVED]
+            moderator_visible_states = [
+                ApprovalStates.PENDING_MODERATION,
+                ApprovalStates.APPROVED,
+                ApprovalStates.MODERATOR_REJECTED,
+            ]
             if schema_response_state in moderator_visible_states and reviews_workflow is not None:
                 return 200
             else:

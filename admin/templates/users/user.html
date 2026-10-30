@@ -22,10 +22,10 @@
                 {% include "users/reset_password.html" with user=user %}
                 {%  if perms.osf.change_osfuser %}
                     <a href="{% url 'users:get-reset-password' guid=user.guid %}" data-toggle="modal" data-target="#getResetModal" class="btn btn-default">Get password reset link</a>
-                    {% if user.confirmed %}
-                        <button class="btn btn-default disabled" data-toggle="tooltip" title="User already confirmed">Get confirmation link</button>
+                    {% if user.is_confirmed %}
+                        <button class="btn btn-default disabled" data-toggle="tooltip" title="User already confirmed">Get Reset Password Link</button>
                     {% else %}
-                        {% if user.unclaimed %}
+                        {% if user.unclaimed_records %}
                             <a href="{% url 'users:get-claim-urls' guid=user.guid  %}" data-toggle="modal" data-target="#getUserClaimModal" class="btn btn-default">Get claim links</a>
                         {%  else %}
                             <a href="{% url 'users:get-confirmation' guid=user.guid  %}" data-toggle="modal" data-target="#getConfirmationModal" class="btn btn-default">Get confirmation link</a>
@@ -188,6 +188,25 @@
                     <td>User is staff</td>
                     <td>
                         {{ user.is_staff }}
+                    </td>
+                </tr>
+                <tr>
+                    <td>Allows SHARE indexing</td>
+                    <td>
+                        {% if user.allow_indexing is False %}
+                            No (opted out)
+                        {% elif user.allow_indexing %}
+                            Yes (opted in)
+                        {% else %}
+                            Yes (default, no preference set)
+                        {% endif %}
+                        {% if perms.osf.change_osfuser %}
+                            <form method="post" action="{% url 'users:share-indexing' guid=user.guid %}" style="display: inline;">
+                                {% csrf_token %}
+                                <input type="hidden" name="allow_indexing" value="{% if user.allow_indexing is False %}true{% else %}false{% endif %}" />
+                                <input class="btn btn-default" type="submit" value="{% if user.allow_indexing is False %}Opt in to SHARE indexing{% else %}Opt out of SHARE indexing{% endif %}" />
+                            </form>
+                        {% endif %}
                     </td>
                 </tr>
                 {% include "nodes/add_system_tags.html" with resource=user %}

@@ -3,6 +3,7 @@ from flask import g
 
 from http.cookies import SimpleCookie
 from unittest import mock
+from urllib.parse import parse_qs, urlparse
 
 from framework.auth import Auth, authenticate, cas
 from framework.auth.utils import impute_names_model
@@ -457,21 +458,24 @@ class TestClaimViews(OsfTestCase):
             uid=self.user._id,
             token='badtoken',
         )
-        res = self.app.get(url, auth=self.referrer.auth)
+        res = self.app.get(url, auth=AuthUserFactory().auth)
         assert res.status_code == 400
 
-    def test_cannot_claim_user_with_user_who_is_already_contributor(self):
-        # user who is already a contirbutor to the project
+    def test_logged_in_contributor_is_logged_out_and_redirected_to_claim_form(self):
+        # user who is already a contributor to the project
         contrib = AuthUserFactory()
         self.project.add_contributor(contrib, auth=Auth(self.project.creator))
         self.project.save()
         # Claiming user goes to claim url, but contrib is already logged in
         url = self.user.get_claim_url(self.project._primary_key)
-        res = self.app.get(
-            url,
-            auth=contrib.auth, follow_redirects=True)
-        # Response is a 400
-        assert res.status_code == 400
+        res = self.app.get(url, auth=contrib.auth)
+        assert res.status_code == 302
+        res = self.app.get(res.location, auth=contrib.auth)
+        assert res.status_code == 302
+        location = urlparse(res.location)
+        assert location.path == '/logout/'
+        return_url = parse_qs(location.query)['redirect_url'][0]
+        assert return_url.endswith(url)
 
     def test_claim_user_with_project_id_adds_corresponding_claimed_tag_to_user(self):
         assert OsfClaimedTags.Osf.value not in self.user.system_tags

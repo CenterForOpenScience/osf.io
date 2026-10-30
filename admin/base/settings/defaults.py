@@ -80,7 +80,10 @@ INSTALLED_APPS = (
     'django.contrib.staticfiles',
 
     # 3rd party
+    'django_celery_beat',
     'django_celery_results',
+    'dj_control_room_base',
+    'dj_celery_panel',
     'webpack_loader',
     'guardian',
     'waffle',
@@ -107,6 +110,12 @@ INSTALLED_APPS = (
     'admin.preprint_providers',
 
 )
+
+DJ_CELERY_PANEL_SETTINGS = {
+    'queues_backend': 'admin.base.celery_panel.RoutedTasksQueuesBackend',
+    # Superusers always have access; users in these groups must also be staff
+    'ALLOWED_GROUPS': ['osf_admin', 'celery_panel'],
+}
 
 MIGRATION_MODULES = {
     'osf': None,
@@ -148,6 +157,7 @@ MIDDLEWARE = (
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
+    'admin.base.middleware.AdminLoginRequiredMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'waffle.middleware.WaffleMiddleware',
