@@ -2280,6 +2280,8 @@ class NodePreprintsList(JSONAPIBaseView, generics.ListAPIView, NodeMixin, Prepri
         return self.preprints_queryset(node.preprints.all(), auth_user, latest_only=True)
 
     def get_queryset(self):
+        if self.request.query_params.get('view_only'):
+            raise PermissionDenied
         return self.get_queryset_from_request()
 
 
