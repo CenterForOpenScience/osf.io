@@ -9,7 +9,7 @@ from django.contrib.messages.storage.fallback import FallbackStorage
 from django.utils import timezone
 
 from tests.base import AdminTestCase
-from osf.models import Preprint, PreprintLog, PreprintRequest, NotificationTypeEnum
+from osf.models import Preprint, PreprintLog, PreprintRequest, NotificationTypeEnum, BaseFileNode
 from framework.auth import Auth
 from osf_tests.factories import (
     AuthUserFactory,
@@ -21,6 +21,7 @@ from osf_tests.factories import (
 
 )
 from osf.models.admin_log_entry import AdminLogEntry, PREPRINT_RECOVERED, PREPRINT_RESTORED
+from osf.models.base import reassign_guid
 from osf.models.spam import SpamStatus
 from osf.utils.workflows import DefaultStates, RequestTypes, ReviewTriggers
 from osf.utils.permissions import ADMIN
@@ -1188,3 +1189,48 @@ class TestRecoverDeletedPreprintView(AdminTestCase):
             )
         # The live preprint's guid still points at it, untouched.
         assert Preprint.load(guid_str).id == live.id
+
+    def test_taken_guid_is_rejected_with_occupant_and_nothing_created(self):
+        taken_guid = self.user._id
+        before = Preprint.objects.count()
+        response = self._post(self._base_data(guid=taken_guid))
+        assert response.status_code == 302
+        assert response.url == reverse('preprints:recover')
+        assert Preprint.objects.count() == before
+        assert Preprint.load(taken_guid) is None
+
+    def test_taken_guid_can_be_recovered_after_reassigning_it(self):
+        taken_guid = NodeFactory()._id
+        before = Preprint.objects.count()
+        self._post(self._base_data(guid=taken_guid))
+        assert Preprint.objects.count() == before
+        assert Preprint.load(taken_guid) is None
+
+        reassign_guid(taken_guid)
+        response = self._post(self._base_data(guid=taken_guid))
+
+        assert response.status_code == 302
+        assert Preprint.load(taken_guid)._id == f'{taken_guid}_v1'
+
+    def test_copies_trashed_source_file_as_active_file(self):
+        source = PreprintFactory(provider=self.provider)
+        source_file = source.primary_file
+        file_guid = source_file.get_guid(create=True)._id
+        source_file.delete()
+
+        response = self._post(self._base_data(file_guid=file_guid))
+        assert response.status_code == 302
+
+        recovered = Preprint.load('abcde')
+        assert recovered.primary_file is not None
+        assert not recovered.primary_file.is_deleted
+        assert recovered.primary_file.deleted_on is None
+        # The original stays trashed.
+        assert BaseFileNode.objects.get(pk=source_file.pk).is_deleted
+
+    def test_get_object_raises_404_for_unknown_guid(self):
+        from django.http import Http404
+        view = views.PreprintMixin()
+        view.kwargs = {'guid': 'zzzzz'}
+        with pytest.raises(Http404):
+            view.get_object()

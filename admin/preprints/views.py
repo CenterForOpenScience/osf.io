@@ -1,7 +1,7 @@
 from django.db import transaction
 from django.db.models import F
 from django.core.exceptions import PermissionDenied, ValidationError
-from django.http import HttpResponse, JsonResponse
+from django.http import Http404, HttpResponse, JsonResponse
 from django.contrib import messages
 from django.contrib.auth.mixins import PermissionRequiredMixin
 from django.shortcuts import redirect
@@ -36,6 +36,8 @@ from osf.models import (
     PreprintProvider,
     Guid,
     BaseFileNode,
+    File,
+    TrashedFileNode,
 )
 
 from osf.models.admin_log_entry import (
@@ -62,6 +64,8 @@ class PreprintMixin(PermissionRequiredMixin):
 
     def get_object(self):
         preprint = Preprint.load(self.kwargs['guid'])
+        if preprint is None:
+            raise Http404(f'Preprint not found: {self.kwargs["guid"]}')
         # Django template does not like attributes with underscores for some reason
         preprint.guid = preprint._id
         return preprint
@@ -289,7 +293,18 @@ class RecoverDeletedPreprintView(PermissionRequiredMixin, FormView):
         latest_version = source_file.versions.order_by('-created').first()
         if latest_version is None:
             raise ValueError(f'File "{file_guid}" has no versions to copy.')
+        is_trashed = isinstance(source_file, TrashedFileNode)
+        if is_trashed and source_file.purged:
+            raise ValueError(f'File "{file_guid}" was deleted and its contents were purged, so it cannot be copied.')
         copied = copy_files(source_file, target_node=preprint, identifier=latest_version.identifier)
+        if is_trashed:
+            # `copy_files` clones the source as-is, so a copy of a trashed file is itself trashed and can't be a
+            # primary file. Restore the copy only; the original stays deleted.
+            copied.deleted = None
+            copied.deleted_on = None
+            copied.recast(copied._resolve_class(File)._typedmodels_type)
+            copied.save()
+            copied = BaseFileNode.objects.get(pk=copied.pk)
         preprint.set_primary_file(copied, auth=self.request, save=True, ignore_permission=True)
 
     def form_valid(self, form):
@@ -321,6 +336,12 @@ class RecoverDeletedPreprintView(PermissionRequiredMixin, FormView):
                         'and resync CrossRef. Run again on the same GUID to add the next version.'
                     )
                 else:
+                    occupant = getattr(Guid.load(guid), 'referent', None)
+                    if occupant is not None:
+                        raise ValueError(
+                            f'GUID "{guid}" is used by {type(occupant).__name__} (pk={occupant.pk}); '
+                            'a user with the remove_guid permission must remove and reassign it in the Guids panel first.'
+                        )
                     version = Preprint.create(
                         provider=data['provider'],
                         title=data['title'],

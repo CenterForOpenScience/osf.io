@@ -44,6 +44,9 @@ MANUAL_ARCHIVE_RESTART = 90
 FILE_REMOVED = 100
 FILE_VERSION_REMOVED = 101
 
+# 102-109 reserved for file actions
+REMOVE_GUID = 110
+
 def update_admin_log(user_id, object_id, object_repr, message, action_flag=UNKNOWN):
     AdminLogEntry.objects.log_action(
         user_id=user_id,

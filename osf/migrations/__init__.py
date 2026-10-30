@@ -73,6 +73,7 @@ def get_admin_read_permissions():
 def get_admin_write_permissions():
     from django.contrib.auth.models import Permission
     return Permission.objects.filter(codename__in=[
+        'view_adminlogentry',
         'add_brand',
         'modify_brand',
         'delete_brand',
@@ -154,6 +155,14 @@ def update_admin_permissions(verbosity=0):
     metrics_permission = Permission.objects.get(codename='view_metrics')
     metrics_group.permissions.add(metrics_permission)
     metrics_group.save()
+
+    # Add a remove_guid Group for the few users who may remove and reassign guids
+    remove_guid_group, created = Group.objects.get_or_create(name='remove_guid')
+    if created and should_log:
+        logger.info('Remove guid group created')
+    remove_guid_group.permissions.add(*Permission.objects.filter(
+        content_type__app_label='osf', codename__in=['view_guid', 'remove_guid'],
+    ))
 
     # Add a celery_panel Group for users who may only monitor Celery in Django admin;
     # dj-celery-panel pages are allowed for it and osf_admin via DJ_CELERY_PANEL_SETTINGS
