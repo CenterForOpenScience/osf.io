@@ -187,6 +187,8 @@ MAILHOG_API_HOST = 'http://mailhog:8025'
 # OR, if using Sendgrid's API
 # WARNING: If `SENDGRID_WHITELIST_MODE` is True,
 SENDGRID_API_KEY = None
+# API key of the SendGrid sub-user with Event Webhook enabled
+SENDGRID_API_KEY_WITH_WEBHOOK = None
 # Public verification key from SendGrid Event Webhook (Mail Settings -> Event Webhook -> Signed Event Webhook)
 SENDGRID_EVENT_WEBHOOK_PUBLIC_KEY = None
 

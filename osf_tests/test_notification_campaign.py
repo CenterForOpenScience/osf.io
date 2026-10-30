@@ -6,12 +6,13 @@ from unittest import mock
 from django.utils import timezone
 from django.db.models import Q
 
-from osf.email import _build_sendgrid_personalizations
+from osf.email import _build_sendgrid_personalizations, _sendgrid_client, get_sendgrid_client
 from osf.email.notification_campaign import (
     NotificationCampaignTask,
     assign_batch_id_to_recipients,
     build_campaign_filter_query,
     create_campaign_recipients,
+    dispatch_campaign,
     get_campaign_recipient_stats,
     process_campaign_retry,
     process_sendgrid_campaign_events,
@@ -730,6 +731,25 @@ class TestNotificationCampaignStart:
         assert campaign.recipient_count == 3
         mock_dispatch_campaign.assert_called_once()
 
+    @pytest.mark.parametrize('sendgrid_bulk, single_send_webhook, expected', [
+        (False, False, False),
+        (True, False, True),
+        (False, True, True),
+    ])
+    @mock.patch('osf.email.notification_campaign.execution.dispatch_campaign.apply_async')
+    def test_start_decides_sendgrid_webhook_client(
+        self, mock_dispatch_campaign, campaign, sendgrid_bulk, single_send_webhook, expected
+    ):
+        campaign.metadata['sendgrid_bulk'] = sendgrid_bulk
+        campaign.run_id = uuid.uuid4()
+        campaign.save()
+
+        with mock.patch('website.settings.CAMPAIGN_SINGLE_SEND_WEBHOOK', single_send_webhook):
+            start_notification_campaign(campaign.id)
+
+        mock_dispatch_campaign.assert_called_once()
+        assert mock_dispatch_campaign.call_args.kwargs['kwargs']['use_sendgrid_webhook'] is expected
+
     @mock.patch('osf.email.notification_campaign.execution.dispatch_campaign')
     def test_start_excludes_unconfirmed_accounts_when_enabled(self, mock_dispatch_campaign, campaign):
         confirmed = UserFactory()
@@ -821,6 +841,28 @@ class TestNotificationCampaignStart:
         assert awaiting.sent_at == awaiting_sent_at
         campaign.refresh_from_db()
         assert campaign.recipient_count == 2
+
+
+class TestDispatchCampaign:
+
+    @mock.patch('osf.email.notification_campaign.execution.process_campaign_retry.delay')
+    @mock.patch('osf.email.notification_campaign.execution.send_campaign_batch.delay')
+    def test_dispatch_passes_sendgrid_webhook_flag_down(self, mock_send_batch, mock_retry, campaign):
+        user = UserFactory()
+        create_campaign_recipients(Q(**{'id__in': [user.id]}), campaign_id=campaign.id)
+        campaign.run_id = uuid.uuid4()
+        campaign.status = NotificationCampaignStatus.RUNNING
+        campaign.save()
+
+        dispatch_campaign(campaign.id, campaign.run_id, use_sendgrid_webhook=True)
+
+        mock_send_batch.assert_called_once()
+        assert mock_send_batch.call_args.kwargs['use_sendgrid_webhook'] is True
+        mock_retry.assert_called_once_with(
+            campaign_id=campaign.id,
+            run_id=campaign.run_id,
+            use_sendgrid_webhook=True,
+        )
 
 
 class TestSendCampaignBatch:
@@ -933,6 +975,48 @@ class TestSendCampaignBatch:
         assert get_campaign_recipient_stats(running_campaign.id)['failed_count'] == 0
         assert get_campaign_recipient_stats(running_campaign.id)['awaiting_count'] == 1
         assert get_campaign_recipient_stats(running_campaign.id)['queued_count'] == 0
+
+    @mock.patch('osf.email.notification_campaign.execution.get_sendgrid_client')
+    @mock.patch('osf.email.notification_campaign.execution.send_email_with_send_grid')
+    def test_send_campaign_batch_sendgrid_bulk_uses_webhook_client(self, mock_sendgrid, mock_get_client, running_campaign):
+        user = UserFactory()
+        running_campaign.metadata['sendgrid_bulk'] = True
+        running_campaign.save(update_fields=['metadata'])
+        create_campaign_recipients(Q(**{'id__in': [user.id]}), campaign_id=running_campaign.id)
+        batch_id = assign_batch_id_to_recipients(campaign_id=running_campaign.id, batch_size=1)
+
+        send_campaign_batch(
+            context={},
+            batch_id=batch_id,
+            notification_type_name='blank',
+            campaign_id=running_campaign.id,
+            run_id=running_campaign.run_id,
+            use_sendgrid_webhook=True,
+        )
+
+        mock_get_client.assert_called_once_with(use_webhook=True)
+        assert mock_sendgrid.call_args.kwargs['client'] is mock_get_client.return_value
+
+    @mock.patch('osf.email.notification_campaign.execution.get_sendgrid_client')
+    @mock.patch('osf.email.notification_campaign.execution.send_email')
+    def test_send_campaign_batch_single_send_reuses_client_for_batch(self, mock_send_email, mock_get_client, running_campaign):
+        users = [UserFactory(), UserFactory()]
+        create_campaign_recipients(Q(**{'id__in': [u.id for u in users]}), campaign_id=running_campaign.id)
+        batch_id = assign_batch_id_to_recipients(campaign_id=running_campaign.id, batch_size=2)
+
+        send_campaign_batch(
+            context={},
+            batch_id=batch_id,
+            notification_type_name='blank',
+            campaign_id=running_campaign.id,
+            run_id=running_campaign.run_id,
+            use_sendgrid_webhook=True,
+        )
+
+        mock_get_client.assert_called_once_with(use_webhook=True)
+        assert mock_send_email.call_count == 2
+        assert all(c.kwargs['client'] is mock_get_client.return_value for c in mock_send_email.call_args_list)
+        assert get_campaign_recipient_stats(running_campaign.id)['awaiting_count'] == 2
 
     def test_build_sendgrid_personalizations_shared_to_list(self):
         personalizations = _build_sendgrid_personalizations(
@@ -1173,6 +1257,36 @@ class TestSendCampaignBatch:
         assert get_campaign_recipient_stats(running_campaign.id)['failed_count'] == 0
         mock_send_email.assert_called_once()
 
+class TestGetSendgridClient:
+
+    @pytest.fixture(autouse=True)
+    def clear_client_cache(self):
+        _sendgrid_client.cache_clear()
+        yield
+        _sendgrid_client.cache_clear()
+
+    @mock.patch('website.settings.SENDGRID_API_KEY_WITH_WEBHOOK', 'webhook-key')
+    @mock.patch('website.settings.SENDGRID_API_KEY', 'default-key')
+    def test_selects_api_key_by_webhook_flag(self):
+        with mock.patch('osf.email.SendGridAPIClient') as mock_client_cls:
+            get_sendgrid_client(use_webhook=True)
+            get_sendgrid_client(use_webhook=False)
+
+        assert mock_client_cls.call_args_list == [mock.call('webhook-key'), mock.call('default-key')]
+
+    @mock.patch('website.settings.SENDGRID_API_KEY_WITH_WEBHOOK', None)
+    @mock.patch('website.settings.SENDGRID_API_KEY', 'default-key')
+    def test_webhook_falls_back_to_default_api_key(self):
+        with mock.patch('osf.email.SendGridAPIClient') as mock_client_cls:
+            get_sendgrid_client(use_webhook=True)
+
+        mock_client_cls.assert_called_once_with('default-key')
+
+    @mock.patch('website.settings.SENDGRID_API_KEY', 'default-key')
+    def test_client_is_cached_per_api_key(self):
+        assert get_sendgrid_client() is get_sendgrid_client()
+
+
 class TestNotificationCampaignCancel:
 
     def test_cancel_sets_cancelled_status_and_completed_at(self, campaign):
@@ -1329,7 +1443,7 @@ class TestProcessCampaignRetry:
         assert campaign.sent_count == 0
         assert campaign.failed_count == 0
         mock_apply_async.assert_called_once_with(
-            kwargs={'campaign_id': campaign.id, 'run_id': campaign.run_id},
+            kwargs={'campaign_id': campaign.id, 'run_id': campaign.run_id, 'use_sendgrid_webhook': False},
             countdown=60,
         )
 
