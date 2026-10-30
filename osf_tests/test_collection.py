@@ -1,6 +1,7 @@
 from unittest import mock
 import pytest
 
+from django.contrib.auth.models import Group
 from django.db import IntegrityError
 
 from framework.auth import Auth
@@ -150,3 +151,24 @@ class TestImplicitRemoval:
         collected_node.remove_node(auth)
 
         assert associated_collections.filter(machine_state=CollectionSubmissionStates.REMOVED).count() == 3
+
+
+class TestCollectionGroups:
+
+    def test_only_admin_group_created(self, user):
+        collection = CollectionFactory(creator=user)
+        assert list(Group.objects.filter(name__startswith=f'collections_{collection.id}_').values_list('name', flat=True)) == [
+            f'collections_{collection.id}_admin'
+        ]
+        assert collection.get_group('admin').user_set.filter(id=user.id).exists()
+
+    def test_creator_has_every_permission(self, user):
+        collection = CollectionFactory(creator=user)
+        for perm in ('read', 'write', 'admin'):
+            assert collection.has_permission(user, perm)
+
+    def test_non_creator_has_no_permission(self, user):
+        collection = CollectionFactory(creator=user)
+        other = UserFactory()
+        for perm in ('read', 'write', 'admin'):
+            assert not collection.has_permission(other, perm)
