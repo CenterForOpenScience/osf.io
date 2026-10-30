@@ -709,6 +709,12 @@ class Preprint(DirtyFieldsMixin, VersionedGuidMixin, IdentifierMixin, Reviewable
         return self.machine_state != DefaultStates.INITIAL.value
 
     @property
+    def requires_primary_file(self):
+        # Authors may leave a preprint without a primary file while they are still working on it: before the first
+        # submission or after a moderator rejected it
+        return self.machine_state not in (DefaultStates.INITIAL.value, DefaultStates.REJECTED.value)
+
+    @property
     def is_pending_moderation(self):
         if self.machine_state == DefaultStates.INITIAL.value:
             return False
@@ -927,6 +933,12 @@ class Preprint(DirtyFieldsMixin, VersionedGuidMixin, IdentifierMixin, Reviewable
             self.save()
         update_or_enqueue_on_preprint_updated(preprint_id=self._id, saved_fields=['primary_file'])
 
+    def remove_primary_file(self):
+        """Unlink the primary file, after it was deleted"""
+        self.primary_file = None
+        self.save()
+        update_or_enqueue_on_preprint_updated(preprint_id=self._id, saved_fields=['primary_file'])
+
     @require_permission([ADMIN])
     def set_published(self, published, auth, save=False, **kwargs):
         if self.is_published and not published:
@@ -1045,8 +1057,8 @@ class Preprint(DirtyFieldsMixin, VersionedGuidMixin, IdentifierMixin, Reviewable
 
         if not first_save and ('ever_public' in saved_fields and saved_fields['ever_public']):
             raise ValidationError('Cannot set "ever_public" to False')
-        if self.has_submitted_preprint and not self.primary_file:
-            raise ValidationError('Cannot save non-initial preprint without primary file.')
+        if self.requires_primary_file and not self.primary_file:
+            raise ValidationError('Only initial or rejected preprints can be saved without a primary file.')
 
         ret = super().save(*args, **kwargs)
 
@@ -1697,6 +1709,9 @@ class Preprint(DirtyFieldsMixin, VersionedGuidMixin, IdentifierMixin, Reviewable
         Params:
             user: The user triggering this transition.
         """
+        # Initial and rejected preprints may have no primary file, but one is required to (re)submit for moderation
+        if self.is_preprint_orphan:
+            raise ValueError('A primary file is required to submit a preprint for moderation.')
         ret = super().run_submit(user=user)
         provider = self.provider
         reviews_workflow = provider.reviews_workflow

@@ -145,7 +145,8 @@ class OsfStorageFileNode(BaseFileNode):
         return int(latest_identifier) if latest_identifier else 1
 
     def _check_delete_allowed(self):
-        if self.is_preprint_primary:
+        # Initial and rejected preprints may be left without a primary file, so authors can replace a wrong one
+        if self.is_preprint_primary and self.target.requires_primary_file:
             raise exceptions.FileNodeIsPrimaryFile()
         if self.is_checked_out:
             raise exceptions.FileNodeCheckedOutError()
@@ -439,7 +440,11 @@ class OsfStorageFile(OsfStorageFileNode, File):
             self.remove_tag(tag, auth, save)
 
     def delete(self, user=None, **kwargs):
+        preprint = self.target if self.is_preprint_primary else None
         ret = super().delete(user, **kwargs)
+        if preprint:
+            # reachable when the preprint allows having no primary file
+            preprint.remove_primary_file()
         self.update_search()
         return ret
 
