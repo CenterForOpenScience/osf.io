@@ -553,7 +553,9 @@ LOOKUPS = {
 }
 
 
-class NotificationCampaignCreateView(CreateView):
+class NotificationCampaignCreateView(PermissionRequiredMixin, CreateView):
+    permission_required = 'osf.change_notificationcampaign'
+    raise_exception = True
     model = NotificationCampaign
     form_class = NotificationCampaignCreateForm
     template_name = 'notifications/notification_campaing_create.html'
