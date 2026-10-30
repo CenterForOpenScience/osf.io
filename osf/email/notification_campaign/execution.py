@@ -6,7 +6,7 @@ from django.utils import timezone
 
 from framework import sentry
 from framework.celery_tasks import app as celery_app
-from osf.email import _render_email_html, send_email, send_email_with_send_grid
+from osf.email import _render_email_html, get_sendgrid_client, send_email, send_email_with_send_grid
 from osf.models import NotificationType, NotificationTypeEnum
 from osf.models.notification_campaign import (
     NotificationCampaign,
@@ -23,7 +23,7 @@ logger = logging.getLogger(__name__)
 
 
 @celery_app.task(bind=True, base=NotificationCampaignTask, name='email.process_campaign_retry')
-def process_campaign_retry(self, campaign_id, run_id):
+def process_campaign_retry(self, campaign_id, run_id, use_sendgrid_webhook=False):
     campaign = self.get_campaign(campaign_id, run_id, abort_if_cancelled=False)
     if campaign is None:
         return
@@ -49,7 +49,11 @@ def process_campaign_retry(self, campaign_id, run_id):
             # Still waiting for in-flight sends / SendGrid delivery webhooks.
             self.sync_campaign_stats(campaign)
             process_campaign_retry.apply_async(
-                kwargs={'campaign_id': campaign_id, 'run_id': campaign.run_id},
+                kwargs={
+                    'campaign_id': campaign_id,
+                    'run_id': campaign.run_id,
+                    'use_sendgrid_webhook': use_sendgrid_webhook,
+                },
                 countdown=execution.get('dispatch_interval', settings.CAMPAIGN_DISPATCH_INTERVAL),
             )
             return
@@ -90,6 +94,7 @@ def process_campaign_retry(self, campaign_id, run_id):
                 args=[campaign_id, campaign.run_id],
                 kwargs={
                     'restart_failed': True,
+                    'use_sendgrid_webhook': use_sendgrid_webhook,
                 },
             )
             return
@@ -118,16 +123,22 @@ def start_notification_campaign(self, campaign_id, restart_failed=False, restart
             status=NotificationCampaignRecipientStatus.QUEUED,
         ).update(status=NotificationCampaignRecipientStatus.PENDING, batch_id=None)
 
+    # Decide once per run which SendGrid user sends the campaign: delivery tracked via
+    # webhook requires the sub-user with Event Webhook enabled.
+    use_sendgrid_webhook = bool(
+        campaign.metadata.get('sendgrid_bulk', False) or settings.CAMPAIGN_SINGLE_SEND_WEBHOOK
+    )
     dispatch_campaign.apply_async(
         args=[campaign_id, campaign.run_id],
         kwargs={
             'restart_failed': restart_failed,
+            'use_sendgrid_webhook': use_sendgrid_webhook,
         },
     )
 
 
 @celery_app.task(bind=True, base=NotificationCampaignTask, name='email.dispatch_campaign')
-def dispatch_campaign(self, campaign_id, run_id, restart_failed=False, restart_stuck=False):
+def dispatch_campaign(self, campaign_id, run_id, restart_failed=False, restart_stuck=False, use_sendgrid_webhook=False):
     campaign = self.get_campaign(campaign_id, run_id)
     if campaign is None:
         return
@@ -196,6 +207,7 @@ def dispatch_campaign(self, campaign_id, run_id, restart_failed=False, restart_s
                 notification_type_name=notification_type_name,
                 run_id=run_id,
                 developer_reminder=developer_reminder,
+                use_sendgrid_webhook=use_sendgrid_webhook,
             )
             new_queued_batches += 1
 
@@ -209,13 +221,14 @@ def dispatch_campaign(self, campaign_id, run_id, restart_failed=False, restart_s
 
     if no_more_recipients:
         process_campaign_retry.delay(
-            campaign_id=campaign_id, run_id=campaign.run_id
+            campaign_id=campaign_id, run_id=campaign.run_id, use_sendgrid_webhook=use_sendgrid_webhook
         )
     else:
         self.apply_async(
             args=[campaign_id, run_id],
             kwargs={
                 'restart_failed': restart_failed,
+                'use_sendgrid_webhook': use_sendgrid_webhook,
             },
             countdown=execution.get('dispatch_interval', settings.CAMPAIGN_DISPATCH_INTERVAL),
         )
@@ -230,6 +243,7 @@ def send_campaign_batch(
     campaign_id=None,
     run_id=None,
     developer_reminder=False,
+    use_sendgrid_webhook=False,
 ):
     campaign = self.get_campaign(campaign_id, run_id)
     if campaign is None:
@@ -286,6 +300,8 @@ def send_campaign_batch(
     invalid_emails_qs = recipients_qs_annotated.filter(recipient_address__isnull=True)
     invalid_emails_qs.update(status=NotificationCampaignRecipientStatus.SKIPPED, error_message='Invalid email address')
 
+    sendgrid_client = get_sendgrid_client(use_webhook=use_sendgrid_webhook)
+
     if campaign.metadata.get('sendgrid_bulk', False):
         recipients = list(valid_emails_qs)
         recipient_emails = []
@@ -307,6 +323,7 @@ def send_campaign_batch(
                 context=context,
                 email_context={'custom_args_list': custom_args_list},
                 is_multiple=True,
+                client=sendgrid_client,
             )
             valid_emails_qs.update(
                 status=NotificationCampaignRecipientStatus.AWAITING_DELIVERY,
@@ -336,8 +353,9 @@ def send_campaign_batch(
                         },
                     },
                     rendered_html=rendered_html,
+                    client=sendgrid_client,
                 )
-                if settings.CAMPAIGN_SINGLE_SEND_WEBHOOK:
+                if use_sendgrid_webhook:
                     recipient.status = NotificationCampaignRecipientStatus.AWAITING_DELIVERY
                 else:
                     recipient.status = NotificationCampaignRecipientStatus.SENT
