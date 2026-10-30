@@ -573,7 +573,7 @@ class TestNodeDetail:
         assert [permissions.READ] == res.json['data']['attributes']['current_user_permissions']
 
     def test_preprints_relationship_hidden_for_view_only_link(self, app, url_public, project_public):
-        private_link = PrivateLinkFactory(anonymous=False)
+        private_link = PrivateLinkFactory(anonymous=True)
         private_link.nodes.add(project_public)
         private_link.save()
 
