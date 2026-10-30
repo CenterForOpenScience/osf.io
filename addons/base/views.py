@@ -1134,6 +1134,13 @@ def persistent_file_download(auth, **kwargs):
             referent, _ = Guid.load_referent(id_or_guid)
             file = referent.primary_file
 
+    # Initial and rejected preprints may have no primary file
+    if file is None:
+        raise HTTPError(http_status.HTTP_404_NOT_FOUND, data={
+            'message_short': 'File Not Found',
+            'message_long': 'The requested file could not be found.'
+        })
+
     if not file.is_file:
         raise HTTPError(http_status.HTTP_400_BAD_REQUEST, data={
             'message_long': 'Downloading folders is not permitted.'

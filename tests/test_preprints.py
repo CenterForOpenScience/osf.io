@@ -1521,6 +1521,26 @@ class TestSetPreprintFile(OsfTestCase):
         with pytest.raises(ValidationError):
             self.preprint.save()
 
+    def test_can_save_rejected_preprint_without_file(self):
+        self.preprint.set_primary_file(self.file, auth=self.auth, save=True)
+        self.preprint.machine_state = DefaultStates.REJECTED.value
+        self.preprint.save()
+
+        self.preprint.remove_primary_file()
+        self.preprint.reload()
+        assert self.preprint.primary_file is None
+        assert self.preprint.is_preprint_orphan
+
+    def test_cant_save_pending_preprint_without_file(self):
+        self.preprint.set_primary_file(self.file, auth=self.auth, save=True)
+        self.preprint.machine_state = DefaultStates.PENDING.value
+        self.preprint.save()
+
+        with pytest.raises(ValidationError):
+            self.preprint.remove_primary_file()
+        self.preprint.reload()
+        assert self.preprint.primary_file == self.file
+
 
 class TestPreprintPermissions(OsfTestCase):
     def setUp(self):
