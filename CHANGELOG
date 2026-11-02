@@ -2,6 +2,28 @@
 
 We follow the CalVer (https://calver.org/) versioning scheme: YY.MINOR.MICRO.
 
+26.26.0 (2026-11-02)
+====================
+
+- PB&S Release: PBS-26-20
+- Ability for moderator to report users as spam
+- Admin auth middleware
+- Add management command to resync preprint DOIs
+- Make SHARE consistently index user content in admin app
+- Make "Exclude non-contributors" checked by default
+- Run postcommit tasks after DB transaction save
+- Allow editing metadata on previous versions of a preprint
+- Integrate dj-celery-panel (part 1)
+- Do not show rejected registrations in the submitted tab
+- Rejected registrations disappearing for registration providers
+- Handle contributors without permission group in merge_user
+- Exclude registered_from from metadata when the source node is private
+- Optimize query planning in MonthlyOsfstorageFileCountReporter
+- Fix issue with unregistered contributor
+- Fix failing confirmation links
+- Show preprints in My Preprints for users added as contributors
+- Exclude spam users from the users-to-index list
+
 26.25.1 (2026-10-27)
 ====================
 
