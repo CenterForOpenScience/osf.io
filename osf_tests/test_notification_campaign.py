@@ -731,24 +731,17 @@ class TestNotificationCampaignStart:
         assert campaign.recipient_count == 3
         mock_dispatch_campaign.assert_called_once()
 
-    @pytest.mark.parametrize('sendgrid_bulk, single_send_webhook, expected', [
-        (False, False, False),
-        (True, False, True),
-        (False, True, True),
-    ])
+    @pytest.mark.parametrize('sendgrid_bulk', [False, True])
     @mock.patch('osf.email.notification_campaign.execution.dispatch_campaign.apply_async')
-    def test_start_decides_sendgrid_webhook_client(
-        self, mock_dispatch_campaign, campaign, sendgrid_bulk, single_send_webhook, expected
-    ):
+    def test_start_uses_sendgrid_webhook_client_only_for_bulk(self, mock_dispatch_campaign, campaign, sendgrid_bulk):
         campaign.metadata['sendgrid_bulk'] = sendgrid_bulk
         campaign.run_id = uuid.uuid4()
         campaign.save()
 
-        with mock.patch('website.settings.CAMPAIGN_SINGLE_SEND_WEBHOOK', single_send_webhook):
-            start_notification_campaign(campaign.id)
+        start_notification_campaign(campaign.id)
 
         mock_dispatch_campaign.assert_called_once()
-        assert mock_dispatch_campaign.call_args.kwargs['kwargs']['use_sendgrid_webhook'] is expected
+        assert mock_dispatch_campaign.call_args.kwargs['kwargs']['use_sendgrid_webhook'] is sendgrid_bulk
 
     @mock.patch('osf.email.notification_campaign.execution.dispatch_campaign')
     def test_start_excludes_unconfirmed_accounts_when_enabled(self, mock_dispatch_campaign, campaign):
@@ -1010,13 +1003,12 @@ class TestSendCampaignBatch:
             notification_type_name='blank',
             campaign_id=running_campaign.id,
             run_id=running_campaign.run_id,
-            use_sendgrid_webhook=True,
         )
 
-        mock_get_client.assert_called_once_with(use_webhook=True)
+        mock_get_client.assert_called_once_with(use_webhook=False)
         assert mock_send_email.call_count == 2
         assert all(c.kwargs['client'] is mock_get_client.return_value for c in mock_send_email.call_args_list)
-        assert get_campaign_recipient_stats(running_campaign.id)['awaiting_count'] == 2
+        assert get_campaign_recipient_stats(running_campaign.id)['sent_count'] == 2
 
     def test_build_sendgrid_personalizations_shared_to_list(self):
         personalizations = _build_sendgrid_personalizations(

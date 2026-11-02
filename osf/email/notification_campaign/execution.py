@@ -123,11 +123,9 @@ def start_notification_campaign(self, campaign_id, restart_failed=False, restart
             status=NotificationCampaignRecipientStatus.QUEUED,
         ).update(status=NotificationCampaignRecipientStatus.PENDING, batch_id=None)
 
-    # Decide once per run which SendGrid user sends the campaign: delivery tracked via
-    # webhook requires the sub-user with Event Webhook enabled.
-    use_sendgrid_webhook = bool(
-        campaign.metadata.get('sendgrid_bulk', False) or settings.CAMPAIGN_SINGLE_SEND_WEBHOOK
-    )
+    # Decide once per run which SendGrid user sends the campaign: bulk campaigns track delivery
+    # via webhook, which requires the sub-user with Event Webhook enabled.
+    use_sendgrid_webhook = bool(campaign.metadata.get('sendgrid_bulk', False))
     dispatch_campaign.apply_async(
         args=[campaign_id, campaign.run_id],
         kwargs={
@@ -355,10 +353,7 @@ def send_campaign_batch(
                     rendered_html=rendered_html,
                     client=sendgrid_client,
                 )
-                if use_sendgrid_webhook:
-                    recipient.status = NotificationCampaignRecipientStatus.AWAITING_DELIVERY
-                else:
-                    recipient.status = NotificationCampaignRecipientStatus.SENT
+                recipient.status = NotificationCampaignRecipientStatus.SENT
                 recipient.error_message = None
                 recipient.sent_at = sent_at
                 recipient_records.append(recipient)

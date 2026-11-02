@@ -677,6 +677,7 @@ class NotificationCampaignCreateView(CreateView):
         context['filters'] = []
         context['predefined_filters'] = FILTER_PRESETS.keys()
         context['default_context'] = json.dumps({'domain': settings.DOMAIN, 'osf_contact_email': settings.OSF_CONTACT_EMAIL}, indent=4)
+        context['bulk_defaults'] = NotificationCampaignCreateForm.BULK_EXECUTION_DEFAULTS
         return context
 
 

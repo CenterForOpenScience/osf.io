@@ -3,6 +3,9 @@ from osf.models import NotificationType, NotificationCampaign
 from website import settings
 import json
 
+# SendGrid Mail Send accepts at most 1000 personalizations (one per recipient in bulk mode) per request.
+SENDGRID_MAX_PERSONALIZATIONS = 1000
+
 
 class NotificationTypeForm(forms.ModelForm):
     class Meta:
@@ -11,6 +14,13 @@ class NotificationTypeForm(forms.ModelForm):
 
 
 class NotificationCampaignCreateForm(forms.ModelForm):
+    # Execution values the create page switches to when "SendGrid Bulk" is selected.
+    BULK_EXECUTION_DEFAULTS = {
+        'batch_size': settings.DEFAULT_CAMPAIGN_BULK_BATCH_SIZE,
+        'max_queued_batches': settings.DEFAULT_CAMPAIGN_BULK_MAX_QUEUED_BATCHES,
+        'dispatch_interval': settings.DEFAULT_CAMPAIGN_BULK_DISPATCH_INTERVAL,
+    }
+
     context = forms.CharField(
         required=False,
         widget=forms.Textarea(attrs={'rows': 8}),
@@ -49,7 +59,9 @@ class NotificationCampaignCreateForm(forms.ModelForm):
         required=False,
         initial=False,
         help_text=(
-            'SendGrid caps personalizations at about 1000 per request - keep Batch Size ≤ 1000 for bulk requests'
+            f'Send each batch as a single SendGrid request (max {SENDGRID_MAX_PERSONALIZATIONS} recipients) '
+            'and track delivery via the SendGrid webhook. Selecting it switches Batch Size, Max Queued Batches '
+            'and Dispatch Interval to bulk defaults that avoid SendGrid rate limiting.'
         ),
     )
 
@@ -77,6 +89,16 @@ class NotificationCampaignCreateForm(forms.ModelForm):
             'name',
             'notification_type',
         )
+
+    def clean(self):
+        cleaned_data = super().clean()
+        batch_size = cleaned_data.get('batch_size')
+        if cleaned_data.get('sendgrid_bulk') and batch_size and batch_size > SENDGRID_MAX_PERSONALIZATIONS:
+            self.add_error(
+                'batch_size',
+                f'Batch Size cannot exceed {SENDGRID_MAX_PERSONALIZATIONS} for SendGrid bulk requests.',
+            )
+        return cleaned_data
 
     def clean_context(self):
         value = self.cleaned_data['context'] or '{}'

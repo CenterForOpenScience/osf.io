@@ -229,13 +229,30 @@
 
                 <table class="table table-striped">
                     <tr>
-                        <th style="width:250px;">Batch Size</th>
+                        <th style="width:250px;">SendGrid Bulk</th>
+                        <td>
+                            <input
+                                type="checkbox"
+                                id="sendgrid-bulk"
+                                name="sendgrid_bulk"
+                                {% if form.sendgrid_bulk.initial %}checked{% endif %}
+                            >
+                            <p class="help-block">
+                                {{ form.sendgrid_bulk.help_text }}
+                            </p>
+                        </td>
+                    </tr>
+
+                    <tr>
+                        <th>Batch Size</th>
                         <td>
                             <input
                                 class="form-control"
                                 type="number"
                                 name="batch_size"
                                 value="{{ form.batch_size.initial }}"
+                                data-standard-default="{{ form.batch_size.initial }}"
+                                data-bulk-default="{{ bulk_defaults.batch_size }}"
                                 min="1"
                             >
                         </td>
@@ -286,28 +303,20 @@
                     </tr>
 
                     <tr>
-                        <th>Sendgrid Bulk</th>
-                        <td>
-                            <input
-                                class="form-control"
-                                type="text"
-                                name="sendgrid_bulk"
-                                value="{{ form.sendgrid_bulk.initial }}"
-                            >
-                            <p class="help-block">
-                                {{ form.sendgrid_bulk.help_text }}
-                            </p>
-                        </td>
-                    </tr>
-                    <tr>
                         <th>Max Queued Batches</th>
                         <td>
                             <input
                                 class="form-control"
-                                type="text"
+                                type="number"
                                 name="max_queued_batches"
                                 value="{{ form.max_queued_batches.initial }}"
+                                data-standard-default="{{ form.max_queued_batches.initial }}"
+                                data-bulk-default="{{ bulk_defaults.max_queued_batches }}"
+                                min="1"
                             >
+                            <p class="help-block">
+                                {{ form.max_queued_batches.help_text }}
+                            </p>
                         </td>
                     </tr>
                     <tr>
@@ -315,9 +324,12 @@
                         <td>
                             <input
                                 class="form-control"
-                                type="text"
+                                type="number"
                                 name="dispatch_interval"
                                 value="{{ form.dispatch_interval.initial }}"
+                                data-standard-default="{{ form.dispatch_interval.initial }}"
+                                data-bulk-default="{{ bulk_defaults.dispatch_interval }}"
+                                min="1"
                             >
                             <p class="help-block">
                                 {{ form.dispatch_interval.help_text }}
@@ -395,6 +407,21 @@ function updateMode() {
 }
 
 filterMode.addEventListener("change", updateMode);
+
+const sendgridBulk = document.getElementById("sendgrid-bulk");
+
+// Swap execution fields between standard and bulk defaults; values the user has changed are kept.
+function applyExecutionDefaults() {
+    const bulk = sendgridBulk.checked;
+    document.querySelectorAll("[data-bulk-default]").forEach(input => {
+        const previousDefault = bulk ? input.dataset.standardDefault : input.dataset.bulkDefault;
+        if (input.value === previousDefault) {
+            input.value = bulk ? input.dataset.bulkDefault : input.dataset.standardDefault;
+        }
+    });
+}
+
+sendgridBulk.addEventListener("change", applyExecutionDefaults);
 
 const filterConfig = JSON.parse(
     document.getElementById("filter-fields").textContent
