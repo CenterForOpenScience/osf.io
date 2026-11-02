@@ -155,6 +155,18 @@ def update_admin_permissions(verbosity=0):
     metrics_group.permissions.add(metrics_permission)
     metrics_group.save()
 
+    # Add a celery_panel Group for users who may only monitor Celery in Django admin;
+    # dj-celery-panel pages are allowed for it and osf_admin via DJ_CELERY_PANEL_SETTINGS
+    celery_panel_group, created = Group.objects.get_or_create(name='celery_panel')
+    if created and should_log:
+        logger.info('Celery panel group created')
+    periodic_task_permission = Permission.objects.get(
+        content_type__app_label='django_celery_beat',
+        codename='view_periodictask',
+    )
+    celery_panel_group.permissions.add(periodic_task_permission)
+    admin_group.permissions.add(periodic_task_permission)
+
 
 def update_provider_auth_groups(verbosity=0):
     # TODO: determine efficient way to only do this if perms change

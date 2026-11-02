@@ -10,30 +10,54 @@ logger = logging.getLogger(__name__)
 
 
 @celery_app.task(name='api.users.tasks.merge_users')
-def merge_users(merger_guid: str, mergee_guid: str):
+def merge_users(merger_guid: str, mergee_guid: str, initiator_guid: str | None = None):
     """
     Background task to merge one user into another.
 
     :param merger_guid: GUID of the primary user that will receive content
     :param mergee_guid: GUID of the user being merged into the primary user
+    :param initiator_guid: GUID of the user who started the merge, notified if it fails
     """
-    from osf.models import OSFUser
+    merger = OSFUser.load(merger_guid)
+    mergee = OSFUser.load(mergee_guid)
+
+    if not merger or not mergee:
+        message = f'User merge task received invalid users: merger={merger_guid}, mergee={mergee_guid}'
+        sentry.log_message(message)
+        _notify_merge_failed(initiator_guid, merger_guid, mergee_guid, message)
+        return
+
+    if merger == mergee:
+        message = f'User merge task attempted to merge a user into itself: {merger_guid}'
+        sentry.log_message(message)
+        _notify_merge_failed(initiator_guid, merger_guid, mergee_guid, message)
+        return
 
     try:
-        merger = OSFUser.load(merger_guid)
-        mergee = OSFUser.load(mergee_guid)
-
-        if not merger or not mergee:
-            sentry.log_message(f'User merge task received invalid users: merger={merger_guid}, mergee={mergee_guid}')
-            return
-
-        if merger == mergee:
-            sentry.log_message(f'User merge task attempted to merge a user into itself: {merger_guid}')
-            return
-
         merger.merge_user(mergee)
     except Exception as exc:
-        logger.exception(f'Unexpected error during background user merge: merger={merger_guid}, mergee={mergee_guid}')
+        _notify_merge_failed(initiator_guid, merger_guid, mergee_guid, repr(exc))
+
+
+def _notify_merge_failed(initiator_guid: str | None, merger_guid: str, mergee_guid: str, error: str):
+    if not initiator_guid:
+        return
+    try:
+        initiator = OSFUser.load(initiator_guid)
+        if not initiator:
+            return
+        NotificationTypeEnum.USER_MERGE_FAILED_REPORT.instance.emit(
+            user=initiator,
+            message_frequency='instantly',
+            event_context={
+                'merger_guid': merger_guid,
+                'mergee_guid': mergee_guid,
+                'error': error,
+            },
+            save=False,
+        )
+    except Exception as exc:
+        logger.exception('Failed to send user merge failure email')
         sentry.log_exception(exc)
 
 

@@ -7,6 +7,8 @@ from flask import g
 from django.utils import timezone
 from framework.celery_tasks import handlers
 from framework.exceptions import PermissionsError
+from framework.postcommit_tasks import handlers as postcommit_handlers
+from framework.transactions import handlers as transaction_handlers
 from api.caching import settings as cache_settings
 from api.caching.utils import storage_usage_cache
 from website.project.model import has_anonymous_link
@@ -2586,6 +2588,87 @@ class TestCheckResourceForSpamPostcommit:
         # spam_postcommit does not override moderation state with a stale value
         assert registration.moderation_state == RegistrationModerationStates.ACCEPTED.db_name
         mock_check_user.assert_called_once()
+
+    @mock.patch.object(settings, 'SPAM_SERVICES_ENABLED', False)
+    @mock.patch('osf.external.spam.tasks._check_resource_for_domains', return_value=[])
+    def test_check_resource_for_spam_postcommit_handler_precedes_transaction_handler_for_registration(
+        self, mock_check_domains, user, app
+    ):
+        registration = RegistrationFactory(creator=user, is_public=True)
+        registration.require_approval(user)
+
+        after_request_handlers = app.after_request_funcs[None]
+        postcommit_handler = postcommit_handlers.postcommit_after_request
+        transaction_handler = transaction_handlers.transaction_after_request
+        transaction_handler_index = after_request_handlers.index(transaction_handler)
+        assert after_request_handlers.index(postcommit_handler) < transaction_handler_index
+
+        handler_execution_order = []
+
+        def tracked_transaction_handler(response):
+            response = transaction_handler(response)
+            handler_execution_order.append('transaction')
+            return response
+
+        def tracked_postcommit_handler(response):
+            handler_execution_order.append('postcommit')
+            return postcommit_handler(response)
+
+        tracked_handlers = {
+            transaction_handler: tracked_transaction_handler,
+            postcommit_handler: tracked_postcommit_handler,
+        }
+
+        def check_domains_after_transaction(*args):
+            assert handler_execution_order == ['transaction', 'postcommit']
+            persisted_registration = Registration.objects.get(id=registration.id)
+            assert persisted_registration.moderation_state == RegistrationModerationStates.ACCEPTED.db_name
+            return []
+
+        mock_check_domains.side_effect = check_domains_after_transaction
+
+        was_testing = app.config['TESTING']
+        app.config['TESTING'] = False
+        atomic = None
+        try:
+            with app.test_request_context('/'):
+                postcommit_handlers.postcommit_before_request()
+                transaction_handlers.transaction_before_request()
+                atomic = g.current_atomic
+                registration.registration_approval.accept()
+
+                postcommit_handlers.postcommit_celery_queue()['registration-spam-check'] = (
+                    spam_tasks.check_resource_for_spam_postcommit.si(
+                        guid=registration._id,
+                        content='Check me for spam',
+                        author=user.fullname,
+                        author_email=user.username,
+                        request_headers={},
+                    )
+                )
+
+                with mock.patch.object(postcommit_handlers.settings, 'USE_CELERY', False):
+                    with mock.patch.object(Registration, 'check_spam_user'):
+                        response = mock.Mock(status_code=200)
+                        relevant_handlers = [
+                            handler for handler in after_request_handlers
+                            if handler in (postcommit_handler, transaction_handler)
+                        ]
+                        for handler in reversed(relevant_handlers):
+                            response = tracked_handlers[handler](response)
+                            if handler is transaction_handler:
+                                atomic = None
+
+            registration.refresh_from_db()
+            assert handler_execution_order == ['transaction', 'postcommit']
+            assert registration.moderation_state == RegistrationModerationStates.ACCEPTED.db_name
+            mock_check_domains.assert_called_once()
+        finally:
+            if atomic is not None:
+                error = RuntimeError('Transaction handler did not complete')
+                atomic.__exit__(RuntimeError, error, None)
+            postcommit_handlers.postcommit_before_request()
+            app.config['TESTING'] = was_testing
 
     @mock.patch.object(settings, 'SPAM_SERVICES_ENABLED', True)
     @mock.patch('osf.external.spam.tasks._check_resource_for_domains')

@@ -1,7 +1,9 @@
 import pytest
 import datetime
+from unittest import mock
 
 from api.base.settings.defaults import API_BASE
+from framework.auth import Auth
 
 from api.providers.workflows import Workflows
 from osf.utils.workflows import NodeRequestTypes, RegistrationModerationTriggers, RegistrationModerationStates
@@ -14,17 +16,19 @@ from osf_tests.factories import (
     NodeRequestFactory,
     EmbargoFactory,
     RetractionFactory,
-    ProjectFactory
+    ProjectFactory,
+    SubjectFactory,
 )
 
 
 from tests.base import get_default_metaschema
 
-from osf.models import NodeRequest
+from osf.models import NodeRequest, NotificationTypeEnum
 from django.contrib.auth.models import Group
 
 from osf.migrations import update_provider_auth_groups
 from tests.utils import capture_notifications
+from website.settings import OSF_ADMIN_URL, OSF_SUPPORT_EMAIL
 
 
 @pytest.mark.django_db
@@ -351,6 +355,96 @@ class TestRegistriesModerationSubmissions:
         assert resp.json['data']['attributes']['trigger'] == RegistrationModerationTriggers.REJECT_SUBMISSION.db_name
         registration.refresh_from_db()
         assert registration.moderation_state == RegistrationModerationStates.REJECTED.db_name
+        assert not registration.is_deleted
+
+    def test_moderator_can_view_rejected_registration(self, app, registration, moderator, moderator_wrong_provider, registration_actions_url, actions_payload_base):
+        registration.require_approval(user=registration.creator)
+        with capture_notifications():
+            registration.registration_approval.accept()
+
+        actions_payload_base['data']['attributes']['trigger'] = RegistrationModerationTriggers.REJECT_SUBMISSION.db_name
+        actions_payload_base['data']['relationships']['target']['data']['id'] = registration._id
+        with capture_notifications():
+            resp = app.post_json_api(registration_actions_url, actions_payload_base, auth=moderator.auth)
+        assert resp.status_code == 201
+
+        registration_url = f'/{API_BASE}registrations/{registration._id}/'
+        assert app.get(registration_url, auth=moderator.auth).status_code == 200
+        resp = app.get(f'{registration_url}schema_responses/', auth=moderator.auth)
+        assert [entry['id'] for entry in resp.json['data']] == [registration.schema_responses.last()._id]
+
+        # Rejected registrations stay private for everyone else
+        assert app.get(registration_url, auth=moderator_wrong_provider.auth, expect_errors=True).status_code == 403
+        assert app.get(registration_url, auth=AuthUserFactory().auth, expect_errors=True).status_code == 403
+        assert app.get(registration_url, expect_errors=True).status_code == 401
+
+    def test_rejected_submission_draft_is_returned_for_resubmission(self, app, registration, reg_creator, moderator, registration_actions_url, actions_payload_base):
+        registration.require_approval(user=registration.creator)
+        with capture_notifications():
+            registration.registration_approval.accept()
+
+        actions_payload_base['data']['attributes']['trigger'] = RegistrationModerationTriggers.REJECT_SUBMISSION.db_name
+        actions_payload_base['data']['relationships']['target']['data']['id'] = registration._id
+        with capture_notifications():
+            resp = app.post_json_api(registration_actions_url, actions_payload_base, auth=moderator.auth)
+        assert resp.status_code == 201
+
+        # The draft is back in the author's drafts and can be edited
+        draft = registration.draft_registration.get()
+        assert draft in reg_creator.draft_registrations_active
+        draft_url = f'/{API_BASE}draft_registrations/{draft._id}/'
+        assert app.get(draft_url, auth=reg_creator.auth).status_code == 200
+        payload = {'data': {'type': 'draft_registrations', 'id': draft._id, 'attributes': {'title': 'Fixed title'}}}
+        assert app.patch_json_api(draft_url, payload, auth=reg_creator.auth).status_code == 200
+
+        # Resubmitting creates a new registration, the rejected one stays as it is
+        draft.subjects.add(SubjectFactory())
+        with mock.patch('framework.celery_tasks.handlers.enqueue_task'):
+            resubmitted = draft.register(Auth(reg_creator), save=True)
+        draft.refresh_from_db()
+        registration.refresh_from_db()
+        assert draft.registered_node == resubmitted
+        assert draft not in reg_creator.draft_registrations_active
+        assert registration.moderation_state == RegistrationModerationStates.REJECTED.db_name
+        assert not registration.is_deleted
+
+    def test_rejected_submission_is_not_listed_for_contributors(self, app, registration, reg_creator, moderator, provider, registration_actions_url, actions_payload_base):
+        user_registrations_url = f'/{API_BASE}users/{reg_creator._id}/registrations/'
+        node_registrations_url = f'/{API_BASE}nodes/{registration.registered_from._id}/registrations/'
+        rejected_tab_url = f'/{API_BASE}providers/registrations/{provider._id}/registrations/?filter[reviews_state]=rejected'
+
+        def listed_ids(url, user):
+            return [entry['id'] for entry in app.get(url, auth=user.auth).json['data']]
+
+        def registration_count(url, user):
+            resp = app.get(f'{url}?related_counts=True', auth=user.auth)
+            return resp.json['data']['relationships']['registrations']['links']['related']['meta']['count']
+
+        def assert_counts_match_lists():
+            user_url = f'/{API_BASE}users/{reg_creator._id}/'
+            node_url = f'/{API_BASE}nodes/{registration.registered_from._id}/'
+            assert registration_count(user_url, reg_creator) == len(listed_ids(user_registrations_url, reg_creator))
+            assert registration_count(node_url, reg_creator) == len(listed_ids(node_registrations_url, reg_creator))
+
+        registration.require_approval(user=registration.creator)
+        with capture_notifications():
+            registration.registration_approval.accept()
+        assert registration._id in listed_ids(user_registrations_url, reg_creator)
+        assert registration._id in listed_ids(node_registrations_url, reg_creator)
+        assert_counts_match_lists()
+
+        actions_payload_base['data']['attributes']['trigger'] = RegistrationModerationTriggers.REJECT_SUBMISSION.db_name
+        actions_payload_base['data']['relationships']['target']['data']['id'] = registration._id
+        with capture_notifications():
+            resp = app.post_json_api(registration_actions_url, actions_payload_base, auth=moderator.auth)
+        assert resp.status_code == 201
+
+        # Contributors get the draft back instead of seeing the rejected registration among submitted
+        assert registration._id not in listed_ids(user_registrations_url, reg_creator)
+        assert registration._id not in listed_ids(node_registrations_url, reg_creator)
+        assert_counts_match_lists()
+        # Moderators still see it under the Rejected tab
+        assert registration._id in listed_ids(rejected_tab_url, moderator)
 
     def test_registries_moderation_post_embargo(self, app, embargo_registration, moderator, provider, embargo_registration_actions_url, actions_payload_base, reg_creator):
         assert embargo_registration.moderation_state == RegistrationModerationStates.INITIAL.db_name
@@ -387,6 +481,7 @@ class TestRegistriesModerationSubmissions:
         assert resp.json['data']['attributes']['trigger'] == RegistrationModerationTriggers.REJECT_SUBMISSION.db_name
         embargo_registration.refresh_from_db()
         assert embargo_registration.moderation_state == RegistrationModerationStates.REJECTED.db_name
+        assert not embargo_registration.is_deleted
 
     @pytest.mark.usefixtures('mock_gravy_valet_get_verified_links')
     def test_registries_moderation_post_withdraw_accept(self, app, retract_registration, moderator, retract_registration_actions_url, actions_payload_base, provider):
@@ -405,6 +500,73 @@ class TestRegistriesModerationSubmissions:
         assert resp.json['data']['attributes']['trigger'] == RegistrationModerationTriggers.ACCEPT_WITHDRAWAL.db_name
         retract_registration.refresh_from_db()
         assert retract_registration.moderation_state == RegistrationModerationStates.WITHDRAWN.db_name
+
+    def test_registries_moderation_post_report_spam(self, app, registration, moderator, registration_actions_url, actions_payload_base, reg_creator):
+        registration.require_approval(user=registration.creator)
+        with capture_notifications():
+            registration.registration_approval.accept()
+        registration.refresh_from_db()
+        assert registration.moderation_state == RegistrationModerationStates.PENDING.db_name
+        actions_payload_base['data']['attributes']['trigger'] = RegistrationModerationTriggers.REPORT_SPAM.db_name
+        actions_payload_base['data']['attributes']['comment'] = 'Spammiest registration Ive ever seen'
+        actions_payload_base['data']['relationships']['target']['data']['id'] = registration._id
+        with capture_notifications() as notifications:
+            resp = app.post_json_api(registration_actions_url, actions_payload_base, auth=moderator.auth)
+        assert resp.status_code == 201
+        assert resp.json['data']['attributes']['trigger'] == RegistrationModerationTriggers.REPORT_SPAM.db_name
+        assert len(notifications['emits']) == 1
+        emit = notifications['emits'][0]
+        assert emit['type'] == NotificationTypeEnum.DESK_MODERATOR_SPAM_REPORT
+        assert emit['kwargs']['destination_address'] == OSF_SUPPORT_EMAIL
+        assert emit['kwargs']['event_context']['moderator__id'] == moderator._id
+        assert emit['kwargs']['event_context']['resource__id'] == registration._id
+        assert emit['kwargs']['event_context']['comment'] == 'Spammiest registration Ive ever seen'
+        admin_app = OSF_ADMIN_URL.rstrip('/')
+        context = emit['kwargs']['event_context']
+        assert context['resource_admin_app_url'] == (f'{admin_app}/nodes/{registration._id}/' if admin_app else '')
+        assert context['creator_admin_app_url'] == (f'{admin_app}/users/{registration.creator._id}/' if admin_app else '')
+        # report logged, registration untouched
+        registration.refresh_from_db()
+        assert registration.moderation_state == RegistrationModerationStates.PENDING.db_name
+        assert registration.spam_status is None
+        action = registration.actions.get(trigger=RegistrationModerationTriggers.REPORT_SPAM.db_name)
+        assert action.from_state == action.to_state == RegistrationModerationStates.PENDING.db_name
+
+    def test_registries_moderation_post_report_spam_forbidden(self, app, registration, moderator_wrong_provider, reg_creator, registration_actions_url, actions_payload_base):
+        registration.require_approval(user=registration.creator)
+        with capture_notifications():
+            registration.registration_approval.accept()
+        actions_payload_base['data']['attributes']['trigger'] = RegistrationModerationTriggers.REPORT_SPAM.db_name
+        actions_payload_base['data']['relationships']['target']['data']['id'] = registration._id
+        # A moderator for another provider can't report
+        resp = app.post_json_api(
+            registration_actions_url,
+            actions_payload_base,
+            auth=moderator_wrong_provider.auth,
+            expect_errors=True
+        )
+        assert resp.status_code == 403
+        resp = app.post_json_api(
+            registration_actions_url,
+            actions_payload_base,
+            auth=reg_creator.auth,
+            expect_errors=True
+        )
+        assert resp.status_code == 403
+        assert not registration.actions.filter(trigger=RegistrationModerationTriggers.REPORT_SPAM.db_name).exists()
+
+    def test_registries_moderation_post_report_spam_invalid_state(self, app, registration, moderator, registration_actions_url, actions_payload_base):
+        assert registration.moderation_state == RegistrationModerationStates.INITIAL.db_name
+        actions_payload_base['data']['attributes']['trigger'] = RegistrationModerationTriggers.REPORT_SPAM.db_name
+        actions_payload_base['data']['relationships']['target']['data']['id'] = registration._id
+        resp = app.post_json_api(
+            registration_actions_url,
+            actions_payload_base,
+            auth=moderator.auth,
+            expect_errors=True
+        )
+        assert resp.status_code == 409
+        assert not registration.actions.filter(trigger=RegistrationModerationTriggers.REPORT_SPAM.db_name).exists()
 
     def test_registries_moderation_post_withdraw_reject(self, app, retract_registration, moderator, retract_registration_actions_url, actions_payload_base, provider):
         with capture_notifications():
@@ -627,6 +789,7 @@ class TestRegistriesModerationSubmissions:
         assert resp.json['data']['attributes']['trigger'] == RegistrationModerationTriggers.REJECT_SUBMISSION.db_name
         registration.refresh_from_db()
         assert registration.moderation_state == RegistrationModerationStates.REJECTED.db_name
+        assert not registration.is_deleted
 
         # ham the project creator
         user.confirm_ham(save=True)

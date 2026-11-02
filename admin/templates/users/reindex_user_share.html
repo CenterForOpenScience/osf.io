@@ -1,8 +1,32 @@
-<a data-toggle="modal" data-target="#confirmReindexShareUser" class="btn btn-default">SHARE Reindex User Content</a>
+{% if user.allow_indexing is False %}
+    <button class="btn btn-default disabled" data-toggle="tooltip" title="User has opted out of SHARE indexing">Reindex User</button>
+{% else %}
+    <a data-toggle="modal" data-target="#confirmReindexShareUser" class="btn btn-default">Reindex User</a>
+{% endif %}
 <div class="modal" id="confirmReindexShareUser">
     <div class="modal-dialog">
         <div class="modal-content">
             <form class="well" method="post" action="{% url 'users:reindex-share-user' guid=user.guid %}">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal">x</button>
+                    <h3>Are you sure you want to SHARE reindex this user? {{ user.guid }}</h3>
+                </div>
+                {% csrf_token %}
+                <div class="modal-footer">
+                    <input class="btn btn-danger" type="submit" value="Confirm" />
+                    <button type="button" class="btn btn-default" data-dismiss="modal">
+                        Cancel
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+<a data-toggle="modal" data-target="#confirmReindexShareUserContent" class="btn btn-default">Reindex All User's Content</a>
+<div class="modal" id="confirmReindexShareUserContent">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form class="well" method="post" action="{% url 'users:reindex-share-user-content' guid=user.guid %}">
                 <div class="modal-header">
                     <button type="button" class="close" data-dismiss="modal">x</button>
                     <h3>Are you sure you want to SHARE reindex all content for this user? {{ user.guid }}</h3>

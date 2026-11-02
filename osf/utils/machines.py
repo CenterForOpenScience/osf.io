@@ -164,6 +164,9 @@ class ReviewsMachine(BaseMachine):
     def notify_edit_comment(self, ev):
         notify.notify_edit_comment(self.machineable, ev.kwargs.get('user'), self.action, self.States)
 
+    def notify_report_spam(self, ev):
+        notify.notify_report_spam(self.machineable, ev.kwargs.get('user'), self.action)
+
     def notify_withdraw(self, ev):
         context = self.get_context()
         context['force_withdrawal'] = False

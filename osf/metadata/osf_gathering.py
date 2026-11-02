@@ -815,7 +815,8 @@ def gather_registration_related_items(focus):
         article_iri = DOI[related_article_doi]
         yield (DCTERMS.relation, article_iri)
         yield (article_iri, DCTERMS.identifier, str(article_iri))
-    yield (DCTERMS.isVersionOf, OsfFocus(focus.dbmodel.registered_from))
+    if focus.dbmodel.registered_from and focus.dbmodel.registered_from.is_public:
+        yield (DCTERMS.isVersionOf, OsfFocus(focus.dbmodel.registered_from))
     # TODO: should the title/description/tags/etc fields on osf.models.Outcome
     #       overwrite the same fields on osf.models.Registration?
     artifact_qs = (

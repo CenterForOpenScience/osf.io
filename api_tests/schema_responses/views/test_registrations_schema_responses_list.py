@@ -186,8 +186,8 @@ class TestRegistrationSchemaResponseListGETBehavior:
     Contributors on the base Registration should be able to see all SchemaResponses
     on a registration, whether approved or not, for both public and private Registrations.
 
-    Moderators should be able to see both PENDING_MODERATION and APPROVED SchemaResponses
-    on Registrations that are part of the moderated provider.
+    Moderators should be able to see PENDING_MODERATION, APPROVED and MODERATOR_REJECTED
+    SchemaResponses on Registrations that are part of the moderated provider.
 
     Non-contributors should only see APPROVED SchemaResponses on Public registrations
     (permissions tests verify 403/401 response for non-contributors on a private registration).
@@ -242,7 +242,12 @@ class TestRegistrationSchemaResponseListGETBehavior:
 
         # Always expect the APPROVED response
         expected_ids = {updated_response.previous_response._id}
-        if response_state in [ApprovalStates.PENDING_MODERATION, ApprovalStates.APPROVED]:
+        moderator_visible_states = [
+            ApprovalStates.PENDING_MODERATION,
+            ApprovalStates.APPROVED,
+            ApprovalStates.MODERATOR_REJECTED,
+        ]
+        if response_state in moderator_visible_states:
             expected_ids.add(updated_response._id)
         encountered_ids = {entry['id'] for entry in resp.json['data']}
         assert encountered_ids == expected_ids

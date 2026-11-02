@@ -1,6 +1,7 @@
 import json
 import logging
 
+from framework import sentry
 from osf.models import RegistrationProvider
 from django.core.management.base import BaseCommand
 from website import settings
@@ -13,14 +14,26 @@ def create_ia_subcollection(provider, version_id, dry_run):
     provider_id = f'osf-registration-providers-{provider._id}-{version_id}'
     resp = None
     if not dry_run:
-        resp = requests.put(
-            f'https://s3.us.archive.org/{provider_id}',
-            headers={
-                'Authorization': f'LOW {settings.IA_ACCESS_KEY}:{settings.IA_SECRET_KEY}',
-                'x-archive-meta01-title': provider.name,
-                'x-archive-meta02-collection': settings.IA_ROOT_COLLECTION,
-                'x-archive-meta03-mediatype': 'collection',
-            },
+        try:
+            resp = requests.put(
+                f'https://s3.us.archive.org/{provider_id}',
+                headers={
+                    'Authorization': f'LOW {settings.IA_ACCESS_KEY}:{settings.IA_SECRET_KEY}',
+                    'x-archive-meta01-title': provider.name,
+                    'x-archive-meta02-collection': settings.IA_ROOT_COLLECTION,
+                    'x-archive-meta03-mediatype': 'collection',
+                },
+            )
+        except requests.RequestException as exception:
+            sentry.log_message(
+                f'Internet Archive provider collection {provider_id} create request failed',
+                extra_data={'exception': exception},
+            )
+            raise exception
+        sentry.log_message(
+            f'Internet Archive provider collection {provider_id} create finished with {resp.status_code}',
+            extra_data={'response': resp},
+            level=logging.INFO,
         )
     logger.info(
         f'{"DRY_RUN" if dry_run else ""} collection for {provider_id} requested with {resp}'
@@ -29,6 +42,7 @@ def create_ia_subcollection(provider, version_id, dry_run):
 
 def update_ia_subcollection(provider, version_id, dry_run):
     provider_id = f'osf-registration-providers-{provider._id}-{version_id}'
+    resp = None
     if not dry_run:
         # The following uses the json patch syntax more info here:
         # https://archive.org/services/docs/api/metadata.html
@@ -42,16 +56,28 @@ def update_ia_subcollection(provider, version_id, dry_run):
                 },
             },
         ]
-        resp = requests.post(
-            f'http://archive.org/metadata/{provider_id}',
-            headers={
-                'Authorization': f'LOW {settings.IA_ACCESS_KEY}:{settings.IA_SECRET_KEY}',
-            },
-            data={
-                'target': 'metadata',
-                '-changes': json.dumps(changes),
-                'priority': None,
-            },
+        try:
+            resp = requests.post(
+                f'http://archive.org/metadata/{provider_id}',
+                headers={
+                    'Authorization': f'LOW {settings.IA_ACCESS_KEY}:{settings.IA_SECRET_KEY}',
+                },
+                data={
+                    'target': 'metadata',
+                    '-changes': json.dumps(changes),
+                    'priority': None,
+                },
+            )
+        except requests.RequestException as exception:
+            sentry.log_message(
+                f'Internet Archive provider collection {provider_id} update request failed',
+                extra_data={'exception': exception},
+            )
+            raise exception
+        sentry.log_message(
+            f'Internet Archive provider collection {provider_id} update finished with {resp.status_code}',
+            extra_data={'response': resp},
+            level=logging.INFO,
         )
     logger.info(
         f'{"DRY_RUN" if dry_run else ""} collection for {provider_id} updated with {resp}'

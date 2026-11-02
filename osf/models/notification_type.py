@@ -31,6 +31,7 @@ class NotificationTypeEnum(str, Enum):
     DESK_ARCHIVE_JOB_FILE_NOT_FOUND = 'desk_archive_job_file_not_found'
     DESK_ARCHIVE_JOB_UNCAUGHT_ERROR = 'desk_archive_job_uncaught_error'
     DESK_CROSSREF_ERROR = 'desk_crossref_error'
+    DESK_MODERATOR_SPAM_REPORT = 'desk_moderator_spam_report'
 
     # User notifications
     USER_PENDING_VERIFICATION = 'user_pending_verification'
@@ -81,6 +82,7 @@ class NotificationTypeEnum(str, Enum):
     USER_CROSSREF_DOI_PENDING = 'user_crossref_doi_pending'
     USER_TERMS_OF_USE_UPDATED = 'user_terms_of_use_updated'  # added as a placeholder
     USER_CONFIRM_HAM_REPORT = 'user_confirm_ham_report'
+    USER_MERGE_FAILED_REPORT = 'user_merge_failed_report'
 
     # Node notifications
     NODE_FILE_UPDATED = 'node_file_updated'

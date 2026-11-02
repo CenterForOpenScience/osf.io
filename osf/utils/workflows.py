@@ -128,6 +128,7 @@ class RegistrationModerationStates(ModerationEnum):
             cls.EMBARGO.db_name,
             cls.PENDING_EMBARGO_TERMINATION.db_name,
             cls.PENDING_WITHDRAW.db_name,
+            cls.REJECTED.db_name,
         ]
 
 
@@ -141,6 +142,7 @@ class RegistrationModerationTriggers(ModerationEnum):
     ACCEPT_WITHDRAWAL = 4
     REJECT_WITHDRAWAL = 5
     FORCE_WITHDRAW = 6
+    REPORT_SPAM = 7
 
     @classmethod
     def from_transition(cls, from_state, to_state):
@@ -230,7 +232,8 @@ REVIEW_STATES = DEFAULT_STATES + [
     ('WITHDRAWN', 'withdrawn'),
 ]
 REVIEW_TRIGGERS = DEFAULT_TRIGGERS + [
-    ('WITHDRAW', 'withdraw')
+    ('WITHDRAW', 'withdraw'),
+    ('REPORT_SPAM', 'report_spam'),
 ]
 
 REGISTRATION_STATES = REVIEW_STATES + [
@@ -297,7 +300,18 @@ REVIEWABLE_TRANSITIONS = DEFAULT_TRANSITIONS + [
         'source': [ReviewStates.PENDING.value, ReviewStates.ACCEPTED.value],
         'dest': ReviewStates.WITHDRAWN.value,
         'after': ['save_action', 'update_last_transitioned', 'perform_withdraw', 'save_changes', 'notify_withdraw']
-    }
+    },
+    {
+        'trigger': ReviewTriggers.REPORT_SPAM.value,
+        'source': [
+            ReviewStates.PENDING.value,
+            ReviewStates.ACCEPTED.value,
+            ReviewStates.REJECTED.value,
+            ReviewStates.WITHDRAWN.value
+        ],
+        'dest': '=',
+        'after': ['save_action', 'notify_report_spam'],
+    },
 ]
 
 APPROVAL_TRANSITIONS = [

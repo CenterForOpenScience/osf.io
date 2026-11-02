@@ -1,0 +1,32 @@
+{% extends "admin/dj_celery_panel/queue_detail.html" %}
+{% load i18n %}
+
+{% block panel_page_content %}
+{{ block.super }}
+{% if queue %}
+<dl class="dcr-dl dcr-mt-sm">
+  <div class="dcr-dl__row">
+    <dt class="dcr-dl__label">{% trans "Routed Tasks" %}</dt>
+    <dd class="dcr-dl__value">
+      {% if queue.routed_tasks %}
+      <strong>{{ queue.routed_tasks|length }}</strong> {% trans "tasks" %}
+      <details class="dcr-mt-sm">
+        <summary>{% trans "Show routed tasks" %}</summary>
+        <ul class="dcr-mt-sm">
+          {% for task in queue.routed_tasks %}
+          <li>
+            <a href="{% url 'dj_celery_panel:tasks' %}?search={{ task|urlencode }}" class="dcr-data-table__link">
+              <code class="dcr-code">{{ task }}</code>
+            </a>
+          </li>
+          {% endfor %}
+        </ul>
+      </details>
+      {% else %}
+      <span class="dcr-text-muted">{% trans "No tasks are routed to this queue" %}</span>
+      {% endif %}
+    </dd>
+  </div>
+</dl>
+{% endif %}
+{% endblock %}

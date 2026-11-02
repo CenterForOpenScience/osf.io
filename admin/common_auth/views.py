@@ -11,6 +11,7 @@ from django.contrib.auth import login, REDIRECT_FIELD_NAME, authenticate, logout
 
 from osf.models.user import OSFUser
 from osf.models import AdminProfile
+from admin.base.utils import login_not_required
 from admin.common_auth.forms import LoginForm, UserRegistrationForm, DeskUserForm, TwoFactorForm
 
 
@@ -19,6 +20,7 @@ class LoginView(FormView):
     redirect_field_name = REDIRECT_FIELD_NAME
     template_name = 'login.html'
 
+    @method_decorator(login_not_required)
     @method_decorator(csrf_protect)
     @method_decorator(never_cache)
     def dispatch(self, request, *args, **kwargs):
@@ -112,7 +114,6 @@ class LoginView(FormView):
         if not redirect_to or redirect_to == '/':
             redirect_to = reverse('home')
         return redirect_to
-
 
 def logout_user(request):
     logout(request)
