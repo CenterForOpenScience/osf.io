@@ -331,7 +331,7 @@ def capture_notifications(
             if passthrough:
                 return _real_send_over_smtp(to_email, notification_type, context, email_context, rendered_html)
 
-        def _fake_send_with_sendgrid(user, notification_type, context=None, email_context=None, rendered_html=None):
+        def _fake_send_with_sendgrid(user, notification_type, context=None, email_context=None, rendered_html=None, client=None):
             captured['emails'].append({
                 'protocol': 'sendgrid',
                 'to': user,
@@ -340,7 +340,9 @@ def capture_notifications(
                 'email_context': email_context.copy() if isinstance(email_context, dict) else email_context,
             })
             if passthrough:
-                return _real_send_with_sendgrid(user, notification_type, context, email_context, rendered_html)
+                return _real_send_with_sendgrid(
+                    user, notification_type, context, email_context, rendered_html=rendered_html, client=client
+                )
 
         patches.extend([
             mock.patch('osf.email.send_email_over_smtp', new=_fake_send_over_smtp),
