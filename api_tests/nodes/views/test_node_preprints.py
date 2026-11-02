@@ -106,7 +106,7 @@ class TestNodePreprintsListFiltering(PreprintsListFilteringMixin):
         assert set(expected) == set(actual)
 
     def test_view_only_link_cannot_fetch_node_preprints(self, app, project_one):
-        view_only_link = PrivateLinkFactory()
+        view_only_link = PrivateLinkFactory(anonymous=True)
         view_only_link.nodes.add(project_one)
         view_only_link.save()
         url = f'/{API_BASE}nodes/{project_one._id}/preprints/?view_only={view_only_link.key}'
