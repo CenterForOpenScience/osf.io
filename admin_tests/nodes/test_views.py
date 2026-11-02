@@ -47,10 +47,13 @@ from admin.nodes.views import (
     ApprovalBacklogListView,
     ConfirmApproveBacklogView,
     EmbargoReportView,
+    RegistrationWithdrawView,
+    RegistrationUnwithdrawView,
 )
 from admin_tests.utilities import setup_log_view, setup_view, handle_post_view_request
 from api_tests.share._utils import mock_update_share
 from osf.models.files import Folder
+from osf.models.admin_log_entry import REGISTRATION_WITHDRAWN, REGISTRATION_UNWITHDRAWN
 from tests.utils import capture_notifications
 from osf.models.notification_type import NotificationTypeEnum
 from website import settings
@@ -62,7 +65,9 @@ from osf_tests.factories import (
     UserFactory,
     AuthUserFactory,
     ProjectFactory,
+    NodeFactory,
     RegistrationFactory,
+    WithdrawnRegistrationFactory,
     RegistrationApprovalFactory,
     RegistrationProviderFactory,
     DraftRegistrationFactory,
@@ -1336,3 +1341,156 @@ class TestEmbargoReportView(AdminTestCase):
 
         context = self.view.get_context_data()
         assert embargo not in context['stuck_completed_page']
+
+
+def post_to_registration_view(view_class, registration, user, data=None):
+    request = RequestFactory().post('/fake_path', data or {})
+    patch_messages(request)
+    request.user = user
+    view = setup_log_view(view_class(), request, guid=registration._id)
+    view.post(request)
+    registration.refresh_from_db()
+
+
+def create_registration_with_component():
+    project = ProjectFactory(is_public=True)
+    NodeFactory(parent=project, is_public=True)
+    registration = RegistrationFactory(project=project, is_public=True)
+    component = registration._nodes.first()
+    component.is_public = True
+    component.save()
+    registration.update_moderation_state()
+    component.refresh_from_db()
+    return registration, component
+
+
+class TestRegistrationWithdraw(AdminTestCase):
+    def setUp(self):
+        super().setUp()
+        self.admin_user = AuthUserFactory()
+        self.registration = RegistrationFactory(is_public=True)
+        self.registration.update_moderation_state()
+
+    def test_withdraw_accepted_registration(self):
+        post_to_registration_view(
+            RegistrationWithdrawView, self.registration, self.admin_user, {'justification': 'Does not meet the standards.'},
+        )
+        assert self.registration.moderation_state == RegistrationModerationStates.WITHDRAWN.db_name
+        assert self.registration.is_retracted
+        assert self.registration.is_public
+        retraction = self.registration.retraction
+        assert retraction.is_approved
+        assert retraction.justification == 'Does not meet the standards.'
+        assert retraction.initiated_by is None
+        assert retraction.date_retracted is not None
+        log = self.registration.registered_from.logs.filter(action=NodeLog.RETRACTION_APPROVED).latest('date')
+        assert_support_attributed_log(log, self.admin_user)
+        assert log.params['retraction_id'] == retraction._id
+        assert AdminLogEntry.objects.filter(object_id=self.registration.pk, action_flag=REGISTRATION_WITHDRAWN).exists()
+
+    def test_withdraw_without_justification(self):
+        post_to_registration_view(RegistrationWithdrawView, self.registration, self.admin_user)
+        assert self.registration.moderation_state == RegistrationModerationStates.WITHDRAWN.db_name
+        assert self.registration.retraction.justification is None
+
+    def test_withdraw_does_not_send_notifications(self):
+        with capture_notifications(expect_none=True):
+            post_to_registration_view(RegistrationWithdrawView, self.registration, self.admin_user)
+        assert self.registration.moderation_state == RegistrationModerationStates.WITHDRAWN.db_name
+
+    def test_withdraw_includes_components(self):
+        registration, component = create_registration_with_component()
+        post_to_registration_view(RegistrationWithdrawView, registration, self.admin_user)
+        component.refresh_from_db()
+        assert component.moderation_state == RegistrationModerationStates.WITHDRAWN.db_name
+        assert component.is_retracted
+
+    def test_cannot_withdraw_registration_that_is_not_accepted(self):
+        self.registration.moderation_state = RegistrationModerationStates.EMBARGO.db_name
+        self.registration.save()
+        post_to_registration_view(RegistrationWithdrawView, self.registration, self.admin_user)
+        assert self.registration.moderation_state == RegistrationModerationStates.EMBARGO.db_name
+        assert self.registration.retraction is None
+
+    def test_cannot_withdraw_component(self):
+        registration, component = create_registration_with_component()
+        post_to_registration_view(RegistrationWithdrawView, component, self.admin_user)
+        registration.refresh_from_db()
+        assert component.moderation_state == RegistrationModerationStates.ACCEPTED.db_name
+        assert registration.retraction is None
+
+    def test_cannot_withdraw_with_too_long_justification(self):
+        post_to_registration_view(RegistrationWithdrawView, self.registration, self.admin_user, {'justification': 'a' * 2049})
+        assert self.registration.moderation_state == RegistrationModerationStates.ACCEPTED.db_name
+        assert self.registration.retraction is None
+
+    def test_withdraw_requires_permission(self):
+        request = RequestFactory().post('/fake_path')
+        request.user = AuthUserFactory()
+        with pytest.raises(PermissionDenied):
+            RegistrationWithdrawView.as_view()(request, guid=self.registration._id)
+
+
+class TestRegistrationUnwithdraw(AdminTestCase):
+    def setUp(self):
+        super().setUp()
+        self.admin_user = AuthUserFactory()
+        self.registration = RegistrationFactory(is_public=True)
+        self.registration.update_moderation_state()
+
+    def test_unwithdraw_registration_withdrawn_in_admin(self):
+        post_to_registration_view(RegistrationWithdrawView, self.registration, self.admin_user)
+        retraction = self.registration.retraction
+        post_to_registration_view(RegistrationUnwithdrawView, self.registration, self.admin_user)
+        assert self.registration.moderation_state == RegistrationModerationStates.ACCEPTED.db_name
+        assert self.registration.retraction is None
+        assert not self.registration.is_retracted
+        assert self.registration.is_public
+        log = self.registration.registered_from.logs.filter(action=NodeLog.RETRACTION_CANCELLED).latest('date')
+        assert_support_attributed_log(log, self.admin_user)
+        assert log.params['retraction_id'] == retraction._id
+        assert AdminLogEntry.objects.filter(object_id=self.registration.pk, action_flag=REGISTRATION_UNWITHDRAWN).exists()
+
+    def test_unwithdraw_registration_withdrawn_by_contributors(self):
+        WithdrawnRegistrationFactory(registration=self.registration, justification='Withdrawn by mistake')
+        self.registration.refresh_from_db()
+        assert self.registration.moderation_state == RegistrationModerationStates.WITHDRAWN.db_name
+        post_to_registration_view(RegistrationUnwithdrawView, self.registration, self.admin_user)
+        assert self.registration.moderation_state == RegistrationModerationStates.ACCEPTED.db_name
+        assert not self.registration.is_retracted
+        assert self.registration.withdrawal_justification is None
+
+    def test_unwithdraw_includes_components(self):
+        registration, component = create_registration_with_component()
+        post_to_registration_view(RegistrationWithdrawView, registration, self.admin_user)
+        post_to_registration_view(RegistrationUnwithdrawView, registration, self.admin_user)
+        component.refresh_from_db()
+        assert component.moderation_state == RegistrationModerationStates.ACCEPTED.db_name
+        assert not component.is_retracted
+
+    def test_cannot_unwithdraw_registration_that_is_not_withdrawn(self):
+        post_to_registration_view(RegistrationUnwithdrawView, self.registration, self.admin_user)
+        assert self.registration.moderation_state == RegistrationModerationStates.ACCEPTED.db_name
+        assert not AdminLogEntry.objects.filter(object_id=self.registration.pk, action_flag=REGISTRATION_UNWITHDRAWN).exists()
+
+    def test_can_withdraw_again_after_unwithdraw(self):
+        post_to_registration_view(RegistrationWithdrawView, self.registration, self.admin_user)
+        first_retraction = self.registration.retraction
+        post_to_registration_view(RegistrationUnwithdrawView, self.registration, self.admin_user)
+        post_to_registration_view(RegistrationWithdrawView, self.registration, self.admin_user, {'justification': 'Requested again'})
+        assert self.registration.moderation_state == RegistrationModerationStates.WITHDRAWN.db_name
+        assert self.registration.retraction != first_retraction
+        assert self.registration.retraction.is_approved
+
+    def test_contributor_can_request_withdrawal_after_unwithdraw(self):
+        post_to_registration_view(RegistrationWithdrawView, self.registration, self.admin_user)
+        post_to_registration_view(RegistrationUnwithdrawView, self.registration, self.admin_user)
+        with capture_notifications(allow_none=True):
+            self.registration.retract_registration(self.registration.creator, 'Requested again')
+        assert self.registration.is_pending_retraction
+
+    def test_unwithdraw_requires_permission(self):
+        request = RequestFactory().post('/fake_path')
+        request.user = AuthUserFactory()
+        with pytest.raises(PermissionDenied):
+            RegistrationUnwithdrawView.as_view()(request, guid=self.registration._id)

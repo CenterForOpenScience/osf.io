@@ -1,0 +1,26 @@
+{% if node.is_registration and node.root_id == node.id and perms.osf.change_node %}
+    {% if node.moderation_state == 'withdrawn' %}
+        <a data-toggle="modal" data-target="#confirmUnwithdrawRegistration" class="btn btn-danger">Unwithdraw</a>
+        <div class="modal" id="confirmUnwithdrawRegistration">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <form class="well" method="post" action="{% url 'nodes:unwithdraw-registration' guid=node.guid %}">
+                        <div class="modal-header">
+                            <button type="button" class="close" data-dismiss="modal">x</button>
+                            <h3>Are you sure you want to unwithdraw this registration? It will be restored to the accepted state.</h3>
+                        </div>
+                        {% csrf_token %}
+                        <div class="modal-footer">
+                            <input class="btn btn-danger" type="submit" value="Unwithdraw" />
+                            <button type="button" class="btn btn-default" data-dismiss="modal">
+                                Cancel
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    {% else %}
+        <a class="btn btn-danger" title="Only withdrawn registrations can be unwithdrawn." disabled=true>Unwithdraw</a>
+    {% endif %}
+{% endif %}

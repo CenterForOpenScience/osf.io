@@ -39,6 +39,7 @@ from osf.models import (
     Registration,
     RegistrationProvider,
     RegistrationApproval,
+    Retraction,
     SpamStatus,
     TrashedFile
 )
@@ -53,9 +54,12 @@ from osf.models.admin_log_entry import (
     UNFLAG_SPAM,
     REINDEX_SHARE,
     REINDEX_ELASTIC,
+    REGISTRATION_WITHDRAWN,
+    REGISTRATION_UNWITHDRAWN,
 )
 from osf.models.files import File
 from osf.utils.permissions import ADMIN, API_CONTRIBUTOR_PERMISSIONS
+from osf.utils.workflows import RegistrationModerationStates
 from scripts.approve_registrations import approve_past_pendings
 from website import settings, search
 from website.archiver.tasks import force_archive
@@ -1207,6 +1211,115 @@ class NodeRevertToDraft(NodeMixin, View):
     def post(self, request, *args, **kwargs):
         registration = self.get_object()
         registration.to_draft()
+        return redirect(self.get_success_url())
+
+
+class RegistrationWithdrawView(NodeMixin, View):
+    """ Allows authorized users to withdraw an accepted registration without contributor or moderator approval.
+    """
+    permission_required = 'osf.change_node'
+    raise_exception = True
+
+    def post(self, request, *args, **kwargs):
+        registration = self.get_object()
+        if not registration.is_registration or registration.root_id != registration.id or registration.is_deleted:
+            messages.error(request, 'Only active top-level registrations can be withdrawn.')
+            return redirect(self.get_success_url())
+        if registration.moderation_state != RegistrationModerationStates.ACCEPTED.db_name:
+            messages.error(request, f'Only accepted registrations can be withdrawn, this one is {registration.moderation_state}.')
+            return redirect(self.get_success_url())
+
+        justification = request.POST.get('justification', '').strip()
+        max_length = Retraction._meta.get_field('justification').max_length
+        if len(justification) > max_length:
+            messages.error(request, f'Justification must be {max_length} characters or less.')
+            return redirect(self.get_success_url())
+
+        try:
+            with transaction.atomic():
+                registration.retraction = Retraction.objects.create(
+                    justification=justification or None,
+                    state=Retraction.APPROVED,
+                    date_retracted=timezone.now(),
+                )
+                registration.save()
+                for node in registration.node_and_primary_descendants():
+                    node.set_privacy('public', auth=None, log=False)
+                    node.moderation_state = RegistrationModerationStates.WITHDRAWN.db_name
+                    node.save()
+                registration.registered_from.add_log(
+                    action=NodeLog.RETRACTION_APPROVED,
+                    params={
+                        'node': registration.registered_from._id,
+                        'registration': registration._id,
+                        'retraction_id': registration.retraction._id,
+                    },
+                    auth=None,
+                    foreign_user=NodeLog.SUPPORT_USER_LABEL,
+                    log_date=timezone.now(),
+                    should_hide=False,
+                )
+        except NodeStateError as e:
+            messages.error(request, str(e))
+            return redirect(self.get_success_url())
+
+        AbstractNode.bulk_update_search(list(registration.node_and_primary_descendants()))
+        update_admin_log(
+            user_id=request.user.id,
+            object_id=registration.pk,
+            object_repr='Registration',
+            message=f'Registration {registration._id} withdrawn.',
+            action_flag=REGISTRATION_WITHDRAWN,
+        )
+        messages.success(request, 'Registration withdrawn.')
+        return redirect(self.get_success_url())
+
+
+class RegistrationUnwithdrawView(NodeMixin, View):
+    """ Allows authorized users to unwithdraw a registration, restoring it to the accepted state.
+    """
+    permission_required = 'osf.change_node'
+    raise_exception = True
+
+    def post(self, request, *args, **kwargs):
+        registration = self.get_object()
+        if not registration.is_registration or registration.root_id != registration.id or registration.is_deleted:
+            messages.error(request, 'Only active top-level registrations can be unwithdrawn.')
+            return redirect(self.get_success_url())
+        if registration.moderation_state != RegistrationModerationStates.WITHDRAWN.db_name:
+            messages.error(request, f'Registration {registration._id} is not withdrawn.')
+            return redirect(self.get_success_url())
+
+        retraction = registration.retraction
+        with transaction.atomic():
+            # without the old retraction attached a new withdrawal can be requested
+            registration.retraction = None
+            registration.save()
+            for node in registration.node_and_primary_descendants():
+                node.moderation_state = RegistrationModerationStates.ACCEPTED.db_name
+                node.save()
+            registration.registered_from.add_log(
+                action=NodeLog.RETRACTION_CANCELLED,
+                params={
+                    'node': registration.registered_from._id,
+                    'registration': registration._id,
+                    'retraction_id': retraction._id if retraction else None,
+                },
+                auth=None,
+                foreign_user=NodeLog.SUPPORT_USER_LABEL,
+                log_date=timezone.now(),
+                should_hide=False,
+            )
+
+        AbstractNode.bulk_update_search(list(registration.node_and_primary_descendants()))
+        update_admin_log(
+            user_id=request.user.id,
+            object_id=registration.pk,
+            object_repr='Registration',
+            message=f'Registration {registration._id} unwithdrawn.',
+            action_flag=REGISTRATION_UNWITHDRAWN,
+        )
+        messages.success(request, 'Registration unwithdrawn.')
         return redirect(self.get_success_url())
 
 
