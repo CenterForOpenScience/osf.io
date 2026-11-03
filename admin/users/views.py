@@ -248,7 +248,7 @@ class UserConfirmSpamView(UserMixin, View):
 
     def post(self, request, *args, **kwargs):
         user = self.get_object()
-        user.confirm_spam(save=True)
+        user.confirm_spam(save=True, force=True)
         update_admin_log(
             user_id=request.user.id,
             object_id=user._id,
@@ -346,7 +346,7 @@ class UserFlaggedSpamList(UserSpamList, View):
 
         if action == 'spam':
             for user in users:
-                user.confirm_spam(save=True)
+                user.confirm_spam(save=True, force=True)
                 update_admin_log(
                     user_id=self.request.user.id,
                     object_id=user.id,
