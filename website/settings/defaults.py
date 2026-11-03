@@ -12,6 +12,7 @@ from datetime import timedelta
 from collections import OrderedDict
 import enum
 
+from framework.celery_task_routes import task_routes
 from celery.schedules import crontab
 
 os_env = os.environ
@@ -538,87 +539,8 @@ class CeleryConfig:
         )
 
         task_default_exchange_type = 'direct'
-        task_routes = {
-            # Low-priority tasks
-            'framework.analytics.*': {'queue': 'low'},
-            'framework.celery_tasks.*': {'queue': 'low'},
-            'scripts.osfstorage.usage_audit': {'queue': 'low'},
-            'scripts.stuck_registration_audit': {'queue': 'low'},
-            'scripts.populate_new_and_noteworthy_projects': {'queue': 'low'},
-            'website.search.elastic_search.*': {'queue': 'low'},
-            'scripts.generate_sitemap': {'queue': 'low'},
-            'osf.management.commands.clear_expired_sessions': {'queue': 'low'},
-            'osf.management.commands.restart_stuck_registrations': {'queue': 'low'},
-            'osf.management.commands.delete_withdrawn_or_failed_registration_files': {'queue': 'low'},
-            'osf.management.commands.migrate_pagecounter_data': {'queue': 'low'},
-            'osf.management.commands.migrate_deleted_date': {'queue': 'low'},
-            'osf.management.commands.addon_deleted_date': {'queue': 'low'},
-            'osf.management.commands.archive_registrations_on_IA': {'queue': 'low'},
-            'osf.management.commands.sync_doi_metadata': {'queue': 'low'},
-            'osf.management.commands.sync_collection_provider_indices': {'queue': 'low'},
-            'osf.management.commands.sync_datacite_doi_metadata': {'queue': 'low'},
-            'osf.management.commands.populate_branched_from_node': {'queue': 'low'},
-            'osf.management.commands.daily_reporters_go': {'queue': 'low'},
-            'osf.management.commands.monthly_reporters_go': {'queue': 'low'},
-            'osf.management.commands.fetch_cedar_metadata_templates': {'queue': 'low'},
-            'osf.metrics.reporters.*': {'queue': 'low'},
-            'scripts.remove_after_use.merge_notification_subscription_provider_ct': {'queue': 'low'},
-            'management.commands.addon_deleted_date': {'queue': 'low'},
-            'management.commands.daily_reporters_go': {'queue': 'low'},
-            'management.commands.daily_reporter_go': {'queue': 'low'},
-            'management.commands.delete_withdrawn_or_failed_registration_files': {'queue': 'low'},
-            'management.commands.migrate_deleted_date': {'queue': 'low'},
-            'management.commands.migrate_pagecounter_data': {'queue': 'low'},
-            'management.commands.ingest_cedar_metadata_templates': {'queue': 'low'},
-            'management.commands.populate_branched_from': {'queue': 'low'},
-            'osf.management.commands.sync_doi_metadata_command': {'queue': 'low'},
-            'osf.management.commands.sync_preprint_missing_dois': {'queue': 'low'},
-            'osf.management.commands.async_request_identifier_update': {'queue': 'low'},
-            'osf.management.commands.sync_doi_empty_metadata_dataarchive_registrations_command': {'queue': 'low'},
 
-            # Medium-priority tasks
-            'scripts.triggered_mails': {'queue': 'med'},
-            'scripts.triggered_no_login_email': {'queue': 'med'},
-            'website.mailchimp_utils.*': {'queue': 'med'},
-            'notifications.tasks.*': {'queue': 'med'},
-            'website.collections.tasks.*': {'queue': 'med'},
-            'website.identifiers.tasks.*': {'queue': 'med'},
-            'website.preprints.tasks.*': {'queue': 'med'},
-            'website.project.tasks.*': {'queue': 'med'},
-
-            # High-priority tasks
-            'scripts.approve_embargo_terminations': {'queue': 'high'},
-            'scripts.approve_registrations': {'queue': 'high'},
-            'scripts.embargo_registrations': {'queue': 'high'},
-            'scripts.premigrate_created_modified': {'queue': 'high'},
-            'scripts.refresh_addon_tokens': {'queue': 'high'},
-            'scripts.retract_registrations': {'queue': 'high'},
-            'website.archiver.tasks.*': {'queue': 'high'},
-            'scripts.add_missing_identifiers_to_preprints': {'queue': 'high'},
-            'osf.management.commands.approve_pending_schema_responses': {'queue': 'high'},
-            'api.share.utils.*': {'queue': 'high'},
-            'scripts.check_manual_restart_approval': {'queue': 'high'},
-            'scripts.enhanced_stuck_registration_audit': {'queue': 'high'},
-            'email.start_notification_campaign': {'queue': 'high'},
-            'scripts.check_manual_restart_approvals_batch': {'queue': 'high'},
-            'scripts.delayed_manual_restart_approval': {'queue': 'high'},
-            'scripts.manual_restart_approval_batch': {'queue': 'high'},
-
-            # Project-enter tasks
-            'email.send_campaign_batch': {'queue': 'project_enter'},
-            'email.process_campaign_retry': {'queue': 'project_enter'},
-            'email.create_campaign_recipients': {'queue': 'project_enter'},
-            'email.dispatch_campaign': {'queue': 'high', 'priority': 10},
-
-            # Remote-computing tasks
-            'addons.boa.tasks.submit_to_boa': {'queue': 'remote'},
-            'stress_testing.simulated_workload': {'queue': 'remote'},
-
-            # External tasks
-            'osf.tasks.log_gv_addon': {'queue': 'external_high'},
-            'website.identifiers.tasks.task__update_verified_links': {'queue': 'external_high'},
-            'email.process_sendgrid_campaign_events': {'queue': 'external_low'},
-        }
+        task_routes = task_routes
         task_ignore_result = True
         task_store_errors_even_if_ignored = True
         result_extended = True
