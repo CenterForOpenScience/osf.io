@@ -3,6 +3,7 @@ import pytest
 
 from django.utils import timezone
 from django.test import RequestFactory
+from django.urls import resolve, reverse
 from django.http import Http404
 from admin.nodes.views import NodeSearchView
 from tests.base import AdminTestCase
@@ -243,3 +244,7 @@ class TestLoginView(AdminTestCase):
         mock_redirect.assert_called()
         mocked_login.assert_not_called()
         assert not hasattr(request, 'user')
+
+    def test_django_admin_login_uses_login_view(self):
+        match = resolve(reverse('admin:login'))
+        assert match.func.view_class is LoginView
