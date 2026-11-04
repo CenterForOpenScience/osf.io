@@ -393,6 +393,40 @@ class TestReviewActionCreateRoot:
             expect_errors=True
         )
         assert res.status_code == 400
+        assert res.json['errors'][0]['detail'] == 'A primary file is required to submit a preprint for moderation.'
+
+    def test_resubmit_rejected_preprint_without_file_returns_400(self, app, url, preprint, node_admin):
+        preprint.machine_state = 'rejected'
+        preprint.primary_file = None
+        preprint.save()
+
+        res = app.post_json_api(
+            url,
+            self.create_payload(preprint._id, trigger='submit'),
+            auth=node_admin.auth,
+            expect_errors=True
+        )
+        assert res.status_code == 400
+        assert res.json['errors'][0]['detail'] == 'A primary file is required to submit a preprint for moderation.'
+        preprint.refresh_from_db()
+        assert preprint.machine_state == 'rejected'
+        assert not preprint.actions.exists()
+
+    def test_accept_rejected_preprint_without_file_returns_400(self, app, url, preprint, moderator):
+        preprint.machine_state = 'rejected'
+        preprint.primary_file = None
+        preprint.save()
+
+        res = app.post_json_api(
+            url,
+            self.create_payload(preprint._id, trigger='accept', comment='Looks good.'),
+            auth=moderator.auth,
+            expect_errors=True
+        )
+        assert res.status_code == 400
+        preprint.refresh_from_db()
+        assert preprint.machine_state == 'rejected'
+        assert not preprint.is_published
 
     def test_provider_not_reviewed_returns_409(self, app, url, preprint, node_admin):
         preprint.provider = PreprintProviderFactory(reviews_workflow=None)
