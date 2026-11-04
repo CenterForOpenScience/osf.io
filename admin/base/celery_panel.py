@@ -1,4 +1,5 @@
 from collections import defaultdict
+from fnmatch import fnmatchcase
 from functools import cache
 
 from django.contrib import messages
@@ -9,7 +10,6 @@ from dj_celery_panel.celery_utils import CeleryQueuesInspectBackend, QueueDetail
 from dj_celery_panel.conf import panel_config
 
 from framework.celery_tasks import app as celery_app
-from website.settings import CeleryConfig
 from osf.celery_stress_test.tasks import start_celery_stress_test
 from .forms import CeleryStressTestForm, WorkloadForm
 from django.forms import formset_factory
@@ -119,21 +119,20 @@ class RoutedTasksQueuesBackend(CeleryQueuesInspectBackend):
         return routed_tasks
 
     def get_unmatched_routing_entries_by_queue(self):
-        # CeleryRouter matches the dotted prefixes of a task name, from two parts up, against the CeleryConfig
-        # *_modules sets, so an entry that is no such prefix of any registered task name routes nothing:
-        # the task is gone, renamed, or its module isn't in CeleryConfig.imports.
-        # An entry is listed under the queue that its exact name routes to
-        prefixes = set()
-        for name in self.get_registered_tasks():
-            parts = name.split('.')
-            prefixes.update('.'.join(parts[:i]) for i in range(2, len(parts) + 1))
+        # Celery matches task_routes entries against task names as fnmatch globs, so an entry
+        # that matches no registered task name routes nothing: the task is gone, renamed,
+        # or its module isn't in the celery app's include.
+        # Entries routed to queues outside task_queues (osf.*, website.*) are for OSF tasks
+        # sent by name with send_task(), which are never registered here, so they are skipped
+        task_names = self.get_registered_tasks()
         router = self.app.amqp.router
         unmatched_entries = defaultdict(list)
-        # dir(), not vars(): the sets are defined on defaults.CeleryConfig, which local.py's CeleryConfig subclasses
-        for attr in dir(CeleryConfig):
-            if attr.endswith('_modules'):
-                for entry in sorted(set(getattr(CeleryConfig, attr)) - prefixes):
-                    unmatched_entries[router.route({}, entry)['queue'].name].append(entry)
+        for entry, route in sorted(self.app.conf.task_routes.items()):
+            queue_name = router.expand_destination(dict(route))['queue'].name
+            if queue_name in self.app.amqp.queues and not any(
+                fnmatchcase(name, entry) for name in task_names
+            ):
+                unmatched_entries[queue_name].append(entry)
         return unmatched_entries
 
 
