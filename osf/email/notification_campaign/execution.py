@@ -38,11 +38,14 @@ def process_campaign_retry(self, campaign_id, run_id, use_sendgrid_webhook=False
         self.finish_campaign(campaign)
         return
 
-    awaiting_qs = NotificationCampaignRecipient.objects.filter(
+    in_flight_qs = NotificationCampaignRecipient.objects.filter(
         campaign=campaign,
-        status=NotificationCampaignRecipientStatus.AWAITING_DELIVERY,
+        status__in=[
+            NotificationCampaignRecipientStatus.QUEUED,
+            NotificationCampaignRecipientStatus.AWAITING_DELIVERY,
+        ],
     )
-    if awaiting_qs.exists():
+    if in_flight_qs.exists():
         delivery_timeout = execution.get('delivery_timeout', settings.DEFAULT_CAMPAIGN_DELIVERY_TIMEOUT)
         reference_time = campaign.started_at or campaign.created_at
         if timezone.now() - reference_time < timedelta(seconds=delivery_timeout):
@@ -58,13 +61,13 @@ def process_campaign_retry(self, campaign_id, run_id, use_sendgrid_webhook=False
             )
             return
 
-        timed_out = awaiting_qs.update(
+        timed_out = in_flight_qs.update(
             status=NotificationCampaignRecipientStatus.FAILED,
-            error_message='SendGrid delivery timeout',
+            error_message='Delivery timeout'
         )
         message = (
             f'[Notification Campaign #{campaign_id}] WARNING: '
-            f'Marked {timed_out} awaiting-delivery recipients as FAILED after delivery timeout '
+            f'Marked {timed_out} queued/awaiting-delivery recipients as FAILED after delivery timeout '
             f'({delivery_timeout}s) for campaign {campaign.name}.'
         )
         logger.warning(message)

@@ -2,7 +2,7 @@ import logging
 import uuid
 from itertools import batched
 
-from django.db.models import BooleanField, Count, OuterRef, Q, Subquery, Exists
+from django.db.models import BooleanField, Count, Max, OuterRef, Q, Subquery, Exists
 from django.db.models.functions import Coalesce
 from django.utils import timezone
 
@@ -182,6 +182,7 @@ def get_campaign_recipient_stats(campaign_id):
             'id',
             filter=Q(status=NotificationCampaignRecipientStatus.AWAITING_DELIVERY),
         ),
+        last_sent_at=Max('sent_at'),
     )
 
 

@@ -421,32 +421,73 @@ class TestNotificationCampaignAdminPermissions(AdminTestCase):
         response = NotificationCampaignDetail.as_view()(request, pk=self.campaign.pk)
         assert response.status_code == 200
 
-    def test_detail_allow_restart_stuck_false_when_recently_updated(self):
+    def _detail_context(self):
         grant_permission(self.user, 'change_notificationcampaign')
         request = RequestFactory().get(
             reverse('notifications:notification_campaigns_detail', kwargs={'pk': self.campaign.pk})
         )
         request.user = self.user
-
         response = NotificationCampaignDetail.as_view()(request, pk=self.campaign.pk)
-
         assert response.status_code == 200
-        assert response.context_data['allow_restart_stuck'] is False
+        return response.context_data
 
-    def test_detail_allow_restart_stuck_true_when_updated_long_time_ago(self):
-        grant_permission(self.user, 'change_notificationcampaign')
+    def _restart_stuck_suggested(self):
+        return self._detail_context().get('restart_stuck_suggested', False)
+
+    def _run_campaign(self, started_ago, recipient_status=NotificationCampaignRecipientStatus.QUEUED, sent_ago=None):
+        self.campaign.status = NotificationCampaignStatus.RUNNING
+        self.campaign.started_at = timezone.now() - started_ago
+        self.campaign.metadata['execution']['dispatch_interval'] = 60
+        self.campaign.save()
+        NotificationCampaignRecipient.objects.create(
+            campaign=self.campaign,
+            user=UserFactory(),
+            status=recipient_status,
+            sent_at=int((timezone.now() - sent_ago).timestamp()) if sent_ago else None,
+        )
+
+    def test_detail_restart_stuck_not_suggested_when_not_running(self):
         NotificationCampaign.objects.filter(pk=self.campaign.pk).update(
             updated_at=timezone.now() - timedelta(minutes=16),
         )
-        request = RequestFactory().get(
-            reverse('notifications:notification_campaigns_detail', kwargs={'pk': self.campaign.pk})
+        assert self._restart_stuck_suggested() is False
+
+    def test_detail_restart_stuck_not_suggested_when_started_within_two_dispatch_intervals(self):
+        # Sends from a previous run don't count against a just-restarted run.
+        self._run_campaign(started_ago=timedelta(seconds=10), sent_ago=timedelta(hours=1))
+        context = self._detail_context()
+        assert context['restart_stuck_suggested'] is False
+        assert context['last_sent_at'] is None
+
+    def test_detail_restart_stuck_suggested_when_nothing_sent_within_two_dispatch_intervals(self):
+        # The dispatch/retry loops keep `updated_at` fresh even when every batch is lost.
+        self._run_campaign(started_ago=timedelta(hours=1), sent_ago=timedelta(minutes=3))
+        assert self.campaign.updated_at > timezone.now() - timedelta(minutes=1)
+        context = self._detail_context()
+        assert context['restart_stuck_suggested'] is True
+        assert context['restart_stuck_after'] == 120
+        assert context['last_activity_ago'] > timedelta(minutes=3)
+
+    def test_detail_restart_stuck_suggested_when_nothing_sent_since_start(self):
+        self._run_campaign(started_ago=timedelta(minutes=3))
+        assert self._restart_stuck_suggested() is True
+
+    def test_detail_restart_stuck_not_suggested_when_sent_within_two_dispatch_intervals(self):
+        # Older than one interval (60s), but within two.
+        self._run_campaign(started_ago=timedelta(hours=1), sent_ago=timedelta(seconds=90))
+        context = self._detail_context()
+        assert context['restart_stuck_suggested'] is False
+        assert timezone.now() - context['last_sent_at'] < timedelta(seconds=120)
+
+    def test_detail_restart_stuck_not_suggested_when_only_awaiting_delivery(self):
+        self._run_campaign(
+            started_ago=timedelta(hours=1),
+            recipient_status=NotificationCampaignRecipientStatus.AWAITING_DELIVERY,
+            sent_ago=timedelta(minutes=3),
         )
-        request.user = self.user
-
-        response = NotificationCampaignDetail.as_view()(request, pk=self.campaign.pk)
-
-        assert response.status_code == 200
-        assert response.context_data['allow_restart_stuck'] is True
+        context = self._detail_context()
+        assert context['restart_stuck_suggested'] is False
+        assert context['awaiting_delivery'] is True
 
     def test_start_requires_change_notificationcampaign_permission(self):
 
