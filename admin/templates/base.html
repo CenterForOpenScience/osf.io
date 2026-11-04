@@ -69,7 +69,7 @@
                   </span>
                 </a>
                 <ul class="dropdown-menu user-menu">
-                    {%  if perms.osf.change_osfuser %}
+                    {%  if perms.osf.admin_user_management %}
                   <li>
                     <a href="{% url 'auth:register' %}">
                       Admin-User Registration
@@ -155,6 +155,17 @@
                       <li><a href="{% url 'users:flagged-spam' %}"><i class="fa fa-exclamation-triangle"></i><span> Flagged Spam</span> </a></li>
                       <li><a href="{% url 'users:known-spam' %}"><i class="fa fa-cutlery"></i><span> Known Spam</span> </a></li>
                       <li><a href="{% url 'users:known-ham' %}"><i class="fa fa-star"></i><span> Known Ham</span> </a></li>
+                  </ul>
+              </div>
+          {% endif %}
+          {% if perms.osf.admin_user_management %}
+              <li><a role="button" data-toggle="collapse" href="#collapseAdminUsers">
+                  <i class='fa fa-caret-down'></i> Admin Users
+              </a></li>
+              <div class="collapse" id="collapseAdminUsers">
+                  <ul class="sidebar-menu sidebar-menu-inner">
+                      <li><a href="{% url 'auth:register' %}"><i class='fa fa-user-plus'></i><span> Register Admin</span> </a></li>
+                      <li><a href="{% url 'auth:admin_audit' %}"><i class='fa fa-list'></i><span> Admin Audit</span> </a></li>
                   </ul>
               </div>
           {% endif %}
