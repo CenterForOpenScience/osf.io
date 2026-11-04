@@ -1504,7 +1504,7 @@ class TestProcessCampaignRetry:
 
         recipient = NotificationCampaignRecipient.objects.get(campaign=campaign, user=user)
         assert recipient.status == NotificationCampaignRecipientStatus.FAILED
-        assert recipient.error_message == 'SendGrid delivery timeout'
+        assert recipient.error_message == 'Delivery timeout'
         campaign.refresh_from_db()
         assert campaign.status == NotificationCampaignStatus.PARTIALLY_COMPLETED
         assert campaign.retries == 0
