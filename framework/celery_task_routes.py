@@ -1,3 +1,6 @@
+# Task routing for Celery. See https://docs.celeryproject.org/en/stable/userguide/routing.html for more information.
+# Defined in a separate file to avoid circular imports with Celery app initialization.
+
 task_routes = {
     # Low-priority tasks
     'framework.analytics.*': {'queue': 'low'},
@@ -62,7 +65,7 @@ task_routes = {
     'scripts.delayed_manual_restart_approval': {'queue': 'high'},
     'scripts.manual_restart_approval_batch': {'queue': 'high'},
 
-    # Project-entry tasks
+    # Project-ENTER tasks
     'email.create_campaign_recipients': {'queue': 'project_enter'},
     'email.start_notification_campaign': {'queue': 'high'},
     'email.dispatch_campaign': {'queue': 'high'},
