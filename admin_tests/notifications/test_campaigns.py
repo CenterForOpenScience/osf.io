@@ -95,6 +95,13 @@ class TestNotificationCampaignCreateForm:
         assert form.fields['time_window'].initial == 8 * 60 * 60
         assert form.fields['sendgrid_bulk'].initial is False
 
+    def test_bulk_execution_defaults_come_from_settings(self):
+        assert NotificationCampaignCreateForm.BULK_EXECUTION_DEFAULTS == {
+            'batch_size': settings.DEFAULT_CAMPAIGN_BULK_BATCH_SIZE,
+            'max_queued_batches': settings.DEFAULT_CAMPAIGN_BULK_MAX_QUEUED_BATCHES,
+            'dispatch_interval': settings.DEFAULT_CAMPAIGN_BULK_DISPATCH_INTERVAL,
+        }
+
     def test_invalid_context_json(self, notification_type):
         form = NotificationCampaignCreateForm(
             data=_valid_form_data(notification_type, context='{not-json')
@@ -249,6 +256,19 @@ class TestNotificationCampaignCreateForm:
         assert form.is_valid()
         assert form.cleaned_data['sendgrid_bulk'] is True
 
+    def test_bulk_batch_size_cannot_exceed_sendgrid_limit(self, notification_type):
+        form = NotificationCampaignCreateForm(
+            data=_valid_form_data(notification_type, sendgrid_bulk=True, batch_size=1001)
+        )
+        assert not form.is_valid()
+        assert 'batch_size' in form.errors
+
+    def test_non_bulk_batch_size_can_exceed_sendgrid_limit(self, notification_type):
+        form = NotificationCampaignCreateForm(
+            data=_valid_form_data(notification_type, sendgrid_bulk=False, batch_size=1001)
+        )
+        assert form.is_valid()
+
 
 class TestNotificationCampaignCreateView(AdminTestCase):
 
@@ -321,6 +341,14 @@ class TestNotificationCampaignCreateView(AdminTestCase):
             'predefined': 'active',
             'exclude_non_contributors': True,
         }
+
+    def test_context_includes_bulk_execution_defaults(self):
+        request = RequestFactory().get(reverse('notifications:notification_campaigns_create'))
+        request.user = self.user
+
+        response = NotificationCampaignCreateView.as_view()(request)
+
+        assert response.context_data['bulk_defaults'] == NotificationCampaignCreateForm.BULK_EXECUTION_DEFAULTS
 
     @mock.patch('admin.notifications.views._render_email_html', side_effect=Exception('bad template'))
     def test_form_valid_rejects_unrenderable_context(self, mock_render):
