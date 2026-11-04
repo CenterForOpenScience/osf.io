@@ -1,7 +1,7 @@
 import re
 import json
 from collections import defaultdict
-from datetime import timedelta
+from datetime import datetime, timedelta, timezone as dt_timezone
 from django.urls import reverse_lazy
 from django.utils import timezone
 from django.db.models import Q, F, Subquery
@@ -445,7 +445,6 @@ class NotificationCampaignDetail(PermissionRequiredMixin, DetailView):
                 for k, v in metadata.items()
                 if k not in {'filters', 'context', 'execution', 'template'}
             },
-            'allow_restart_stuck': True if timezone.now() - notification_campaign.updated_at > timedelta(minutes=15) else False,
             'delete_allowed': notification_campaign.status != NotificationCampaignStatus.RUNNING,
             'start_allowed': notification_campaign.status == NotificationCampaignStatus.CREATED and metadata.get('recipients_creation_finished', False),
         }
@@ -489,6 +488,9 @@ class NotificationCampaignDetail(PermissionRequiredMixin, DetailView):
             eta = None
             estimated_finish = None
             last_activity_ago = None
+            last_sent_at = None
+            restart_stuck_after = None
+            restart_stuck_suggested = False
             failure_rate = None
 
             if notification_campaign.started_at:
@@ -502,8 +504,17 @@ class NotificationCampaignDetail(PermissionRequiredMixin, DetailView):
                         eta = timedelta(seconds=int(remaining / speed))
                         estimated_finish = timezone.now() + eta
 
-            if notification_campaign.updated_at:
-                last_activity_ago = timezone.now() - notification_campaign.updated_at
+                if (stats['last_sent_at'] or 0) >= int(notification_campaign.started_at.timestamp()):
+                    last_sent_at = datetime.fromtimestamp(stats['last_sent_at'], tz=dt_timezone.utc)
+                last_activity_ago = timezone.now() - (last_sent_at or notification_campaign.started_at)
+                # Suggest "Restart stuck" when nothing was sent within two dispatch intervals
+                restart_stuck_after = 2 * metadata.get('execution', {}).get('dispatch_interval', settings.CAMPAIGN_DISPATCH_INTERVAL)
+                restart_stuck_suggested = (
+                    notification_campaign.status == NotificationCampaignStatus.RUNNING
+                    and not awaiting_delivery
+                    and last_activity_ago > timedelta(seconds=restart_stuck_after)
+                )
+
             if processed:
                 failure_rate = failed_count / processed * 100
             else:
@@ -528,6 +539,9 @@ class NotificationCampaignDetail(PermissionRequiredMixin, DetailView):
                 'eta': eta,
                 'estimated_finish': estimated_finish,
                 'last_activity_ago': last_activity_ago,
+                'last_sent_at': last_sent_at,
+                'restart_stuck_after': restart_stuck_after,
+                'restart_stuck_suggested': restart_stuck_suggested,
                 'failure_rate': failure_rate,
             })
 

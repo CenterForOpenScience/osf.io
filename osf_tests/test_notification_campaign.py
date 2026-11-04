@@ -474,6 +474,7 @@ class TestGetCampaignRecipientStats:
             'failed_count': 0,
             'queued_count': 0,
             'awaiting_count': 0,
+            'last_sent_at': None,
         }
 
     def test_counts_sent_failed_and_skipped(self, campaign, notification_type):
@@ -513,6 +514,7 @@ class TestGetCampaignRecipientStats:
             'failed_count': 2,  # FAILED + SKIPPED
             'queued_count': 1,
             'awaiting_count': 1,
+            'last_sent_at': None,
         }
 
     def test_scopes_to_requested_campaign(self, campaign, notification_type):
@@ -538,6 +540,7 @@ class TestGetCampaignRecipientStats:
             'failed_count': 0,
             'queued_count': 0,
             'awaiting_count': 0,
+            'last_sent_at': None,
         }
         assert get_campaign_recipient_stats(other.id) == {
             'recipient_count': 1,
@@ -545,7 +548,16 @@ class TestGetCampaignRecipientStats:
             'failed_count': 1,
             'queued_count': 0,
             'awaiting_count': 0,
+            'last_sent_at': None,
         }
+
+    def test_last_sent_at_is_latest_send(self, campaign):
+        users = [UserFactory(), UserFactory()]
+        create_campaign_recipients(Q(**{'id__in': [u.id for u in users]}), campaign_id=campaign.id)
+        for user, sent_at in zip(users, [100, 200]):
+            NotificationCampaignRecipient.objects.filter(campaign=campaign, user=user).update(sent_at=sent_at)
+
+        assert get_campaign_recipient_stats(campaign.id)['last_sent_at'] == 200
 
 
 class TestGetCampaignRecipientBatches:
@@ -1414,6 +1426,34 @@ class TestProcessCampaignRetry:
         assert campaign.completed_at is not None
 
     @mock.patch('osf.email.notification_campaign.execution.process_campaign_retry.apply_async')
+    def test_process_campaign_retry_waits_for_queued_recipients(self, mock_apply_async, campaign):
+        queued_user = UserFactory()
+        sent_user = UserFactory()
+        create_campaign_recipients(Q(**{'id__in': [queued_user.id, sent_user.id]}), campaign_id=campaign.id)
+        NotificationCampaignRecipient.objects.filter(campaign=campaign, user=queued_user).update(
+            status=NotificationCampaignRecipientStatus.QUEUED
+        )
+        NotificationCampaignRecipient.objects.filter(campaign=campaign, user=sent_user).update(
+            status=NotificationCampaignRecipientStatus.SENT
+        )
+        campaign.run_id = uuid.uuid4()
+        campaign.status = NotificationCampaignStatus.RUNNING
+        campaign.started_at = timezone.now()
+        campaign.metadata['execution']['dispatch_interval'] = 60
+        campaign.save()
+
+        process_campaign_retry(campaign_id=campaign.id, run_id=campaign.run_id)
+
+        campaign.refresh_from_db()
+        assert campaign.status == NotificationCampaignStatus.RUNNING
+        assert campaign.completed_at is None
+        assert campaign.sent_count == 1
+        mock_apply_async.assert_called_once_with(
+            kwargs={'campaign_id': campaign.id, 'run_id': campaign.run_id, 'use_sendgrid_webhook': False},
+            countdown=60,
+        )
+
+    @mock.patch('osf.email.notification_campaign.execution.process_campaign_retry.apply_async')
     def test_process_campaign_retry_waits_for_awaiting_delivery_recipients(self, mock_apply_async, campaign):
         user = UserFactory()
         create_campaign_recipients(Q(**{'id__in': [user.id]}), campaign_id=campaign.id)
@@ -1456,7 +1496,7 @@ class TestProcessCampaignRetry:
 
         recipient = NotificationCampaignRecipient.objects.get(campaign=campaign, user=user)
         assert recipient.status == NotificationCampaignRecipientStatus.FAILED
-        assert recipient.error_message == 'SendGrid delivery timeout'
+        assert recipient.error_message == 'Delivery timeout'
         campaign.refresh_from_db()
         assert campaign.status == NotificationCampaignStatus.PARTIALLY_COMPLETED
         assert campaign.retries == 0
