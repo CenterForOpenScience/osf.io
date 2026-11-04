@@ -216,7 +216,7 @@ def check_resource_for_spam_postcommit(guid, content, author, author_email, requ
         return f'{guid} not found'
 
     if isinstance(resource, OSFUser) and resource.is_protected_from_auto_spam:
-        sentry.log_message(f"User {guid} is not checked for spam because of ham status")
+        logger.info(f'User {guid} is not checked for spam because of ham status')
         return
 
     spammy_domains = _check_resource_for_domains(resource, content)

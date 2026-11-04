@@ -1585,7 +1585,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
 
     def confirm_spam(self, domains=None, save=True, train_spam_services=False, skip_resources_spam=False, notify=True, force=False):
         if not force and self.is_protected_from_auto_spam:
-            sentry.log_message(f'User {self._id} is protected from automated spam actions (HAM / assumed HAM)')
+            logger.info(f'User {self._id} is protected from automated spam actions (HAM / assumed HAM)')
             return
         was_disabled = self.is_disabled
         self.deactivate_account()
