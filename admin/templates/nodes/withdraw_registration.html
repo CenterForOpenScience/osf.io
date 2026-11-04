@@ -1,0 +1,30 @@
+{% if node.is_registration and node.root_id == node.id and perms.osf.change_node %}
+    {% if node.moderation_state == 'accepted' %}
+        <a data-toggle="modal" data-target="#confirmWithdrawRegistration" class="btn btn-danger">Withdraw</a>
+        <div class="modal" id="confirmWithdrawRegistration">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <form class="well" method="post" action="{% url 'nodes:withdraw-registration' guid=node.guid %}">
+                        <div class="modal-header">
+                            <button type="button" class="close" data-dismiss="modal">x</button>
+                            <h3>Are you sure you want to withdraw this registration?</h3>
+                        </div>
+                        {% csrf_token %}
+                        <div class="modal-body">
+                            <label for="withdrawalJustification">Justification</label>
+                            <textarea id="withdrawalJustification" name="justification" class="form-control" rows="4" maxlength="2048"></textarea>
+                        </div>
+                        <div class="modal-footer">
+                            <input class="btn btn-danger" type="submit" value="Withdraw" />
+                            <button type="button" class="btn btn-default" data-dismiss="modal">
+                                Cancel
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    {% else %}
+        <a class="btn btn-danger" title="Only accepted registrations can be withdrawn." disabled=true>Withdraw</a>
+    {% endif %}
+{% endif %}
