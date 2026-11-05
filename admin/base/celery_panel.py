@@ -1,15 +1,52 @@
+from collections import defaultdict
+from fnmatch import fnmatchcase
+from functools import cache
+
+from django.contrib import messages
+from django.shortcuts import redirect, render
+from django.views.decorators.http import require_http_methods
+from dj_celery_panel import views
 from dj_celery_panel.celery_utils import CeleryQueuesInspectBackend, QueueDetailPage, QueueListPage
+from dj_celery_panel.conf import panel_config
+
+from framework.celery_tasks import app as celery_app
+from osf.celery_stress_test.tasks import start_celery_stress_test
+from .forms import CeleryStressTestForm, WorkloadForm
+from django.forms import formset_factory
+
+
+WorkloadFormSet = formset_factory(
+    WorkloadForm,
+    extra=1,
+    can_delete=True,
+    max_num=10,
+    min_num=1,
+    validate_max=True,
+)
+
+
+@cache
+def import_task_modules():
+    # Register the tasks from CeleryConfig.imports like the worker does on start. Not in AppConfig.ready():
+    # some task modules call django.setup() on import, which can't run while Django is loading apps
+    celery_app.loader.import_default_modules()
+
+
+def overview(request):
+    # The overview lists the tasks registered in this process
+    import_task_modules()
+    return views.index(request)
 
 
 class RoutedTasksQueuesBackend(CeleryQueuesInspectBackend):
-    """dj-celery-panel queues backend that also lists the tasks routed to each queue
-    and the configured queues that no active worker consumes.
+    """dj-celery-panel queues backend that also lists the tasks routed to each queue, the
+    CeleryConfig routing entries that match no task, and the configured queues that no active worker consumes.
 
     Routes are resolved the same way Celery does when sending a task, so explicit
     queue= overrides passed to apply_async() at call time are not reflected.
     """
 
-    BACKEND_DESCRIPTION = 'Queue bindings, routing configuration, routed tasks and unconsumed queues'
+    BACKEND_DESCRIPTION = 'Queue bindings, routing configuration, routed tasks, unmatched routing entries and unconsumed queues'
 
     def get_queues(self):
         page = super().get_queues()
@@ -21,21 +58,31 @@ class RoutedTasksQueuesBackend(CeleryQueuesInspectBackend):
             for name, queue in sorted(self.app.amqp.queues.items())
             if name not in listed
         ]
-        return QueueListPage(queues=page.queues + unconsumed, error=page.error)
+        routed_tasks = self.get_routed_tasks_by_queue()
+        unmatched_entries = self.get_unmatched_routing_entries_by_queue()
+        return QueueListPage(
+            queues=[
+                {
+                    **queue,
+                    'routed_tasks_count': len(routed_tasks[queue['name']]),
+                    'unmatched_routing_entries': unmatched_entries[queue['name']],
+                }
+                for queue in page.queues + unconsumed
+            ],
+            error=page.error,
+        )
 
     def get_queue_detail(self, queue_name):
         page = super().get_queue_detail(queue_name)
-        queue, error = page.queue, page.error
+        queue = page.queue
         if queue is None:
             # membership check first: indexing Queues creates missing ones
             if queue_name not in self.app.amqp.queues:
                 return page
             queue = self.describe_unconsumed_queue(self.app.amqp.queues[queue_name])
-            error = 'No active worker consumes this queue'
-        routed_tasks = self.get_routed_tasks(queue_name, self.get_task_names(queue['workers']))
         return QueueDetailPage(
-            queue={**queue, 'routed_tasks': routed_tasks},
-            error=error,
+            queue={**queue, 'routed_tasks': self.get_routed_tasks(queue_name)},
+            error=page.error,
         )
 
     def describe_unconsumed_queue(self, queue):
@@ -56,20 +103,95 @@ class RoutedTasksQueuesBackend(CeleryQueuesInspectBackend):
             'broker_query_error': broker_info.get('error'),
         }
 
-    def get_task_names(self, workers):
-        # The admin process registers only the task modules it happens to import,
-        # so ask the workers for the tasks they have registered: the ones consuming
-        # this queue, or all of them when nobody consumes it
-        registered = self.app.control.inspect(destination=workers or None).registered() or {}
-        names = {name for worker_tasks in registered.values() for name in worker_tasks}
-        return {name for name in names | set(self.app.tasks) if not name.startswith('celery.')}
+    def get_routed_tasks(self, queue_name):
+        return self.get_routed_tasks_by_queue()[queue_name]
 
-    def get_routed_tasks(self, queue_name, task_names):
+    def get_registered_tasks(self):
+        # Every task the worker registers, not only the ones this process happened to import
+        import_task_modules()
+        return {name: task for name, task in self.app.tasks.items() if not name.startswith('celery.')}
+
+    def get_routed_tasks_by_queue(self):
         router = self.app.amqp.router
-        routed_tasks = []
-        for name in task_names:
-            task = self.app.tasks.get(name)
-            options = dict(task._get_exec_options()) if task else {}
-            if router.route(options, name)['queue'].name == queue_name:
-                routed_tasks.append(name)
-        return sorted(routed_tasks)
+        routed_tasks = defaultdict(list)
+        for name, task in sorted(self.get_registered_tasks().items()):
+            routed_tasks[router.route(dict(task._get_exec_options()), name)['queue'].name].append(name)
+        return routed_tasks
+
+    def get_unmatched_routing_entries_by_queue(self):
+        # Celery matches task_routes entries against task names as fnmatch globs, so an entry
+        # that matches no registered task name routes nothing: the task is gone, renamed,
+        # or its module isn't in the celery app's include.
+        # Entries routed to queues outside task_queues (osf.*, website.*) are for OSF tasks
+        # sent by name with send_task(), which are never registered here, so they are skipped
+        task_names = self.get_registered_tasks()
+        router = self.app.amqp.router
+        unmatched_entries = defaultdict(list)
+        for entry, route in sorted(self.app.conf.task_routes.items()):
+            queue_name = router.expand_destination(dict(route))['queue'].name
+            if queue_name in self.app.amqp.queues and not any(
+                fnmatchcase(name, entry) for name in task_names
+            ):
+                unmatched_entries[queue_name].append(entry)
+        return unmatched_entries
+
+
+@panel_config.permission_required('celery_stress_test')
+@require_http_methods(['GET', 'POST'])
+def celery_stress_test_view(request):
+    """
+    Configure and start a Celery stress test.
+    """
+    context = panel_config.get_context(
+        request,
+        current_tab='celery_stress_test',
+    )
+
+    if request.method == 'POST':
+        form = CeleryStressTestForm(request.POST)
+        workload_formset = WorkloadFormSet(request.POST)
+
+        if form.is_valid() and workload_formset.is_valid():
+            config = {
+                **form.cleaned_data,
+                'workloads': [
+                    workload_form.cleaned_data
+                    for workload_form in workload_formset
+                    if workload_form.cleaned_data
+                    and not workload_form.cleaned_data.get('DELETE', False)
+                ],
+            }
+
+            if not config['workloads']:
+                messages.error(
+                    request,
+                    'Please configure at least one workload.',
+                )
+            else:
+                try:
+                    result = start_celery_stress_test.delay(config)
+                except Exception:
+                    messages.error(
+                        request,
+                        'Failed to start the stress test. Please try again.',
+                    )
+                else:
+                    messages.success(
+                        request,
+                        f"Stress test submitted successfully. Task ID: {result.id}",
+                    )
+                    return redirect(request.path)
+    else:
+        form = CeleryStressTestForm()
+        workload_formset = WorkloadFormSet()
+
+    context.update({
+        'form': form,
+        'workload_formset': workload_formset,
+    })
+
+    return render(
+        request,
+        'admin/dj_celery_panel/celery_stress_testing.html',
+        context,
+    )

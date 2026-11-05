@@ -1,0 +1,14 @@
+{% extends "admin/dj_celery_panel/base.html" %}
+{% load i18n %}
+
+{% block panel_content %}
+<nav class="dcr-tabs dcr-mb-lg">
+  <a href="{% url 'dj_celery_panel:index' %}" class="dcr-tabs__tab{% if current_tab == 'overview' %} active{% endif %}"{% if current_tab == 'overview' %} aria-current="page"{% endif %}>{% trans "Overview" %}</a>
+  <a href="{% url 'dj_celery_panel:workers' %}" class="dcr-tabs__tab{% if current_tab == 'workers' %} active{% endif %}"{% if current_tab == 'workers' %} aria-current="page"{% endif %}>{% trans "Workers" %}</a>
+  <a href="{% url 'dj_celery_panel:tasks' %}" class="dcr-tabs__tab{% if current_tab == 'tasks' %} active{% endif %}"{% if current_tab == 'tasks' %} aria-current="page"{% endif %}>{% trans "Tasks" %}</a>
+  <a href="{% url 'dj_celery_panel:queues' %}" class="dcr-tabs__tab{% if current_tab == 'queues' %} active{% endif %}"{% if current_tab == 'queues' %} aria-current="page"{% endif %}>{% trans "Queues" %}</a>
+  <a href="{% url 'dj_celery_panel:configuration' %}" class="dcr-tabs__tab{% if current_tab == 'configuration' %} active{% endif %}"{% if current_tab == 'configuration' %} aria-current="page"{% endif %}>{% trans "Configuration" %}</a>
+  <a href="{% url 'celery_stress_test' %}" class="dcr-tabs__tab{% if current_tab == 'celery_stress_test' %} active{% endif %}"{% if current_tab == 'celery_stress_test' %} aria-current="page"{% endif %}>{% trans "Stress Testing" %}</a>
+</nav>
+{% block panel_page_content %}{% endblock %}
+{% endblock %}
