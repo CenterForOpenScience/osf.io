@@ -11,7 +11,11 @@ from osf.models import Registration, SchemaResponse, SchemaResponseAction
 from osf.utils.workflows import ApprovalStates
 
 
-MODERATOR_VISIBLE_STATES = [ApprovalStates.PENDING_MODERATION, ApprovalStates.APPROVED]
+MODERATOR_VISIBLE_STATES = [
+    ApprovalStates.PENDING_MODERATION,
+    ApprovalStates.APPROVED,
+    ApprovalStates.MODERATOR_REJECTED,
+]
 
 
 class SchemaResponseParentPermission:
@@ -20,7 +24,7 @@ class SchemaResponseParentPermission:
     To GET a SchemaResponse (or a subpath), one of three conditions must be met:
       *  The user must have "read" permissions on the parent resource
       *  The user must be a moderator on the parent resource's Provider and the
-         SchemaResponse must be in an APPROVED or PENDING_MODERATION state
+         SchemaResponse must be in an APPROVED, PENDING_MODERATION or MODERATOR_REJECTED state
       *  The SchemaResponse must be APPROVED and the parent resource must be public
 
     For DELETE/PATCH/POST/PUT, the required permission should be added in the

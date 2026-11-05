@@ -339,7 +339,9 @@ class ReactivateInstitution(PermissionRequiredMixin, UpdateView):
         return redirect('institutions:detail', institution_id=institution.id)
 
 
-class CannotDeleteInstitution(TemplateView):
+class CannotDeleteInstitution(PermissionRequiredMixin, TemplateView):
+    permission_required = 'osf.delete_institution'
+    raise_exception = True
     template_name = 'institutions/cannot_delete.html'
 
     def get_context_data(self, **kwargs):

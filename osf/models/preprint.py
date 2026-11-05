@@ -233,6 +233,7 @@ class Preprint(DirtyFieldsMixin, VersionedGuidMixin, IdentifierMixin, Reviewable
 
     identifiers = GenericRelation(Identifier, related_query_name='preprints')
     preprint_doi_created = NonNaiveDateTimeField(default=None, null=True, blank=True)
+    doi_resync_queued_at = NonNaiveDateTimeField(default=None, null=True, blank=True)
     date_withdrawn = NonNaiveDateTimeField(default=None, null=True, blank=True)
     withdrawal_justification = models.TextField(default='', blank=True)
     ever_public = models.BooleanField(default=False, blank=True)
@@ -338,6 +339,9 @@ class Preprint(DirtyFieldsMixin, VersionedGuidMixin, IdentifierMixin, Reviewable
             ('write_preprint', 'Can write the preprint'),
             ('admin_preprint', 'Can manage the preprint'),
         )
+        indexes = [
+            models.Index(fields=['deleted', 'spam_status', 'created'], name='preprint_del_spam_created_idx'),
+        ]
 
     def __unicode__(self):
         return '{} ({} preprint) (guid={}){}'.format(self.title, 'published' if self.is_published else 'unpublished', self._id, ' with supplemental files on ' + self.node.__unicode__() if self.node else '')

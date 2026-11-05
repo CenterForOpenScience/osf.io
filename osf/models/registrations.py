@@ -23,7 +23,7 @@ from osf import features
 from osf.models import Identifier
 from osf.utils.fields import NonNaiveDateTimeField, LowercaseCharField
 from osf.utils.permissions import ADMIN, READ, WRITE
-from osf.exceptions import NodeStateError, DraftRegistrationStateError
+from osf.exceptions import NodeStateError, DraftRegistrationStateError, InvalidTriggerError
 from osf.external.internet_archive.tasks import archive_to_ia, update_ia_metadata
 from osf.metrics.events import RegistriesModerationEvent
 from osf.models.notification_type import NotificationTypeEnum
@@ -764,6 +764,40 @@ class Registration(AbstractNode):
             node.moderation_state = to_state.db_name
             node.save()
 
+    def report_spam_to_support(self, user, comment=''):
+        '''Write a RegistrationAction for a moderator's spam report and email support.
+
+        Doesn't touch the registration itself, report_abuse is the one that flags and hides it.
+
+        :param OSFUser user: The moderator making the report.
+        :param str comment: Text describing why.
+        '''
+        trigger = RegistrationModerationTriggers.REPORT_SPAM.db_name
+        state = RegistrationModerationStates.from_db_name(self.moderation_state)
+        if state in [RegistrationModerationStates.UNDEFINED, RegistrationModerationStates.INITIAL]:
+            raise InvalidTriggerError(trigger, self.moderation_state, valid_triggers=[])
+        # nothing moves, so from_state and to_state are the same
+        action = RegistrationAction.objects.create(
+            target=self,
+            creator=user,
+            trigger=trigger,
+            from_state=state.db_name,
+            to_state=state.db_name,
+            comment=comment,
+        )
+        if waffle.switch_is_active(features.ELASTICSEARCH_METRICS):
+            RegistriesModerationEvent.record(
+                registration_id=self._id,
+                provider_id=self.provider._id,
+                from_state=state.db_name,
+                to_state=state.db_name,
+                trigger=trigger,
+                user_id=user._id,
+                comment=comment,
+            )
+        notify.notify_report_spam(resource=self, user=user, action=action)
+        return action
+
     def _write_registration_action(self, from_state, to_state, initiated_by, comment):
         '''Write a new RegistrationAction on relevant state transitions.'''
         trigger = RegistrationModerationTriggers.from_transition(from_state, to_state)
@@ -1160,6 +1194,25 @@ class DraftRegistration(ObjectIDMixin, RegistrationResponseMixin, DirtyFieldsMix
     @property
     def has_project(self):
         return isinstance(self.branched_from, Node)
+
+    @property
+    def has_active_registration(self):
+        """
+        Check whether this draft has an active registration, so it can no longer be edited.
+        A registration that was deleted or rejected by a moderator is not active: its draft is
+        returned to the contributors for resubmission.
+        """
+        registration = self.registered_node
+        if registration is None:
+            # Not registered yet
+            return False
+        if registration.is_deleted:
+            # Rejected by a contributor or failed to archive
+            return False
+        if registration.moderation_state == RegistrationModerationStates.REJECTED.db_name:
+            # Rejected by a moderator
+            return False
+        return True
 
     @property
     def url(self):

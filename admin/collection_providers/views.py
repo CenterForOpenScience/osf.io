@@ -268,7 +268,9 @@ class DeleteCollectionProvider(PermissionRequiredMixin, DeleteView):
         return CollectionProvider.objects.get(id=self.kwargs['collection_provider_id'])
 
 
-class CannotDeleteProvider(TemplateView):
+class CannotDeleteProvider(PermissionRequiredMixin, TemplateView):
+    permission_required = 'osf.delete_collectionprovider'
+    raise_exception = True
     template_name = 'collection_providers/cannot_delete.html'
 
     def get_context_data(self, **kwargs):

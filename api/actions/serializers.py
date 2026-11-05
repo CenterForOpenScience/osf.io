@@ -211,13 +211,15 @@ class ReviewActionSerializer(BaseActionSerializer):
 
     def create(self, validated_data):
         trigger = validated_data.get('trigger')
-        if trigger != ReviewTriggers.WITHDRAW.value:
+        if trigger not in (ReviewTriggers.WITHDRAW.value, ReviewTriggers.REPORT_SPAM.value):
             return super().create(validated_data)
         user = validated_data.pop('user')
         target = validated_data.pop('target')
         comment = validated_data.pop('comment', '')
         try:
-            return target.run_withdraw(user=user, comment=comment)
+            if trigger == ReviewTriggers.WITHDRAW.value:
+                return target.run_withdraw(user=user, comment=comment)
+            return target.run_report_spam(user=user, comment=comment)
         except InvalidTriggerError as e:
             # Invalid transition from the current state
             raise Conflict(str(e))
@@ -277,6 +279,18 @@ class RegistrationActionSerializer(BaseActionSerializer):
         target = validated_data.pop('target')
         comment = validated_data.pop('comment', '')
         user = validated_data.pop('user')
+
+        if trigger == RegistrationModerationTriggers.REPORT_SPAM.db_name:
+            # moderators only, unlike the rest of the triggers
+            if not user.has_perm('view_submissions', target.provider):
+                raise PermissionDenied('You do not have permission to report this registration as spam.')
+            try:
+                return target.report_spam_to_support(user=user, comment=comment)
+            except InvalidTriggerError:
+                raise Conflict(
+                    'Only submitted registrations can be reported as spam. '
+                    f'This one is in the "{target.moderation_state}" state.',
+                )
 
         sanction = target.sanction
 

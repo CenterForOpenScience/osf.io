@@ -319,7 +319,9 @@ class DeletePreprintProvider(PermissionRequiredMixin, DeleteView):
         return PreprintProvider.objects.get(id=self.kwargs['preprint_provider_id'])
 
 
-class CannotDeleteProvider(TemplateView):
+class CannotDeleteProvider(PermissionRequiredMixin, TemplateView):
+    permission_required = 'osf.delete_preprintprovider'
+    raise_exception = True
     template_name = 'preprint_providers/cannot_delete.html'
 
     def get_context_data(self, **kwargs):

@@ -38,6 +38,7 @@ from osf.models import Email, Node, OSFUser, Preprint, Registration, UserMessage
 from osf.models.user_message import MessageTypes
 from osf.models.provider import AbstractProviderGroupObjectPermission
 from osf.utils.requests import string_type_request_headers
+from osf.utils.workflows import RegistrationModerationStates
 from website import settings, mailchimp_utils
 from website.settings import MAILCHIMP_GENERAL_LIST, OSF_HELP_LIST, CONFIRM_REGISTRATIONS_BY_EMAIL
 from website.util import api_v2_url
@@ -228,7 +229,10 @@ class UserSerializer(JSONAPISerializer):
 
     def get_registration_count(self, obj):
         auth = get_user_auth(self.context['request'])
-        user_registration = default_node_list_queryset(model_cls=Registration).filter(contributor__user__id=obj.id)
+        # registrations rejected by a moderator are not listed
+        user_registration = default_node_list_queryset(model_cls=Registration).filter(
+            contributor__user__id=obj.id,
+        ).exclude(moderation_state=RegistrationModerationStates.REJECTED.db_name)
         return user_registration.can_view(user=auth.user, private_link=auth.private_link).count()
 
     def get_preprint_count(self, obj):

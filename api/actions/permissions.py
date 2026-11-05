@@ -14,6 +14,7 @@ TRIGGER_PERMISSIONS = {
     ReviewTriggers.REJECT.value: 'reject_submissions',
     ReviewTriggers.WITHDRAW.value: 'withdraw_submissions',
     ReviewTriggers.EDIT_COMMENT.value: 'edit_review_comments',
+    ReviewTriggers.REPORT_SPAM.value: 'view_submissions',
 }
 
 

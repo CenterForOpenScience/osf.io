@@ -11,6 +11,8 @@ from website.settings import SENTRY_DSN, VERSION, CeleryConfig
 
 app = Celery()
 app.config_from_object(CeleryConfig)
+# Make this app the fallback for celery.current_app in every thread, not only the importing one
+app.set_default()
 
 if SENTRY_DSN:
     init(
