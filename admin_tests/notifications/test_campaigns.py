@@ -3,6 +3,7 @@ import pytest
 from unittest import mock
 
 from django.contrib.auth.models import Permission
+from django.contrib.contenttypes.models import ContentType
 from django.contrib.messages.storage.fallback import FallbackStorage
 from django.core.exceptions import PermissionDenied
 from django.test import RequestFactory
@@ -16,11 +17,12 @@ from admin.notifications.views import (
     NotificationCampaignDetail,
     NotificationCampaignsList,
     NotificationCampaignsRecipientsPreview,
+    NotificationCampaignsRecipientsView,
     StartNotificationCampaign,
     DeleteNotificationCampaign,
 )
 from admin_tests.utilities import setup_form_view
-from osf.models import NotificationType
+from osf.models import Guid, NotificationType, OSFUser
 from osf.models.notification_campaign import (
     NotificationCampaign,
     NotificationCampaignRecipient,
@@ -36,6 +38,12 @@ def patch_messages(request):
     setattr(request, 'session', 'session')
     messages = FallbackStorage(request)
     setattr(request, '_messages', messages)
+
+
+def _add_primary_guid(user):
+    """Give `user` a second, newer guid, which becomes its primary guid (`user._id`)."""
+    Guid.objects.filter(object_id=user.pk, content_type__model='osfuser').update(created=timezone.now() - timedelta(days=1))
+    return Guid.objects.create(content_type=ContentType.objects.get_for_model(OSFUser), object_id=user.pk)
 
 
 def grant_permission(user, codename):
@@ -408,6 +416,35 @@ class TestNotificationCampaignsRecipientsPreview(AdminTestCase):
         view = NotificationCampaignsRecipientsPreview()
         view.setup(request)
         assert list(view.get_queryset().values_list('id', flat=True)) == [self.contributor.id]
+
+    def test_preview_lists_user_with_several_guids_once(self):
+        primary_guid = _add_primary_guid(self.contributor)
+        filters = {'manual': {'operator': 'AND', 'children': [{'field': 'id', 'lookup': 'exact', 'value': self.contributor.id}]}}
+        request = RequestFactory().get(
+            reverse('notifications:notification_campaigns_recipients_preview'),
+            data={'filters': json.dumps(filters)},
+        )
+        request.user = self.user
+        view = NotificationCampaignsRecipientsPreview()
+        view.setup(request)
+        assert list(view.get_queryset().values_list('id', 'primary_guid')) == [(self.contributor.id, primary_guid._id)]
+
+    def test_recipients_list_lists_user_with_several_guids_once(self):
+        notification_type, _ = NotificationType.objects.get_or_create(
+            name='blank',
+            defaults={'subject': 'Test', 'template': 'Hello'},
+        )
+        campaign = NotificationCampaign.objects.create(name='Campaign', notification_type=notification_type)
+        recipient = NotificationCampaignRecipient.objects.create(campaign=campaign, user=self.contributor)
+        primary_guid = _add_primary_guid(self.contributor)
+        request = RequestFactory().get(
+            reverse('notifications:notification_campaigns_recipients_list'),
+            data={'campaign_id': campaign.id},
+        )
+        request.user = self.user
+        view = NotificationCampaignsRecipientsView()
+        view.setup(request)
+        assert list(view.get_queryset().values_list('id', 'guid')) == [(recipient.id, primary_guid._id)]
 
 
 class TestNotificationCampaignAdminPermissions(AdminTestCase):

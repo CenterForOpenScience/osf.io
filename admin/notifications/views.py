@@ -4,14 +4,14 @@ from collections import defaultdict
 from datetime import datetime, timedelta, timezone as dt_timezone
 from django.urls import reverse_lazy
 from django.utils import timezone
-from django.db.models import Q, F, Subquery
+from django.db.models import Q, OuterRef, Subquery
 from django.db.models.functions import Coalesce
 from django.db import models
 from django.shortcuts import get_object_or_404, redirect
 from django.views.generic import ListView, DetailView, UpdateView, CreateView, View
 from django.contrib import messages
 from django.contrib.auth.mixins import PermissionRequiredMixin
-from osf.models import NotificationSubscription, NotificationType, Notification, EmailTask, NotificationCampaign, OSFUser, NotificationCampaignRecipient
+from osf.models import NotificationSubscription, NotificationType, Notification, EmailTask, NotificationCampaign, OSFUser, NotificationCampaignRecipient, Guid
 from osf.models.notification_campaign import NotificationCampaignStatus, NotificationCampaignRecipientStatus
 from django.forms.models import model_to_dict
 from .forms import NotificationTypeForm, NotificationCampaignCreateForm
@@ -19,7 +19,7 @@ from mako.lexer import Lexer
 from mako.parsetree import ControlLine
 from string import Formatter
 from osf.email import _render_email_html
-from osf.email.notification_campaign import FILTER_PRESETS, counter_subquery, build_campaign_filter_query, get_campaign_recipient_stats
+from osf.email.notification_campaign import FILTER_PRESETS, counter_subquery, primary_guid_subquery, build_campaign_filter_query, get_campaign_recipient_stats
 from website import settings
 from urllib.parse import urlencode
 
@@ -710,7 +710,8 @@ class NotificationCampaignsRecipientsPreview(PermissionRequiredMixin, ListView):
 
         qs = OSFUser.objects.filter(query)
         qs = qs.annotate(
-            guid=F('guids___id'),
+            primary_guid=Subquery(primary_guid_subquery),
+        ).annotate(
             activity_score=Coalesce(Subquery(counter_subquery), 0)
         ).order_by('-activity_score')
 
@@ -755,8 +756,9 @@ class NotificationCampaignsRecipientsView(PermissionRequiredMixin, ListView):
 
         qs = NotificationCampaignRecipient.objects.filter(**query)
 
+        # Same as `primary_guid_subquery`, but for the recipient's user.
         return qs.annotate(
-            guid=F('user__guids___id')
+            guid=Subquery(Guid.objects.filter(content_type__model='osfuser', object_id=OuterRef('user_id')).values('_id')[:1])
         )
 
     def get_context_data(self, **kwargs):
