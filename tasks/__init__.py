@@ -185,47 +185,6 @@ def celery_beat(ctx, level='debug', schedule=None):
     ctx.run(bin_prefix(cmd), pty=True)
 
 @task
-def migrate_search(ctx, delete=True, remove=False, index='website'):
-    """Migrate the search-enabled models."""
-    from website.app import init_app
-    init_app(routes=False, set_backends=False)
-    from website.search_migration.migrate import migrate
-
-    # NOTE: Silence the warning:
-    # "InsecureRequestWarning: Unverified HTTPS request is being made. Adding certificate verification is strongly advised."
-    SILENT_LOGGERS = ['py.warnings']
-    for logger in SILENT_LOGGERS:
-        logging.getLogger(logger).setLevel(logging.ERROR)
-
-    migrate(delete, remove=remove, index=index)
-
-@task
-def rebuild_search(ctx):
-    """Delete and recreate the index for elasticsearch"""
-    from website.app import init_app
-    import requests
-    from website import settings
-
-    init_app(routes=False, set_backends=True)
-    if not settings.ELASTIC_URI.startswith('http'):
-        protocol = 'http://' if settings.DEBUG_MODE else 'https://'
-    else:
-        protocol = ''
-    url = '{protocol}{uri}/{index}'.format(
-        protocol=protocol,
-        uri=settings.ELASTIC_URI.rstrip('/'),
-        index=settings.ELASTIC_INDEX,
-    )
-    print(f'Deleting index {settings.ELASTIC_INDEX}')
-    print(f'----- DELETE {url}*')
-    requests.delete(url + '*')
-    print(f'Creating index {settings.ELASTIC_INDEX}')
-    print(f'----- PUT {url}')
-    requests.put(url)
-    migrate_search(ctx, delete=False)
-
-
-@task
 def mailserver(ctx, port=1025):
     """Run a SMTP test server."""
     cmd = f'python3 -m smtpd -n -c DebuggingServer localhost:{port}'
