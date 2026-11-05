@@ -12,7 +12,6 @@ from datetime import timedelta
 from collections import OrderedDict
 import enum
 
-from framework.celery_task_routes import task_routes
 from celery.schedules import crontab
 
 os_env = os.environ
@@ -549,7 +548,125 @@ class CeleryConfig:
 
         task_default_exchange_type = 'direct'
 
-        task_routes = task_routes
+        task_routes = {
+            # Low-priority tasks
+            'framework.analytics.*': {'queue': 'low'},
+            'framework.celery_tasks.*': {'queue': 'low'},
+            'scripts.osfstorage.usage_audit': {'queue': 'low'},
+            'scripts.stuck_registration_audit': {'queue': 'low'},
+            'scripts.populate_new_and_noteworthy_projects': {'queue': 'low'},
+            'website.search.elastic_search.*': {'queue': 'low'},
+            'scripts.generate_sitemap': {'queue': 'low'},
+            'osf.management.commands.clear_expired_sessions': {'queue': 'low'},
+            'osf.management.commands.restart_stuck_registrations': {'queue': 'low'},
+            'osf.management.commands.delete_withdrawn_or_failed_registration_files': {'queue': 'low'},
+            'osf.management.commands.migrate_pagecounter_data': {'queue': 'low'},
+            'osf.management.commands.migrate_deleted_date': {'queue': 'low'},
+            'osf.management.commands.archive_registrations_on_IA': {'queue': 'low'},
+            'osf.management.commands.sync_doi_metadata': {'queue': 'low'},
+            'osf.management.commands.sync_collection_provider_indices': {'queue': 'low'},
+            'osf.management.commands.sync_datacite_doi_metadata': {'queue': 'low'},
+            'osf.management.commands.populate_branched_from_node': {'queue': 'low'},
+            'osf.management.commands.daily_reporters_go': {'queue': 'low'},
+            'osf.management.commands.monthly_reporters_go': {'queue': 'low'},
+            'osf.management.commands.fetch_cedar_metadata_templates': {'queue': 'low'},
+            'osf.metrics.reporters.*': {'queue': 'low'},
+            'scripts.remove_after_use.merge_notification_subscription_provider_ct': {'queue': 'low'},
+            'management.commands.addon_deleted_date': {'queue': 'low'},
+            'management.commands.daily_reporters_go': {'queue': 'low'},
+            'management.commands.daily_reporter_go': {'queue': 'low'},
+            'management.commands.delete_withdrawn_or_failed_registration_files': {'queue': 'low'},
+            'management.commands.migrate_deleted_date': {'queue': 'low'},
+            'management.commands.migrate_pagecounter_data': {'queue': 'low'},
+            'management.commands.ingest_cedar_metadata_templates': {'queue': 'low'},
+            'management.commands.populate_branched_from': {'queue': 'low'},
+            'osf.management.commands.sync_doi_metadata_command': {'queue': 'low'},
+            'osf.management.commands.sync_preprint_missing_dois': {'queue': 'low'},
+            'osf.management.commands.async_request_identifier_update': {'queue': 'low'},
+            'osf.management.commands.sync_doi_empty_metadata_dataarchive_registrations_command': {'queue': 'low'},
+
+            # Medium-priority tasks
+            'scripts.triggered_mails': {'queue': 'med'},
+            'scripts.triggered_no_login_email': {'queue': 'med'},
+            'website.mailchimp_utils.*': {'queue': 'med'},
+            'notifications.tasks.*': {'queue': 'med'},
+            'website.collections.tasks.*': {'queue': 'med'},
+            'website.identifiers.tasks.*': {'queue': 'med'},
+            'website.preprints.tasks.*': {'queue': 'med'},
+            'website.project.tasks.*': {'queue': 'med'},
+
+            # High-priority tasks
+            'scripts.approve_embargo_terminations': {'queue': 'high'},
+            'scripts.approve_registrations': {'queue': 'high'},
+            'scripts.embargo_registrations': {'queue': 'high'},
+            'scripts.premigrate_created_modified': {'queue': 'high'},
+            'scripts.refresh_addon_tokens': {'queue': 'high'},
+            'scripts.retract_registrations': {'queue': 'high'},
+            'website.archiver.tasks.*': {'queue': 'high'},
+            'scripts.add_missing_identifiers_to_preprints': {'queue': 'high'},
+            'osf.management.commands.approve_pending_schema_responses': {'queue': 'high'},
+            'api.share.utils.*': {'queue': 'high'},
+            'scripts.check_manual_restart_approval': {'queue': 'high'},
+            'scripts.enhanced_stuck_registration_audit': {'queue': 'high'},
+            'scripts.check_manual_restart_approvals_batch': {'queue': 'high'},
+            'scripts.delayed_manual_restart_approval': {'queue': 'high'},
+            'scripts.manual_restart_approval_batch': {'queue': 'high'},
+
+            # Project-ENTER tasks
+            'email.create_campaign_recipients': {'queue': 'project_enter'},
+            'email.start_notification_campaign': {'queue': 'high'},
+            'email.dispatch_campaign': {'queue': 'high'},
+            'email.send_campaign_batch': {'queue': 'project_enter'},
+            'email.process_campaign_retry': {'queue': 'project_enter'},
+
+            # Remote-computing tasks
+            'addons.boa.tasks.submit_to_boa': {'queue': 'remote'},
+
+            # External tasks
+            'osf.tasks.log_gv_addon': {'queue': 'external_high'},
+            'website.identifiers.tasks.task__update_verified_links': {'queue': 'external_high'},
+            'email.process_sendgrid_campaign_events': {'queue': 'external_low'},
+
+            # Default queue tasks
+            'addons.osfstorage.listeners.checkin_files_task': {'queue': 'celery'},
+            'addons.osfstorage.listeners.delete_files_task': {'queue': 'celery'},
+            'addons.osfstorage.utils.update_analytics_async': {'queue': 'celery'},
+            'admin.files.tasks.purge_file_version_task': {'queue': 'celery'},
+            'api.caching.tasks.ban_url': {'queue': 'celery'},
+            'api.caching.tasks.update_storage_usage_cache': {'queue': 'celery'},
+            'api.providers.tasks.bulk_create_registrations': {'queue': 'celery'},
+            'api.providers.tasks.monitor_registration_bulk_upload_jobs': {'queue': 'celery'},
+            'api.providers.tasks.prepare_for_registration_bulk_creation': {'queue': 'celery'},
+            'api.users.tasks.confirm_user_ham': {'queue': 'celery'},
+            'api.users.tasks.merge_users': {'queue': 'celery'},
+            'framework.auth.tasks.update_affiliation_for_orcid_sso_users': {'queue': 'celery'},
+            'framework.auth.tasks.update_user_from_activity': {'queue': 'celery'},
+            'management.commands.correct_registration_moderation_states': {'queue': 'celery'},
+            'management.commands.data_storage_usage': {'queue': 'celery'},
+            'management.commands.deactivate_requested_accounts': {'queue': 'celery'},
+            'management.commands.registration_schema_metrics': {'queue': 'celery'},
+            'osf.external.askismet.tasks.submit_ham': {'queue': 'celery'},
+            'osf.external.askismet.tasks.submit_spam': {'queue': 'celery'},
+            'osf.external.chronos.tasks.update_submissions_status_async': {'queue': 'celery'},
+            'osf.external.internet_archive.tasks._archive_to_ia': {'queue': 'celery'},
+            'osf.external.internet_archive.tasks._create_ia_provider_subcollection': {'queue': 'celery'},
+            'osf.external.internet_archive.tasks._update_ia_metadata': {'queue': 'celery'},
+            'osf.external.spam.tasks.check_resource_for_domains_async': {'queue': 'celery'},
+            'osf.external.spam.tasks.check_resource_for_spam_postcommit': {'queue': 'celery'},
+            'osf.external.spam.tasks.reclassify_domain_references': {'queue': 'celery'},
+            'osf.management.commands.monthly_reporters_go.monthly_reporter_do': {'queue': 'celery'},
+            'osf.management.commands.monthly_reporters_go.monthly_reporters_go': {'queue': 'celery'},
+            'osf.management.commands.monthly_reporters_go.schedule_monthly_reporter': {'queue': 'celery'},
+            'osf.management.commands.reject_pending_collection_submissions': {'queue': 'celery'},
+            'osf.management.commands.reject_pending_node_requests': {'queue': 'celery'},
+            'osf.metrics.events.delete_expired_djelme_indexes': {'queue': 'celery'},
+            'osf.utils.download_telemetry.write_download_event': {'queue': 'celery'},
+            'scripts.disable_removed_beat_tasks': {'queue': 'celery'},
+            'scripts.premigrate_created_modified.run_sql': {'queue': 'celery'},
+            'stress_testing.simulated_workload': {'queue': 'celery'},
+            'stress_testing.start_celery_stress_test': {'queue': 'celery'},
+        }
+
         task_ignore_result = True
         task_store_errors_even_if_ignored = True
         result_extended = True
