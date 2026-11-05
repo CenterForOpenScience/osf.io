@@ -8,7 +8,7 @@ from django.utils import timezone
 
 from framework import sentry
 from framework.celery_tasks import app as celery_app
-from osf.models import Email, OSFUser, UserActivityCounter, Contributor
+from osf.models import Email, Guid, OSFUser, UserActivityCounter, Contributor
 from osf.models.notification_campaign import (
     NotificationCampaign,
     NotificationCampaignRecipient,
@@ -32,9 +32,16 @@ first_email_subquery = (
 )
 
 
+primary_guid_subquery = (
+    Guid.objects
+    .filter(content_type__model='osfuser', object_id=OuterRef('pk'))
+    .values('_id')[:1]
+)
+
+
 counter_subquery = (
     UserActivityCounter.objects
-    .filter(_id=OuterRef('guids___id'))
+    .filter(_id=OuterRef('primary_guid'))
     .values('total')[:1]
 )
 
@@ -118,6 +125,7 @@ def create_campaign_recipients(filters=None, campaign_id=None):
     qs = (
         OSFUser.objects
         .filter(filters)
+        .annotate(primary_guid=Subquery(primary_guid_subquery))
         .annotate(activity_score=Coalesce(Subquery(counter_subquery), 0))
         .values_list(
             'id',

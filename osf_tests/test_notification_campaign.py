@@ -3,6 +3,7 @@ import uuid
 from datetime import timedelta
 from unittest import mock
 
+from django.contrib.contenttypes.models import ContentType
 from django.utils import timezone
 from django.db.models import Q
 
@@ -20,7 +21,7 @@ from osf.email.notification_campaign import (
     start_notification_campaign,
     build_query,
 )
-from osf.models import UserActivityCounter, OSFUser, Contributor
+from osf.models import UserActivityCounter, OSFUser, Contributor, Guid
 from osf.models.notification_campaign import (
     NotificationCampaign,
     NotificationCampaignRecipient,
@@ -421,6 +422,22 @@ class TestCreateCampaignRecipients:
         assert recipients[low.id] == 50
         assert recipients[zero.id] == 0
         assert NotificationCampaignRecipient.objects.filter(campaign=campaign).count() == 3
+
+    def test_user_with_several_guids_is_created_once(self, campaign):
+        user = UserFactory()
+        old_guid = user.guids.get()
+        Guid.objects.filter(id=old_guid.id).update(created=timezone.now() - timedelta(days=1))
+        # Inserted last but created latest, so it is the primary guid (`user._id`).
+        primary_guid = Guid.objects.create(content_type=ContentType.objects.get_for_model(OSFUser), object_id=user.pk)
+        UserActivityCounter.objects.create(_id=old_guid._id, total=5)
+        UserActivityCounter.objects.create(_id=primary_guid._id, total=70)
+
+        create_campaign_recipients(Q(id=user.id), campaign_id=campaign.id)
+
+        recipients = NotificationCampaignRecipient.objects.filter(campaign=campaign)
+        assert [(r.user_id, r.activity_score) for r in recipients] == [(user.id, 70)]
+        campaign.refresh_from_db()
+        assert campaign.recipient_count == 1
 
     def test_respects_user_filters(self, campaign):
         included = UserFactory(is_staff=True)
