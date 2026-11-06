@@ -188,7 +188,10 @@ MAILHOG_API_HOST = 'http://mailhog:8025'
 
 # OR, if using Sendgrid's API
 # WARNING: If `SENDGRID_WHITELIST_MODE` is True,
+# API key of either the primary/default SendGrid user or a different sub-suer, both without Event Webhook enabled
 SENDGRID_API_KEY = None
+# API key of the SendGrid sub-user with Event Webhook enabled
+SENDGRID_API_KEY_WITH_WEBHOOK = None
 # Public verification key from SendGrid Event Webhook (Mail Settings -> Event Webhook -> Signed Event Webhook)
 SENDGRID_EVENT_WEBHOOK_PUBLIC_KEY = None
 
@@ -216,10 +219,17 @@ NOTIFICATION_CAMPAIGN_RECIPIENTS_CLEANUP_BATCH_SIZE = 5000  # Batch size for not
 # Notification campaign execution defaults (overridable per campaign in admin metadata)
 DEFAULT_CAMPAIGN_ACTIVITY_THRESHOLD = 3  # Users at/above this activity total are scheduled in the high-activity phase
 DEFAULT_CAMPAIGN_BATCH_SIZE = 1000
+# Execution defaults applied in admin when "SendGrid Bulk" is selected. A bulk batch is a single SendGrid Mail Send
+# request (max 1000 personalizations), and batches finish within seconds, so each dispatch sends up to
+# `max_queued_batches` requests at once: 10 requests x 1000 recipients every 60s = ~10k emails/minute. Bursts are
+# kept small to avoid SendGrid 429 rate limiting; tune per SendGrid plan.
+DEFAULT_CAMPAIGN_BULK_BATCH_SIZE = 1000
+DEFAULT_CAMPAIGN_BULK_MAX_QUEUED_BATCHES = 10
+DEFAULT_CAMPAIGN_BULK_DISPATCH_INTERVAL = 60
 DEFAULT_CAMPAIGN_WINDOW_TIME = 28800  # 8 hours
 DEFAULT_CAMPAIGN_MAX_RETRIES = 3
-DEFAULT_CAMPAIGN_DELIVERY_TIMEOUT = 86400  # 24 hours; mark remaining QUEUED as FAILED after this from started_at
-MAX_QUEUED_CAMPAIGN_BATCHES = 100  # Maximum number of queued campaign batches allowed before new batches are rejected. This is to prevent runaway campaigns from overwhelming the system.
+DEFAULT_CAMPAIGN_DELIVERY_TIMEOUT = 86400  # 24 hours; mark remaining QUEUED and AWAITING_DELIVERY as FAILED after this from started_at
+MAX_QUEUED_CAMPAIGN_BATCHES = 100  # Max QUEUED (Celery send in flight) batches before new batches are held back. AWAITING_DELIVERY (webhook pending) does not count.
 CAMPAIGN_DISPATCH_INTERVAL = 300  # 5 min (300 sec), minimum time before checking and dispatching new campaign batches.
 # The following are rough estimates so we can log to sentry those batches and sendgrid quests which run longer than normal
 ESTIMATED_PER_REQUEST_THRESHOLD = 0.3  # On production, sending one email via SendGrid takes 0.20 ~ 0.50 seconds, set default alert threshold at 0.30s

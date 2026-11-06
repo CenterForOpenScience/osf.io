@@ -4,6 +4,7 @@ import json
 import logging
 import importlib
 import sys
+from functools import cache
 from html import unescape
 from typing import Optional
 from mako.template import Template as MakoTemplate
@@ -285,7 +286,22 @@ def _build_sendgrid_personalizations(to_list, email_context=None, is_multiple=Fa
     ]
 
 
-def send_email_with_send_grid(to_addr, notification_type, context, email_context=None, *, is_multiple=False, rendered_html=None):
+@cache
+def _sendgrid_client(api_key):
+    return SendGridAPIClient(api_key)
+
+
+def get_sendgrid_client(use_webhook=False):
+    """Return a per-process cached SendGrid client.
+
+    When ``use_webhook`` is True, the client authenticates as the sub-user with Event Webhook enabled
+    (``SENDGRID_API_KEY_WITH_WEBHOOK``), otherwise as the default user (``SENDGRID_API_KEY``).
+    """
+    api_key = settings.SENDGRID_API_KEY_WITH_WEBHOOK if use_webhook else None
+    return _sendgrid_client(api_key or settings.SENDGRID_API_KEY)
+
+
+def send_email_with_send_grid(to_addr, notification_type, context, email_context=None, *, is_multiple=False, rendered_html=None, client=None):
 
     email_context = email_context or {}
     to_list = [to_addr] if isinstance(to_addr, str) else [a for a in (to_addr or []) if a]
@@ -337,7 +353,7 @@ def send_email_with_send_grid(to_addr, notification_type, context, email_context
 
             payload['attachments'] = [item]
     try:
-        sg = SendGridAPIClient(settings.SENDGRID_API_KEY)
+        sg = client or SendGridAPIClient(settings.SENDGRID_API_KEY)
         resp = sg.client.mail.send.post(request_body=payload)
         if resp.status_code not in (200, 201, 202):
             logging.error(
@@ -380,9 +396,10 @@ def send_email_with_send_grid(to_addr, notification_type, context, email_context
             logging.error('SendGrid hit a blocked socket error: %r | payload=%s', exc, payload)
         raise
 
-def send_email(recipient_address, notification_type, event_context=None, email_context=None, rendered_html=None):
+def send_email(recipient_address, notification_type, event_context=None, email_context=None, rendered_html=None, client=None):
     """
     Send an email using either SMTP or SendGrid based on settings and feature flags.
+    ``client`` is an optional SendGrid client to reuse; a default one is created per call otherwise.
     """
     if waffle.switch_is_active(features.ENABLE_MAILHOG):
         send_email_over_smtp(
@@ -400,6 +417,7 @@ def send_email(recipient_address, notification_type, event_context=None, email_c
             event_context,
             email_context,
             rendered_html=rendered_html,
+            client=client,
         )
 
     if settings.LOCAL_MODE and not waffle.switch_is_active(features.ENABLE_MAILHOG):
