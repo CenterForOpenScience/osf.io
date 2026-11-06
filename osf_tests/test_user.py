@@ -47,8 +47,8 @@ from framework.auth.core import Auth
 from osf.utils.names import impute_names_model
 from osf.utils import permissions
 from osf.exceptions import (
-    ValidationError, BlockedEmailError, UserStateError, InstitutionAffiliationStateError,
-    OrcidRevocationError, OrcidTokenMissingError,
+    ValidationError, BlockedEmailError, UserStateError, InstitutionAffiliationStateError, OrcidRevocationError,
+    OrcidTokenMissingError,
 )
 from osf.features import ENABLE_GV
 
@@ -1758,8 +1758,9 @@ class TestRemoveExternalIdentity(OsfTestCase):
             'ORCID': {'0000-0000-0000-0001': {'access_token': 'fake-token'}},
         }
 
-    @mock.patch('osf.models.user.requests.post')
-    def test_remove_external_identity_revokes_token_and_unlinks(self, mock_post):
+    @mock.patch('osf.models.user.requests_retry_session')
+    def test_remove_external_identity_revokes_token_and_unlinks(self, mock_retry_session):
+        mock_post = mock_retry_session.return_value.post
         mock_post.return_value = mock.Mock(status_code=200)
 
         self.user.remove_external_identity('ORCID', '0000-0000-0000-0001')
@@ -1770,8 +1771,9 @@ class TestRemoveExternalIdentity(OsfTestCase):
         mock_post.assert_called_once()
         assert mock_post.call_args.kwargs['data']['token'] == 'fake-token'
 
-    @mock.patch('osf.models.user.requests.post')
-    def test_remove_external_identity_kills_sessions(self, mock_post):
+    @mock.patch('osf.models.user.requests_retry_session')
+    def test_remove_external_identity_kills_sessions(self, mock_retry_session):
+        mock_post = mock_retry_session.return_value.post
         mock_post.return_value = mock.Mock(status_code=200)
 
         session = SessionStore()
@@ -1783,8 +1785,9 @@ class TestRemoveExternalIdentity(OsfTestCase):
 
         assert not SessionStore().exists(session_key=session.session_key)
 
-    @mock.patch('osf.models.user.requests.post')
-    def test_remove_external_identity_fails_when_revoke_fails(self, mock_post):
+    @mock.patch('osf.models.user.requests_retry_session')
+    def test_remove_external_identity_fails_when_revoke_fails(self, mock_retry_session):
+        mock_post = mock_retry_session.return_value.post
         mock_post.side_effect = requests.exceptions.ConnectionError('boom')
 
         session = SessionStore()
@@ -1801,8 +1804,9 @@ class TestRemoveExternalIdentity(OsfTestCase):
         }
         assert SessionStore().exists(session_key=session.session_key)
 
-    @mock.patch('osf.models.user.requests.post')
-    def test_remove_external_identity_fails_when_orcid_token_missing(self, mock_post):
+    @mock.patch('osf.models.user.requests_retry_session')
+    def test_remove_external_identity_fails_when_orcid_token_missing(self, mock_retry_session):
+        mock_post = mock_retry_session.return_value.post
         self.user.external_identity_tokens = {}
         self.user.save()
 
@@ -1812,15 +1816,17 @@ class TestRemoveExternalIdentity(OsfTestCase):
         mock_post.assert_not_called()
         assert self.user.external_identity == {'ORCID': {'0000-0000-0000-0001': 'VERIFIED'}}
 
-    @mock.patch('osf.models.user.requests.post')
-    def test_remove_external_identity_revoke_failure_raises_orcid_revocation_error(self, mock_post):
+    @mock.patch('osf.models.user.requests_retry_session')
+    def test_remove_external_identity_revoke_failure_raises_orcid_revocation_error(self, mock_retry_session):
+        mock_post = mock_retry_session.return_value.post
         mock_post.side_effect = requests.exceptions.ConnectionError('boom')
 
         with pytest.raises(OrcidRevocationError):
             self.user.remove_external_identity('ORCID', '0000-0000-0000-0001')
 
-    @mock.patch('osf.models.user.requests.post')
-    def test_remove_external_identity_sets_usable_password_when_only_login_method(self, mock_post):
+    @mock.patch('osf.models.user.requests_retry_session')
+    def test_remove_external_identity_sets_usable_password_when_only_login_method(self, mock_retry_session):
+        mock_post = mock_retry_session.return_value.post
         mock_post.return_value = mock.Mock(status_code=200)
         self.user.set_unusable_password()
         self.user.save()
@@ -1832,8 +1838,9 @@ class TestRemoveExternalIdentity(OsfTestCase):
         assert self.user.has_usable_password()
         assert self.user.is_active
 
-    @mock.patch('osf.models.user.requests.post')
-    def test_remove_external_identity_keeps_existing_password(self, mock_post):
+    @mock.patch('osf.models.user.requests_retry_session')
+    def test_remove_external_identity_keeps_existing_password(self, mock_retry_session):
+        mock_post = mock_retry_session.return_value.post
         mock_post.return_value = mock.Mock(status_code=200)
         self.user.set_password('a-Strong-pa55word!', notify=False)
         self.user.save()
@@ -1848,7 +1855,8 @@ class TestRemoveExternalIdentity(OsfTestCase):
         self.user.external_identity_tokens['ORCID']['0000-0000-0000-0002'] = {'access_token': 'other-token'}
         self.user.save()
 
-        with mock.patch('osf.models.user.requests.post', return_value=mock.Mock(status_code=200)):
+        with mock.patch('osf.models.user.requests_retry_session') as mock_retry_session:
+            mock_retry_session.return_value.post.return_value = mock.Mock(status_code=200)
             self.user.remove_external_identity('ORCID', '0000-0000-0000-0001')
         self.user.save()
 
@@ -2812,7 +2820,7 @@ class TestSaveExternalIdentityTokens:
         assert user.external_identity_tokens == {}
 
 
-class TestDisconnectExternalIdentity:
+class TestRemoveExternalIdentityOrcid:
 
     @pytest.fixture()
     def user(self):
@@ -2833,7 +2841,7 @@ class TestDisconnectExternalIdentity:
         mock_session.post.return_value = mock.Mock(status_code=200, text='')
         mock_retry_session.return_value = mock_session
 
-        user.disconnect_external_identity('ORCID', 'fake-orcid-id')
+        user.remove_external_identity('ORCID', 'fake-orcid-id')
         user.save()
 
         mock_retry_session.assert_called_once_with(
@@ -2857,7 +2865,7 @@ class TestDisconnectExternalIdentity:
         mock_retry_session.return_value = mock_session
 
         with pytest.raises(OrcidRevocationError):
-            user.disconnect_external_identity('ORCID', 'fake-orcid-id')
+            user.remove_external_identity('ORCID', 'fake-orcid-id')
 
         assert user.external_identity['ORCID'] == {'fake-orcid-id': 'VERIFIED'}
         assert user.external_identity_tokens['ORCID'] == {'fake-orcid-id': {'access_token': 'fake-orcid-token'}}
@@ -2866,23 +2874,31 @@ class TestDisconnectExternalIdentity:
 
     def test_disconnect_non_orcid_identity_does_not_call_orcid_api(self, user):
         with mock.patch('osf.models.user.requests_retry_session') as mock_retry_session:
-            user.disconnect_external_identity('LOTUS', 'fake-lotus-id')
+            user.remove_external_identity('LOTUS', 'fake-lotus-id')
             user.save()
 
         mock_retry_session.assert_not_called()
         assert 'LOTUS' not in user.external_identity
         assert user.external_identity['ORCID'] == {'fake-orcid-id': 'VERIFIED'}
 
-    def test_disconnect_orcid_without_stored_token_skips_revoke_call(self, user):
+    def test_disconnect_orcid_without_stored_token_fails_and_keeps_identity(self, user):
         user.external_identity_tokens = {}
         user.save()
 
         with mock.patch('osf.models.user.requests_retry_session') as mock_retry_session:
-            user.disconnect_external_identity('ORCID', 'fake-orcid-id')
-            user.save()
+            with pytest.raises(OrcidTokenMissingError):
+                user.remove_external_identity('ORCID', 'fake-orcid-id')
 
         mock_retry_session.assert_not_called()
-        assert 'ORCID' not in user.external_identity
+        assert user.external_identity['ORCID'] == {'fake-orcid-id': 'VERIFIED'}
+
+    def test_disconnect_does_not_remove_sessions_when_disabled(self, user):
+        with mock.patch('osf.models.user.requests_retry_session') as mock_retry_session, \
+                mock.patch('osf.models.user.remove_sessions_for_user') as mock_remove_sessions:
+            mock_retry_session.return_value.post.return_value = mock.Mock(status_code=200, text='')
+            user.remove_external_identity('ORCID', 'fake-orcid-id', remove_sessions=False)
+
+        mock_remove_sessions.assert_not_called()
 
     def test_disconnect_orcid_then_gdpr_delete_does_not_raise(self, user):
         with mock.patch('osf.models.user.requests_retry_session') as mock_retry_session:
@@ -2890,7 +2906,7 @@ class TestDisconnectExternalIdentity:
             mock_session.post.return_value = mock.Mock(status_code=200, text='')
             mock_retry_session.return_value = mock_session
 
-            user.disconnect_external_identity('ORCID', 'fake-orcid-id')
+            user.remove_external_identity('ORCID', 'fake-orcid-id')
             user.save()
 
         # No ORCiD connection left -- GDPR delete's revoke check should just skip, not raise.
