@@ -314,6 +314,12 @@
                   </ul>
               </div>
           {% endif %}
+          {% if perms.osf.view_guid %}
+            <li><a href="{% url 'guids:search' %}"><i class='fa fa-search'></i> <span>Guids</span></a></li>
+          {% endif %}
+          {% if perms.osf.view_adminlogentry %}
+            <li><a href="{% url 'admin_log:list' %}"><i class='fa fa-list'></i> <span>Admin Log</span></a></li>
+          {% endif %}
           {% if perms.osf.view_metrics %}
             <li><a href="{% url 'metrics:metrics' %}"><i class='fa fa-link'></i> <span>Metrics</span></a></li>
           {% endif %}
