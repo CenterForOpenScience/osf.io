@@ -8,23 +8,33 @@ from django.views.generic import FormView, TemplateView, View
 
 from admin.base.forms import GuidForm
 from admin.guids.forms import ReassignGuidForm
-from osf.models import AbstractNode, Collection, Guid, OSFUser
+from osf.models import AbstractNode, BaseFileNode, Collection, Guid, OSFUser, Preprint
 from osf.models.admin_log_entry import REMOVE_GUID, update_admin_log
-from osf.models.base import GuidReassignError, reassign_guid
+from osf.models.base import GuidReassignError, guid_reassign_blocker, reassign_guid
 
 
 def get_referent_admin_url(referent):
     """Admin page of the object a guid points to, or None if it has no admin page."""
     if isinstance(referent, OSFUser):
         return reverse('users:user', kwargs={'guid': referent._id})
-    if isinstance(referent, AbstractNode):
+    if isinstance(referent, AbstractNode):  # nodes and registrations share one admin page
         return reverse('nodes:node', kwargs={'guid': referent._id})
+    if isinstance(referent, Preprint):
+        return reverse('preprints:preprint', kwargs={'guid': referent._id})
+    if isinstance(referent, BaseFileNode) and referent.target is not None:
+        return get_referent_admin_url(referent.target)  # files have no admin page of their own
     return None
 
 
 def describe_referent(referent):
     if isinstance(referent, Collection) and referent.is_bookmark_collection:
         return f'Bookmark collection (owner: {referent.creator._id})'
+    if isinstance(referent, BaseFileNode):
+        target = referent.target
+        target_id = getattr(target, '_id', None)
+        return f'File {referent.materialized_path or referent.name} ({referent.provider}) of {type(target).__name__} {target_id}'
+    if isinstance(referent, Preprint):
+        return f'Preprint {referent._id} "{referent.title}"'
     return f'{type(referent).__name__} {referent.pk}'
 
 
@@ -49,11 +59,14 @@ class GuidDetailView(PermissionRequiredMixin, TemplateView):
         if guid is None:
             raise Http404(f'Guid not found: {self.kwargs["guid"]}')
         referent = guid.referent
+        reassign_blocker = guid_reassign_blocker(referent) if referent is not None else None
         kwargs.update({
             'guid': guid,
             'referent': referent,
             'referent_description': describe_referent(referent) if referent is not None else None,
             'referent_url': get_referent_admin_url(referent) if referent is not None else None,
+            'reassign_blocker': reassign_blocker,
+            'can_reassign': referent is not None and reassign_blocker is None,
             'form': ReassignGuidForm(),
         })
         return super().get_context_data(**kwargs)

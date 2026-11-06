@@ -58,6 +58,40 @@ class TestGuidDetailView(AdminTestCase):
         assert response.context_data['referent_url'] == reverse('nodes:node', kwargs={'guid': node._id})
 
 
+class TestGuidDetailViewReferents(AdminTestCase):
+    def _get(self, guid):
+        request = RequestFactory().get('/fake')
+        request.user = user_in_group('remove_guid')
+        return GuidDetailView.as_view()(request, guid=guid)
+
+    def test_preprint_is_found_but_not_reassignable(self):
+        from osf_tests.factories import PreprintFactory
+        preprint = PreprintFactory()
+        response = self._get(preprint.get_guid()._id)
+        assert response.context_data['referent_url'] == reverse('preprints:preprint', kwargs={'guid': preprint._id})
+        assert response.context_data['can_reassign'] is False
+        assert response.context_data['reassign_blocker']
+
+    def test_registration_is_found_but_not_reassignable(self):
+        from osf_tests.factories import RegistrationFactory
+        registration = RegistrationFactory()
+        response = self._get(registration._id)
+        assert response.context_data['referent_url'] == reverse('nodes:node', kwargs={'guid': registration._id})
+        assert response.context_data['can_reassign'] is False
+
+    def test_file_links_to_target_and_is_reassignable(self):
+        node = NodeFactory()
+        file = node.get_addon('osfstorage').get_root().append_file('f.txt')
+        guid = file.get_guid(create=True)._id
+        response = self._get(guid)
+        assert response.context_data['referent_url'] == reverse('nodes:node', kwargs={'guid': node._id})
+        assert response.context_data['can_reassign'] is True
+
+    def test_node_is_reassignable(self):
+        response = self._get(NodeFactory()._id)
+        assert response.context_data['can_reassign'] is True
+
+
 class TestGuidReassignView(AdminTestCase):
     def setUp(self):
         super().setUp()

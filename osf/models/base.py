@@ -58,16 +58,34 @@ class GuidReassignError(ValueError):
     pass
 
 
+def guid_reassign_blocker(referent):
+    from osf.models import AbstractNode, BaseFileNode, Collection, OSFUser, Registration
+    from osf.models.identifiers import IdentifierMixin
+
+    if isinstance(referent, VersionedGuidMixin):
+        return 'Guids of preprints cannot be reassigned because they always have DOIs.'
+    if isinstance(referent, Registration):
+        return 'Guids of registrations cannot be reassigned because they have DOIs.'
+    if not isinstance(referent, (AbstractNode, OSFUser, Collection, BaseFileNode)):
+        return f'Guids of {type(referent).__name__} objects cannot be reassigned.'
+    if isinstance(referent, IdentifierMixin) and referent.all_identifiers().filter(category='doi').exists():
+        return 'This guid cannot be reassigned because the object has a DOI.'
+    return None
+
+
 def reassign_guid(guid):
     """Give the object behind ``guid`` a new guid and free the old id string.
 
     The ``Guid`` row is repointed (not deleted) so rows that reference it, such as collection
-    submissions and metadata records, are kept. Preprints are not supported.
+    submissions and metadata records, are kept. Preprints and registrations are not supported,
+    since they have DOIs. After commit the object is reindexed under its new guid and the
+    SHARE records stored under the old guid are deleted.
 
     :param guid: ``Guid`` instance or guid string
     :return: ``(old_id, new_id, referent)``
     """
-    from osf.models import AbstractNode, Collection, OSFUser
+    from osf.models import AbstractNode, OSFUser
+    from api.share.utils import update_share_after_guid_reassign
     from website.search import search
 
     guid_str = guid._id if isinstance(guid, Guid) else guid
@@ -78,8 +96,9 @@ def reassign_guid(guid):
         referent = guid_obj.referent
         if referent is None:
             raise GuidReassignError(f'Guid "{guid_str}" has no object attached to it.')
-        if isinstance(referent, VersionedGuidMixin) or not isinstance(referent, (AbstractNode, OSFUser, Collection)):
-            raise GuidReassignError(f'Guids of {type(referent).__name__} objects cannot be reassigned.')
+        blocker = guid_reassign_blocker(referent)
+        if blocker:
+            raise GuidReassignError(blocker)
 
         old_id = guid_obj._id
         new_id = generate_guid()
@@ -92,6 +111,7 @@ def reassign_guid(guid):
             transaction.on_commit(lambda: search.update_node(referent))
         elif isinstance(referent, OSFUser):
             transaction.on_commit(lambda: search.update_user(referent))
+        transaction.on_commit(lambda: update_share_after_guid_reassign(referent, old_id))
     return old_id, new_id, referent
 
 

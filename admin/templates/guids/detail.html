@@ -33,7 +33,7 @@
                 </tr>
             </tbody>
         </table>
-        {% if perms.osf.remove_guid and referent_description %}
+        {% if perms.osf.remove_guid and can_reassign %}
             <a data-toggle="modal" data-target="#reassignGuid" class="btn btn-danger">Remove and reassign guid</a>
             <div class="modal" id="reassignGuid">
                 <div class="modal-dialog">
@@ -71,6 +71,8 @@
                     </div>
                 </div>
             </div>
+        {% elif perms.osf.remove_guid and reassign_blocker %}
+            <p class="text-muted">{{ reassign_blocker }}</p>
         {% endif %}
     </div>
 {% endblock content %}
