@@ -77,7 +77,7 @@ def get_permissions(user, resource):
 
 @register.simple_tag
 def get_spam_status(resource):
-    if getattr(resource, 'is_assumed_ham', None):
+    if resource.spam_status == SpamStatus.UNKNOWN and getattr(resource, 'is_assumed_ham', None):
         return mark_safe('<span class="label label-default">(assumed Ham)</span>')
 
     if resource.spam_status == SpamStatus.UNKNOWN:

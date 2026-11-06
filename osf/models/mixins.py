@@ -2452,7 +2452,7 @@ class SpamOverrideMixin(SpamMixin):
         and we don't need to spam it but for some cases we want to manually call this method with self spamming.
         """
         domains = domains or []
-        if user.is_hammy:
+        if user.is_protected_from_auto_spam:
             return False
 
         self.flag_spam(skip_user_suspension=True)

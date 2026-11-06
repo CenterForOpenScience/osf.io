@@ -9,6 +9,7 @@ from flask import g
 from addons.wiki.tests.factories import WikiVersionFactory
 from osf.external.spam import tasks as spam_tasks
 from osf.models import (
+    OSFUser,
     NotableDomain,
     DomainReference,
     SpamStatus,
@@ -541,3 +542,60 @@ class TestNotableDomainReclassification:
         obj_two.reload()
         assert obj_two.spam_status == SpamStatus.SPAM
         assert set(obj_two.spam_data['domains']) == {self.ignored_domain.netloc}
+
+
+@pytest.mark.django_db
+class TestReclassificationSkipsProtectedUsers:
+
+    @pytest.fixture()
+    def excluded_domain(self):
+        return NotableDomain.objects.create(domain='newly-excluded.io', note=NotableDomain.Note.UNKNOWN)
+
+    def _reference(self, user, domain):
+        return DomainReference.objects.create(
+            referrer_content_type=ContentType.objects.get_for_model(user),
+            referrer_object_id=user.pk,
+            domain=domain,
+        )
+
+    def _exclude(self, domain):
+        spam_tasks.reclassify_domain_references(
+            domain.pk,
+            NotableDomain.Note.EXCLUDE_FROM_ACCOUNT_CREATION_AND_CONTENT,
+            NotableDomain.Note.UNKNOWN,
+        )
+
+    def test_assumed_ham_user_not_banned(self, excluded_domain):
+        NotableDomain.objects.create(domain='trusted.edu', note=NotableDomain.Note.ASSUME_HAM_UNTIL_REPORTED)
+        user = UserFactory()
+        user.emails.create(address='someone@trusted.edu')
+        self._reference(user, excluded_domain)
+        self._exclude(excluded_domain)
+        user.refresh_from_db()
+        assert not user.is_spammy
+        assert not user.is_disabled
+
+    def test_flagged_assumed_ham_user_not_banned(self, excluded_domain):
+        NotableDomain.objects.create(domain='trusted.edu', note=NotableDomain.Note.ASSUME_HAM_UNTIL_REPORTED)
+        user = UserFactory()
+        user.emails.create(address='someone@trusted.edu')
+        OSFUser.objects.filter(pk=user.pk).update(spam_status=SpamStatus.FLAGGED)
+        self._reference(user, excluded_domain)
+        self._exclude(excluded_domain)
+        user.refresh_from_db()
+        assert user.spam_status == SpamStatus.FLAGGED
+
+    def test_ham_user_not_banned(self, excluded_domain):
+        user = UserFactory()
+        user.confirm_ham(save=True)
+        self._reference(user, excluded_domain)
+        self._exclude(excluded_domain)
+        user.refresh_from_db()
+        assert user.is_ham
+
+    def test_plain_user_is_banned(self, excluded_domain):
+        user = UserFactory()
+        self._reference(user, excluded_domain)
+        self._exclude(excluded_domain)
+        user.refresh_from_db()
+        assert user.is_spam
