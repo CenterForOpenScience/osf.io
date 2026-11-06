@@ -24,6 +24,15 @@ def generate_users(prefix, suffix, domain, total, start=1):
         for i in range(start, total + start)
     }
 
+def generate_users_for_enter_black_hole(prefix, domain, total, start=1):
+    """Generate usernames paired with full names: "enterNNNN@osf.io"
+    """
+    if start + total > 9999:
+        raise Exception(f'The max numbered user cannot be greater than 9999: start({start}) + total({total}) = {start + total}!')
+    return {
+        f'{prefix}{str(i).zfill(4)}@{domain}': f'{prefix}{str(i).zfill(4)} {prefix}{str(i).zfill(4)}'
+        for i in range(start, total + start)
+    }
 
 def create_confirmed_test_users(
         prefix,
@@ -35,13 +44,17 @@ def create_confirmed_test_users(
         set_activity=True,
         no_email=False,
         flagged=False,
-        dry_run=False
+        dry_run=False,
+        enter_black_hole=False
 ):
     """Create a given number of confirmed users, with generated usernames and full names. For each created user,
     optionally creates a matching UserActivityCounter entry with a random total between 1 and 100.
     """
     created_user_ids = []
-    username_to_fullname = generate_users(prefix, suffix, domain, total, start)
+    if enter_black_hole:
+        username_to_fullname = generate_users_for_enter_black_hole(prefix, domain, total, start)
+    else:
+        username_to_fullname = generate_users(prefix, suffix, domain, total, start)
 
     for raw_username, fullname in username_to_fullname.items():
         username = raw_username.lower().strip()
@@ -151,6 +164,12 @@ class Command(BaseCommand):
             dest='dry_run',
             help='Dry run; log what would happen without creating any users',
         )
+        parser.add_argument(
+            '--black-hole',
+            action='store_true',
+            dest='enter_black_hole',
+            help='ENTER Black Hole: create users to be filtered by enter black hole in mail gun',
+        )
 
     def handle(self, *args, **options):
         prefix = options.get('prefix')
@@ -163,6 +182,7 @@ class Command(BaseCommand):
         no_email = options.get('no_email', False)
         flagged = options.get('flagged', False)
         dry_run = options.get('dry_run', False)
+        enter_black_hole = options.get('enter_black_hole', False)
 
         if dry_run:
             logger.info('This is a dry run; no users will be created.')
@@ -179,4 +199,5 @@ class Command(BaseCommand):
                 no_email=no_email,
                 flagged=flagged,
                 dry_run=dry_run,
+                enter_black_hole=enter_black_hole
             )
