@@ -176,6 +176,7 @@
                         {% endif %}
                     </td>
                 </tr>
+                {% include "users/external_identities.html" with user=user external_identities=external_identities %}
                 {% include "users/two_factor.html" with user=user %}
 
                 <tr>

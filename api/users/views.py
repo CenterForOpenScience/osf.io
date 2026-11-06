@@ -1236,6 +1236,10 @@ class ConfirmEmailView(generics.CreateAPIView):
 
     On success returns a response with a 201 status code with a JSONAPI payload that includes the `redirect_url`
     attribute.
+
+    TODO: This view is inactive / future, has not been tested, and may not work as expected. It should not handle
+    external identities at all; ``ExternalLoginConfirmEmailView`` is the view meant for ORCiD SSO confirmation.
+    To be updated / fixed in the Legacy Code Removal project.
     """
     permission_classes = (
         base_permissions.TokenHasScope,
@@ -1249,7 +1253,10 @@ class ConfirmEmailView(generics.CreateAPIView):
     serializer_class = ConfirmEmailTokenSerializer
 
     def _process_external_identity(self, user, external_identity, service_url):
-        """Handle all external_identity logic, including task enqueueing and url updates."""
+        """Handle all external_identity logic, including task enqueueing and url updates.
+
+        TODO: Inactive / future and untested; see the note on ``ConfirmEmailView``.
+        """
         provider = next(iter(external_identity))
         if provider not in user.external_identity:
             raise ValidationError('External-ID provider mismatch.')
@@ -1258,6 +1265,7 @@ class ConfirmEmailView(generics.CreateAPIView):
         ensure_external_identity_uniqueness(provider, provider_id, user)
         external_status = user.external_identity[provider][provider_id]
         user.external_identity[provider][provider_id] = 'VERIFIED'
+        user.record_external_identity_connected(provider, provider_id)
 
         if external_status == 'CREATE':
             service_url += '&' + urlencode({'new': 'true'})
@@ -1573,6 +1581,7 @@ class ExternalLoginConfirmEmailView(generics.CreateAPIView):
 
         user.date_last_logged_in = timezone.now()
         user.external_identity[provider][provider_id] = 'VERIFIED'
+        user.record_external_identity_connected(provider, provider_id)
         del user.email_verifications[token]
         user.verification_key = generate_verification_key()
         user.save()
