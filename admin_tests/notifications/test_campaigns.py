@@ -477,6 +477,22 @@ class TestNotificationCampaignAdminPermissions(AdminTestCase):
         response = DeleteNotificationCampaign.as_view()(request, pk=self.campaign.pk)
         assert response.status_code == 302
 
+
+class TestNotificationCampaignProgressManagement(AdminTestCase):
+
+    def setUp(self):
+        super().setUp()
+        self.user = AuthUserFactory()
+        self.notification_type, _ = NotificationType.objects.get_or_create(
+            name='blank',
+            defaults={'subject': 'Test', 'template': 'Hello'},
+        )
+        self.campaign = NotificationCampaign.objects.create(
+            name='Campaign',
+            notification_type=self.notification_type,
+            metadata={'filters': {}, 'context': {}, 'execution': {}},
+        )
+
     def _detail_context(self):
         grant_permission(self.user, 'change_notificationcampaign')
         request = RequestFactory().get(
