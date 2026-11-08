@@ -24,15 +24,31 @@ logger = logging.getLogger(__name__)
 
 @celery_app.task(bind=True, base=NotificationCampaignTask, name='email.process_campaign_retry')
 def process_campaign_retry(self, campaign_id, run_id, use_sendgrid_webhook=False):
+    """Attempt to retry failed recipients. This happens at the end of each campaign. If retry is successful, reaches max
+    retry limit, or times out it will continue to finish the campaign (with respective status). If retry is blocked, it
+    will kick off another retry. If campaign is canceled, it will skip and finish the campaign. Note: the retry actually
+    calls `dispatch_campaign` to execute the one retry.
+    """
     campaign = self.get_campaign(campaign_id, run_id, abort_if_cancelled=False)
     if campaign is None:
+        message = f'[Notification Campaign #{campaign_id}] ERROR: Campaign retry failed due to campaign not found.'
+        logger.error(message)
+        sentry.log_message(message)
         return
 
     campaign.refresh_from_db()
+    campaign_retry_attempt_started_at = timezone.now()
+    campaign_retry_id = f'{campaign_id}-{run_id}-retry#{campaign.retries}'
+    message = (f'[Notification Campaign #{campaign_id}] INFO: '
+               f'Campaign retry({campaign_retry_id}) attempted at {campaign_retry_attempt_started_at}.')
+    logger.info(message)
+    sentry.log_message(message)
     execution = campaign.metadata.get('execution', {})
 
     if campaign.status == NotificationCampaignStatus.CANCELLED:
-        message = f'[Notification Campaign #{campaign_id}] WARNING: Campaign {campaign.name} was cancelled.'
+        message = (f'[Notification Campaign #{campaign_id}] WARNING: '
+                   f'Campaign retry({campaign_retry_id}) attempt skipped due to campaign cancelled, '
+                   f'and continue to finish campaign (as cancelled as it is).')
         logger.info(message)
         sentry.log_message(message)
         self.finish_campaign(campaign)
@@ -51,28 +67,32 @@ def process_campaign_retry(self, campaign_id, run_id, use_sendgrid_webhook=False
         if timezone.now() - reference_time < timedelta(seconds=delivery_timeout):
             # Still waiting for in-flight sends / SendGrid delivery webhooks.
             self.sync_campaign_stats(campaign)
+            retry_interval = execution.get('dispatch_interval', settings.CAMPAIGN_DISPATCH_INTERVAL),
+            message = (f'[Notification Campaign #{campaign_id}] WARNING: '
+                       f'Campaign retry({campaign_retry_id}) attempt skipped due to delivery in-progress, '
+                       f'and kicking off another retry in {retry_interval}s.')
+            logger.warning(message)
+            sentry.log_message(message)
             process_campaign_retry.apply_async(
                 kwargs={
                     'campaign_id': campaign_id,
                     'run_id': campaign.run_id,
                     'use_sendgrid_webhook': use_sendgrid_webhook,
                 },
-                countdown=execution.get('dispatch_interval', settings.CAMPAIGN_DISPATCH_INTERVAL),
+                countdown=retry_interval,
             )
             return
 
-        timed_out = in_flight_qs.update(
+        timed_out_cout = in_flight_qs.update(
             status=NotificationCampaignRecipientStatus.FAILED,
             error_message='Delivery timeout'
         )
-        message = (
-            f'[Notification Campaign #{campaign_id}] WARNING: '
-            f'Marked {timed_out} queued/awaiting-delivery recipients as FAILED after delivery timeout '
-            f'({delivery_timeout}s) for campaign {campaign.name}.'
-        )
+        message = (f'[Notification Campaign #{campaign_id}] WARNING: '
+                   f'Campaign retry({campaign_retry_id}) attempt skipped due to delivery timeout({delivery_timeout}s), '
+                   f'and marked {timed_out_cout} queued/awaiting-delivery recipients as FAILED, '
+                   f'and continue to finish campaign as {NotificationCampaignStatus.PARTIALLY_COMPLETED}')
         logger.warning(message)
         sentry.log_message(message)
-
         # Do not retry timed-out deliveries; close the run as partially completed.
         self.finish_campaign(campaign, NotificationCampaignStatus.PARTIALLY_COMPLETED)
         return
@@ -82,17 +102,16 @@ def process_campaign_retry(self, campaign_id, run_id, use_sendgrid_webhook=False
         status=NotificationCampaignRecipientStatus.FAILED,
     ).count()
     max_retries = execution.get('max_retries', settings.DEFAULT_CAMPAIGN_MAX_RETRIES)
-
     if failed_recipients_count:
         if campaign.retries < max_retries:
-            message = (f'[Notification Campaign #{campaign_id}] WARNING: '
-                       f'Retrying {failed_recipients_count} failed recipients, '
-                       f'previous retry attempts: {campaign.retries}/{max_retries}')
+            campaign_retry_exec_started_at = timezone.now()
+            campaign.retries += 1
+            message = (f'[Notification Campaign #{campaign_id}] INFO: '
+                       f'Campaign retry({campaign_retry_id}) execution({campaign.retries}/{max_retries}) started '
+                       f'at {campaign_retry_exec_started_at} with {failed_recipients_count} recipients.')
             logger.info(message)
             sentry.log_message(message)
-            campaign.retries += 1
             campaign.save()
-
             dispatch_campaign.apply_async(
                 args=[campaign_id, campaign.run_id],
                 kwargs={
@@ -101,10 +120,18 @@ def process_campaign_retry(self, campaign_id, run_id, use_sendgrid_webhook=False
                 },
             )
             return
-
         final_status = NotificationCampaignStatus.PARTIALLY_COMPLETED
+        message = (f'[Notification Campaign #{campaign_id}] WARNING: '
+                   f'Campaign retry({campaign_retry_id}) finished with max retries reached, '
+                   f'and continue to finish campaign as {NotificationCampaignStatus.PARTIALLY_COMPLETED}')
+        logger.warning(message)
     else:
         final_status = NotificationCampaignStatus.COMPLETED
+        message = (f'[Notification Campaign #{campaign_id}] INFO: '
+                   f'Campaign retry({campaign_retry_id}) finished successfully, '
+                   f'and continue to finish campaign as {NotificationCampaignStatus.COMPLETED}')
+        logger.info(message)
+    sentry.log_message(message)
 
     self.finish_campaign(campaign, final_status)
 
