@@ -425,29 +425,57 @@ class TestNotificationCampaignAdminPermissions(AdminTestCase):
             metadata={'filters': {}, 'context': {}, 'execution': {}},
         )
 
-    def test_list_requires_view_permission(self):
+    def test_view_campaign_list_page_requires_view_permission(self):
         request = RequestFactory().get(reverse('notifications:notification_campaigns_list'))
         request.user = self.user
-
         with self.assertRaises(PermissionDenied):
             NotificationCampaignsList.as_view()(request)
-
         grant_permission(self.user, 'view_notificationcampaign')
         response = NotificationCampaignsList.as_view()(request)
         assert response.status_code == 200
 
-    def test_detail_requires_change_permission(self):
+    def test_view_campaign_detail_page_requires_change_permission(self):
         request = RequestFactory().get(
             reverse('notifications:notification_campaigns_detail', kwargs={'pk': self.campaign.pk})
         )
         request.user = self.user
-
         with self.assertRaises(PermissionDenied):
             NotificationCampaignDetail.as_view()(request, pk=self.campaign.pk)
-
         grant_permission(self.user, 'change_notificationcampaign')
         response = NotificationCampaignDetail.as_view()(request, pk=self.campaign.pk)
         assert response.status_code == 200
+
+    def test_view_campaign_creation_page_requires_change_permission(self):
+        request = RequestFactory().get(reverse('notifications:notification_campaigns_create'))
+        request.user = self.user
+        with self.assertRaises(PermissionDenied):
+            NotificationCampaignCreateView.as_view()(request)
+        grant_permission(self.user, 'change_notificationcampaign')
+        response = NotificationCampaignCreateView.as_view()(request)
+        assert response.status_code == 200
+
+    def test_start_campaign_requires_change_permission(self):
+        request = RequestFactory().post(
+            reverse('notifications:notification_campaigns_start', kwargs={'pk': self.campaign.pk})
+        )
+        request.user = self.user
+        with self.assertRaises(PermissionDenied):
+            StartNotificationCampaign.as_view()(request, pk=self.campaign.pk)
+        grant_permission(self.user, 'change_notificationcampaign')
+        response = StartNotificationCampaign.as_view()(request, pk=self.campaign.pk)
+        assert response.status_code == 302
+
+    def test_delete_requires_change_notificationcampaign_permission(self):
+        request = RequestFactory().post(
+            reverse('notifications:notification_campaigns_delete', kwargs={'pk': self.campaign.pk})
+        )
+        request.user = self.user
+        patch_messages(request)
+        with self.assertRaises(PermissionDenied):
+            DeleteNotificationCampaign.as_view()(request, pk=self.campaign.pk)
+        grant_permission(self.user, 'delete_notificationcampaign')
+        response = DeleteNotificationCampaign.as_view()(request, pk=self.campaign.pk)
+        assert response.status_code == 302
 
     def _detail_context(self):
         grant_permission(self.user, 'change_notificationcampaign')
@@ -517,16 +545,11 @@ class TestNotificationCampaignAdminPermissions(AdminTestCase):
         assert context['restart_stuck_suggested'] is False
         assert context['awaiting_delivery'] is True
 
-    def test_start_requires_change_notificationcampaign_permission(self):
-
+    def test_start_campaign_success(self):
         request = RequestFactory().post(
             reverse('notifications:notification_campaigns_start', kwargs={'pk': self.campaign.pk})
         )
         request.user = self.user
-
-        with self.assertRaises(PermissionDenied):
-            StartNotificationCampaign.as_view()(request, pk=self.campaign.pk)
-
         grant_permission(self.user, 'change_notificationcampaign')
         with mock.patch.object(NotificationCampaign, 'start') as mock_start:
             response = StartNotificationCampaign.as_view()(request, pk=self.campaign.pk)
@@ -572,17 +595,13 @@ class TestNotificationCampaignDeleteView(AdminTestCase):
             metadata={'filters': {}, 'context': {}, 'execution': {}},
         )
 
-    def test_delete_requires_change_notificationcampaign_permission(self):
+    def test_campaign_delete_success_and_returns_302(self):
         request = RequestFactory().post(
             reverse('notifications:notification_campaigns_delete', kwargs={'pk': self.campaign.pk})
         )
         request.user = self.user
-        patch_messages(request)
-
-        with self.assertRaises(PermissionDenied):
-            DeleteNotificationCampaign.as_view()(request, pk=self.campaign.pk)
-
         grant_permission(self.user, 'delete_notificationcampaign')
+        patch_messages(request)
         response = DeleteNotificationCampaign.as_view()(request, pk=self.campaign.pk)
         assert response.status_code == 302
         assert not NotificationCampaign.objects.filter(pk=self.campaign.pk).exists()
