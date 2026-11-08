@@ -296,19 +296,23 @@ def send_campaign_batch(
     developer_reminder=False,
     use_sendgrid_webhook=False,
 ):
+    """Send emails in one campaign batch.
+    """
     campaign = self.get_campaign(campaign_id, run_id)
     if campaign is None:
+        message = f'[Notification Campaign #{campaign_id}] ERROR: Batch failed due to campaign not found.'
+        logger.error(message)
+        sentry.log_message(message)
         return
 
-    recipients_qs = NotificationCampaignRecipient.objects.filter(batch_id=batch_id).select_related('user')
-
     batch_started_at = timezone.now()
+    recipients_qs = NotificationCampaignRecipient.objects.filter(batch_id=batch_id).select_related('user')
     if hasattr(NotificationTypeEnum, notification_type_name):
         notification_type = getattr(NotificationTypeEnum, notification_type_name).instance
     else:
         notification_type = NotificationType.objects.filter(
             name=notification_type_name
-        ).first()  # TODO cache
+        ).first()
         if notification_type is None:
             if campaign.status != NotificationCampaignStatus.FAILED:
                 campaign.status = NotificationCampaignStatus.FAILED
@@ -317,7 +321,7 @@ def send_campaign_batch(
                 status=NotificationCampaignRecipientStatus.FAILED,
                 error_message='Notification type not found',
             )
-            message = f'[Notification Campaign #{campaign_id}] ERROR: Batch failed due to none notification_type (template)'
+            message = f'[Notification Campaign #{campaign_id}] ERROR: Batch failed due to notification type not found.'
             logger.error(message)
             sentry.log_message(message)
             return
@@ -332,8 +336,8 @@ def send_campaign_batch(
             ).update(developer_reminder_sent=True)
             if updated:
                 message = (
-                    f'[Notification Campaign #{campaign_id}] WARNING: Campaign {campaign.name} exceeded '
-                    f'its high-activity execution time window ({execution_time_window} seconds).'
+                    f'[Notification Campaign #{campaign_id}] WARNING: '
+                    f'Campaign exceeded its high-activity execution time window ({execution_time_window}s).'
                 )
                 logger.warning(message)
                 sentry.log_message(message)
@@ -381,8 +385,7 @@ def send_campaign_batch(
                 sent_at=sent_at,
             )
         except Exception as exc:
-            message = (f'[Notification Campaign #{campaign_id}] ERROR: '
-                       f'Campaign {campaign.name} sendgrid bulk request failed, error={str(exc)}')
+            message = f'[Notification Campaign #{campaign_id}] ERROR: SendGrid bulk request failed, error="{str(exc)}".'
             logger.error(message)
             sentry.log_message(message)
             valid_emails_qs.update(status=NotificationCampaignRecipientStatus.FAILED, error_message=str(exc))
@@ -411,21 +414,19 @@ def send_campaign_batch(
                 recipient.sent_at = sent_at
                 recipient_records.append(recipient)
             except Exception as exc:
-                message = (f'[Notification Campaign #{campaign_id}] ERROR:'
-                           f'SendGrid request failed for user {recipient.user.username} ({recipient.user._id}),'
-                           f'error={str(exc)}')
+                message = (f'[Notification Campaign #{campaign_id}] ERROR: '
+                           f'SendGrid single request failed for user {recipient.user._id}({recipient.user.username}), '
+                           f'error="{str(exc)}".')
                 logger.error(message)
                 sentry.log_message(message)
                 recipient.status = NotificationCampaignRecipientStatus.FAILED
                 recipient.error_message = str(exc)
                 recipient_records.append(recipient)
             notification_finished_at = timezone.now()
-            notification_sent_run_time = (notification_finished_at - notification_started_at).total_seconds()
-            if notification_sent_run_time > settings.ESTIMATED_PER_REQUEST_THRESHOLD:
-                message = (f'[Notification Campaign #{campaign_id}] WARNING: Slow Notification, '
-                           f'run_time(threshold)={notification_sent_run_time}({settings.ESTIMATED_PER_REQUEST_THRESHOLD}), '
-                           f'user={recipient.user.username}({recipient.user._id})'
-                           f'campaign_name={campaign.name}')
+            sent_run_time = (notification_finished_at - notification_started_at).total_seconds()
+            if sent_run_time > settings.ESTIMATED_PER_REQUEST_THRESHOLD:
+                message = (f'[Notification Campaign #{campaign_id}] WARNING: '
+                           f'Slow notification detected using {sent_run_time}s for user {recipient.user._id}.')
                 logger.warning(message)
                 sentry.log_message(message)
         if recipient_records:
@@ -434,10 +435,7 @@ def send_campaign_batch(
     batch_finished_at = timezone.now()
     batch_run_time = (batch_finished_at - batch_started_at).total_seconds()
     if batch_run_time > settings.ESTIMATED_BATCH_RUN_TIME_THRESHOLD:
-        message = (f'[Notification Campaign #{campaign_id}] WARNING: Slow Batch, '
-                   f'run_time(threshold)={batch_run_time}({settings.ESTIMATED_BATCH_RUN_TIME_THRESHOLD}), '
-                   f'campaign_name={campaign.name}')
+        message = f'[Notification Campaign #{campaign_id}] WARNING: Slow batch detected using {batch_run_time}s.'
         logger.warning(message)
         sentry.log_message(message)
-    logger.info(f'[Notification Campaign #{campaign_id}] INFO: '
-                f'Batch finished in {batch_run_time} seconds for campaign {campaign.name}')
+    logger.info(f'[Notification Campaign #{campaign_id}] INFO: Campaign batch finished in {batch_run_time}s.')
