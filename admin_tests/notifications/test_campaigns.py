@@ -344,8 +344,8 @@ class TestNotificationCampaignCreateView(AdminTestCase):
 
     def test_context_includes_bulk_execution_defaults(self):
         request = RequestFactory().get(reverse('notifications:notification_campaigns_create'))
+        grant_permission(self.user, 'change_notificationcampaign')
         request.user = self.user
-
         response = NotificationCampaignCreateView.as_view()(request)
 
         assert response.context_data['bulk_defaults'] == NotificationCampaignCreateForm.BULK_EXECUTION_DEFAULTS
