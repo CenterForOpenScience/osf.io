@@ -67,7 +67,7 @@ def process_campaign_retry(self, campaign_id, run_id, use_sendgrid_webhook=False
         if timezone.now() - reference_time < timedelta(seconds=delivery_timeout):
             # Still waiting for in-flight sends / SendGrid delivery webhooks.
             self.sync_campaign_stats(campaign)
-            retry_interval = execution.get('dispatch_interval', settings.CAMPAIGN_DISPATCH_INTERVAL),
+            retry_interval = execution.get('dispatch_interval', settings.CAMPAIGN_DISPATCH_INTERVAL)
             message = (f'[Notification Campaign #{campaign_id}] WARNING: '
                        f'Campaign retry({campaign_retry_id}) attempt skipped due to delivery in-progress, '
                        f'and kicking off another retry in {retry_interval}s.')
