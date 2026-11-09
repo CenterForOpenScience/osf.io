@@ -96,7 +96,7 @@ class NotificationCampaign(models.Model):
     def start(self, restart_failed=False, restart_stuck=False):
         """Start a notification campaign in 3 cases:
         1. Clean start a notification campaign with full recipients;
-        2. Restart a stuck campaign, operating only on pending recipients;
+        2. Restart a stuck campaign, operating only on queued recipients;
         3. Restart a partially completed campaign, operating only on failed recipients.
 
         Note: #3 can be manually started, but it is also part of the retry phase in #1 and #2
