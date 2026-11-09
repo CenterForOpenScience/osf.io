@@ -599,3 +599,25 @@ class TestReclassificationSkipsProtectedUsers:
         self._exclude(excluded_domain)
         user.refresh_from_db()
         assert user.is_spam
+
+
+@pytest.mark.django_db
+class TestProtectedAuthorContentNotFlagged:
+
+    @pytest.mark.parametrize('protected', [True, False])
+    def test_other_public_content_flagged_only_for_unprotected_author(self, protected):
+        author = UserFactory()
+        if protected:
+            author.confirm_ham(save=True)
+        resource = NodeFactory(creator=author, is_public=True)
+        other = NodeFactory(creator=author, is_public=True)
+        client = mock.Mock(NAME='akismet')
+        client.check_content.return_value = (True, 'details')
+        with mock.patch.object(spam_tasks, 'AkismetClient', return_value=client), \
+                mock.patch.object(spam_tasks.settings, 'AKISMET_ENABLED', True), \
+                mock.patch.object(spam_tasks.settings, 'OOPSPAM_ENABLED', False):
+            spam_tasks.check_resource_with_spam_services(
+                resource, 'content', author.fullname, author.username, {},
+            )
+        other.refresh_from_db()
+        assert (other.spam_status == SpamStatus.FLAGGED) is (not protected)

@@ -3019,14 +3019,16 @@ class TestCheckResourceForSpamPostcommit:
                 assert user.spam_pro_tip is None
                 assert user.spam_data == {}
 
-                assert preprint.spam_status == SpamStatus.FLAGGED
-                assert preprint.spam_pro_tip == 'spam_data'
+                assert preprint.spam_status == SpamStatus.UNKNOWN
+                assert preprint.spam_pro_tip is None
+                assert preprint.spam_data == {}
 
                 assert project.spam_status == SpamStatus.FLAGGED
                 assert project.spam_pro_tip == 'spam_data'
 
-                assert project2.spam_status == SpamStatus.FLAGGED
-                assert project2.spam_pro_tip == 'spam_data'
+                assert project2.spam_status == SpamStatus.UNKNOWN
+                assert project2.spam_pro_tip is None
+                assert project2.spam_data == {}
 
     @mock.patch.object(settings, 'SPAM_ACCOUNT_SUSPENSION_ENABLED', True)
     @mock.patch.object(settings, 'SPAM_SERVICES_ENABLED', True)
@@ -3067,11 +3069,13 @@ class TestCheckResourceForSpamPostcommit:
                 assert preprint.spam_status == SpamStatus.FLAGGED
                 assert preprint.spam_pro_tip == 'spam_data'
 
-                assert project.spam_status == SpamStatus.FLAGGED
-                assert project.spam_pro_tip == 'spam_data'
+                assert project.spam_status == SpamStatus.UNKNOWN
+                assert project.spam_pro_tip is None
+                assert project.spam_data == {}
 
-                assert project2.spam_status == SpamStatus.FLAGGED
-                assert project2.spam_pro_tip == 'spam_data'
+                assert project2.spam_status == SpamStatus.UNKNOWN
+                assert project2.spam_pro_tip is None
+                assert project2.spam_data == {}
 
     @mock.patch.object(settings, 'SPAM_ACCOUNT_SUSPENSION_ENABLED', True)
     @mock.patch.object(settings, 'SPAM_SERVICES_ENABLED', True)
@@ -3152,14 +3156,14 @@ class TestCheckResourceForSpamPostcommit:
                 assert user.spam_status == SpamStatus.HAM
                 assert user.spam_data == {}
 
-                assert preprint.spam_status == SpamStatus.FLAGGED
-                assert preprint.spam_data['oopspam_data'] == {'reason': 'spam'}
+                assert preprint.spam_status == SpamStatus.UNKNOWN
+                assert preprint.spam_data == {}
 
                 assert project.spam_status == SpamStatus.FLAGGED
                 assert project.spam_data['oopspam_data'] == {'reason': 'spam'}
 
-                assert project2.spam_status == SpamStatus.FLAGGED
-                assert project2.spam_data['oopspam_data'] == {'reason': 'spam'}
+                assert project2.spam_status == SpamStatus.UNKNOWN
+                assert project2.spam_data == {}
 
     @mock.patch.object(settings, 'SPAM_ACCOUNT_SUSPENSION_ENABLED', True)
     @mock.patch.object(settings, 'SPAM_SERVICES_ENABLED', True)
@@ -3199,11 +3203,11 @@ class TestCheckResourceForSpamPostcommit:
                 assert preprint.spam_status == SpamStatus.FLAGGED
                 assert preprint.spam_data['oopspam_data'] == {'reason': 'spam'}
 
-                assert project.spam_status == SpamStatus.FLAGGED
-                assert project.spam_data['oopspam_data'] == {'reason': 'spam'}
+                assert project.spam_status == SpamStatus.UNKNOWN
+                assert project.spam_data == {}
 
-                assert project2.spam_status == SpamStatus.FLAGGED
-                assert project2.spam_data['oopspam_data'] == {'reason': 'spam'}
+                assert project2.spam_status == SpamStatus.UNKNOWN
+                assert project2.spam_data == {}
 
     @mock.patch.object(settings, 'SPAM_ACCOUNT_SUSPENSION_ENABLED', True)
     @mock.patch.object(settings, 'SPAM_SERVICES_ENABLED', True)
@@ -3289,17 +3293,17 @@ class TestCheckResourceForSpamPostcommit:
                 assert user.spam_pro_tip is None
                 assert user.spam_data == {}
 
-                assert preprint.spam_status == SpamStatus.FLAGGED
-                assert preprint.spam_pro_tip == 'akismet spam data'
-                assert preprint.spam_data['oopspam_data'] == {'reason': 'spam'}
+                assert preprint.spam_status == SpamStatus.UNKNOWN
+                assert preprint.spam_pro_tip is None
+                assert preprint.spam_data == {}
 
                 assert project.spam_status == SpamStatus.FLAGGED
                 assert project.spam_pro_tip == 'akismet spam data'
                 assert project.spam_data['oopspam_data'] == {'reason': 'spam'}
 
-                assert project2.spam_status == SpamStatus.FLAGGED
-                assert project2.spam_pro_tip == 'akismet spam data'
-                assert project2.spam_data['oopspam_data'] == {'reason': 'spam'}
+                assert project2.spam_status == SpamStatus.UNKNOWN
+                assert project2.spam_pro_tip is None
+                assert project2.spam_data == {}
 
     @mock.patch.object(settings, 'SPAM_ACCOUNT_SUSPENSION_ENABLED', True)
     @mock.patch.object(settings, 'SPAM_SERVICES_ENABLED', True)
@@ -3341,13 +3345,13 @@ class TestCheckResourceForSpamPostcommit:
                 assert preprint.spam_pro_tip == 'akismet spam data'
                 assert preprint.spam_data['oopspam_data'] == {'reason': 'spam'}
 
-                assert project.spam_status == SpamStatus.FLAGGED
-                assert project.spam_pro_tip == 'akismet spam data'
-                assert project.spam_data['oopspam_data'] == {'reason': 'spam'}
+                assert project.spam_status == SpamStatus.UNKNOWN
+                assert project.spam_pro_tip is None
+                assert project.spam_data == {}
 
-                assert project2.spam_status == SpamStatus.FLAGGED
-                assert project2.spam_pro_tip == 'akismet spam data'
-                assert project2.spam_data['oopspam_data'] == {'reason': 'spam'}
+                assert project2.spam_status == SpamStatus.UNKNOWN
+                assert project2.spam_pro_tip is None
+                assert project2.spam_data == {}
 
     @mock.patch.object(settings, 'SPAM_ACCOUNT_SUSPENSION_ENABLED', True)
     @mock.patch.object(settings, 'SPAM_SERVICES_ENABLED', True)

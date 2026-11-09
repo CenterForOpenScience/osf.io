@@ -2409,7 +2409,7 @@ class SpamOverrideMixin(SpamMixin):
             return
         if settings.SPAM_CHECK_PUBLIC_ONLY and not self.is_public:
             return
-        if user.is_hammy:
+        if user.is_protected_from_auto_spam:
             return
         if getattr(self, 'provider', False) and self.provider.reviews_workflow == Workflows.PRE_MODERATION.value:
             return
