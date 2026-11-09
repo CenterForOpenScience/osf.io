@@ -91,6 +91,11 @@
             {{ failed_count }}
         </div>
 
+        <div class="progress-bar"
+            style="width: {{ skipped_percent }}%; background-color: #777;">
+            {{ skipped_count }}
+        </div>
+
         <div class="progress-bar progress-bar-default"
             style="width: {{ pending_percent }}%;">
             {{ pending }}
@@ -128,6 +133,11 @@
     <tr>
         <th>Failure rate</th>
         <td>{{ failure_rate|floatformat:2 }}%</td>
+    </tr>
+
+    <tr>
+        <th>Skip rate</th>
+        <td>{{ skip_rate|floatformat:2 }}%</td>
     </tr>
 
     <tr>
@@ -301,8 +311,8 @@
                                 <td>{{ awaiting }}</td>
                             </tr>
                             <tr>
-                                <th>Sent / Failed</th>
-                                <td>{{ sent_count }} / {{ failed_count }}</td>
+                                <th>Sent / Failed / Skipped</th>
+                                <td>{{ sent_count }} / {{ failed_count }} / {{ skipped_count }}</td>
                             </tr>
                         </table>
 
@@ -381,6 +391,16 @@
                                 </button>
                             </form>
                         </td>
+                    {% elif field == 'Skipped' and value != 0 %}
+                        <td>
+                            <a
+                                href="{% url 'notifications:notification_campaigns_recipients_list' %}?notification_status=skipped&campaign_id={{ notification_campaign.id }}"
+                                class="btn btn-default"
+                                target="_blank">
+                                View Recipients
+                            </a>
+                        </td>
+                        <td></td>
                     {% else %}
                         <td></td>
                         <td></td>

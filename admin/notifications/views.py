@@ -401,10 +401,12 @@ class NotificationCampaignDetail(PermissionRequiredMixin, DetailView):
             recipient_count = stats['recipient_count']
             sent_count = stats['sent_count']
             failed_count = stats['failed_count']
+            skipped_count = stats['skipped_count']
         else:
             recipient_count = notification_campaign.recipient_count
             sent_count = notification_campaign.sent_count
             failed_count = notification_campaign.failed_count
+            skipped_count = notification_campaign.skipped_count
 
         context = {
             'notification_campaign': notification_campaign,
@@ -419,6 +421,7 @@ class NotificationCampaignDetail(PermissionRequiredMixin, DetailView):
                 ('Queued', queued),
                 ('Awaiting Delivery', awaiting),
                 ('Failed', failed_count),
+                ('Skipped', skipped_count),
                 ('Retries', notification_campaign.retries),
                 ('Created', notification_campaign.created_at),
                 ('Started', notification_campaign.started_at),
@@ -450,7 +453,7 @@ class NotificationCampaignDetail(PermissionRequiredMixin, DetailView):
         }
 
         if notification_campaign.status != NotificationCampaignStatus.CREATED:
-            processed = sent_count + failed_count
+            processed = sent_count + failed_count + skipped_count
             pending = max(
                 recipient_count - processed - queued - awaiting,
                 0,
@@ -470,6 +473,10 @@ class NotificationCampaignDetail(PermissionRequiredMixin, DetailView):
                 failed_count / recipient_count * 100
                 if recipient_count else 0
             )
+            skipped_percent = (
+                skipped_count / recipient_count * 100
+                if recipient_count else 0
+            )
             queued_percent = (
                 queued / recipient_count * 100
                 if recipient_count else 0
@@ -480,7 +487,7 @@ class NotificationCampaignDetail(PermissionRequiredMixin, DetailView):
             )
 
             pending_percent = max(
-                100 - sent_percent - failed_percent - queued_percent - awaiting_percent,
+                100 - sent_percent - failed_percent - skipped_percent - queued_percent - awaiting_percent,
                 0,
             )
             elapsed = None
@@ -492,6 +499,7 @@ class NotificationCampaignDetail(PermissionRequiredMixin, DetailView):
             restart_stuck_after = None
             restart_stuck_suggested = False
             failure_rate = None
+            skip_rate = None
 
             if notification_campaign.started_at:
                 end_time = notification_campaign.completed_at or timezone.now()
@@ -517,13 +525,16 @@ class NotificationCampaignDetail(PermissionRequiredMixin, DetailView):
 
             if processed:
                 failure_rate = failed_count / processed * 100
+                skip_rate = skipped_count / processed * 100
             else:
                 failure_rate = 0
+                skip_rate = 0
 
             context.update({
                 'recipient_count': recipient_count,
                 'sent_count': sent_count,
                 'failed_count': failed_count,
+                'skipped_count': skipped_count,
                 'processed': processed,
                 'pending': pending,
                 'queued': queued,
@@ -531,6 +542,7 @@ class NotificationCampaignDetail(PermissionRequiredMixin, DetailView):
                 'awaiting_delivery': awaiting_delivery,
                 'sent_percent': sent_percent,
                 'failed_percent': failed_percent,
+                'skipped_percent': skipped_percent,
                 'queued_percent': queued_percent,
                 'awaiting_percent': awaiting_percent,
                 'pending_percent': pending_percent,
@@ -543,6 +555,7 @@ class NotificationCampaignDetail(PermissionRequiredMixin, DetailView):
                 'restart_stuck_after': restart_stuck_after,
                 'restart_stuck_suggested': restart_stuck_suggested,
                 'failure_rate': failure_rate,
+                'skip_rate': skip_rate,
             })
 
         return context
@@ -750,10 +763,8 @@ class NotificationCampaignsRecipientsView(PermissionRequiredMixin, ListView):
         if not campaign_id:
             return NotificationCampaignRecipient.objects.none()
         query = {'campaign_id': campaign_id}
-        if status == NotificationCampaignRecipientStatus.SENT:
-            query['status'] = NotificationCampaignRecipientStatus.SENT
-        elif status == NotificationCampaignRecipientStatus.FAILED:
-            query['status__in'] = [NotificationCampaignRecipientStatus.FAILED, NotificationCampaignRecipientStatus.SKIPPED]
+        if status in NotificationCampaignRecipientStatus.values:
+            query['status'] = status
 
         qs = NotificationCampaignRecipient.objects.filter(**query)
 

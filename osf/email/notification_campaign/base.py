@@ -37,11 +37,13 @@ class NotificationCampaignTask(celery_app.Task):
         campaign.recipient_count = stats['recipient_count']
         campaign.sent_count = stats['sent_count']
         campaign.failed_count = stats['failed_count']
+        campaign.skipped_count = stats['skipped_count']
         if save:
             campaign.save(update_fields=[
                 'recipient_count',
                 'sent_count',
                 'failed_count',
+                'skipped_count',
                 'updated_at',
             ])
         return stats
