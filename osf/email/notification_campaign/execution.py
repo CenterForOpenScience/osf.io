@@ -164,7 +164,7 @@ def start_notification_campaign(self, campaign_id, restart_failed=False, restart
     use_sendgrid_webhook = bool(campaign.metadata.get('sendgrid_bulk', False))
     message = (f'[Notification Campaign #{campaign_id}] INFO: '
                f'Campaign started successfully at {campaign.started_at}, '
-               f'kicking off the first dispatcher (TASK: "dispatch_campaign").')
+               f'kicking off the first dispatcher (TASK: "{dispatch_campaign.name}").')
     logger.error(message)
     sentry.log_message(message)
     dispatch_campaign.apply_async(
@@ -194,7 +194,6 @@ def dispatch_campaign(self, campaign_id, run_id, restart_failed=False, restart_s
         logger.error(message)
         sentry.log_message(message)
         return
-    notification_type_name = campaign.notification_type.name
 
     # Refresh counters once per dispatch interval (covers SENT without webhook and
     # FAILED/SKIPPED set by batches) instead of re-aggregating after every batch.
@@ -211,7 +210,7 @@ def dispatch_campaign(self, campaign_id, run_id, restart_failed=False, restart_s
     max_queued_batches = execution.get('max_queued_batches', settings.MAX_QUEUED_CAMPAIGN_BATCHES)
     to_queue = max_queued_batches - queued_batches_count
     message = (f'[Notification Campaign #{campaign_id}] INFO: '
-               f'Dispatching {to_queue} new batches/tasks (TASK: "send_campaign_batch") ...')
+               f'Dispatching {to_queue} new batches/tasks (TASK: "{send_campaign_batch.name}") ...')
     logger.info(message)
     sentry.log_message(message)
 
@@ -251,7 +250,7 @@ def dispatch_campaign(self, campaign_id, run_id, restart_failed=False, restart_s
                 context=campaign.metadata.get('context', {}),
                 batch_id=batch_id,
                 campaign_id=campaign_id,
-                notification_type_name=notification_type_name,
+                notification_type_name=campaign.notification_type.name,
                 run_id=run_id,
                 developer_reminder=developer_reminder,
                 use_sendgrid_webhook=use_sendgrid_webhook,
@@ -264,13 +263,13 @@ def dispatch_campaign(self, campaign_id, run_id, restart_failed=False, restart_s
             break
 
     if no_more_recipients:
-        next_steps = 'continue to process campaign retry because all recipients has been dispatched successfully.'
+        next_step = 'continue to process campaign retry because all recipients have been dispatched successfully.'
         process_campaign_retry.delay(
             campaign_id=campaign_id, run_id=campaign.run_id, use_sendgrid_webhook=use_sendgrid_webhook
         )
     else:
         dispatch_interval = execution.get('dispatch_interval', settings.CAMPAIGN_DISPATCH_INTERVAL)
-        next_steps = f'kicking off a new dispatcher in {dispatch_interval}s to dispatch more recipients.'
+        next_step = f'kicking off a new dispatcher in {dispatch_interval}s to dispatch more recipients.'
         self.apply_async(
             args=[campaign_id, run_id],
             kwargs={
@@ -280,7 +279,8 @@ def dispatch_campaign(self, campaign_id, run_id, restart_failed=False, restart_s
             countdown=dispatch_interval,
         )
     message = (f'[Notification Campaign #{campaign_id}] INFO: '
-               f'Dispatched {total_new_queued_batches} new batches/tasks (TASK: "send_campaign_batch"), {next_steps}')
+               f'Dispatched {total_new_queued_batches} new batches/tasks '
+               f'(TASK: "{send_campaign_batch.name}"), {next_step}')
     logger.info(message)
     sentry.log_message(message)
 
