@@ -167,12 +167,11 @@ def get_campaign_recipient_stats(campaign_id):
         ),
         failed_count=Count(
             'id',
-            filter=Q(
-                status__in=[
-                    NotificationCampaignRecipientStatus.FAILED,
-                    NotificationCampaignRecipientStatus.SKIPPED,
-                ]
-            ),
+            filter=Q(status=NotificationCampaignRecipientStatus.FAILED),
+        ),
+        skipped_count=Count(
+            'id',
+            filter=Q(status=NotificationCampaignRecipientStatus.SKIPPED),
         ),
         queued_count=Count(
             'id',
