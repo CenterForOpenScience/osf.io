@@ -77,6 +77,7 @@ class NotificationCampaign(models.Model):
     recipient_count = models.PositiveIntegerField(default=0)
     sent_count = models.PositiveIntegerField(default=0)
     failed_count = models.PositiveIntegerField(default=0)
+    skipped_count = models.PositiveIntegerField(default=0)
     retries = models.PositiveIntegerField(default=0)
 
     developer_reminder_sent = models.BooleanField(default=False)
@@ -107,6 +108,7 @@ class NotificationCampaign(models.Model):
         self.run_id = uuid.uuid4()
         if not restart_failed and not restart_stuck:
             self.sent_count = 0
+            self.skipped_count = 0
         self.failed_count = 0
         self.retries = 0
         self.metadata.update({'template': self.notification_type.template})

@@ -640,8 +640,17 @@ class TestNotificationCampaignDetailCounters(AdminTestCase):
             status=NotificationCampaignStatus.COMPLETED,
             recipient_count=10,
             sent_count=7,
-            failed_count=3,
+            failed_count=2,
+            skipped_count=1,
             metadata={'filters': {}, 'context': {}, 'execution': {}},
+        )
+
+    def _counters(self, context):
+        return (
+            context['recipient_count'],
+            context['sent_count'],
+            context['failed_count'],
+            context['skipped_count'],
         )
 
     def _context(self):
@@ -667,7 +676,7 @@ class TestNotificationCampaignDetailCounters(AdminTestCase):
 
         context = self._context()
 
-        assert (context['recipient_count'], context['sent_count'], context['failed_count']) == (3, 1, 1)
+        assert self._counters(context) == (3, 1, 0, 1)
         assert context['awaiting'] == 1
         assert context['processed'] == 2
         assert context['pending'] == 0
@@ -675,7 +684,7 @@ class TestNotificationCampaignDetailCounters(AdminTestCase):
     def test_falls_back_to_stored_counters_when_recipients_purged(self):
         context = self._context()
 
-        assert (context['recipient_count'], context['sent_count'], context['failed_count']) == (10, 7, 3)
+        assert self._counters(context) == (10, 7, 2, 1)
         assert context['processed'] == 10
         assert context['pending'] == 0
 
@@ -692,4 +701,5 @@ class TestNotificationCampaignDetailCounters(AdminTestCase):
 
             context = self._context()
 
-            assert (context['recipient_count'], context['sent_count'], context['failed_count']) == (3, 1, 2)
+            assert self._counters(context) == (3, 1, 1, 1)
+            assert context['processed'] == 3

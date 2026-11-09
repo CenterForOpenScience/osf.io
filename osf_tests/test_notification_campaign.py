@@ -84,6 +84,7 @@ class TestNotificationCampaignTask:
         assert campaign.recipient_count == 1
         assert campaign.sent_count == 0
         assert campaign.failed_count == 0
+        assert campaign.skipped_count == 0
 
 
 @pytest.fixture
@@ -472,6 +473,7 @@ class TestGetCampaignRecipientStats:
             'recipient_count': 0,
             'sent_count': 0,
             'failed_count': 0,
+            'skipped_count': 0,
             'queued_count': 0,
             'awaiting_count': 0,
             'last_sent_at': None,
@@ -511,7 +513,8 @@ class TestGetCampaignRecipientStats:
         assert get_campaign_recipient_stats(campaign.id) == {
             'recipient_count': 6,
             'sent_count': 1,
-            'failed_count': 2,  # FAILED + SKIPPED
+            'failed_count': 1,
+            'skipped_count': 1,
             'queued_count': 1,
             'awaiting_count': 1,
             'last_sent_at': None,
@@ -538,6 +541,7 @@ class TestGetCampaignRecipientStats:
             'recipient_count': 1,
             'sent_count': 1,
             'failed_count': 0,
+            'skipped_count': 0,
             'queued_count': 0,
             'awaiting_count': 0,
             'last_sent_at': None,
@@ -546,6 +550,7 @@ class TestGetCampaignRecipientStats:
             'recipient_count': 1,
             'sent_count': 0,
             'failed_count': 1,
+            'skipped_count': 0,
             'queued_count': 0,
             'awaiting_count': 0,
             'last_sent_at': None,
@@ -673,6 +678,11 @@ class TestNotificationCampaignStart:
 
     @mock.patch('osf.email.notification_campaign.start_notification_campaign.delay')
     def test_campaign_start_sets_running_state(self, mock_delay, campaign):
+        campaign.sent_count = 4
+        campaign.failed_count = 4
+        campaign.skipped_count = 4
+        campaign.save()
+
         with mock.patch(
             'osf.models.notification_campaign.transaction.on_commit',
             side_effect=lambda callback: callback(),
@@ -684,6 +694,9 @@ class TestNotificationCampaignStart:
         assert campaign.run_id is not None
         assert campaign.started_at is not None
         assert campaign.retries == 0
+        assert campaign.sent_count == 0
+        assert campaign.failed_count == 0
+        assert campaign.skipped_count == 0
         mock_delay.assert_called_once_with(
             campaign_id=campaign.id,
             restart_failed=False,
@@ -695,6 +708,7 @@ class TestNotificationCampaignStart:
         campaign.recipient_count = 10
         campaign.sent_count = 4
         campaign.failed_count = 4
+        campaign.skipped_count = 2
         campaign.retries = 1
         campaign.save()
 
@@ -708,6 +722,7 @@ class TestNotificationCampaignStart:
         assert campaign.recipient_count == 10
         assert campaign.sent_count == 4
         assert campaign.failed_count == 0
+        assert campaign.skipped_count == 2
         assert campaign.retries == 0
         mock_delay.assert_called_once_with(
             campaign_id=campaign.id,
@@ -945,7 +960,8 @@ class TestSendCampaignBatch:
         running_campaign.refresh_from_db()
         assert recipient.status == NotificationCampaignRecipientStatus.SKIPPED
         assert recipient.error_message == 'Invalid email address'
-        assert get_campaign_recipient_stats(running_campaign.id)['failed_count'] == 1
+        assert get_campaign_recipient_stats(running_campaign.id)['skipped_count'] == 1
+        assert get_campaign_recipient_stats(running_campaign.id)['failed_count'] == 0
         assert get_campaign_recipient_stats(running_campaign.id)['sent_count'] == 0
 
     @mock.patch('osf.email.notification_campaign.execution.send_email_with_send_grid')
@@ -1338,7 +1354,8 @@ class TestProcessCampaignRetry:
         assert campaign.status == NotificationCampaignStatus.COMPLETED
         assert campaign.recipient_count == 2
         assert campaign.sent_count == 1
-        assert campaign.failed_count == 1
+        assert campaign.failed_count == 0
+        assert campaign.skipped_count == 1
         assert campaign.completed_at is not None
 
     def test_process_campaign_retry_skips_stale_run_id(self, campaign):
@@ -1588,7 +1605,8 @@ class TestProcessSendgridCampaignEvents:
         recipient.refresh_from_db()
         assert recipient.status == NotificationCampaignRecipientStatus.SKIPPED
         assert recipient.error_message == '550 user unknown'
-        assert get_campaign_recipient_stats(campaign.id)['failed_count'] == 1  # SKIPPED counts in failed_count
+        assert get_campaign_recipient_stats(campaign.id)['skipped_count'] == 1
+        assert get_campaign_recipient_stats(campaign.id)['failed_count'] == 0
         assert get_campaign_recipient_stats(campaign.id)['awaiting_count'] == 0
         assert get_campaign_recipient_stats(campaign.id)['queued_count'] == 0
 
