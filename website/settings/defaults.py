@@ -507,7 +507,7 @@ class CeleryConfig:
         'scripts.osfstorage.usage_audit',
         'scripts.stuck_registration_audit',
         'scripts.populate_new_and_noteworthy_projects',
-            'scripts.generate_sitemap',
+        'scripts.generate_sitemap',
         'osf.management.commands.clear_expired_sessions',
         'osf.management.commands.restart_stuck_registrations',
         'osf.management.commands.delete_withdrawn_or_failed_registration_files',
