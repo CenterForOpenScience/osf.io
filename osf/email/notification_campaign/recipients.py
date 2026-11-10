@@ -111,12 +111,14 @@ def build_campaign_filter_query(filters):
 @celery_app.task(name='email.create_campaign_recipients')
 def create_campaign_recipients(filters=None, campaign_id=None):
     recipients_creation_started_at = timezone.now()
+    message = (f'[Notification Campaign #{campaign_id}] INFO: '
+               f'Recipients creation started at {recipients_creation_started_at}.')
+    logger.info(message)
+    sentry.log_message(message)
     campaign = NotificationCampaign.objects.get(id=campaign_id)
     if not filters:
-
         raw_filters = campaign.metadata.get('filters', {})
         filters = build_campaign_filter_query(raw_filters)
-
     qs = (
         OSFUser.objects
         .filter(filters)
@@ -127,7 +129,6 @@ def create_campaign_recipients(filters=None, campaign_id=None):
         )
     )
     processed_records = 0
-
     for rows in batched(qs.iterator(chunk_size=BULK_CREATE_SIZE), BULK_CREATE_SIZE):
         NotificationCampaignRecipient.objects.bulk_create(
             [
@@ -151,9 +152,7 @@ def create_campaign_recipients(filters=None, campaign_id=None):
     recipients_creation_finished_at = timezone.now()
     recipients_creation_run_time = (recipients_creation_finished_at - recipients_creation_started_at)
     message = (f'[Notification Campaign #{campaign_id}] INFO: '
-                f'Recipients creation finished in {recipients_creation_run_time} seconds '
-                f'(start={recipients_creation_started_at}, finish={recipients_creation_finished_at}) '
-                f'for Campaign {campaign.name} (start={campaign.started_at}).')
+               f'Recipients creation finished in {recipients_creation_run_time}s at {recipients_creation_finished_at}.')
     logger.info(message)
     sentry.log_message(message)
     send_campaign_log_email(

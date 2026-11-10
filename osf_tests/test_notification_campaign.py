@@ -1402,7 +1402,7 @@ class TestProcessCampaignRetry:
         assert campaign.sent_count == 1
         assert campaign.failed_count == 1
         assert campaign.completed_at is not None
-        mock_sentry.assert_called_once()
+        assert mock_sentry.call_count == 1
 
     @mock.patch('osf.email.notification_campaign.execution.dispatch_campaign.apply_async')
     def test_process_campaign_retry_retries_failed_recipients(self, mock_dispatch_campaign, campaign):
