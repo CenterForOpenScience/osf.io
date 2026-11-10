@@ -78,4 +78,5 @@ class NotificationCampaignTask(celery_app.Task):
             campaign.status = status
         campaign.save()
         if send_log_email:
-            send_campaign_log_email(campaign, status or campaign.status, f"Campaign finished with status {status or campaign.status}")
+            status_label = campaign.get_status_display()
+            send_campaign_log_email(campaign, status_label, f'Campaign finished with status {status_label}')
