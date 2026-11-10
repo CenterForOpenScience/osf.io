@@ -1,6 +1,12 @@
+import logging
+import uuid
+
 from django.db import models, transaction
 from django.utils import timezone
-import uuid
+
+from framework import sentry
+
+logger = logging.getLogger(__name__)
 
 
 class NotificationCampaignStatus(models.TextChoices):
@@ -77,12 +83,25 @@ class NotificationCampaign(models.Model):
     developer_reminder_sent = models.BooleanField(default=False)
 
     def cancel(self):
+        """Cancel a running notification campaign.
+        """
+        cancelled_at = timezone.now()
         self.status = NotificationCampaignStatus.CANCELLED
         if self.completed_at is None:
-            self.completed_at = timezone.now()
+            self.completed_at = cancelled_at
         self.save()
+        message = f'[Notification Campaign #{self.id}] WARNING: Campaign cancelled at {cancelled_at}.'
+        logger.warning(message)
+        sentry.log_message(message)
 
     def start(self, restart_failed=False, restart_stuck=False):
+        """Start a notification campaign in 3 cases:
+        1. Clean start a notification campaign with full recipients;
+        2. Restart a stuck campaign, operating only on queued recipients;
+        3. Restart a partially completed campaign, operating only on failed recipients.
+
+        Note: #3 can be manually started, but it is also part of the retry phase in #1 and #2
+        """
         from osf.email.notification_campaign import start_notification_campaign
         self.status = NotificationCampaignStatus.RUNNING
         self.started_at = timezone.now()
@@ -94,7 +113,6 @@ class NotificationCampaign(models.Model):
         self.retries = 0
         self.metadata.update({'template': self.notification_type.template})
         self.save()
-
         # run start_notification_campaign after transaction
         transaction.on_commit(
             lambda: start_notification_campaign.delay(
@@ -103,16 +121,26 @@ class NotificationCampaign(models.Model):
                 restart_stuck=restart_stuck,
             )
         )
+        # log message after transaction and after task kick off
+        message = (f'[Notification Campaign #{self.id}] INFO: '
+                   f'Campaign start or restart attempted at {self.started_at}, '
+                   f'with restart_stuck={restart_stuck} and restart_failed={restart_failed}), ')
+        logger.info(message)
+        sentry.log_message(message)
 
     def create_recipients(self):
         from osf.email.notification_campaign import create_campaign_recipients
-
+        attempted_at = timezone.now()
         self.metadata.update({'recipients_creation_finished': False})
         self.save()
-
+        # run create_recipients after transaction
         transaction.on_commit(
             lambda: create_campaign_recipients.delay(campaign_id=self.id)
         )
+        # log message after transaction and after task kick off
+        message = f'[Notification Campaign #{self.id}] INFO: Recipients creation attempted at {attempted_at}.'
+        logger.info(message)
+        sentry.log_message(message)
 
 
 class NotificationCampaignRecipient(models.Model):
