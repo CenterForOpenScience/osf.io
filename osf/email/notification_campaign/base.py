@@ -11,9 +11,28 @@ from osf.models.notification_campaign import (
     NotificationCampaignStatus,
 )
 
-from .recipients import get_campaign_recipient_stats
-
 logger = logging.getLogger(__name__)
+
+
+def send_campaign_log_email(campaign, status, message):
+    """Send a notification campaign status email."""
+    log_email_recipients = campaign.metadata.get('execution', {}).get('log_email_recipients', '')
+    recipients = [recipient.strip() for recipient in log_email_recipients.split(',') if recipient.strip()]
+    for recipient in recipients:
+        try:
+            send_email(
+                recipient_address=recipient,
+                notification_type=NotificationTypeEnum.NOTIFICATION_CAMPAIGN_LOG.instance,
+                event_context={'campaign_name': campaign.name, 'status': status, 'message': message},)
+        except Exception as exc:
+            logger.error(f"Failed to send error logs email for campaign {campaign.id}: {exc}")
+            sentry.log_message(f"Failed to send error logs email for campaign {campaign.id}: {exc}")
+
+
+@celery_app.task(name='email.send_campaign_log_email')
+def send_campaign_log_email_task(campaign_id, status, message):
+    """Send a campaign status email outside the request, for events triggered from the admin."""
+    send_campaign_log_email(NotificationCampaign.objects.get(id=campaign_id), status, message)
 
 
 class NotificationCampaignTask(celery_app.Task):
@@ -33,6 +52,8 @@ class NotificationCampaignTask(celery_app.Task):
         return campaign
 
     def sync_campaign_stats(self, campaign, *, save=True):
+        from .recipients import get_campaign_recipient_stats
+
         stats = get_campaign_recipient_stats(campaign.id)
         campaign.recipient_count = stats['recipient_count']
         campaign.sent_count = stats['sent_count']
@@ -48,7 +69,7 @@ class NotificationCampaignTask(celery_app.Task):
             ])
         return stats
 
-    def finish_campaign(self, campaign, status=None):
+    def finish_campaign(self, campaign, status=None, send_log_email=True):
         """Sync recipient counters, set completed_at once, optionally update status, and save."""
         self.sync_campaign_stats(campaign, save=False)
         if campaign.completed_at is None:
@@ -56,17 +77,5 @@ class NotificationCampaignTask(celery_app.Task):
         if status is not None:
             campaign.status = status
         campaign.save()
-        self.send_campaign_log_email(campaign, status or campaign.status, f"Campaign finished with status {status or campaign.status}")
-
-    def send_campaign_log_email(self, campaign, status, message):
-        """Send a notification campaign status email."""
-        recipients = [recipient.strip() for recipient in campaign.metadata['execution'].get('log_email_recipients', '').split(',') if recipient]
-        for recipient in recipients:
-            try:
-                send_email(
-                    recipient_address=recipient,
-                    notification_type=NotificationTypeEnum.NOTIFICATION_CAMPAIGN_LOG.instance,
-                    event_context={'campaign_name': campaign.name, 'status': status, 'message': message},)
-            except Exception as exc:
-                logger.error(f"Failed to send error logs email for campaign {campaign.id}: {exc}")
-                sentry.log_message(f"Failed to send error logs email for campaign {campaign.id}: {exc}")
+        if send_log_email:
+            send_campaign_log_email(campaign, status or campaign.status, f"Campaign finished with status {status or campaign.status}")

@@ -16,7 +16,7 @@ from osf.models.notification_campaign import (
 )
 from website import settings
 
-from .base import NotificationCampaignTask
+from .base import NotificationCampaignTask, send_campaign_log_email
 from .recipients import assign_batch_id_to_recipients, first_email_subquery
 
 logger = logging.getLogger(__name__)
@@ -35,7 +35,8 @@ def process_campaign_retry(self, campaign_id, run_id, use_sendgrid_webhook=False
         message = f'[Notification Campaign #{campaign_id}] WARNING: Campaign {campaign.name} was cancelled.'
         logger.info(message)
         sentry.log_message(message)
-        self.finish_campaign(campaign)
+        # cancel() already sent the "Cancelled" log email.
+        self.finish_campaign(campaign, send_log_email=False)
         return
 
     in_flight_qs = NotificationCampaignRecipient.objects.filter(
@@ -100,6 +101,11 @@ def process_campaign_retry(self, campaign_id, run_id, use_sendgrid_webhook=False
                     'use_sendgrid_webhook': use_sendgrid_webhook,
                 },
             )
+            send_campaign_log_email(
+                campaign,
+                'Retry started',
+                f'Retry {campaign.retries}/{max_retries} started for {failed_recipients_count} failed recipients.',
+            )
             return
 
         final_status = NotificationCampaignStatus.PARTIALLY_COMPLETED
@@ -118,13 +124,27 @@ def start_notification_campaign(self, campaign_id, restart_failed=False, restart
     if hasattr(NotificationTypeEnum, notification_type_name):
         del getattr(NotificationTypeEnum, notification_type_name).instance
 
+    restart_message = None
     if restart_stuck:
         # Only reclaim Celery-in-flight batches. Leave AWAITING_DELIVERY alone so
         # SendGrid webhooks for already-accepted mail still match recipient.sent_at.
-        NotificationCampaignRecipient.objects.filter(
+        reset_count = NotificationCampaignRecipient.objects.filter(
             campaign_id=campaign_id,
             status=NotificationCampaignRecipientStatus.QUEUED,
         ).update(status=NotificationCampaignRecipientStatus.PENDING, batch_id=None)
+        restart_message = (
+            f'Stuck campaign restarted: {reset_count} queued recipients were reset to pending '
+            f'and will be re-dispatched.'
+        )
+    elif restart_failed:
+        # Count before dispatching, which moves FAILED recipients into new batches.
+        failed_count = NotificationCampaignRecipient.objects.filter(
+            campaign_id=campaign_id,
+            status=NotificationCampaignRecipientStatus.FAILED,
+        ).count()
+        restart_message = (
+            f'Campaign restarted for failed recipients only: {failed_count} failed recipients will be resent.'
+        )
 
     # Decide once per run which SendGrid user sends the campaign: bulk campaigns track delivery
     # via webhook, which requires the sub-user with Event Webhook enabled.
@@ -136,6 +156,9 @@ def start_notification_campaign(self, campaign_id, restart_failed=False, restart
             'use_sendgrid_webhook': use_sendgrid_webhook,
         },
     )
+
+    if restart_message:
+        send_campaign_log_email(campaign, 'Restarted', restart_message)
 
 
 @celery_app.task(bind=True, base=NotificationCampaignTask, name='email.dispatch_campaign')
@@ -287,7 +310,7 @@ def send_campaign_batch(
                 )
                 logger.warning(message)
                 sentry.log_message(message)
-                self.send_campaign_log_email(campaign, message=message, status='WARNING')
+                send_campaign_log_email(campaign, message=message, status='WARNING')
 
     recipient_records = []
     recipients_qs_annotated = recipients_qs.annotate(

@@ -77,10 +77,19 @@ class NotificationCampaign(models.Model):
     developer_reminder_sent = models.BooleanField(default=False)
 
     def cancel(self):
+        from osf.email.notification_campaign import send_campaign_log_email_task
         self.status = NotificationCampaignStatus.CANCELLED
         if self.completed_at is None:
             self.completed_at = timezone.now()
         self.save()
+
+        transaction.on_commit(
+            lambda: send_campaign_log_email_task.delay(
+                campaign_id=self.id,
+                status=NotificationCampaignStatus.CANCELLED.label,
+                message='Campaign was cancelled. Batches that are already sending will finish; queued batches will not be sent.',
+            )
+        )
 
     def start(self, restart_failed=False, restart_stuck=False):
         from osf.email.notification_campaign import start_notification_campaign

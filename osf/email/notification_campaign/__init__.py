@@ -1,4 +1,4 @@
-from .base import NotificationCampaignTask
+from .base import NotificationCampaignTask, send_campaign_log_email, send_campaign_log_email_task
 from .execution import (
     dispatch_campaign,
     process_campaign_retry,
@@ -51,5 +51,7 @@ __all__ = [
     'process_campaign_retry',
     'process_sendgrid_campaign_events',
     'send_campaign_batch',
+    'send_campaign_log_email',
+    'send_campaign_log_email_task',
     'start_notification_campaign',
 ]

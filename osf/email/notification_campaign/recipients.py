@@ -16,6 +16,8 @@ from osf.models.notification_campaign import (
 )
 from osf.models.spam import SpamStatus
 
+from .base import send_campaign_log_email
+
 logger = logging.getLogger(__name__)
 
 BULK_CREATE_SIZE = 5000
@@ -154,6 +156,11 @@ def create_campaign_recipients(filters=None, campaign_id=None):
                 f'for Campaign {campaign.name} (start={campaign.started_at}).')
     logger.info(message)
     sentry.log_message(message)
+    send_campaign_log_email(
+        campaign,
+        'Recipients created',
+        f'Recipients creation finished: {processed_records} recipients created in {recipients_creation_run_time}.',
+    )
 
 
 def get_campaign_recipient_stats(campaign_id):
