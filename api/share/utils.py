@@ -61,6 +61,18 @@ def update_share(resource):
     _enqueue_update_share(resource)
 
 
+def update_share_after_guid_reassign(resource, old_osfid: str):
+    if not settings.SHARE_ENABLED:
+        return
+    _enqueue_update_share(resource)
+    _new_osfid = resource.guids.values_list('_id', flat=True).first()
+    if _new_osfid:
+        _template_cedar_ids = list(
+            resource.guids.first().cedar_metadata_records.values_list('template__cedar_id', flat=True),
+        )
+        enqueue_task(task__delete_share_records_for_old_guid.s(old_osfid, _new_osfid, _template_cedar_ids))
+
+
 def _enqueue_update_share(osfresource):
     _osfguid_value = osfresource.guids.values_list('_id', flat=True).first()
     if not _osfguid_value:
@@ -147,6 +159,34 @@ def share_delete_cedar_metadata_record(
         headers=_shtrove_auth_headers(referent),
     )
     retry_shtrove_request(self, response)
+
+
+@celery_app.task(
+    bind=True,
+    acks_late=True,
+    max_retries=4,
+    retry_backoff=True,
+    soft_time_limit=settings.SHARE_UPDATE_TASK_SOFT_TIME_LIMIT,
+    time_limit=settings.SHARE_UPDATE_TASK_HARD_TIME_LIMIT,
+)
+def task__delete_share_records_for_old_guid(self, old_osfid: str, new_osfid: str, cedar_template_ids=()):
+    """Delete every SHARE/trove record stored under a guid that no longer exists (see ``reassign_guid``)."""
+    _resource = apps.get_model('osf.Guid').load(new_osfid).referent
+    for _partition in OsfmapPartition:
+        try:
+            _response = pls_delete_trove_record(_resource, osfmap_partition=_partition, osfid=old_osfid)
+        except GVException as e:
+            log_exception(e)
+            raise self.retry(exc=e)
+        retry_shtrove_request(self, _response)
+    for _cedar_id in cedar_template_ids:
+        _response = requests.delete(
+            shtrove_ingest_url(),
+            params={'record_identifier': _shtrove_cedar_record_identifier(old_osfid, _cedar_id)},
+            headers=_shtrove_auth_headers(_resource),
+            timeout=settings.EXTERNAL_REQUEST_TIMEOUT,
+        )
+        retry_shtrove_request(self, _response)
 
 
 def _schedule_cedar_record_updates(guid_instance):
@@ -284,19 +324,19 @@ def pls_send_trove_record(osf_item, *, is_backfill: bool, osfmap_partition: Osfm
     )
 
 
-def pls_delete_trove_record(osf_item, osfmap_partition: OsfmapPartition):
+def pls_delete_trove_record(osf_item, osfmap_partition: OsfmapPartition, osfid: str | None = None):
     return requests.delete(
         shtrove_ingest_url(),
         params={
-            'record_identifier': _shtrove_record_identifier(osf_item, osfmap_partition),
+            'record_identifier': _shtrove_record_identifier(osf_item, osfmap_partition, osfid=osfid),
         },
         headers=_shtrove_auth_headers(osf_item),
         timeout=settings.EXTERNAL_REQUEST_TIMEOUT,
     )
 
 
-def _shtrove_record_identifier(osf_item, osfmap_partition: OsfmapPartition):
-    _id = osf_item.guids.values_list('_id', flat=True).first()
+def _shtrove_record_identifier(osf_item, osfmap_partition: OsfmapPartition, osfid: str | None = None):
+    _id = osfid or osf_item.guids.values_list('_id', flat=True).first()
     return (
         f'{_id}/{osfmap_partition.name}'
         if osfmap_partition.is_supplementary
