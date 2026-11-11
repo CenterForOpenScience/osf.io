@@ -85,6 +85,8 @@ class NotificationCampaign(models.Model):
     def cancel(self):
         """Cancel a running notification campaign.
         """
+        from osf.email.notification_campaign import send_campaign_log_email_task
+
         cancelled_at = timezone.now()
         self.status = NotificationCampaignStatus.CANCELLED
         if self.completed_at is None:
@@ -93,6 +95,14 @@ class NotificationCampaign(models.Model):
         message = f'[Notification Campaign #{self.id}] WARNING: Campaign cancelled at {cancelled_at}.'
         logger.warning(message)
         sentry.log_message(message)
+
+        transaction.on_commit(
+            lambda: send_campaign_log_email_task.delay(
+                campaign_id=self.id,
+                status=NotificationCampaignStatus.CANCELLED.label,
+                message='Campaign was cancelled. Batches that are already sending will finish; queued batches will not be sent.',
+            )
+        )
 
     def start(self, restart_failed=False, restart_stuck=False):
         """Start a notification campaign in 3 cases:
