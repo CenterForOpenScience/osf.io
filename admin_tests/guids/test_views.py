@@ -132,6 +132,19 @@ class TestGuidReassignView(AdminTestCase):
         assert 'Preprint recovery, ticket 1' in entry.change_message
         assert node._id in entry.change_message
 
+    def test_reassign_logs_warning_with_details(self):
+        old_id = self.node._id
+        user = user_in_group('remove_guid')
+        with self.assertLogs('admin.guids.views', level='WARNING') as logs:
+            self._post(user, {'justification': 'Preprint recovery, ticket 1'})
+
+        node = type(self.node).objects.get(pk=self.node.pk)
+        message = '\n'.join(logs.output)
+        assert f'old_guid={old_id}' in message
+        assert f'new_guid={node._id}' in message
+        assert f'referent_pk={node.pk}' in message
+        assert 'Preprint recovery, ticket 1' in message
+
     def test_preprint_guid_is_refused(self):
         from osf_tests.factories import PreprintFactory
         preprint = PreprintFactory()

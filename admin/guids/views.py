@@ -1,3 +1,5 @@
+import logging
+
 from django.contrib import messages
 from django.contrib.auth.mixins import PermissionRequiredMixin
 from django.db import transaction
@@ -11,6 +13,9 @@ from admin.guids.forms import ReassignGuidForm
 from osf.models import AbstractNode, BaseFileNode, Collection, Guid, OSFUser, Preprint
 from osf.models.admin_log_entry import REMOVE_GUID, update_admin_log
 from osf.models.base import GuidReassignError, guid_reassign_blocker, reassign_guid
+
+
+logger = logging.getLogger(__name__)
 
 
 def get_referent_admin_url(referent):
@@ -88,15 +93,23 @@ class GuidReassignView(PermissionRequiredMixin, View):
         try:
             with transaction.atomic():
                 old_id, new_id, referent = reassign_guid(guid_str)
+                referent_description = describe_referent(referent)
                 update_admin_log(
                     user_id=request.user.id,
                     object_id=old_id,
                     object_repr=type(referent).__name__,
-                    message=f'{form.cleaned_data["justification"]} (old={old_id}, new={new_id}, referent={describe_referent(referent)})',
+                    message=f'{form.cleaned_data["justification"]} (old={old_id}, new={new_id}, referent={referent_description})',
                     action_flag=REMOVE_GUID,
                 )
         except GuidReassignError as exc:
             messages.error(request, str(exc))
             return redirect(detail_url)
+        # Logged after the transaction commits so cloud logs show what happened and the change can be reversed.
+        logger.warning(
+            'Admin guid reassignment: old_guid=%s new_guid=%s referent_type=%s referent_pk=%s referent=%s '
+            'admin_user_pk=%s admin_user_guid=%s justification=%s',
+            old_id, new_id, type(referent).__name__, referent.pk, referent_description,
+            request.user.id, getattr(request.user, '_id', None), form.cleaned_data['justification'],
+        )
         messages.success(request, f'Guid {old_id} was removed. The object now has guid {new_id}.')
         return redirect(reverse('guids:detail', kwargs={'guid': new_id}))

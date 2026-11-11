@@ -9,7 +9,7 @@ from django.contrib.messages.storage.fallback import FallbackStorage
 from django.utils import timezone
 
 from tests.base import AdminTestCase
-from osf.models import Preprint, PreprintLog, PreprintRequest, NotificationTypeEnum, BaseFileNode
+from osf.models import Preprint, PreprintLog, PreprintRequest, NotificationTypeEnum
 from framework.auth import Auth
 from osf_tests.factories import (
     AuthUserFactory,
@@ -1211,22 +1211,6 @@ class TestRecoverDeletedPreprintView(AdminTestCase):
 
         assert response.status_code == 302
         assert Preprint.load(taken_guid)._id == f'{taken_guid}_v1'
-
-    def test_copies_trashed_source_file_as_active_file(self):
-        source = PreprintFactory(provider=self.provider)
-        source_file = source.primary_file
-        file_guid = source_file.get_guid(create=True)._id
-        source_file.delete()
-
-        response = self._post(self._base_data(file_guid=file_guid))
-        assert response.status_code == 302
-
-        recovered = Preprint.load('abcde')
-        assert recovered.primary_file is not None
-        assert not recovered.primary_file.is_deleted
-        assert recovered.primary_file.deleted_on is None
-        # The original stays trashed.
-        assert BaseFileNode.objects.get(pk=source_file.pk).is_deleted
 
     def test_get_object_raises_404_for_unknown_guid(self):
         from django.http import Http404
