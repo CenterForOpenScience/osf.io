@@ -34,6 +34,13 @@ class TestGuidSearchView(AdminTestCase):
         assert response.status_code == 302
         assert response.url == reverse('guids:detail', kwargs={'guid': 'abcde'})
 
+    def test_search_rejects_malformed_guid(self):
+        request = RequestFactory().post(reverse('guids:search'), {'guid': 'abc-de'})
+        request.user = user_in_group('remove_guid')
+        response = GuidSearchView.as_view()(request)
+        assert response.status_code == 200
+        assert 'is not a valid guid' in response.context_data['form'].errors['guid'][0]
+
     def test_search_requires_view_guid(self):
         request = RequestFactory().get(reverse('guids:search'))
         request.user = user_in_group('osf_admin')

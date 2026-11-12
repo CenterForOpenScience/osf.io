@@ -29,6 +29,10 @@ from website import settings
 
 logger = logging.getLogger(__name__)
 
+# After a guid is reassigned, records that mention the object are re-sent in chunks, one chunk per task run
+GUID_REASSIGN_RELATED_CHUNK_SIZE = 200
+GUID_REASSIGN_RELATED_CHUNK_DELAY = 60  # seconds between chunks
+
 
 def shtrove_ingest_url():
     return f'{settings.SHARE_URL}trove/ingest'
@@ -71,6 +75,49 @@ def update_share_after_guid_reassign(resource, old_osfid: str):
             resource.guids.first().cedar_metadata_records.values_list('template__cedar_id', flat=True),
         )
         enqueue_task(task__delete_share_records_for_old_guid.s(old_osfid, _new_osfid, _template_cedar_ids))
+        enqueue_task(task__update_share_for_related_after_guid_reassign.s(_new_osfid))
+
+
+def get_related_querysets_after_guid_reassign(resource) -> list:
+    from osf.models import AbstractNode, BaseFileNode, Contributor, NodeRelation, OSFUser, Preprint, PreprintContributor
+
+    _public_nodes = AbstractNode.objects.filter(is_public=True, is_deleted=False)
+    _public_preprints = Preprint.objects.filter(is_public=True, deleted__isnull=True)
+    if isinstance(resource, OSFUser):
+        return [
+            _public_nodes.filter(
+                pk__in=Contributor.objects.filter(user=resource, visible=True).values('node_id'),
+            ),
+            _public_preprints.filter(
+                pk__in=PreprintContributor.objects.filter(user=resource, visible=True).values('preprint_id'),
+            ),
+        ]
+    if isinstance(resource, AbstractNode):
+        if not resource.is_public or resource.is_deleted:
+            return []
+        return [
+            _public_nodes.filter(
+                Q(root_id=resource.pk)  # hasRoot
+                | Q(pk__in=NodeRelation.objects.filter(parent=resource).values('child_id'))  # isPartOf
+                | Q(pk__in=NodeRelation.objects.filter(child=resource).values('parent_id'))  # hasPart, references
+                | Q(registered_from_id=resource.pk),  # isVersionOf
+            ).exclude(pk=resource.pk),
+            _public_preprints.filter(node=resource),  # isSupplementedBy
+            BaseFileNode.active.filter(  # isContainedBy
+                target_object_id=resource.pk,
+                target_content_type=ContentType.objects.get_for_model(resource),
+                pk__in=apps.get_model('osf.Guid').objects.filter(
+                    content_type=ContentType.objects.get_for_model(BaseFileNode),
+                ).values('object_id'),
+            ),
+        ]
+    if isinstance(resource, BaseFileNode):
+        _target = resource.target
+        if isinstance(_target, AbstractNode):  # contains
+            return [_public_nodes.filter(pk=_target.pk)]
+        if isinstance(_target, Preprint):
+            return [_public_preprints.filter(pk=_target.pk)]
+    return []
 
 
 def _enqueue_update_share(osfresource):
@@ -187,6 +234,43 @@ def task__delete_share_records_for_old_guid(self, old_osfid: str, new_osfid: str
             timeout=settings.EXTERNAL_REQUEST_TIMEOUT,
         )
         retry_shtrove_request(self, _response)
+
+
+@celery_app.task(bind=True, acks_late=True)
+def task__update_share_for_related_after_guid_reassign(
+    self,
+    new_osfid: str,
+    queryset_index: int = 0,
+    start_id: int = 0,
+    chunk_size: int = GUID_REASSIGN_RELATED_CHUNK_SIZE,
+):
+    """Re-send the SHARE records that mention a reassigned guid (see ``reassign_guid``).
+
+    Each run queues one chunk of low-priority updates, then schedules itself for the next chunk, so reassigning
+    the guid of a user with thousands of contributions does not flood the queue.
+    """
+    from osf.management.commands.recatalog_metadata import recatalog_chunk
+
+    _osfid_instance = apps.get_model('osf.Guid').load(new_osfid)
+    if _osfid_instance is None or _osfid_instance.referent is None:
+        logger.warning(f'skipping related SHARE updates, unknown osfguid "{new_osfid}"')
+        return
+    _querysets = get_related_querysets_after_guid_reassign(_osfid_instance.referent)
+    while queryset_index < len(_querysets):
+        _last_id = recatalog_chunk(_querysets[queryset_index], start_id, chunk_size)
+        if _last_id is not None:
+            self.apply_async(
+                kwargs={
+                    'new_osfid': new_osfid,
+                    'queryset_index': queryset_index,
+                    'start_id': _last_id + 1,
+                    'chunk_size': chunk_size,
+                },
+                countdown=GUID_REASSIGN_RELATED_CHUNK_DELAY,
+            )
+            return
+        queryset_index += 1
+        start_id = 0
 
 
 def _schedule_cedar_record_updates(guid_instance):
