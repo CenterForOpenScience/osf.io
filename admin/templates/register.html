@@ -38,6 +38,7 @@
                 <p><strong>osf_admin</strong><br>User make changes to nodes, preprints, users, meetings, and mark spam</p>
                 <p><strong>remove_guid</strong><br>User can look up guids and permanently remove a guid from an object, giving it a new one</p>
                 <p><strong>celery_panel</strong><br>User can only view Celery monitoring pages in Django admin</p>
+                <p><strong>admin_user_management</strong><br>User can register admin users, add them to any of these groups, and audit staff and superuser status</p>
 
                 <p>{{ form.group_perms }}</p>
                 {% if form.group_perms.errors %}<span class="text-danger"> {{ form.group_perms.errors }}</span>{% endif %}

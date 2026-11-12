@@ -176,6 +176,13 @@ def update_admin_permissions(verbosity=0):
     celery_panel_group.permissions.add(periodic_task_permission)
     admin_group.permissions.add(periodic_task_permission)
 
+    # Add an admin_user_management Group for users who may register admin users and audit staff and superusers.
+    # It is kept out of osf_admin, because whoever holds it can grant any admin group, osf_admin included.
+    admin_user_management_group, created = Group.objects.get_or_create(name='admin_user_management')
+    if created and should_log:
+        logger.info('Admin user management group created')
+    admin_user_management_group.permissions.add(Permission.objects.get(codename='admin_user_management'))
+
 
 def update_provider_auth_groups(verbosity=0):
     # TODO: determine efficient way to only do this if perms change
