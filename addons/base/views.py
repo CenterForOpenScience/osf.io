@@ -400,6 +400,9 @@ def _check_resource_permissions(resource, auth, action):
 
 def _ensure_resource_not_read_only(resource):
     """Block file/folder writes via Waterbutler while the resource is in read-only mode."""
+    if isinstance(resource, Preprint) and resource.is_migrated:
+        raise HTTPError(http_status.HTTP_403_FORBIDDEN, message='This preprint has been migrated; file writes are disabled.')
+
     if not isinstance(resource, Node):
         return
 

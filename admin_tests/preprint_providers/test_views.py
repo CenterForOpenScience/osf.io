@@ -16,7 +16,7 @@ from osf_tests.factories import (
     SubjectFactory,
     ProviderAssetFileFactory
 )
-from osf.models import PreprintProvider, NodeLicense
+from osf.models import PreprintProvider, NodeLicense, NotificationSubscription
 from admin_tests.utilities import setup_form_view, setup_user_view
 from admin_tests.mixins.providers import (
     ProcessCustomTaxonomyMixinBase,
@@ -520,3 +520,31 @@ class TestEditModerators:
         assert res.status_code == 302
         assert user in provider.get_group('moderator').user_set.all()
         assert user not in provider.get_group('admin').user_set.all()
+
+    def test_re_add_moderator_with_changed_subscription_frequency(self, add_moderator_view, remove_moderator_view, req, moderator, provider):
+        # A moderator whose provider subscription was changed to a non-default frequency must be re-addable
+        NotificationSubscription.objects.filter(user=moderator, _is_digest=True).update(message_frequency='daily')
+
+        setattr(req, 'session', 'session')
+        setattr(req, '_messages', FallbackStorage(req))
+
+        req.POST = {'csrfmiddlewaretoken': 'fake csfr', f'Moderator-{moderator.id}': ['on']}
+        res = remove_moderator_view.post(req)
+        assert res.status_code == 302
+        assert not NotificationSubscription.objects.filter(user=moderator, _is_digest=True).exists()
+
+        req.POST = {'csrfmiddlewaretoken': 'fake csfr', 'add-moderators-form': [moderator._id], 'moderator': ['Add Moderator']}
+        with capture_notifications():
+            res = add_moderator_view.post(req)
+        assert res.status_code == 302
+        assert moderator in provider.get_group('moderator').user_set.all()
+
+    def test_remove_last_admin_is_allowed_in_admin_app(self, remove_moderator_view, req, user, provider):
+        provider.add_to_group(user, 'admin')
+        setattr(req, 'session', 'session')
+        setattr(req, '_messages', FallbackStorage(req))
+
+        req.POST = {'csrfmiddlewaretoken': 'fake csfr', f'Admin-{user.id}': ['on']}
+        res = remove_moderator_view.post(req)
+        assert res.status_code == 302
+        assert not provider.get_group('admin').user_set.exists()

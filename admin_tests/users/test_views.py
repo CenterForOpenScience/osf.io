@@ -15,6 +15,7 @@ from tests.base import AdminTestCase
 from website import settings
 from framework.auth import Auth
 from osf.models.user import OSFUser
+from osf.models import NotableDomain
 from osf.models.spam import SpamStatus
 from osf_tests.factories import (
     UserFactory,
@@ -944,3 +945,26 @@ class TestUserMerge(AdminTestCase):
 
         view.form_valid(valid_form)
         mock_merge_users_delay.assert_called_with(user._id, user_merged._id, initiator_guid=view.request.user._id)
+
+
+class TestAdminSpamOverridesProtection(AdminTestCase):
+    def setUp(self):
+        NotableDomain.objects.create(domain='trusted.edu', note=NotableDomain.Note.ASSUME_HAM_UNTIL_REPORTED)
+        self.assumed_ham = UserFactory()
+        self.assumed_ham.emails.create(address='x@trusted.edu')
+        self.ham = UserFactory()
+        self.ham.confirm_ham(save=True)
+
+    def _post(self, user):
+        request = RequestFactory().post('/fake_path')
+        view = setup_log_view(views.UserConfirmSpamView, request, guid=user._id)
+        view().post(request)
+        user.refresh_from_db()
+
+    def test_admin_can_mark_assumed_ham_user_spam(self):
+        self._post(self.assumed_ham)
+        assert self.assumed_ham.is_spam
+
+    def test_admin_can_mark_ham_user_spam(self):
+        self._post(self.ham)
+        assert self.ham.is_spam
