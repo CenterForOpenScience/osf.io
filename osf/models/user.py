@@ -2369,13 +2369,16 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
                 logger.error(msg)
                 sentry.log_message(msg, level=logging.ERROR)
                 raise OrcidTokenMissingError('ORCiD identity has no token to revoke; sign in via ORCiD and try again.')
-            # Revoke first: a failure must abort the removal before anything is mutated.
-            # Retries are safe since revoking an already revoked token is a no-op.
+            # Revoke first: a failure must abort the removal before anything is mutated. Retries are safe for `POST` in
+            # this case since revoking an already revoked token is a no-op. For undocumented reasons, ORCiD returns the
+            # same success code when revoking already revoked tokens (which is issued with scope `\authenticate` during
+            # each successful SS). We also verfied that the token has been successfully revoked because it requires
+            # manual authorization again during SSO afterward. Must override `allowed_methods=` to make POST safe.
             self._revoke_orcid_token(
                 external_id, token_entry, '[Remove external identity]',
                 session=requests_retry_session(
                     retries=website_settings.ORCID_OAUTH_REVOKE_MAX_RETRIES,
-                    status_forcelist=(429, 500, 502, 503, 504),
+                    status_forcelist=(400, 401, 403, 429, 500, 502, 503, 504),
                     allowed_methods=frozenset({'POST'}),
                 ),
             )
