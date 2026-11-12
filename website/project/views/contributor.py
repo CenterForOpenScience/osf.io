@@ -231,65 +231,6 @@ def finalize_invitation(
             )
 
 
-@must_be_valid_project
-@must_have_permission(ADMIN)
-@must_not_be_registration
-def project_contributors_post(auth, node, **kwargs):
-    """ Add contributors to a node. """
-    user_dicts = request.json.get('users')
-    node_ids = request.json.get('node_ids')
-    if node._id in node_ids:
-        node_ids.remove(node._id)
-
-    if user_dicts is None or node_ids is None:
-        raise HTTPError(http_status.HTTP_400_BAD_REQUEST)
-
-    # Prepare input data for `Node::add_contributors`
-    try:
-        contribs = deserialize_contributors(node, user_dicts, auth=auth, validate=True)
-    except ValidationError as e:
-        return {'status': 400, 'message': e.message}, 400
-
-    try:
-        node.add_contributors(contributors=contribs, auth=auth)
-    except NodeStateError as e:
-        return {'status': 400, 'message': e.args[0]}, 400
-
-    node.save()
-
-    # Disconnect listener to avoid multiple invite emails
-    unreg_contributor_added.disconnect(finalize_invitation)
-
-    for child_id in node_ids:
-        child = AbstractNode.load(child_id)
-        # Only email unreg users once
-        try:
-            child_contribs = deserialize_contributors(
-                child, user_dicts, auth=auth, validate=True
-            )
-        except ValidationError as e:
-            return {'status': 400, 'message': e.message}, 400
-
-        child.add_contributors(
-            contributors=child_contribs,
-            auth=auth,
-            notification_type=False
-        )
-        child.save()
-    # Reconnect listeners
-    unreg_contributor_added.connect(finalize_invitation)
-
-    if node.is_public:
-        node.update_search()
-    return {
-        'status': 'success',
-        'contributors': profile_utils.serialize_contributors(
-            node.visible_contributors,
-            node=node,
-        )
-    }, 201
-
-
 @no_auto_transaction
 @must_be_valid_project  # injects project
 @must_have_permission(ADMIN)

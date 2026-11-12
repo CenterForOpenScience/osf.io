@@ -13,7 +13,6 @@ from osf.utils import permissions
 from osf_tests.factories import (
     fake_email,
     AuthUserFactory,
-    NodeFactory,
     ProjectFactory,
     RegistrationProviderFactory,
     UserFactory,
@@ -126,133 +125,6 @@ class TestAddingContributorViews(OsfTestCase):
         assert res['profile_image_url']
         assert res['fullname'] == name
         assert res['email'] == email
-
-    def test_add_contributor_with_unreg_contribs_and_reg_contribs(self):
-        n_contributors_pre = len(self.project.contributors)
-        reg_user = UserFactory()
-        name, email = fake.name(), fake_email()
-        pseudouser = {
-            'id': None,
-            'registered': False,
-            'fullname': name,
-            'email': email,
-            'permission': permissions.ADMIN,
-            'visible': True,
-        }
-        reg_dict = add_contributor_json(reg_user)
-        reg_dict['permission'] = permissions.ADMIN
-        reg_dict['visible'] = True
-        payload = {
-            'users': [reg_dict, pseudouser],
-            'node_ids': []
-        }
-        url = self.project.api_url_for('project_contributors_post')
-        self.app.post(url, json=payload, follow_redirects=True, auth=self.creator.auth)
-        self.project.reload()
-        assert len(self.project.contributors) == n_contributors_pre + len(payload['users'])
-
-        new_unreg = auth.get_user(email=email)
-        assert not new_unreg.is_registered
-        # unclaimed record was added
-        new_unreg.reload()
-        assert self.project._primary_key in new_unreg.unclaimed_records
-        rec = new_unreg.get_unclaimed_record(self.project._primary_key)
-        assert rec['name'] == name
-        assert rec['email'] == email
-
-    @mock.patch('website.project.views.contributor.send_claim_email')
-    def test_add_contributors_post_only_sends_one_email_to_unreg_user(self, mock_send_claim_email):
-        # Project has components
-        comp1 = NodeFactory(creator=self.creator)
-        comp2 = NodeFactory(creator=self.creator)
-        NodeRelation.objects.create(parent=self.project, child=comp1)
-        NodeRelation.objects.create(parent=self.project, child=comp2)
-        self.project.save()
-
-        # An unreg user is added to the project AND its components
-        unreg_user = {  # dict because user has not previous unreg record
-            'id': None,
-            'registered': False,
-            'fullname': fake.name(),
-            'email': fake_email(),
-            'permission': permissions.ADMIN,
-            'visible': True,
-        }
-        payload = {
-            'users': [unreg_user],
-            'node_ids': [comp1._primary_key, comp2._primary_key]
-        }
-
-        # send request
-        url = self.project.api_url_for('project_contributors_post')
-        assert self.project.can_edit(user=self.creator)
-        self.app.post(url, json=payload, auth=self.creator.auth)
-
-    def test_add_contributors_post_only_sends_one_email_to_registered_user(self):
-        # Project has components
-        comp1 = NodeFactory(creator=self.creator, parent=self.project)
-        comp2 = NodeFactory(creator=self.creator, parent=self.project)
-
-        # A registered user is added to the project AND its components
-        user = UserFactory()
-        user_dict = {
-            'id': user._id,
-            'fullname': user.fullname,
-            'email': user.username,
-            'permission': permissions.WRITE,
-            'visible': True}
-
-        payload = {
-            'users': [user_dict],
-            'node_ids': [comp1._primary_key, comp2._primary_key]
-        }
-
-        # send request
-        url = self.project.api_url_for('project_contributors_post')
-        assert self.project.can_edit(user=self.creator)
-        self.app.post(url, json=payload, auth=self.creator.auth)
-
-    def test_add_contributors_post_sends_email_if_user_not_contributor_on_parent_node(self):
-        # Project has a component with a sub-component
-        component = NodeFactory(creator=self.creator, parent=self.project)
-        sub_component = NodeFactory(creator=self.creator, parent=component)
-
-        # A registered user is added to the project and the sub-component, but NOT the component
-        user = UserFactory()
-        user_dict = {
-            'id': user._id,
-            'fullname': user.fullname,
-            'email': user.username,
-            'permission': permissions.WRITE,
-            'visible': True}
-
-        payload = {
-            'users': [user_dict],
-            'node_ids': [sub_component._primary_key]
-        }
-
-        # send request
-        url = self.project.api_url_for('project_contributors_post')
-        assert self.project.can_edit(user=self.creator)
-        self.app.post(url, json=payload, auth=self.creator.auth)
-
-    @mock.patch('website.project.views.contributor.send_claim_email')
-    def test_email_sent_when_unreg_user_is_added(self, send_mail):
-        name, email = fake.name(), fake_email()
-        pseudouser = {
-            'id': None,
-            'registered': False,
-            'fullname': name,
-            'email': email,
-            'permission': permissions.ADMIN,
-            'visible': True,
-        }
-        payload = {
-            'users': [pseudouser],
-            'node_ids': []
-        }
-        url = self.project.api_url_for('project_contributors_post')
-        self.app.post(url, json=payload, follow_redirects=True, auth=self.creator.auth)
 
     def test_email_sent_when_reg_user_is_added(self):
         contributor = UserFactory()
@@ -374,56 +246,6 @@ class TestAddingContributorViews(OsfTestCase):
     def test_creating_template_does_not_email_creator(self):
         with capture_notifications():
             self.project.use_as_template(auth=Auth(self.creator))
-
-    def test_add_multiple_contributors_only_adds_one_log(self):
-        n_logs_pre = self.project.logs.count()
-        reg_user = UserFactory()
-        name = fake.name()
-        pseudouser = {
-            'id': None,
-            'registered': False,
-            'fullname': name,
-            'email': fake_email(),
-            'permission': permissions.WRITE,
-            'visible': True,
-        }
-        reg_dict = add_contributor_json(reg_user)
-        reg_dict['permission'] = permissions.ADMIN
-        reg_dict['visible'] = True
-        payload = {
-            'users': [reg_dict, pseudouser],
-            'node_ids': []
-        }
-        url = self.project.api_url_for('project_contributors_post')
-        self.app.post(url, json=payload, follow_redirects=True, auth=self.creator.auth)
-        self.project.reload()
-        assert self.project.logs.count() == n_logs_pre + 1
-
-    def test_add_contribs_to_multiple_nodes(self):
-        child = NodeFactory(parent=self.project, creator=self.creator)
-        n_contributors_pre = child.contributors.count()
-        reg_user = UserFactory()
-        name, email = fake.name(), fake_email()
-        pseudouser = {
-            'id': None,
-            'registered': False,
-            'fullname': name,
-            'email': email,
-            'permission': permissions.ADMIN,
-            'visible': True,
-        }
-        reg_dict = add_contributor_json(reg_user)
-        reg_dict['permission'] = permissions.ADMIN
-        reg_dict['visible'] = True
-        payload = {
-            'users': [reg_dict, pseudouser],
-            'node_ids': [self.project._primary_key, child._primary_key]
-        }
-        url = f'/api/v1/project/{self.project._id}/contributors/'
-        self.app.post(url, json=payload, follow_redirects=True, auth=self.creator.auth)
-        child.reload()
-        assert child.contributors.count() == n_contributors_pre + len(payload['users'])
-
 
 class TestUserInviteViews(OsfTestCase):
 
