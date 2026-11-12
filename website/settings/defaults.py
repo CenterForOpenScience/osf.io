@@ -124,7 +124,7 @@ ALLOW_LOGIN = True
 # e.g. LATEST_TERMS_OF_SERVICE_UPDATE=2026-10-01 (no timezone means UTC)
 LATEST_TERMS_OF_SERVICE_UPDATE = datetime.datetime(2018, 5, 25, tzinfo=datetime.timezone.utc)  # GDPR terms update
 
-SEARCH_ENGINE = 'elastic'  # Can be 'elastic', or None
+SEARCH_ENGINE = None  # legacy Elasticsearch 2 search was removed; search indexing goes through SHARE
 ELASTIC_URI = '127.0.0.1:9200'
 ELASTIC8_URI = os.environ.get('ELASTIC8_URI')
 ELASTIC8_CERT_PATH = os.environ.get('ELASTIC8_CERT_PATH')
@@ -507,7 +507,6 @@ class CeleryConfig:
         'scripts.osfstorage.usage_audit',
         'scripts.stuck_registration_audit',
         'scripts.populate_new_and_noteworthy_projects',
-        'website.search.elastic_search',
         'scripts.generate_sitemap',
         'osf.management.commands.clear_expired_sessions',
         'osf.management.commands.restart_stuck_registrations',

@@ -1091,6 +1091,30 @@ class TestDeleteHookPreprint(TestDeleteHookNode):
         res = self.delete(self.preprint.primary_file)
         assert res.status_code == 403
 
+    def test_attempt_delete_while_preprint_pending(self):
+        self.node = self.preprint = PreprintFactory(creator=self.user, is_published=False, machine_state='pending')
+        res = self.delete(self.preprint.primary_file)
+        assert res.status_code == 403
+        assert res.json['message_long'] == 'Cannot delete file as it is the primary file of preprint.'
+
+    def test_delete_while_preprint_initial(self):
+        self.node = self.preprint = PreprintFactory(creator=self.user, is_published=False, machine_state='initial')
+        primary_file = self.preprint.primary_file
+        res = self.delete(primary_file)
+        assert res.status_code == 200
+        self.preprint.reload()
+        assert self.preprint.primary_file is None
+        assert models.TrashedFileNode.load(primary_file._id)
+
+    def test_delete_while_preprint_rejected(self):
+        self.node = self.preprint = PreprintFactory(creator=self.user, is_published=False, machine_state='rejected')
+        primary_file = self.preprint.primary_file
+        res = self.delete(primary_file)
+        assert res.status_code == 200
+        self.preprint.reload()
+        assert self.preprint.primary_file is None
+        assert models.TrashedFileNode.load(primary_file._id)
+
     def test_attempt_delete_folder_with_preprint(self):
         folder = self.root_node.append_folder('Fishes')
         file = folder.append_file('Fish')
@@ -1658,6 +1682,19 @@ class TestPreprintFileViews(StorageTestCase):
         url = base_url.format(folder._id)
         redirect = self.app.get(url, auth=self.user.auth)
         assert redirect.status_code == 400
+
+    def test_download_preprint_without_primary_file(self):
+        self.preprint = PreprintFactory(creator=self.user, is_published=False, machine_state='rejected')
+        res = self.app.get(f'/download/{self.preprint._id}/', auth=self.user.auth)
+        assert res.status_code == 302
+        res = self.app.get(f'/{self.preprint._id}/download/', auth=self.user.auth)
+        assert res.status_code == 302
+
+        self.preprint.remove_primary_file()
+        res = self.app.get(f'/download/{self.preprint._id}/', auth=self.user.auth)
+        assert res.status_code == 404
+        res = self.app.get(f'/{self.preprint._id}/download/', auth=self.user.auth)
+        assert res.status_code == 404
 
     @responses.activate
     @mock.patch('framework.auth.cas.get_client')

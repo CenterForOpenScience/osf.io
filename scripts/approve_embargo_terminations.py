@@ -16,6 +16,7 @@ from django.utils import timezone
 from django.db import transaction
 django.setup()
 
+from framework import sentry
 from framework.celery_tasks import app as celery_app
 
 from osf import models
@@ -66,17 +67,27 @@ def main():
             registration.save()
             continue
         else:
-            count += 1
             logger.info(f'Ending the Embargo ({embargo._id}) of Registration ({registration._id}) early. Making the registration and all of its children public now.')
-            # Call 'accept' trigger directly. This will terminate the embargo
-            # if the registration is unmoderated or push it into the moderation
-            # queue if it is part of a moderated registry.
-            request.accept()
-            registration.reload()
-            embargo_termination_state = registration.embargo_termination_approval.approval_stage
-            assert registration.embargo_termination_approval.state == models.Sanction.APPROVED
-            assert registration.is_embargoed is False
-            assert registration.is_public is True
+            try:
+                with transaction.atomic():
+                    # Call 'accept' trigger directly. This will terminate the embargo
+                    # if the registration is unmoderated or push it into the moderation
+                    # queue if it is part of a moderated registry.
+                    request.accept()
+                    registration.reload()
+                    embargo_termination_state = registration.embargo_termination_approval.approval_stage
+                    assert registration.embargo_termination_approval.state == models.Sanction.APPROVED
+                    assert registration.is_embargoed is False
+                    assert registration.is_public is True
+            except Exception as err:
+                # Rollback request so failure does not block the rest registrations
+                logger.error(
+                    f'Could not end the Embargo ({embargo._id}) of Registration ({registration._id}). Error: {err}',
+                    exc_info=err,
+                )
+                sentry.log_exception(err)
+            else:
+                count += 1
 
     logger.info(f'Auto-approved {count} of {len(pending_embargo_termination_requests)} embargo termination requests')
 
