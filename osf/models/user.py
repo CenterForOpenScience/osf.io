@@ -2373,18 +2373,20 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
                 logger.error(msg)
                 sentry.log_message(msg, level=logging.ERROR)
                 raise OrcidTokenMissingError('ORCiD identity has no token to revoke; sign in via ORCiD and try again.')
-            # Revoke first: a failure must abort the removal before anything is mutated. Retries are safe for `POST` in
-            # this case since revoking an already revoked token is a no-op. For undocumented reasons, ORCiD returns the
-            # same success code when revoking already revoked tokens (which is issued with scope `\authenticate` during
-            # each successful SS). We also verfied that the token has been successfully revoked because it requires
-            # manual authorization again during SSO afterward. Must override `allowed_methods=` to make POST safe.
+            # Note 1: Revoke first because a failure must abort the removal before anything is mutated. In addition,
+            # retries are safe for `POST` in this case since revoking an already revoked token is a no-op in ORCiD API.
+            # For undocumented reasons, ORCiD returns the same success code when revoking already revoked tokens (which
+            # was issued with scope `\authenticate` during each successful SSO). We also verfied that the tokens have
+            # been successfully revoked because it requires manual authorization again during SSO afterward. Finally,
+            # must override `allowed_methods=` to make the revoke `POST` request retriable.
+            # Note 2: Locally, modify `status_forcelist` to test retry for 400s
             self._revoke_tokens_for_one_orcid_id(
                 external_id,
                 token_entry,
                 error_prefix,
                 session=requests_retry_session(
                     retries=website_settings.ORCID_OAUTH_REVOKE_MAX_RETRIES,
-                    status_forcelist=(400, 401, 403, 429, 500, 502, 503, 504),
+                    status_forcelist=(500, 502, 503, 504),
                     allowed_methods=frozenset({'POST'}),
                 )
             )

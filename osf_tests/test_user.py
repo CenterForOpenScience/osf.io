@@ -2846,7 +2846,7 @@ class TestRemoveExternalIdentityOrcid:
 
         mock_retry_session.assert_called_once_with(
             retries=settings.ORCID_OAUTH_REVOKE_MAX_RETRIES,
-            status_forcelist=(429, 500, 502, 503, 504),
+            status_forcelist=(500, 502, 503, 504),
             allowed_methods=frozenset({'POST'}),
         )
         mock_session.post.assert_called_once()
