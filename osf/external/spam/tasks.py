@@ -156,8 +156,14 @@ def check_resource_with_spam_services(resource, content, author, author_email, r
     else:
         creator = OSFUser.objects.get(username=author_email)
 
-    nodes_to_flag = creator.nodes.filter(is_public=True, is_deleted=False)
-    preprints_to_flag = creator.preprints.filter(is_public=True, deleted__isnull=True)
+    creator_protected = creator.is_protected_from_auto_spam
+    if creator_protected:
+        # never flag the other content of a HAM / assumed-HAM / HAM-content author
+        nodes_to_flag = creator.nodes.none()
+        preprints_to_flag = creator.preprints.none()
+    else:
+        nodes_to_flag = creator.nodes.filter(is_public=True, is_deleted=False)
+        preprints_to_flag = creator.preprints.filter(is_public=True, deleted__isnull=True)
 
     for client in spam_clients:
         is_spam, details = client.check_content(**kwargs)
@@ -167,7 +173,7 @@ def check_resource_with_spam_services(resource, content, author, author_email, r
         any_is_spam = True
 
         set_found_spam_info(resource, client, details)
-        if not isinstance(resource, OSFUser) and not creator.is_hammy:
+        if not isinstance(resource, OSFUser) and not creator_protected:
             set_found_spam_info(creator, client, details)
 
         for node in nodes_to_flag:
@@ -188,7 +194,7 @@ def check_resource_with_spam_services(resource, content, author, author_email, r
     resource.flag_spam(skip_user_suspension=True)
 
     # set spam_data but don't flag the creator because it'll happen at the end of check_resource_for_spam_postcommit
-    if not isinstance(resource, OSFUser) and not creator.is_hammy:
+    if not isinstance(resource, OSFUser) and not creator_protected:
         set_collected_info(creator)
         creator.save()
 
@@ -215,8 +221,8 @@ def check_resource_for_spam_postcommit(guid, content, author, author_email, requ
     if not resource:
         return f'{guid} not found'
 
-    if isinstance(resource, OSFUser) and resource.is_hammy:
-        sentry.log_message(f"User {guid} is not checked for spam because of ham status")
+    if isinstance(resource, OSFUser) and resource.is_protected_from_auto_spam:
+        logger.info(f'User {guid} is not checked for spam because of ham status')
         return
 
     spammy_domains = _check_resource_for_domains(resource, content)
@@ -248,7 +254,7 @@ def check_resource_for_spam_postcommit(guid, content, author, author_email, requ
         resource.save()
 
     user = OSFUser.objects.get(username=author_email)
-    if hasattr(resource, 'check_spam_user') and not user.is_hammy:
+    if hasattr(resource, 'check_spam_user') and not user.is_protected_from_auto_spam:
         resource.check_spam_user(user, domains=list(spammy_domains))
 
 

@@ -63,7 +63,7 @@ from .contributor import Contributor, RecentlyAddedContributor
 from .institution import Institution
 from .institution_affiliation import InstitutionAffiliation
 from .mixins import AddonModelMixin, ShareIndexMixin
-from .spam import SpamMixin
+from .spam import SpamMixin, SpamStatus
 from .session import UserSessionMap
 from .tag import Tag
 from .validators import validate_email, validate_social, validate_history_item
@@ -1571,7 +1571,30 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
 
         return True
 
-    def confirm_spam(self, domains=None, save=True, train_spam_services=False, skip_resources_spam=False, notify=True):
+    @property
+    def is_protected_from_auto_spam(self):
+        """True if automated processes must never flag/ban this user.
+
+        Covers users explicitly marked HAM, users with a safe-listed ("assumed HAM") email domain
+        (regardless of their current spam_status) and users owning any content marked HAM by staff.
+        Staff can still mark such a user as spam manually by passing ``force=True`` to ``confirm_spam``.
+        """
+        if self.spam_status == SpamStatus.HAM or self.is_assumed_ham:
+            return True
+        return (
+            self.nodes.filter(spam_status=SpamStatus.HAM).exists()
+            or self.preprints.filter(spam_status=SpamStatus.HAM).exists()
+        )
+
+    def flag_spam(self, force=False, **kwargs):
+        if not force and self.is_protected_from_auto_spam:
+            return
+        super().flag_spam(**kwargs)
+
+    def confirm_spam(self, domains=None, save=True, train_spam_services=False, skip_resources_spam=False, notify=True, force=False):
+        if not force and self.is_protected_from_auto_spam:
+            logger.info(f'User {self._id} is protected from automated spam actions (HAM / assumed HAM)')
+            return
         was_disabled = self.is_disabled
         self.deactivate_account()
         super().confirm_spam(domains=domains, save=save, train_spam_services=train_spam_services)
