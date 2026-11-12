@@ -54,6 +54,9 @@ def external_identity_connected_log_message(provider, external_id):
     return f'{provider} identity {external_id} connected'
 
 
+# 102-109 reserved for file actions
+REMOVE_GUID = 110
+
 def update_admin_log(user_id, object_id, object_repr, message, action_flag=UNKNOWN):
     AdminLogEntry.objects.log_action(
         user_id=user_id,

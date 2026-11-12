@@ -1,7 +1,7 @@
 from django.db import transaction
 from django.db.models import F
 from django.core.exceptions import PermissionDenied, ValidationError
-from django.http import HttpResponse, JsonResponse
+from django.http import Http404, HttpResponse, JsonResponse
 from django.contrib import messages
 from django.contrib.auth.mixins import PermissionRequiredMixin
 from django.shortcuts import redirect
@@ -62,6 +62,8 @@ class PreprintMixin(PermissionRequiredMixin):
 
     def get_object(self):
         preprint = Preprint.load(self.kwargs['guid'])
+        if preprint is None:
+            raise Http404(f'Preprint not found: {self.kwargs["guid"]}')
         # Django template does not like attributes with underscores for some reason
         preprint.guid = preprint._id
         return preprint
@@ -321,6 +323,12 @@ class RecoverDeletedPreprintView(PermissionRequiredMixin, FormView):
                         'and resync CrossRef. Run again on the same GUID to add the next version.'
                     )
                 else:
+                    occupant = getattr(Guid.load(guid), 'referent', None)
+                    if occupant is not None:
+                        raise ValueError(
+                            f'GUID "{guid}" is used by {type(occupant).__name__} (pk={occupant.pk}); '
+                            'a user with the remove_guid permission must remove and reassign it in the Guids panel first.'
+                        )
                     version = Preprint.create(
                         provider=data['provider'],
                         title=data['title'],

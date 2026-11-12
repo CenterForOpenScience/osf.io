@@ -94,7 +94,11 @@ def requests_retry_session(
     backoff_factor=0.3,
     status_forcelist=(500, 502, 504),
     session=None,
+<<<<<<< HEAD
     allowed_methods=None,
+=======
+    allowed_methods=Retry.DEFAULT_ALLOWED_METHODS,
+>>>>>>> upstream/feature/pbs-26-22
 ):
     """
     https://www.peterbe.com/plog/best-practice-with-retries-with-requests
@@ -112,7 +116,11 @@ def requests_retry_session(
         connect=retries,
         backoff_factor=backoff_factor,
         status_forcelist=status_forcelist,
+<<<<<<< HEAD
         **retry_kwargs,
+=======
+        allowed_methods=allowed_methods,
+>>>>>>> upstream/feature/pbs-26-22
     )
     adapter = HTTPAdapter(max_retries=retry)
     session.mount('http://', adapter)

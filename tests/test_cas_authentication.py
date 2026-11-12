@@ -202,8 +202,6 @@ class TestCASClient(OsfTestCase):
             responses.Response(
                 responses.POST,
                 url,
-                json={'client_id': client_id,
-                      'client_secret': client_secret},
                 status=204
             )
         )
