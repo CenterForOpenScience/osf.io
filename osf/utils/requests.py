@@ -98,6 +98,9 @@ def requests_retry_session(
 ):
     """
     https://www.peterbe.com/plog/best-practice-with-retries-with-requests
+
+    Note: urllib3 only retries idempotent methods on read errors and status codes by default (POST is excluded).
+    Callers can override default ``allowed_methods`` for requests that are safe to repeat for their customized cases.
     """
     session = session or requests.Session()
     retry = Retry(
@@ -106,7 +109,7 @@ def requests_retry_session(
         connect=retries,
         backoff_factor=backoff_factor,
         status_forcelist=status_forcelist,
-        allowed_methods=allowed_methods,
+        allowed_methods=allowed_methods
     )
     adapter = HTTPAdapter(max_retries=retry)
     session.mount('http://', adapter)

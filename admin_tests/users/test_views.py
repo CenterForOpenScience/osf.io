@@ -256,9 +256,10 @@ class TestRemoveExternalIdentity(AdminTestCase):
             'ORCID': {'0000-0000-0000-0001': {'access_token': 'fake-token'}},
         }
         self.user.save()
-        post_patcher = mock.patch('osf.models.user.requests.post', return_value=mock.Mock(status_code=200))
-        self.mock_post = post_patcher.start()
-        self.addCleanup(post_patcher.stop)
+        session_patcher = mock.patch('osf.models.user.requests_retry_session')
+        self.mock_post = session_patcher.start().return_value.post
+        self.mock_post.return_value = mock.Mock(status_code=200)
+        self.addCleanup(session_patcher.stop)
 
         self.request = RequestFactory().post('/fake_path')
         self.view = views.UserRemoveExternalIdentityView
