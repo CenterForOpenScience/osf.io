@@ -459,7 +459,7 @@ class UserRemoveExternalIdentityView(UserMixin, View):
             return redirect(self.get_success_url())
 
         try:
-            user.remove_external_identity(provider, external_id)
+            user.remove_one_external_identity(provider, external_id)
         except UserStateError as e:
             messages.error(request, f'Failed to remove {provider} identity {external_id}: {e}')
             return redirect(self.get_success_url())

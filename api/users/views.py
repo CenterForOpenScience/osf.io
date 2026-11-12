@@ -649,7 +649,7 @@ class UserIdentitiesDetail(JSONAPIBaseView, generics.RetrieveDestroyAPIView, Use
         try:
             for identity_id in identity_ids:
                 # Keep the user's current session: they are managing their own account.
-                user.remove_external_identity(provider, identity_id, remove_sessions=False)
+                user.remove_one_external_identity(provider, identity_id, remove_sessions=False)
         except OrcidTokenMissingError:
             raise Conflict(detail='No ORCiD token found for this identity. Please sign in via ORCiD and try again.')
         except OrcidRevocationError:
