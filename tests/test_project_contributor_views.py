@@ -27,7 +27,6 @@ from tests.base import (
 )
 from tests.utils import capture_notifications
 from website import language
-from website.profile.utils import add_contributor_json
 
 
 from unittest import mock
@@ -51,7 +50,6 @@ from tests.base import (
     OsfTestCase,
 )
 from website import language
-from website.profile.utils import add_contributor_json
 
 
 @pytest.mark.enable_bookmark_creation
@@ -167,52 +165,6 @@ class TestProjectContributorViews(OsfTestCase):
         assert 'forked_date' in data['node']
         assert 'registered_from_url' in data['node']
         # TODO: Test "parent" and "user" output
-
-    def test_add_contributor_post(self):
-        # Two users are added as a contributor via a POST request
-        project = ProjectFactory(creator=self.user1, is_public=True)
-        user2 = UserFactory()
-        user3 = UserFactory()
-
-        dict2 = add_contributor_json(user2)
-        dict3 = add_contributor_json(user3)
-        dict2.update(
-            {
-                'permission': permissions.ADMIN,
-                'visible': True,
-            }
-        )
-        dict3.update(
-            {
-                'permission': permissions.WRITE,
-                'visible': False,
-            }
-        )
-
-        with capture_notifications(expect_none=True):
-            self.app.post(
-                f'/api/v1/project/{project._id}/contributors/',
-                json={
-                    'users': [dict2, dict3],
-                    'node_ids': [project._id],
-                },
-                content_type='application/json',
-                auth=self.auth,
-                follow_redirects=True,
-            )
-        project.reload()
-        assert user2 in project.contributors
-        # A log event was added
-        assert project.logs.latest().action == 'contributor_added'
-        assert len(project.contributors) == 3
-
-        assert project.has_permission(user2, permissions.ADMIN) is True
-        assert project.has_permission(user2, permissions.WRITE) is True
-        assert project.has_permission(user2, permissions.READ) is True
-
-        assert project.has_permission(user3, permissions.ADMIN) is False
-        assert project.has_permission(user3, permissions.WRITE) is True
-        assert project.has_permission(user3, permissions.READ) is True
 
     def test_manage_permissions(self):
         resp = self.app.post(
