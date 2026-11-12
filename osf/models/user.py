@@ -6,7 +6,6 @@ import uuid
 from copy import deepcopy
 
 from flask import Request as FlaskRequest
-from framework import analytics
 from guardian.shortcuts import get_perms
 
 # OSF imports
@@ -27,7 +26,7 @@ from django.db.models.signals import post_save
 from django.utils import timezone
 from django.utils.crypto import get_random_string
 
-from framework import sentry
+from framework import analytics, sentry
 from framework.auth import Auth, signals, utils
 from framework.auth.core import generate_verification_key
 from framework.auth.exceptions import (
@@ -2361,18 +2360,21 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         Raises OrcidTokenMissingError if the ORCiD identity has no token to revoke, and OrcidRevocationError
         if the ORCiD token revocation fails. Both are UserStateError; the user is left unchanged.
         """
-        # TODO: Fix this
-        # Raises KeyError if the identity isn't actually connected -- callers rely on this.
-        # self.external_identity[provider][external_id]
-
         error_prefix = '[Remove External Identity]'
+        # Note: In the only two places right before where this method is called, there are checks to ensure that
+        # `self.external_identity[provider][external_id]` won't raise `KeyError`. Raise `UserStateError`.
+        if external_id not in self.external_identity.get(provider, {}):
+            msg = f'{error_prefix} External identity "{provider}#{external_id}" is not connected to user {self._id}.'
+            logger.warning(msg)
+            sentry.log_message(msg)
+            raise UserStateError(msg)
         if provider == website_settings.EXTERNAL_IDENTITY_PROFILE['OrcidProfile']:
             token_entry = self.external_identity_tokens.get(provider, {}).get(external_id)
             if not (token_entry and (token_entry.get('access_token') or token_entry.get('refresh_token'))):
                 msg = f'{error_prefix} Missing ORCiD token: user={self._id}, orcid_id={external_id}'
                 logger.error(msg)
                 sentry.log_message(msg, level=logging.ERROR)
-                raise OrcidTokenMissingError('ORCiD identity has no token to revoke; sign in via ORCiD and try again.')
+                raise OrcidTokenMissingError(msg)
             # Note 1: Revoke first because a failure must abort the removal before anything is mutated. In addition,
             # retries are safe for `POST` in this case since revoking an already revoked token is a no-op in ORCiD API.
             # For undocumented reasons, ORCiD returns the same success code when revoking already revoked tokens (which
@@ -2425,7 +2427,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
             logger.error(msg)
             sentry.log_message(msg, level=logging.ERROR)
             sentry.log_exception(e)
-            raise OrcidRevocationError(f'Fail to revoke ORCiD access: {e}')
+            raise OrcidRevocationError(msg)
 
     def _clear_identifying_information(self):
         # This doesn't remove identifying info, but ensures other users can't see the deleted user's profile etc.

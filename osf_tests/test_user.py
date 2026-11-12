@@ -1864,7 +1864,7 @@ class TestRemoveExternalIdentity(OsfTestCase):
         assert '0000-0000-0000-0001' not in self.user.external_identity_tokens['ORCID']
 
     def test_removing_external_identity_raises_for_unknown_identity(self):
-        with pytest.raises(KeyError):
+        with pytest.raises(UserStateError):
             self.user.remove_one_external_identity('ORCID', 'not-a-real-id')
 
 
