@@ -2,6 +2,12 @@
 
 We follow the CalVer (https://calver.org/) versioning scheme: YY.MINOR.MICRO.
 
+26.26.1 (2026-11-12)
+====================
+
+- Add admin check for `add_contributors_to_node`
+- Remove deprecated v1 / flask route
+
 26.26.0 (2026-11-02)
 ====================
 
