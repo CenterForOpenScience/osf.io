@@ -6,7 +6,7 @@ from django.db import migrations
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('osf', '0061_guid_remove_guid_permission'),
+        ('osf', '0062_merge_20261112_1547'),
     ]
 
     operations = [
