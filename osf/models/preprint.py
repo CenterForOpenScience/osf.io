@@ -262,6 +262,8 @@ class Preprint(DirtyFieldsMixin, VersionedGuidMixin, IdentifierMixin, Reviewable
     deleted = NonNaiveDateTimeField(null=True, blank=True)
     # For legacy preprints
     migrated = NonNaiveDateTimeField(null=True, blank=True)
+    # Moved off OSF together with its provider; the API rejects edits
+    is_migrated = models.BooleanField(default=False)
     region = models.ForeignKey(Region, null=True, blank=True, on_delete=models.CASCADE)
 
     # For ContributorMixin

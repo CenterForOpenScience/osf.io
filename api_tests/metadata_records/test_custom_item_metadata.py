@@ -2,6 +2,7 @@ import pytest
 from waffle.testutils import override_flag
 
 from api.base.settings.defaults import API_BASE
+from api.preprints.permissions import MIGRATED_PREPRINT_ERROR
 from osf import features
 from osf.models import GuidMetadataRecord, Preprint
 from osf.utils import permissions
@@ -603,3 +604,27 @@ class TestCustomItemMetadataProjectReadOnly:
         record = GuidMetadataRecord.objects.get(guid=preprint.guids.first())
         assert record.language == 'en'
         assert record.resource_type_general == 'Text'
+
+
+@pytest.mark.django_db
+class TestCustomItemMetadataMigratedPreprint:
+
+    def test_put_blocked_when_preprint_migrated(self, app):
+        user = AuthUserFactory()
+        preprint = PreprintFactory(creator=user)
+        preprint.is_migrated = True
+        preprint.save()
+        url = f'/{API_BASE}custom_item_metadata_records/{preprint._id}/'
+        payload = {
+            'data': {
+                'id': preprint._id,
+                'type': 'custom-item-metadata-records',
+                'attributes': {
+                    'language': 'en',
+                    'resource_type_general': 'Text',
+                },
+            }
+        }
+        res = app.put_json_api(url, payload, auth=user.auth, expect_errors=True)
+        assert res.status_code == 403
+        assert res.json['errors'][0]['detail'] == MIGRATED_PREPRINT_ERROR
