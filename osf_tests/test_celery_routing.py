@@ -56,6 +56,8 @@ def test_every_route_matches_a_registered_task(registered_tasks):
 
 
 def test_no_task_sets_routing_attributes(registered_tasks):
+    # Only catches routing set on the task decorator (e.g. @app.task(queue=...)). Overrides passed at call time,
+    # e.g. task.apply_async(queue=...), live in the calling code and take precedence over both, but aren't visible here
     overrides = {}
     for name, task in sorted(registered_tasks.items()):
         attributes = {attr: getattr(task, attr) for attr in ROUTING_ATTRIBUTES if getattr(task, attr, None) is not None}
