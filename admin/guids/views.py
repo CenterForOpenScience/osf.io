@@ -5,7 +5,7 @@ from django.contrib.auth.mixins import PermissionRequiredMixin
 from django.db import transaction
 from django.http import Http404
 from django.shortcuts import redirect
-from django.urls import reverse
+from django.urls import NoReverseMatch, reverse
 from django.views.generic import FormView, TemplateView, View
 
 from admin.base.forms import GuidForm
@@ -43,6 +43,15 @@ def describe_referent(referent):
     return f'{type(referent).__name__} {referent.pk}'
 
 
+def version_guid_error(guid_str):
+    base_guid_str, version = Guid.split_guid(guid_str)
+    if version is None:
+        return None
+    return (
+        f'"{guid_str}" is a preprint guid. Version guids cannot be reassigned'
+    )
+
+
 class GuidSearchView(PermissionRequiredMixin, FormView):
     """Look up a guid to see what it points to."""
     template_name = 'guids/search.html'
@@ -51,13 +60,28 @@ class GuidSearchView(PermissionRequiredMixin, FormView):
     form_class = GuidForm
 
     def form_valid(self, form):
-        return redirect(reverse('guids:detail', kwargs={'guid': form.cleaned_data['guid'].strip().lower()}))
+        guid_str = form.cleaned_data['guid'].strip().lower()
+        error = version_guid_error(guid_str)
+        if error is None:
+            try:
+                return redirect(reverse('guids:detail', kwargs={'guid': guid_str}))
+            except NoReverseMatch:
+                error = f'"{guid_str}" is not a valid guid.'
+        form.add_error('guid', error)
+        return self.form_invalid(form)
 
 
 class GuidDetailView(PermissionRequiredMixin, TemplateView):
     template_name = 'guids/detail.html'
     permission_required = 'osf.view_guid'
     raise_exception = True
+
+    def get(self, request, *args, **kwargs):
+        error = version_guid_error(self.kwargs['guid'])
+        if error:
+            messages.error(request, error)
+            return redirect(reverse('guids:search'))
+        return super().get(request, *args, **kwargs)
 
     def get_context_data(self, **kwargs):
         guid = Guid.load(self.kwargs['guid'])
@@ -67,6 +91,7 @@ class GuidDetailView(PermissionRequiredMixin, TemplateView):
         reassign_blocker = guid_reassign_blocker(referent) if referent is not None else None
         kwargs.update({
             'guid': guid,
+            'guid_id': guid._id,
             'referent': referent,
             'referent_description': describe_referent(referent) if referent is not None else None,
             'referent_url': get_referent_admin_url(referent) if referent is not None else None,

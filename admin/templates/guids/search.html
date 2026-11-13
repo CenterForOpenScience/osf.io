@@ -16,9 +16,9 @@
         <div class="row">
             <form action="{% url 'guids:search' %}" method="post">
                 {% csrf_token %}
-                {% if form.errors %}
-                    <div class="alert alert-danger">{{ form.errors }}</div>
-                {% endif %}
+                {% for error in form.guid.errors %}
+                    <p class="text-danger">{{ error }}</p>
+                {% endfor %}
                 {{ form.guid }}
                 <input type="submit" class="btn btn-primary" value="Look up" />
             </form>
