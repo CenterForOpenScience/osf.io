@@ -63,6 +63,7 @@ from api.preprints.permissions import (
     PreprintFilesPermissions,
     PreprintInstitutionPermissionList,
     CanSubmitPreprintToProvider,
+    MIGRATED_PREPRINT_ERROR,
 )
 from api.providers.workflows import Workflows, PUBLIC_STATES
 from api.nodes.permissions import ContributorOrPublic
@@ -138,6 +139,9 @@ class PreprintMixin(NodeMixin):
         # May raise a permission denied
         if check_object_permissions:
             self.check_object_permissions(self.request, preprint)
+
+        if preprint.is_migrated and self.request.method not in drf_permissions.SAFE_METHODS:
+            raise PermissionDenied(detail=MIGRATED_PREPRINT_ERROR)
 
         return preprint
 
@@ -231,6 +235,9 @@ class PreprintVersionsList(JSONAPIBaseView, generics.ListCreateAPIView, Preprint
         return qs
 
     def create(self, request, *args, **kwargs):
+        preprint = Preprint.load(kwargs.get('preprint_id'))
+        if preprint and preprint.is_migrated:
+            raise PermissionDenied(detail=MIGRATED_PREPRINT_ERROR)
         request.data['type'] = 'preprints'
         request.data['create_from_guid'] = kwargs.get('preprint_id')
         return super().create(request, *args, **kwargs)

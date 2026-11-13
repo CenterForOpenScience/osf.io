@@ -30,18 +30,14 @@
 
         var FOOTER_LINKS_CONFIG = $.extend({
             selector:'textarea[name=footer_links]',
-            content_css: [
-                'https://netdna.bootstrapcdn.com/font-awesome/4.6.3/css/font-awesome.min.css',
-            ],
             valid_elements : "@[id|class|style|title],a[name|href|target|title|class],#p[class],#span[class|style],u,strong/b,em/i,br,-div",
             style_formats: [
                 {title: 'vertical-align', selector: 'span', styles: {'vertical-align': 'middle'}},
-                {title: 'fontawesome 2x', selector: 'span.fa', classes: 'fa-2x'},
             ],
             style_formats_merge: true,
             end_container_on_empty_block: true,
-            plugins: 'link image preview code fontawesome',
-            toolbar: 'bold italic underline | undo redo | link | image | fontawesome | code | preview ',
+            plugins: 'link image preview code',
+            toolbar: 'bold italic underline | undo redo | link | image | code | preview ',
             external_plugins: {
             }
         }, TINYMCE_BASE_CONFIG);

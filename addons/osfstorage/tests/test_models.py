@@ -311,6 +311,35 @@ class TestOsfstorageFileNode(StorageTestCase):
         with pytest.raises(FileNodeIsPrimaryFile):
             file.delete()
 
+    def test_delete_primary_file_of_pending_preprint(self):
+        preprint = PreprintFactory(is_published=False, machine_state='pending')
+        file = preprint.files.get()
+
+        with pytest.raises(FileNodeIsPrimaryFile):
+            file.delete()
+        preprint.reload()
+        assert preprint.primary_file == file
+
+    def test_delete_primary_file_of_initial_or_rejected_preprint(self):
+        for machine_state in ('initial', 'rejected'):
+            preprint = PreprintFactory(is_published=False, machine_state=machine_state)
+            file = preprint.files.get()
+
+            file.delete()
+            preprint.reload()
+            assert preprint.primary_file is None
+            assert preprint.machine_state == machine_state
+            assert models.TrashedFile.load(file._id)
+
+    def test_delete_folder_with_primary_file_of_initial_preprint(self):
+        preprint = PreprintFactory(is_published=False)
+        folder = preprint.root_folder.append_folder('Drafts')
+        preprint.primary_file.move_under(folder)
+
+        folder.delete()
+        preprint.reload()
+        assert preprint.primary_file is None
+
     def test_delete_file_no_guid(self):
         child = self.node_settings.get_root().append_file('Test')
 

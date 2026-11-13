@@ -191,7 +191,7 @@ class WikiVersion(ObjectIDMixin, BaseModel):
 
         if settings.SPAM_CHECK_PUBLIC_ONLY and not node.is_public:
             return
-        if user.is_hammy:
+        if user.is_protected_from_auto_spam:
             return
 
         content = self._get_spam_content(node)

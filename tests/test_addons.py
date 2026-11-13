@@ -1153,6 +1153,20 @@ class TestCheckAuth(OsfTestCase):
         with override_flag(features.PROJECT_READ_ONLY, active=True):
             assert views._check_resource_permissions(preprint, Auth(user=self.user), 'upload')
 
+    def test_preprint_upload_blocked_when_migrated(self):
+        preprint = PreprintFactory(creator=self.user)
+        preprint.is_migrated = True
+        preprint.save()
+        with self.assertRaises(HTTPError) as exc_info:
+            views._check_resource_permissions(preprint, Auth(user=self.user), 'upload')
+        assert exc_info.exception.code == 403
+
+    def test_preprint_download_allowed_when_migrated(self):
+        preprint = PreprintFactory(creator=self.user)
+        preprint.is_migrated = True
+        preprint.save()
+        assert views._check_resource_permissions(preprint, Auth(user=self.user), 'download')
+
 class TestCheckOAuth(OsfTestCase):
 
     def setUp(self):

@@ -6,7 +6,7 @@ from django.utils import timezone
 
 from tests.base import OsfTestCase
 from osf_tests.factories import AuthUserFactory, NodeFactory, EmbargoTerminationApprovalFactory, RegistrationFactory, EmbargoFactory
-from osf.models import Sanction, Registration
+from osf.models import Sanction, Registration, SpamStatus
 
 from scripts.approve_embargo_terminations import main, get_pending_embargo_termination_requests
 
@@ -81,3 +81,26 @@ class TestApproveEmbargoTerminations(OsfTestCase):
         main()
         self.registration2.refresh_from_db()
         assert self.registration2.embargo_termination_approval is None
+
+    @pytest.mark.usefixtures('mock_gravy_valet_get_verified_links')
+    @mock.patch('osf.models.sanctions.EmailApprovableSanction.ask', mock.Mock())
+    def test_main_failed_termination_does_not_block_other_requests(self):
+        other_approval = EmbargoTerminationApprovalFactory()
+        other_approval.initiation_date = timezone.now() - timedelta(days=5)
+        other_approval.save()
+        other_registration = Registration.objects.get(embargo_termination_approval=other_approval)
+
+        # A spam-flagged registration cannot be made public, so its termination fails
+        self.registration2.spam_status = SpamStatus.SPAM
+        self.registration2.save()
+
+        main()
+
+        other_registration.refresh_from_db()
+        assert other_registration.is_public
+        assert not other_registration.is_embargoed
+
+        self.registration2.refresh_from_db()
+        assert not self.registration2.is_public
+        assert self.registration2.embargo.state == Sanction.APPROVED
+        assert self.registration2.embargo_termination_approval.state == Sanction.UNAPPROVED

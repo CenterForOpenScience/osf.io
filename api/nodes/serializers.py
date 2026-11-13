@@ -239,7 +239,6 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
         'node_links',
         'parent',
         'preprint',
-        'preprints',
         'public',
         'region',
         'registration',

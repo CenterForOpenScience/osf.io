@@ -1,8 +1,29 @@
+import operator
+from functools import reduce
+
 from django import forms
 from django.db.models import Q
 from django.contrib.auth.models import Group
 
 from osf.models import AdminProfile
+
+# TODO: Moving to guardian, find a better way to distinguish "admin-like" groups from object permission groups
+OBJECT_PERMISSION_GROUP_PREFIXES = (
+    'collections_',
+    'reviews_',
+    'preprint_',
+    'node_',
+    'draft_registration_',
+    'osfgroup_',
+    'institution_',
+)
+
+
+def get_admin_app_groups():
+    """Groups that grant admin app permissions (osf_admin, read_only, ...): every group but the per-object ones."""
+    return Group.objects.exclude(
+        reduce(operator.or_, (Q(name__startswith=prefix) for prefix in OBJECT_PERMISSION_GROUP_PREFIXES))
+    )
 
 
 class LoginForm(forms.Form):
@@ -20,9 +41,8 @@ class UserRegistrationForm(forms.Form):
 
     osf_id = forms.CharField(required=True, max_length=5, min_length=5)
 
-    # TODO: Moving to guardian, find a better way to distinguish "admin-like" groups from object permission groups
     group_perms = forms.ModelMultipleChoiceField(
-        queryset=Group.objects.exclude(Q(name__startswith='collections_') | Q(name__startswith='reviews_') | Q(name__startswith='preprint_') | Q(name__startswith='node_') | Q(name__startswith='draft_registration_')),
+        queryset=get_admin_app_groups(),
         required=False,
         widget=forms.CheckboxSelectMultiple
     )

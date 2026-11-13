@@ -23,4 +23,5 @@ class AdminProfile(models.Model):
             ('delete_preprintrequest', 'Can delete preprints withdrawal requests'),
             ('change_preprintrequest', 'Can update preprints withdrawal requests'),
             ('view_management', 'Can view and run management commands in the admin app.'),
+            ('admin_user_management', 'Can register admin users and audit staff and superuser status in the admin app.'),
         )

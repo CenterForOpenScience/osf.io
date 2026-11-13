@@ -3,8 +3,12 @@ from django.urls import re_path
 from django.contrib import admin
 from admin.base.settings import ADMIN_BASE, DEBUG
 from admin.base import views
+from admin.common_auth.views import LoginView
 
 base_pattern = f'^{ADMIN_BASE}'
+
+# Route Django admin's login through our LoginView so it enforces two-factor auth
+admin.site.login = LoginView.as_view()
 
 urlpatterns = [
     ### ADMIN ###
@@ -41,6 +45,8 @@ urlpatterns = [
             re_path(r'^draft_registrations/', include('admin.draft_registrations.urls', namespace='draft_registrations')),
             re_path(r'^files/', include('admin.files.urls', namespace='files')),
             re_path(r'^share_reindex/', include('admin.share_reindex.urls', namespace='share_reindex')),
+            re_path(r'^guids/', include('admin.guids.urls', namespace='guids')),
+            re_path(r'^admin_log/', include('admin.admin_log.urls', namespace='admin_log')),
             re_path(r'^notifications/', include('admin.notifications.urls', namespace='notifications')),
         ]),
     ),

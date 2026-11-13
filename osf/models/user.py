@@ -6,7 +6,6 @@ import uuid
 from copy import deepcopy
 
 from flask import Request as FlaskRequest
-from framework import analytics
 from guardian.shortcuts import get_perms
 
 # OSF imports
@@ -25,8 +24,9 @@ from django.db import models, transaction
 from django.db.models import Count, Exists, OuterRef
 from django.db.models.signals import post_save
 from django.utils import timezone
+from django.utils.crypto import get_random_string
 
-from framework import sentry
+from framework import analytics, sentry
 from framework.auth import Auth, signals, utils
 from framework.auth.core import generate_verification_key
 from framework.auth.exceptions import (
@@ -41,21 +41,28 @@ from osf.external.gravy_valet import (
     request_helpers as gv_requests,
     translations as gv_translations,
 )
-from osf.utils.requests import get_current_request
+from osf.utils.requests import get_current_request, requests_retry_session
 from osf.exceptions import (
     reraise_django_validation_errors,
     UserStateError,
+    OrcidRevocationError,
+    OrcidTokenMissingError,
     InvalidTagError,
     TagNotFoundError
 )
 
+from .admin_log_entry import (
+    update_admin_log,
+    EXTERNAL_IDENTITY_CONNECTED,
+    external_identity_connected_log_message,
+)
 from .base import BaseModel, GuidMixin, GuidMixinQuerySet
 from .notable_domain import NotableDomain
 from .contributor import Contributor, RecentlyAddedContributor
 from .institution import Institution
 from .institution_affiliation import InstitutionAffiliation
 from .mixins import AddonModelMixin, ShareIndexMixin
-from .spam import SpamMixin
+from .spam import SpamMixin, SpamStatus
 from .session import UserSessionMap
 from .tag import Tag
 from .validators import validate_email, validate_social, validate_history_item
@@ -1563,7 +1570,30 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
 
         return True
 
-    def confirm_spam(self, domains=None, save=True, train_spam_services=False, skip_resources_spam=False, notify=True):
+    @property
+    def is_protected_from_auto_spam(self):
+        """True if automated processes must never flag/ban this user.
+
+        Covers users explicitly marked HAM, users with a safe-listed ("assumed HAM") email domain
+        (regardless of their current spam_status) and users owning any content marked HAM by staff.
+        Staff can still mark such a user as spam manually by passing ``force=True`` to ``confirm_spam``.
+        """
+        if self.spam_status == SpamStatus.HAM or self.is_assumed_ham:
+            return True
+        return (
+            self.nodes.filter(spam_status=SpamStatus.HAM).exists()
+            or self.preprints.filter(spam_status=SpamStatus.HAM).exists()
+        )
+
+    def flag_spam(self, force=False, **kwargs):
+        if not force and self.is_protected_from_auto_spam:
+            return
+        super().flag_spam(**kwargs)
+
+    def confirm_spam(self, domains=None, save=True, train_spam_services=False, skip_resources_spam=False, notify=True, force=False):
+        if not force and self.is_protected_from_auto_spam:
+            logger.info(f'User {self._id} is protected from automated spam actions (HAM / assumed HAM)')
+            return
         was_disabled = self.is_disabled
         self.deactivate_account()
         super().confirm_spam(domains=domains, save=save, train_spam_services=train_spam_services)
@@ -2168,7 +2198,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         """
         Complies with GDPR guidelines by disabling the account and removing identifying information.
         """
-        self._revoke_orcid_tokens()
+        self._gdpr_delete_revoke_all_orcid_tokens()
 
         with transaction.atomic():
             self._validate_and_remove_resource_for_gdpr_delete(
@@ -2266,15 +2296,31 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
                         f'access_token=[{"present" if access_token else "missing"}], '
                         f'refresh_token=[{"present" if refresh_token else "missing"}]')
 
-    def _revoke_orcid_tokens(self):
-        """Revokes all ORCiD tokens associated with this user via the ORCiD API.
+    def record_external_identity_connected(self, provider, external_id):
+        """Records an admin-log entry when this user connects an external identity (e.g. ORCID).
+
+        Connection metadata (when/whether an identity was connected) lives only in the admin
+        log, so this does not touch `external_identity_tokens`.
+        """
+        update_admin_log(
+            user_id=self.id,
+            object_id=self.pk,
+            object_repr='User',
+            message=external_identity_connected_log_message(provider, external_id),
+            action_flag=EXTERNAL_IDENTITY_CONNECTED,
+        )
+
+    def _gdpr_delete_revoke_all_orcid_tokens(self):
+        """Revokes all ORCiD tokens associated with this user via the ORCiD API. This is (and should be) used by GDPR
+        Delete only, because it only revokes the authorization without removing user's ORCiD ID or tokens.
         """
         identity_ids = set(self.external_identity.get('ORCID', {}))
         tokens_identity_ids = self.external_identity_tokens.get('ORCID', {})
+        log_prefix = '[GDPR Delete]'
 
         # If there are multiple identities, inform sentry and continue with revocation
         if len(identity_ids) > 1 or len(tokens_identity_ids) > 1:
-            msg = (f'[GDPR Delete] Multiple ORCiD entries found: user={self._id}, '
+            msg = (f'{log_prefix} Multiple ORCiD entries found: user={self._id}, '
                    f'identities={sorted(identity_ids)}, tokens={sorted(tokens_identity_ids)}')
             logger.warning(msg)
             sentry.log_message(msg, level=logging.WARNING)
@@ -2286,7 +2332,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
 
         identity_only_ids = identity_ids - identity_ids_with_tokens
         if identity_only_ids:
-            msg = (f'[GDPR Delete] Missing ORCiD tokens: '
+            msg = (f'{log_prefix} Missing ORCiD tokens: '
                    f'user={self._id}, ids_without_token={sorted(identity_only_ids)}')
             logger.error(msg)
             sentry.log_message(msg, level=logging.ERROR)
@@ -2294,7 +2340,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
 
         token_only_ids = identity_ids_with_tokens - identity_ids
         if token_only_ids:
-            msg = (f'[GDPR delete] Orphaned ORCiD tokens: '
+            msg = (f'{log_prefix} Orphaned ORCiD tokens: '
                    f'user={self._id}, ids_with_orphaned_tokens={sorted(token_only_ids)})')
             sentry.log_message(msg, level=logging.ERROR)
             logger.error(msg)
@@ -2302,36 +2348,109 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
 
         revocable_ids = identity_ids & identity_ids_with_tokens
         if not revocable_ids:
-            logger.info(f'[GDPR delete] No ORCiD Connected: user={self._id}')
+            logger.info(f'{log_prefix} No ORCiD Connected: user={self._id}')
             return
 
         for orcid_id in sorted(revocable_ids):
-            token_entry = tokens_identity_ids[orcid_id]
-            # We only need to revoke with either access token or refresh token
-            orcid_token = token_entry.get('access_token') or token_entry.get('refresh_token')
-            logger.info(f'[GDPR delete] Revoking ORCiD Access: user={self._id}, orcid_id={orcid_id}')
-            # Note: no need to retry as for now since this is only triggered manually by OSF admin
-            # TODO: however, need to add retry when we add revocation when user disconnect ORCiD
-            try:
-                response = requests.post(
-                    website_settings.ORCID_OAUTH_REVOKE_URL,
-                    data={
-                        'client_id': website_settings.ORCID_OAUTH_CLIENT_ID,
-                        'client_secret': website_settings.ORCID_OAUTH_CLIENT_SECRET,
-                        'token': orcid_token,
-                    },
-                    timeout=website_settings.ORCID_OAUTH_REVOKE_REQUEST_TIMEOUT,
-                )
-                logger.info(f'[GDPR delete] ORCiD Revocation Response: user={self._id}, orcid_id={orcid_id}, '
-                            f'status_code={response.status_code}, response_text={response.text}')
-                response.raise_for_status()
-            except requests.exceptions.RequestException as e:
-                msg = f'[GDPR delete] ORCiD Revocation Failed: user={self._id}, orcid_id={orcid_id}, error={e}'
+            # NOTE 1: No need to retry as it is only triggered manually by OSF admin, use `session=None` (default)
+            # NOTE 2: For GDPR delete, the actual identities/tokens removal happens in `_clear_identifying_information()`.
+            self._revoke_tokens_for_one_orcid_id(orcid_id, tokens_identity_ids[orcid_id], log_prefix, session=None)
+
+    def _send_orcid_revoke_request(self, orcid_id, orcid_token, context, session=None):
+        session = session or requests
+        response = session.post(
+            website_settings.ORCID_OAUTH_REVOKE_URL,
+            data={
+                'client_id': website_settings.ORCID_OAUTH_CLIENT_ID,
+                'client_secret': website_settings.ORCID_OAUTH_CLIENT_SECRET,
+                'token': orcid_token,
+            },
+            timeout=website_settings.ORCID_OAUTH_REVOKE_REQUEST_TIMEOUT,
+        )
+        logger.info(f'[{context}] ORCiD Revocation Response: user={self._id}, orcid_id={orcid_id}, '
+                    f'status_code={response.status_code}, response_text={response.text}')
+        response.raise_for_status()
+        return response
+
+    def remove_one_external_identity(self, provider, external_id, remove_sessions=True):
+        """Unlinks a single external identity (e.g. ORCID) from this user. For ORCiD, the token is revoked
+        with the provider first and is required. This method is used by both OSF Admin and API.
+
+        If this leaves the user with no way to log in, a random usable password is set so the
+        account stays active (the user can recover via password reset).
+
+        Raises KeyError if `external_id` is not connected to this user under `provider`.
+        Raises OrcidTokenMissingError if the ORCiD identity has no token to revoke, and OrcidRevocationError
+        if the ORCiD token revocation fails. Both are UserStateError; the user is left unchanged.
+        """
+        error_prefix = '[Remove External Identity]'
+        # Note: In the only two places right before where this method is called, there are checks to ensure that
+        # `self.external_identity[provider][external_id]` won't raise `KeyError`. Raise `UserStateError`.
+        if external_id not in self.external_identity.get(provider, {}):
+            msg = f'{error_prefix} External identity "{provider}#{external_id}" is not connected to user {self._id}.'
+            logger.warning(msg)
+            sentry.log_message(msg)
+            raise UserStateError(msg)
+        if provider == website_settings.EXTERNAL_IDENTITY_PROFILE['OrcidProfile']:
+            token_entry = self.external_identity_tokens.get(provider, {}).get(external_id)
+            if not (token_entry and (token_entry.get('access_token') or token_entry.get('refresh_token'))):
+                msg = f'{error_prefix} Missing ORCiD token: user={self._id}, orcid_id={external_id}'
                 logger.error(msg)
                 sentry.log_message(msg, level=logging.ERROR)
-                sentry.log_exception(e)
-                raise UserStateError(f'Fail to revoke ORCiD access: {e}')
-            # NOTE: The actual identities/tokens removal happens in `_clear_identifying_information()`.
+                raise OrcidTokenMissingError(msg)
+            # Note 1: Revoke first because a failure must abort the removal before anything is mutated. In addition,
+            # retries are safe for `POST` in this case since revoking an already revoked token is a no-op in ORCiD API.
+            # For undocumented reasons, ORCiD returns the same success code when revoking already revoked tokens (which
+            # was issued with scope `\authenticate` during each successful SSO). We also verfied that the tokens have
+            # been successfully revoked because it requires manual authorization again during SSO afterward. Finally,
+            # must override `allowed_methods=` to make the revoke `POST` request retriable.
+            # Note 2: Locally, modify `status_forcelist` to test retry for 400s
+            self._revoke_tokens_for_one_orcid_id(
+                external_id,
+                token_entry,
+                error_prefix,
+                session=requests_retry_session(
+                    retries=website_settings.ORCID_OAUTH_REVOKE_MAX_RETRIES,
+                    status_forcelist=(500, 502, 503, 504),
+                    allowed_methods=frozenset({'POST'}),
+                )
+            )
+
+        del self.external_identity[provider][external_id]
+        if not self.external_identity[provider]:
+            del self.external_identity[provider]
+
+        self.external_identity_tokens.get(provider, {}).pop(external_id, None)
+        if provider in self.external_identity_tokens and not self.external_identity_tokens[provider]:
+            del self.external_identity_tokens[provider]
+
+        has_verified_identity = any(
+            status == 'VERIFIED' for ids in self.external_identity.values() for status in ids.values()
+        )
+        if not self.has_usable_password() and not has_verified_identity:
+            self.set_password(get_random_string(32), notify=False)
+
+        if remove_sessions:
+            remove_sessions_for_user(self)
+
+    def _revoke_tokens_for_one_orcid_id(self, orcid_id, token_entry, log_prefix, session=None):
+        """Revokes both access and refresh tokens for one single ORCiD ID via the ORCiD API. Each ORCiD SSO token entry
+        contains one access token and one refresh token. Revoking either one of them will revoke both. We use access
+        token by default.
+
+        Raises OrcidRevocationError if the revocation request fails.
+        """
+        # We only need to revoke with either access token or refresh token
+        orcid_token = token_entry.get('access_token') or token_entry.get('refresh_token')
+        logger.info(f'{log_prefix} Revoking ORCiD Access: user={self._id}, orcid_id={orcid_id}')
+        try:
+            self._send_orcid_revoke_request(orcid_id, orcid_token, context=log_prefix, session=session)
+        except requests.exceptions.RequestException as e:
+            msg = f'{log_prefix} ORCiD Revocation Failed: user={self._id}, orcid_id={orcid_id}, error={e}'
+            logger.error(msg)
+            sentry.log_message(msg, level=logging.ERROR)
+            sentry.log_exception(e)
+            raise OrcidRevocationError(msg)
 
     def _clear_identifying_information(self):
         # This doesn't remove identifying info, but ensures other users can't see the deleted user's profile etc.

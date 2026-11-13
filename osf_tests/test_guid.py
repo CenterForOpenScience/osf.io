@@ -5,9 +5,10 @@ import pytest
 
 from framework.auth import Auth
 from osf.models import Guid, GuidVersionsThrough, NodeLicenseRecord, OSFUser, Preprint
-from osf.models.base import VersionedGuidMixin
+from osf.models.base import GuidReassignError, VersionedGuidMixin, reassign_guid
 from osf_tests.factories import (
     AuthUserFactory,
+    BookmarkCollectionFactory,
     NodeFactory,
     NodeLicenseRecordFactory,
     PreprintFactory,
@@ -340,3 +341,102 @@ class TestGuidVersionsThrough:
         GuidVersionsThrough.objects.filter(guid=preprint_guid).delete()
         preprint._id = None
         assert preprint._id is None
+
+
+@pytest.mark.django_db
+class TestReassignGuid:
+
+    @pytest.fixture(params=['user', 'node', 'bookmark'])
+    def referent(self, request):
+        if request.param == 'user':
+            return UserFactory()
+        if request.param == 'node':
+            return NodeFactory()
+        return BookmarkCollectionFactory()
+
+    def test_file_gets_new_guid_and_old_id_is_freed(self):
+        file = NodeFactory().get_addon('osfstorage').get_root().append_file('f.txt')
+        guid = file.get_guid(create=True)
+        old_id = guid._id
+
+        returned_old, new_id, referent = reassign_guid(old_id)
+
+        assert returned_old == old_id
+        assert new_id != old_id
+        assert referent == file
+        assert not Guid.objects.filter(_id=old_id).exists()
+        assert file.guids.get().pk == guid.pk
+        assert file.guids.get()._id == new_id
+
+    def test_referent_gets_new_guid_and_old_id_is_freed(self, referent):
+        old_id = referent._id
+        guid_pk = Guid.objects.get(_id=old_id).pk
+
+        returned_old, new_id, returned_referent = reassign_guid(old_id)
+
+        assert returned_old == old_id
+        assert new_id != old_id
+        assert returned_referent == referent
+        assert not Guid.objects.filter(_id=old_id).exists()
+        assert Guid.objects.get(_id=new_id).pk == guid_pk
+        assert Guid.load_referent(new_id)[0] == referent
+        assert returned_referent._id == new_id
+
+    def test_old_id_can_be_used_for_a_recovered_preprint(self, referent):
+        old_id = referent._id
+        reassign_guid(old_id)
+
+        preprint = Preprint.create(
+            provider=PreprintProviderFactory(),
+            title='Recovered',
+            creator=UserFactory(),
+            description='',
+            manual_guid=old_id,
+        )
+
+        assert preprint.get_guid()._id == old_id
+
+    def test_related_rows_survive(self):
+        node = NodeFactory()
+        guid = node.guids.first()
+        node.save()
+        reassign_guid(guid)
+        node.refresh_from_db()
+        assert node.guids.count() == 1
+        assert node.guids.first().pk == guid.pk
+
+    def test_preprint_is_not_supported(self):
+        preprint = PreprintFactory()
+        with pytest.raises(GuidReassignError):
+            reassign_guid(preprint.get_guid()._id)
+        assert Guid.objects.filter(_id=preprint.get_guid()._id).exists()
+
+    def test_registration_is_not_supported(self):
+        registration = RegistrationFactory()
+        with pytest.raises(GuidReassignError):
+            reassign_guid(registration._id)
+        assert Guid.objects.filter(_id=registration._id).exists()
+
+    def test_node_with_doi_is_not_supported(self):
+        node = NodeFactory()
+        node.set_identifier_value('doi', '10.70102/FK2osf.io/abcde')
+        with pytest.raises(GuidReassignError):
+            reassign_guid(node._id)
+        assert Guid.objects.filter(_id=node._id).exists()
+
+    def test_reindexes_new_guid_and_deletes_old_after_commit(self, django_capture_on_commit_callbacks):
+        node = NodeFactory()
+        old_id = node._id
+        with mock.patch('api.share.utils.update_share_after_guid_reassign') as mock_share:
+            with django_capture_on_commit_callbacks(execute=True):
+                reassign_guid(old_id)
+        mock_share.assert_called_once_with(node, old_id)
+
+    def test_orphan_guid_raises(self):
+        guid = Guid.objects.create()
+        with pytest.raises(GuidReassignError):
+            reassign_guid(guid._id)
+
+    def test_unknown_guid_raises(self):
+        with pytest.raises(GuidReassignError):
+            reassign_guid('zzzzz')
