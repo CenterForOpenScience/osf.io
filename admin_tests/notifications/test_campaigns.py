@@ -23,8 +23,11 @@ from admin_tests.utilities import setup_form_view
 from osf.models import NotificationType
 from osf.models.notification_campaign import (
     NotificationCampaign,
+    NotificationCampaignRecipient,
+    NotificationCampaignRecipientStatus,
+    NotificationCampaignStatus,
 )
-from osf_tests.factories import AuthUserFactory, ProjectFactory
+from osf_tests.factories import AuthUserFactory, ProjectFactory, UserFactory
 from tests.base import AdminTestCase
 from website import settings
 
@@ -64,6 +67,7 @@ def _valid_form_data(notification_type, **overrides):
         'time_window': 8 * 60 * 60,
         'max_queued_batches': settings.MAX_QUEUED_CAMPAIGN_BATCHES,
         'dispatch_interval': settings.CAMPAIGN_DISPATCH_INTERVAL,
+        'log_email_recipients': '',
     }
     data.update(overrides)
     return data
@@ -81,6 +85,7 @@ class TestNotificationCampaignCreateForm:
         assert form.cleaned_data['activity_threshold'] == settings.DEFAULT_CAMPAIGN_ACTIVITY_THRESHOLD
         assert form.cleaned_data['time_window'] == 8 * 60 * 60
         assert form.cleaned_data['sendgrid_bulk'] is False
+        assert form.cleaned_data['log_email_recipients'] == ''
 
     def test_defaults_come_from_settings(self):
         form = NotificationCampaignCreateForm()
@@ -89,6 +94,13 @@ class TestNotificationCampaignCreateForm:
         assert form.fields['activity_threshold'].initial == settings.DEFAULT_CAMPAIGN_ACTIVITY_THRESHOLD
         assert form.fields['time_window'].initial == 8 * 60 * 60
         assert form.fields['sendgrid_bulk'].initial is False
+
+    def test_bulk_execution_defaults_come_from_settings(self):
+        assert NotificationCampaignCreateForm.BULK_EXECUTION_DEFAULTS == {
+            'batch_size': settings.DEFAULT_CAMPAIGN_BULK_BATCH_SIZE,
+            'max_queued_batches': settings.DEFAULT_CAMPAIGN_BULK_MAX_QUEUED_BATCHES,
+            'dispatch_interval': settings.DEFAULT_CAMPAIGN_BULK_DISPATCH_INTERVAL,
+        }
 
     def test_invalid_context_json(self, notification_type):
         form = NotificationCampaignCreateForm(
@@ -244,6 +256,19 @@ class TestNotificationCampaignCreateForm:
         assert form.is_valid()
         assert form.cleaned_data['sendgrid_bulk'] is True
 
+    def test_bulk_batch_size_cannot_exceed_sendgrid_limit(self, notification_type):
+        form = NotificationCampaignCreateForm(
+            data=_valid_form_data(notification_type, sendgrid_bulk=True, batch_size=1001)
+        )
+        assert not form.is_valid()
+        assert 'batch_size' in form.errors
+
+    def test_non_bulk_batch_size_can_exceed_sendgrid_limit(self, notification_type):
+        form = NotificationCampaignCreateForm(
+            data=_valid_form_data(notification_type, sendgrid_bulk=False, batch_size=1001)
+        )
+        assert form.is_valid()
+
 
 class TestNotificationCampaignCreateView(AdminTestCase):
 
@@ -288,6 +313,7 @@ class TestNotificationCampaignCreateView(AdminTestCase):
             'time_window': 28800,
             'max_queued_batches': 10,
             'dispatch_interval': 60,
+            'log_email_recipients': ''
         }
         assert campaign.metadata['sendgrid_bulk'] is True
         assert campaign.metadata['filters'] == {'predefined': 'active'}
@@ -315,6 +341,14 @@ class TestNotificationCampaignCreateView(AdminTestCase):
             'predefined': 'active',
             'exclude_non_contributors': True,
         }
+
+    def test_context_includes_bulk_execution_defaults(self):
+        request = RequestFactory().get(reverse('notifications:notification_campaigns_create'))
+        grant_permission(self.user, 'change_notificationcampaign')
+        request.user = self.user
+        response = NotificationCampaignCreateView.as_view()(request)
+
+        assert response.context_data['bulk_defaults'] == NotificationCampaignCreateForm.BULK_EXECUTION_DEFAULTS
 
     @mock.patch('admin.notifications.views._render_email_html', side_effect=Exception('bad template'))
     def test_form_valid_rejects_unrenderable_context(self, mock_render):
@@ -391,67 +425,147 @@ class TestNotificationCampaignAdminPermissions(AdminTestCase):
             metadata={'filters': {}, 'context': {}, 'execution': {}},
         )
 
-    def test_list_requires_view_permission(self):
+    def test_view_campaign_list_page_requires_view_permission(self):
         request = RequestFactory().get(reverse('notifications:notification_campaigns_list'))
         request.user = self.user
-
         with self.assertRaises(PermissionDenied):
             NotificationCampaignsList.as_view()(request)
-
         grant_permission(self.user, 'view_notificationcampaign')
         response = NotificationCampaignsList.as_view()(request)
         assert response.status_code == 200
 
-    def test_detail_requires_change_permission(self):
+    def test_view_campaign_detail_page_requires_change_permission(self):
         request = RequestFactory().get(
             reverse('notifications:notification_campaigns_detail', kwargs={'pk': self.campaign.pk})
         )
         request.user = self.user
-
         with self.assertRaises(PermissionDenied):
             NotificationCampaignDetail.as_view()(request, pk=self.campaign.pk)
-
         grant_permission(self.user, 'change_notificationcampaign')
         response = NotificationCampaignDetail.as_view()(request, pk=self.campaign.pk)
         assert response.status_code == 200
 
-    def test_detail_allow_restart_stuck_false_when_recently_updated(self):
-        grant_permission(self.user, 'change_notificationcampaign')
-        request = RequestFactory().get(
-            reverse('notifications:notification_campaigns_detail', kwargs={'pk': self.campaign.pk})
-        )
+    def test_view_campaign_creation_page_requires_change_permission(self):
+        request = RequestFactory().get(reverse('notifications:notification_campaigns_create'))
         request.user = self.user
-
-        response = NotificationCampaignDetail.as_view()(request, pk=self.campaign.pk)
-
-        assert response.status_code == 200
-        assert response.context_data['allow_restart_stuck'] is False
-
-    def test_detail_allow_restart_stuck_true_when_updated_long_time_ago(self):
+        with self.assertRaises(PermissionDenied):
+            NotificationCampaignCreateView.as_view()(request)
         grant_permission(self.user, 'change_notificationcampaign')
-        NotificationCampaign.objects.filter(pk=self.campaign.pk).update(
-            updated_at=timezone.now() - timedelta(minutes=16),
-        )
-        request = RequestFactory().get(
-            reverse('notifications:notification_campaigns_detail', kwargs={'pk': self.campaign.pk})
-        )
-        request.user = self.user
-
-        response = NotificationCampaignDetail.as_view()(request, pk=self.campaign.pk)
-
+        response = NotificationCampaignCreateView.as_view()(request)
         assert response.status_code == 200
-        assert response.context_data['allow_restart_stuck'] is True
 
-    def test_start_requires_change_notificationcampaign_permission(self):
-
+    def test_start_campaign_requires_change_permission(self):
         request = RequestFactory().post(
             reverse('notifications:notification_campaigns_start', kwargs={'pk': self.campaign.pk})
         )
         request.user = self.user
-
         with self.assertRaises(PermissionDenied):
             StartNotificationCampaign.as_view()(request, pk=self.campaign.pk)
+        grant_permission(self.user, 'change_notificationcampaign')
+        response = StartNotificationCampaign.as_view()(request, pk=self.campaign.pk)
+        assert response.status_code == 302
 
+    def test_delete_requires_change_notificationcampaign_permission(self):
+        request = RequestFactory().post(
+            reverse('notifications:notification_campaigns_delete', kwargs={'pk': self.campaign.pk})
+        )
+        request.user = self.user
+        patch_messages(request)
+        with self.assertRaises(PermissionDenied):
+            DeleteNotificationCampaign.as_view()(request, pk=self.campaign.pk)
+        grant_permission(self.user, 'delete_notificationcampaign')
+        response = DeleteNotificationCampaign.as_view()(request, pk=self.campaign.pk)
+        assert response.status_code == 302
+
+
+class TestNotificationCampaignProgressManagement(AdminTestCase):
+
+    def setUp(self):
+        super().setUp()
+        self.user = AuthUserFactory()
+        self.notification_type, _ = NotificationType.objects.get_or_create(
+            name='blank',
+            defaults={'subject': 'Test', 'template': 'Hello'},
+        )
+        self.campaign = NotificationCampaign.objects.create(
+            name='Campaign',
+            notification_type=self.notification_type,
+            metadata={'filters': {}, 'context': {}, 'execution': {}},
+        )
+
+    def _detail_context(self):
+        grant_permission(self.user, 'change_notificationcampaign')
+        request = RequestFactory().get(
+            reverse('notifications:notification_campaigns_detail', kwargs={'pk': self.campaign.pk})
+        )
+        request.user = self.user
+        response = NotificationCampaignDetail.as_view()(request, pk=self.campaign.pk)
+        assert response.status_code == 200
+        return response.context_data
+
+    def _restart_stuck_suggested(self):
+        return self._detail_context().get('restart_stuck_suggested', False)
+
+    def _run_campaign(self, started_ago, recipient_status=NotificationCampaignRecipientStatus.QUEUED, sent_ago=None):
+        self.campaign.status = NotificationCampaignStatus.RUNNING
+        self.campaign.started_at = timezone.now() - started_ago
+        self.campaign.metadata['execution']['dispatch_interval'] = 60
+        self.campaign.save()
+        NotificationCampaignRecipient.objects.create(
+            campaign=self.campaign,
+            user=UserFactory(),
+            status=recipient_status,
+            sent_at=int((timezone.now() - sent_ago).timestamp()) if sent_ago else None,
+        )
+
+    def test_detail_restart_stuck_not_suggested_when_not_running(self):
+        NotificationCampaign.objects.filter(pk=self.campaign.pk).update(
+            updated_at=timezone.now() - timedelta(minutes=16),
+        )
+        assert self._restart_stuck_suggested() is False
+
+    def test_detail_restart_stuck_not_suggested_when_started_within_two_dispatch_intervals(self):
+        # Sends from a previous run don't count against a just-restarted run.
+        self._run_campaign(started_ago=timedelta(seconds=10), sent_ago=timedelta(hours=1))
+        context = self._detail_context()
+        assert context['restart_stuck_suggested'] is False
+        assert context['last_sent_at'] is None
+
+    def test_detail_restart_stuck_suggested_when_nothing_sent_within_two_dispatch_intervals(self):
+        # The dispatch/retry loops keep `updated_at` fresh even when every batch is lost.
+        self._run_campaign(started_ago=timedelta(hours=1), sent_ago=timedelta(minutes=3))
+        assert self.campaign.updated_at > timezone.now() - timedelta(minutes=1)
+        context = self._detail_context()
+        assert context['restart_stuck_suggested'] is True
+        assert context['restart_stuck_after'] == 120
+        assert context['last_activity_ago'] > timedelta(minutes=3)
+
+    def test_detail_restart_stuck_suggested_when_nothing_sent_since_start(self):
+        self._run_campaign(started_ago=timedelta(minutes=3))
+        assert self._restart_stuck_suggested() is True
+
+    def test_detail_restart_stuck_not_suggested_when_sent_within_two_dispatch_intervals(self):
+        # Older than one interval (60s), but within two.
+        self._run_campaign(started_ago=timedelta(hours=1), sent_ago=timedelta(seconds=90))
+        context = self._detail_context()
+        assert context['restart_stuck_suggested'] is False
+        assert timezone.now() - context['last_sent_at'] < timedelta(seconds=120)
+
+    def test_detail_restart_stuck_not_suggested_when_only_awaiting_delivery(self):
+        self._run_campaign(
+            started_ago=timedelta(hours=1),
+            recipient_status=NotificationCampaignRecipientStatus.AWAITING_DELIVERY,
+            sent_ago=timedelta(minutes=3),
+        )
+        context = self._detail_context()
+        assert context['restart_stuck_suggested'] is False
+        assert context['awaiting_delivery'] is True
+
+    def test_start_campaign_success(self):
+        request = RequestFactory().post(
+            reverse('notifications:notification_campaigns_start', kwargs={'pk': self.campaign.pk})
+        )
+        request.user = self.user
         grant_permission(self.user, 'change_notificationcampaign')
         with mock.patch.object(NotificationCampaign, 'start') as mock_start:
             response = StartNotificationCampaign.as_view()(request, pk=self.campaign.pk)
@@ -497,17 +611,95 @@ class TestNotificationCampaignDeleteView(AdminTestCase):
             metadata={'filters': {}, 'context': {}, 'execution': {}},
         )
 
-    def test_delete_requires_change_notificationcampaign_permission(self):
+    def test_campaign_delete_success_and_returns_302(self):
         request = RequestFactory().post(
             reverse('notifications:notification_campaigns_delete', kwargs={'pk': self.campaign.pk})
         )
         request.user = self.user
-        patch_messages(request)
-
-        with self.assertRaises(PermissionDenied):
-            DeleteNotificationCampaign.as_view()(request, pk=self.campaign.pk)
-
         grant_permission(self.user, 'delete_notificationcampaign')
+        patch_messages(request)
         response = DeleteNotificationCampaign.as_view()(request, pk=self.campaign.pk)
         assert response.status_code == 302
         assert not NotificationCampaign.objects.filter(pk=self.campaign.pk).exists()
+
+
+class TestNotificationCampaignDetailCounters(AdminTestCase):
+
+    def setUp(self):
+        super().setUp()
+        self.user = AuthUserFactory()
+        grant_permission(self.user, 'change_notificationcampaign')
+        notification_type, _ = NotificationType.objects.get_or_create(
+            name='blank',
+            defaults={'subject': 'Test', 'template': 'Hello'},
+        )
+        # Stored counters deliberately differ from recipient rows.
+        self.campaign = NotificationCampaign.objects.create(
+            name='Campaign',
+            notification_type=notification_type,
+            status=NotificationCampaignStatus.COMPLETED,
+            recipient_count=10,
+            sent_count=7,
+            failed_count=2,
+            skipped_count=1,
+            metadata={'filters': {}, 'context': {}, 'execution': {}},
+        )
+
+    def _counters(self, context):
+        return (
+            context['recipient_count'],
+            context['sent_count'],
+            context['failed_count'],
+            context['skipped_count'],
+        )
+
+    def _context(self):
+        request = RequestFactory().get(
+            reverse('notifications:notification_campaigns_detail', kwargs={'pk': self.campaign.pk})
+        )
+        request.user = self.user
+        response = NotificationCampaignDetail.as_view()(request, pk=self.campaign.pk)
+        assert response.status_code == 200
+        return response.context_data
+
+    def _add_recipient(self, status):
+        NotificationCampaignRecipient.objects.create(
+            campaign=self.campaign,
+            user=UserFactory(),
+            status=status,
+        )
+
+    def test_uses_live_recipient_stats_when_recipients_exist(self):
+        self._add_recipient(NotificationCampaignRecipientStatus.SENT)
+        self._add_recipient(NotificationCampaignRecipientStatus.SKIPPED)
+        self._add_recipient(NotificationCampaignRecipientStatus.AWAITING_DELIVERY)
+
+        context = self._context()
+
+        assert self._counters(context) == (3, 1, 0, 1)
+        assert context['awaiting'] == 1
+        assert context['processed'] == 2
+        assert context['pending'] == 0
+
+    def test_falls_back_to_stored_counters_when_recipients_purged(self):
+        context = self._context()
+
+        assert self._counters(context) == (10, 7, 2, 1)
+        assert context['processed'] == 10
+        assert context['pending'] == 0
+
+    @mock.patch('osf.email.notification_campaign.start_notification_campaign.delay')
+    def test_restart_does_not_reset_displayed_counters(self, mock_delay):
+        self._add_recipient(NotificationCampaignRecipientStatus.SENT)
+        self._add_recipient(NotificationCampaignRecipientStatus.FAILED)
+        self._add_recipient(NotificationCampaignRecipientStatus.SKIPPED)
+
+        for flags in ({'restart_failed': True}, {'restart_stuck': True}):
+            self.campaign.start(**flags)  # resets stored failed_count to 0
+            self.campaign.refresh_from_db()
+            assert self.campaign.failed_count == 0
+
+            context = self._context()
+
+            assert self._counters(context) == (3, 1, 1, 1)
+            assert context['processed'] == 3
