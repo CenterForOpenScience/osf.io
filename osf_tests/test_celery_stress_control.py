@@ -250,7 +250,8 @@ def render_fragment(request, template, context):
 
     engine = Engine(
         dirs=[str(Path(__file__).parents[1] / 'admin/templates')],
-        libraries={'i18n': 'django.templatetags.i18n', 'static': 'django.templatetags.static'},
+        libraries={'i18n': 'django.templatetags.i18n', 'static': 'django.templatetags.static',
+                   'dcr_icons': 'dj_control_room_base.templatetags.dcr_icons'},
         loaders=[
             ('django.template.loaders.locmem.Loader', {
                 'admin/dj_celery_panel/base.html': '{% block panel_page_content %}{% endblock %}',
@@ -379,3 +380,45 @@ def test_signal_registration_runs_after_app_finalization():
             tasks.task_failure.disconnect(sender=task, dispatch_uid=f'{name}.record_test_failure')
             tasks.task_revoked.disconnect(sender=task, dispatch_uid=f'{name}.record_test_revocation')
         app.close()
+
+
+@pytest.mark.parametrize('preset', ['retry', 'workflow'])
+def test_scenario_preset_form_renders(admin_views, preset):
+    request = admin_request()
+    request.GET = {'preset': preset}
+    with patch.object(admin_views.panel_config, 'get_context', return_value={}), \
+            patch.object(admin_views, 'render', side_effect=render_fragment):
+        response = admin_views.celery_stress_test_view(request)
+    html = response.content.decode()
+    assert f'value="{preset}"' in html
+    assert 'name="deadline_seconds"' in html
+    assert ('name="retry_delay"' in html) == (preset == 'retry')
+    assert ('name="chain_length"' in html) == (preset == 'workflow')
+
+
+def test_unknown_preset_is_rejected(admin_views):
+    request = admin_request()
+    request.GET = {'preset': 'unknown'}
+    with patch.object(admin_views.panel_config, 'get_context', return_value={}):
+        assert admin_views.celery_stress_test_view(request).status_code == 400
+
+
+@pytest.mark.parametrize('task_name', ['stress_testing.simulated_workload', 'stress_testing.scenario'])
+def test_revocation_accepts_context_without_name(suite, task_name):
+    from celery.app.task import Context
+    task = make_task(suite)
+    request = Context(id=str(task.id), task=task_name)
+    assert not hasattr(request, 'name')
+    tasks.task_revoked.send(sender=tasks.celery_app.tasks[task_name], request=request)
+    task.refresh_from_db()
+    assert task.status == Task.Status.CANCELLED
+    assert task.error == 'Task revoked.'
+
+
+def test_coordinator_revocation_accepts_context_without_name(suite):
+    from celery.app.task import Context
+    request = Context(id=str(suite.coordinator_task_id), task='stress_testing.start_celery_stress_test')
+    tasks.record_test_revocation(request=request)
+    suite.refresh_from_db()
+    assert suite.status == Suite.Status.FAILED
+    assert suite.error == 'Coordinator revoked.'

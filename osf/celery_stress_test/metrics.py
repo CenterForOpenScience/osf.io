@@ -39,7 +39,7 @@ def suite_metrics(suite):
     publish_seconds = ((suite.publishing_finished_at or now) - suite.started_at).total_seconds() if suite.started_at else 0
     elapsed = ((suite.finished_at or now) - suite.started_at).total_seconds() if suite.started_at else 0
     workloads = []
-    for index, workload in enumerate(suite.config['workloads']):
+    for index, workload in enumerate(suite.config.get('workloads', [])):
         workloads.append({
             'config': workload,
             **task_metrics(suite.tasks.filter(workload_index=index), publish_seconds, elapsed),
@@ -49,7 +49,7 @@ def suite_metrics(suite):
         'workloads': workloads,
         'publishing_seconds': publish_seconds,
         'elapsed_seconds': elapsed,
-        'requested_rate': sum(w['rate'] for w in suite.config['workloads']),
-        'effective_rate_cap': min(suite.config['max_total_rate'], sum(w['rate'] for w in suite.config['workloads'])),
+        'requested_rate': sum(w['rate'] for w in suite.config.get('workloads', [])),
+        'effective_rate_cap': min(suite.config.get('max_total_rate', 0), sum(w['rate'] for w in suite.config.get('workloads', []))),
         'workers': suite.tasks.exclude(worker='').values_list('worker', flat=True).distinct(),
     }

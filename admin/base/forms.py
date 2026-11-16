@@ -98,3 +98,39 @@ class WorkloadForm(forms.Form):
             self.add_error('cpu_iterations', 'Specify the CPU iteration count.')
 
         return cleaned_data
+
+
+class CeleryScenarioForm(forms.Form):
+    name = forms.CharField(max_length=100, initial='Celery correctness test')
+    queue = forms.ChoiceField(choices=[(q, q) for q in ('high', 'med', 'low', 'celery')])
+    deadline_seconds = forms.IntegerField(min_value=10, max_value=3600, initial=120)
+    retry_delay = forms.IntegerField(min_value=1, max_value=60, initial=2)
+    max_retries = forms.IntegerField(min_value=2, max_value=10, initial=3)
+    tasks_per_scenario = forms.IntegerField(min_value=1, max_value=100, initial=1,
+        help_text='Number of tasks for each of the three retry scenarios (3 × this value total).')
+    transient_failures = forms.IntegerField(min_value=1, max_value=10, initial=2,
+        help_text='Failures before a transient task succeeds; must not exceed maximum retries.')
+    workflow_count = forms.IntegerField(min_value=1, max_value=100, initial=1,
+        help_text='Number of independent chain, group and chord sets.')
+    chain_length = forms.IntegerField(min_value=2, max_value=100, initial=2)
+    group_size = forms.IntegerField(min_value=2, max_value=100, initial=3)
+    chord_size = forms.IntegerField(min_value=2, max_value=100, initial=3,
+        help_text='Header task count; each chord also has one final callback.')
+
+    def __init__(self, *args, suite_type, **kwargs):
+        super().__init__(*args, **kwargs)
+        excluded = (('workflow_count', 'chain_length', 'group_size', 'chord_size') if suite_type == 'retry'
+                    else ('tasks_per_scenario', 'transient_failures', 'retry_delay', 'max_retries'))
+        for name in excluded:
+            del self.fields[name]
+
+    def clean(self):
+        data = super().clean()
+        if 'max_retries' in data and data.get('deadline_seconds', 0) <= data['max_retries'] * data.get('retry_delay', 0):
+            self.add_error('deadline_seconds', 'Allow more time than the configured retry delays.')
+        if data.get('transient_failures', 0) > data.get('max_retries', 0):
+            self.add_error('transient_failures', 'Must not exceed maximum retries.')
+        total = data.get('workflow_count', 0) * (data.get('chain_length', 0) + data.get('group_size', 0) + data.get('chord_size', 0) + 1)
+        if total > 500:
+            self.add_error('workflow_count', 'Choose sizes producing at most 500 tasks in total.')
+        return data

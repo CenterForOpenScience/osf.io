@@ -19,6 +19,9 @@ class CeleryTestSuite(models.Model):
     created_by = models.ForeignKey('OSFUser', null=True, blank=True, on_delete=models.SET_NULL)
     name = models.CharField(max_length=100, default='Celery load test')
     config = models.JSONField()
+    verdict = models.CharField(max_length=16, default='pending')
+    results = models.JSONField(default=dict)
+    deadline_at = models.DateTimeField(null=True, blank=True)
     status = models.CharField(max_length=16, choices=Status.choices, default=Status.QUEUED, db_index=True)
     coordinator_task_id = models.UUIDField(default=uuid.uuid4, unique=True, editable=False)
     created_at = models.DateTimeField(default=timezone.now)
@@ -47,6 +50,7 @@ class CeleryTestTask(models.Model):
     class Status(models.TextChoices):
         QUEUED = 'queued', 'Queued'
         RUNNING = 'running', 'Running'
+        RETRYING = 'retrying', 'Retrying'
         SUCCEEDED = 'succeeded', 'Succeeded'
         FAILED = 'failed', 'Failed'
         CANCELLED = 'cancelled', 'Cancelled'
@@ -54,7 +58,10 @@ class CeleryTestTask(models.Model):
     TERMINAL_STATUSES = (Status.SUCCEEDED, Status.FAILED, Status.CANCELLED)
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     suite = models.ForeignKey(CeleryTestSuite, related_name='tasks', on_delete=models.CASCADE)
-    workload_index = models.PositiveSmallIntegerField()
+    workload_index = models.PositiveSmallIntegerField(null=True, blank=True)
+    scenario = models.CharField(max_length=100, blank=True)
+    expected = models.JSONField(default=dict)
+    observations = models.JSONField(default=dict)
     queue = models.CharField(max_length=255)
     status = models.CharField(max_length=16, choices=Status.choices, default=Status.QUEUED)
     submitted_at = models.DateTimeField(default=timezone.now)
@@ -69,3 +76,17 @@ class CeleryTestTask(models.Model):
 
     class Meta:
         indexes = [models.Index(fields=['suite', 'status'], name='celery_test_suite_status_idx')]
+
+
+class CeleryTestTaskAttempt(models.Model):
+    task = models.ForeignKey(CeleryTestTask, related_name='attempts', on_delete=models.CASCADE)
+    number = models.PositiveSmallIntegerField()
+    started_at = models.DateTimeField(default=timezone.now)
+    finished_at = models.DateTimeField(null=True, blank=True)
+    retry_at = models.DateTimeField(null=True, blank=True)
+    worker = models.CharField(max_length=255, blank=True)
+    outcome = models.CharField(max_length=32, blank=True)
+    error = models.TextField(blank=True)
+
+    class Meta:
+        constraints = [models.UniqueConstraint(fields=['task', 'number'], name='celery_test_attempt_unique')]

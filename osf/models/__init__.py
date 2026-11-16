@@ -115,4 +115,4 @@ from .user import (
     OSFUser,
 )
 from .user_message import UserMessage
-from .celery_test import CeleryTestSuite, CeleryTestTask
+from .celery_test import CeleryTestSuite, CeleryTestTask, CeleryTestTaskAttempt
