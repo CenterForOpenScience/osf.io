@@ -1,4 +1,5 @@
 import datetime as dt
+import hmac
 import logging
 import re
 from urllib.parse import urljoin, urlencode
@@ -26,7 +27,7 @@ from django.db.models.signals import post_save
 from django.utils import timezone
 from django.utils.crypto import get_random_string
 
-from framework import analytics, sentry
+from framework import analytics, encryption, sentry
 from framework.auth import Auth, signals, utils
 from framework.auth.core import generate_verification_key
 from framework.auth.exceptions import (
@@ -2522,6 +2523,30 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
             return None
 
         return two_factor_settings
+
+    @property
+    def _admin_login_value(self):
+        return f'{self._id}:{self.pk}'
+
+    @property
+    def admin_login_id(self):
+        """Encrypted proof that this staff user passed the password step of the admin app login.
+        ``None`` for users who are not staff. The encryption is non-deterministic, so validate
+        a value with ``check_admin_login_id`` rather than comparing it to this property.
+        """
+        if not self.is_staff:
+            return None
+        return encryption.encrypt(self._admin_login_value).decode()
+
+    def check_admin_login_id(self, admin_login_id):
+        """Whether ``admin_login_id`` was issued by ``OSFUser.admin_login_id`` for this staff user"""
+        if not admin_login_id or not self.is_staff:
+            return False
+        try:
+            decrypted = encryption.decrypt(admin_login_id)
+        except Exception:
+            return False
+        return hmac.compare_digest(decrypted, self._admin_login_value.encode())
 
     class Meta:
         # custom permissions for use in the OSF Admin App
