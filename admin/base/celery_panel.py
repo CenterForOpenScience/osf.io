@@ -17,6 +17,7 @@ from framework.celery_tasks import app as celery_app
 from osf.models.celery_test import CeleryTestSuite, CeleryTestTask
 from osf.celery_stress_test.control import cancel_suite, finish_publishing
 from osf.celery_stress_test.metrics import suite_metrics
+from osf.celery_stress_test.scenarios import reconcile_suites
 from osf.celery_stress_test.tasks import start_celery_stress_test
 from .forms import CeleryStressTestForm, WorkloadForm, CeleryScenarioForm
 from osf.celery_stress_test.presets import PRESETS, resolve
@@ -284,3 +285,12 @@ def celery_stress_suite_cancel(request, suite_id):
     else:
         messages.info(request, 'This suite has already finished.')
     return redirect('celery_stress_suite_detail', suite_id=suite.id)
+
+
+@transaction.non_atomic_requests
+@panel_config.permission_required('celery_stress_test')
+@require_http_methods(['POST'])
+def celery_stress_suites_reconcile(request):
+    reconcile_suites.run()
+    messages.success(request, 'Checked overdue suites and reconciled their status.')
+    return redirect('celery_stress_test')
