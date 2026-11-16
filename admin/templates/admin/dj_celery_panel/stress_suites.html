@@ -5,6 +5,11 @@
   <h1>{% trans "Stress test suites" %}</h1>
   <p>{% trans "Track active load tests, cancel work, and compare completed runs." %}</p>
   <a class="dcr-btn dcr-btn--primary" href="{% url 'celery_stress_test_new' %}">{% trans "New test suite" %}</a>
+  <form method="post" action="{% url 'celery_stress_suites_reconcile' %}">
+    {% csrf_token %}
+    <button type="submit" class="dcr-btn dcr-btn--secondary">{% trans "Reconcile overdue suites" %}</button>
+  </form>
+  <p>{% trans "Manually mark suites past their execution deadline as failed. This does not stop worker processes." %}</p>
 </div>
 <section class="dcr-card"><div class="dcr-card__body">
   <h2>{% trans "Active suites" %}</h2>

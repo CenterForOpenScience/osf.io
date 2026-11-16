@@ -774,10 +774,6 @@ class CeleryConfig:
     #  Setting up a scheduler, essentially replaces an independent cron job
     # Note: these times must be in UTC
     beat_schedule = {
-        'reconcile-celery-test-suites': {
-            'task': 'stress_testing.reconcile_suites',
-            'schedule': 15.0,
-        },
         'disable_removed_beat_tasks': {
             'task': 'scripts.disable_removed_beat_tasks',
             'schedule': crontab(minute=0, hour=0),  # Daily 8:00 PM EDT

@@ -228,6 +228,7 @@ def admin_views(settings):
     global urlpatterns
     urlpatterns = [
         path('suites/', celery_panel.celery_stress_suites, name='celery_stress_test'),
+        path('suites/reconcile/', celery_panel.celery_stress_suites_reconcile, name='celery_stress_suites_reconcile'),
         path('suites/new/', celery_panel.celery_stress_test_view, name='celery_stress_test_new'),
         path('suites/<uuid:suite_id>/', celery_panel.celery_stress_suite_detail, name='celery_stress_suite_detail'),
         path('suites/<uuid:suite_id>/cancel/', celery_panel.celery_stress_suite_cancel, name='celery_stress_suite_cancel'),
@@ -422,3 +423,28 @@ def test_coordinator_revocation_accepts_context_without_name(suite):
     suite.refresh_from_db()
     assert suite.status == Suite.Status.FAILED
     assert suite.error == 'Coordinator revoked.'
+
+
+def test_manual_reconciliation_is_post_only(admin_views):
+    with patch.object(admin_views.reconcile_suites, 'run') as reconcile:
+        assert admin_views.celery_stress_suites_reconcile(admin_request()).status_code == 405
+    reconcile.assert_not_called()
+
+
+def test_manual_reconciliation_runs_and_redirects(admin_views):
+    with patch.object(admin_views.reconcile_suites, 'run') as reconcile, \
+            patch.object(admin_views.messages, 'success'):
+        response = admin_views.celery_stress_suites_reconcile(admin_request('post'))
+    reconcile.assert_called_once_with()
+    assert response.status_code == 302
+    assert response.url == '/suites/'
+
+
+def test_manual_reconciliation_requires_permission(admin_views):
+    from django.core.exceptions import PermissionDenied
+    request = admin_request('post')
+    request.user.is_superuser = request.user.is_staff = False
+    with patch.object(admin_views.reconcile_suites, 'run') as reconcile:
+        with pytest.raises(PermissionDenied):
+            admin_views.celery_stress_suites_reconcile(request)
+    reconcile.assert_not_called()
