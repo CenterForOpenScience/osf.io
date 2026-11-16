@@ -3,16 +3,22 @@ from fnmatch import fnmatchcase
 from functools import cache
 
 from django.contrib import messages
-from django.shortcuts import redirect, render
+from django.core.paginator import Paginator
+from django.db import transaction
+from django.db.models import Count, Q
+from django.forms import formset_factory
+from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_http_methods
 from dj_celery_panel import views
 from dj_celery_panel.celery_utils import CeleryQueuesInspectBackend, QueueDetailPage, QueueListPage
 from dj_celery_panel.conf import panel_config
 
 from framework.celery_tasks import app as celery_app
+from osf.models.celery_test import CeleryTestSuite, CeleryTestTask
+from osf.celery_stress_test.control import cancel_suite, finish_publishing
+from osf.celery_stress_test.metrics import suite_metrics
 from osf.celery_stress_test.tasks import start_celery_stress_test
 from .forms import CeleryStressTestForm, WorkloadForm
-from django.forms import formset_factory
 
 
 WorkloadFormSet = formset_factory(
@@ -136,6 +142,7 @@ class RoutedTasksQueuesBackend(CeleryQueuesInspectBackend):
         return unmatched_entries
 
 
+@transaction.non_atomic_requests
 @panel_config.permission_required('celery_stress_test')
 @require_http_methods(['GET', 'POST'])
 def celery_stress_test_view(request):
@@ -168,9 +175,15 @@ def celery_stress_test_view(request):
                     'Please configure at least one workload.',
                 )
             else:
+                suite = CeleryTestSuite.objects.create(
+                    name=config['name'], config=config, created_by=request.user,
+                )
                 try:
-                    result = start_celery_stress_test.delay(config)
-                except Exception:
+                    start_celery_stress_test.apply_async(
+                        args=[str(suite.id)], task_id=str(suite.coordinator_task_id), retry=False,
+                    )
+                except Exception as error:
+                    finish_publishing(suite.id, f'Coordinator publication failed: {error}')
                     messages.error(
                         request,
                         'Failed to start the stress test. Please try again.',
@@ -178,9 +191,9 @@ def celery_stress_test_view(request):
                 else:
                     messages.success(
                         request,
-                        f"Stress test submitted successfully. Task ID: {result.id}",
+                        f"Stress test submitted successfully: {suite.name}",
                     )
-                    return redirect(request.path)
+                    return redirect('celery_stress_suite_detail', suite_id=suite.id)
     else:
         form = CeleryStressTestForm()
         workload_formset = WorkloadFormSet()
@@ -195,3 +208,47 @@ def celery_stress_test_view(request):
         'admin/dj_celery_panel/celery_stress_testing.html',
         context,
     )
+
+
+@panel_config.permission_required('celery_stress_test')
+@require_http_methods(['GET'])
+def celery_stress_suites(request):
+    context = panel_config.get_context(request, current_tab='celery_stress_test')
+    suites = CeleryTestSuite.objects.annotate(
+        task_count=Count('tasks'),
+        succeeded_count=Count('tasks', filter=Q(tasks__status=CeleryTestTask.Status.SUCCEEDED)),
+        failed_count=Count('tasks', filter=Q(tasks__status=CeleryTestTask.Status.FAILED)),
+    )
+    context.update({
+        'active_suites': suites.filter(status__in=CeleryTestSuite.ACTIVE_STATUSES),
+        'history': Paginator(suites.exclude(status__in=CeleryTestSuite.ACTIVE_STATUSES), 25).get_page(request.GET.get('page')),
+    })
+    return render(request, 'admin/dj_celery_panel/stress_suites.html', context)
+
+
+@panel_config.permission_required('celery_stress_test')
+@require_http_methods(['GET'])
+def celery_stress_suite_detail(request, suite_id):
+    suite = get_object_or_404(CeleryTestSuite, pk=suite_id)
+    context = panel_config.get_context(request, current_tab='celery_stress_test')
+    context.update({
+        'suite': suite,
+        'metrics': suite_metrics(suite),
+        'task_page': Paginator(suite.tasks.order_by('-submitted_at', '-id'), 50).get_page(request.GET.get('page')),
+    })
+    return render(request, 'admin/dj_celery_panel/stress_suite_detail.html', context)
+
+
+@transaction.non_atomic_requests
+@panel_config.permission_required('celery_stress_test')
+@require_http_methods(['POST'])
+def celery_stress_suite_cancel(request, suite_id):
+    get_object_or_404(CeleryTestSuite, pk=suite_id)
+    suite, warning = cancel_suite(suite_id, request.user, celery_app)
+    if warning:
+        messages.warning(request, warning)
+    elif suite.cancel_requested_at:
+        messages.success(request, 'Cancellation requested. Queued tasks are revoked; running tasks and the coordinator stop cooperatively.')
+    else:
+        messages.info(request, 'This suite has already finished.')
+    return redirect('celery_stress_suite_detail', suite_id=suite.id)
