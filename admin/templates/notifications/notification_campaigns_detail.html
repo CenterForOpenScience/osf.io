@@ -62,16 +62,38 @@
             <strong>Last activity:</strong> {{ last_activity_ago }} ago
         {% endif %}
     </div>
+    {% if awaiting_delivery %}
+    <div class="alert alert-info">
+        <strong>Awaiting delivery:</strong>
+        All recipients have been submitted to SendGrid.
+        Waiting for delivery confirmation ({{ awaiting }} awaiting).
+    </div>
+    {% endif %}
     <div class="progress">
 
         <div class="progress-bar progress-bar-success"
             style="width: {{ sent_percent }}%;">
-            {{ notification_campaign.sent_count }}
+            {{ sent_count }}
+        </div>
+
+        <div class="progress-bar progress-bar-info"
+            style="width: {{ awaiting_percent }}%;">
+            {{ awaiting }}
+        </div>
+
+        <div class="progress-bar progress-bar-warning"
+            style="width: {{ queued_percent }}%;">
+            {{ queued }}
         </div>
 
         <div class="progress-bar progress-bar-danger"
             style="width: {{ failed_percent }}%;">
-            {{ notification_campaign.failed_count }}
+            {{ failed_count }}
+        </div>
+
+        <div class="progress-bar"
+            style="width: {{ skipped_percent }}%; background-color: #777;">
+            {{ skipped_count }}
         </div>
 
         <div class="progress-bar progress-bar-default"
@@ -85,7 +107,17 @@
 <table class="table table-bordered">
     <tr>
         <th style="width:250px;">Processed</th>
-        <td>{{ processed }} / {{ notification_campaign.recipient_count }}</td>
+        <td>{{ processed }} / {{ recipient_count }}</td>
+    </tr>
+
+    <tr>
+        <th>Queued</th>
+        <td>{{ queued }}</td>
+    </tr>
+
+    <tr>
+        <th>Awaiting Delivery</th>
+        <td>{{ awaiting }}</td>
     </tr>
 
     <tr>
@@ -101,6 +133,11 @@
     <tr>
         <th>Failure rate</th>
         <td>{{ failure_rate|floatformat:2 }}%</td>
+    </tr>
+
+    <tr>
+        <th>Skip rate</th>
+        <td>{{ skip_rate|floatformat:2 }}%</td>
     </tr>
 
     <tr>
@@ -148,10 +185,10 @@
     </tr>
 
 </table>
-{% if allow_restart_stuck and notification_campaign.status == "running" %}
+{% if restart_stuck_suggested %}
 <div class="alert alert-warning">
     <strong>Warning!</strong>
-    No activity has been detected for more than 15 minutes.
+    No emails have been sent for more than {{ restart_stuck_after }}s (two dispatch intervals).
     The campaign may be stuck and can be restarted.
 </div>
 {% endif %}
@@ -184,18 +221,11 @@
             Create Campaign Recipients
         </button>
     </form>
-    <form
-        id="restart-stuck-campaign-form"
-        method="post"
-        action="{% url 'notifications:notification_campaigns_start' notification_campaign.id %}?restart_stuck=true"
-        style="display:inline;"
-    >
-        {% csrf_token %}
-        <button type="submit" class="btn btn-primary" {% if not allow_restart_stuck or notification_campaign.status != "running" %}disabled{% endif %}
-        title="Restart the campaign after 15 minutes of inactivity.">
-            Restart stuck Campaign
-        </button>
-    </form>
+    <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#restart-stuck-campaign-modal"
+        {% if notification_campaign.status != "running" %}disabled{% endif %}
+        title="Review campaign progress and restart it if it is stuck.">
+        Restart stuck Campaign
+    </button>
     <form
         id="cancel-campaign-form"
         method="post"
@@ -220,6 +250,94 @@
             Delete Campaign
         </button>
     </form>
+
+    {% if notification_campaign.status == "running" %}
+    <div class="modal fade" id="restart-stuck-campaign-modal" tabindex="-1" role="dialog">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <form
+                    id="restart-stuck-campaign-form"
+                    method="post"
+                    action="{% url 'notifications:notification_campaigns_start' notification_campaign.id %}?restart_stuck=true"
+                >
+                    {% csrf_token %}
+                    <div class="modal-header">
+                        <button type="button" class="close" data-dismiss="modal">&times;</button>
+                        <h4 class="modal-title">Restart stuck campaign?</h4>
+                    </div>
+                    <div class="modal-body">
+                        {% if awaiting_delivery %}
+                        <div class="alert alert-info">
+                            All recipients have been submitted to SendGrid; only delivery confirmations are pending.
+                            Restarting will not help.
+                        </div>
+                        {% elif restart_stuck_suggested %}
+                        <div class="alert alert-warning">
+                            No emails have been sent for more than {{ restart_stuck_after }}s (two dispatch intervals).
+                            The campaign looks stuck, restarting is recommended.
+                        </div>
+                        {% else %}
+                        <div class="alert alert-success">
+                            Emails were sent within the last {{ restart_stuck_after }}s (two dispatch intervals).
+                            The campaign is progressing; restarting is not recommended.
+                        </div>
+                        {% endif %}
+
+                        <table class="table table-condensed">
+                            <tr>
+                                <th style="width:220px;">Last email sent</th>
+                                <td>
+                                    {% if last_sent_at %}
+                                        {{ last_sent_at }} ({{ last_activity_ago }} ago)
+                                    {% else %}
+                                        None in this run
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            <tr>
+                                <th>Run started</th>
+                                <td>{{ notification_campaign.started_at }} ({{ elapsed }} ago)</td>
+                            </tr>
+                            <tr>
+                                <th>Queued</th>
+                                <td>{{ queued }} (reset to Pending and re-dispatched)</td>
+                            </tr>
+                            <tr>
+                                <th>Pending</th>
+                                <td>{{ pending }}</td>
+                            </tr>
+                            <tr>
+                                <th>Awaiting delivery</th>
+                                <td>{{ awaiting }}</td>
+                            </tr>
+                            <tr>
+                                <th>Sent / Failed / Skipped</th>
+                                <td>{{ sent_count }} / {{ failed_count }} / {{ skipped_count }}</td>
+                            </tr>
+                        </table>
+
+                        <p class="text-muted">
+                            Restart starts a new run. Batches still waiting in the queue belong to the old run and
+                            will not send anything. A batch that is sending right now keeps sending, so some of its
+                            recipients may receive the email twice.
+                        </p>
+
+                        <div class="form-group">
+                            <label for="restart-stuck-campaign-name">Type the campaign name to confirm</label>
+                            <input id="restart-stuck-campaign-name" class="form-control" type="text" autocomplete="off">
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+                        <button type="submit" id="restart-stuck-campaign-confirm" class="btn btn-danger" disabled>
+                            Restart
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    {% endif %}
 
     <!-- General information -->
     <div class="row">
@@ -269,10 +387,20 @@
                             >
                                 {% csrf_token %}
                                 <button type="submit" class="btn btn-primary" {% if notification_campaign.status != "partially_completed" %}disabled{% endif %}>
-                                    Restart Campaign
+                                    Restart Failed Recipeints
                                 </button>
                             </form>
                         </td>
+                    {% elif field == 'Skipped' and value != 0 %}
+                        <td>
+                            <a
+                                href="{% url 'notifications:notification_campaigns_recipients_list' %}?notification_status=skipped&campaign_id={{ notification_campaign.id }}"
+                                class="btn btn-default"
+                                target="_blank">
+                                View Recipients
+                            </a>
+                        </td>
+                        <td></td>
                     {% else %}
                         <td></td>
                         <td></td>
@@ -469,11 +597,12 @@
         });
     }
 
-    const restartstuckForm = document.getElementById("restart-stuck-campaign-form");
+    const restartStuckName = document.getElementById("restart-stuck-campaign-name");
 
-    if (restartstuckForm) {
-        restartstuckForm.addEventListener("submit", function (e) {
-            confirmCampaign(this, e);
+    if (restartStuckName) {
+        const campaignName = document.getElementById("campaign_name").textContent.trim();
+        restartStuckName.addEventListener("input", function () {
+            document.getElementById("restart-stuck-campaign-confirm").disabled = this.value !== campaignName;
         });
     }
 
