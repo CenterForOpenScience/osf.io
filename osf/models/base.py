@@ -215,6 +215,8 @@ class Guid(BaseModel):
     referent = GenericForeignKey()
     content_type = models.ForeignKey(ContentType, null=True, blank=True, on_delete=models.CASCADE)
     object_id = models.PositiveIntegerField(null=True, blank=True)
+    redirect_url = models.URLField(null=True, blank=True)
+    redirect_automatically = models.BooleanField(default=False)
 
     created = NonNaiveDateTimeField(db_index=True, auto_now_add=True)
 
