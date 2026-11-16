@@ -18,7 +18,8 @@ from osf.models.celery_test import CeleryTestSuite, CeleryTestTask
 from osf.celery_stress_test.control import cancel_suite, finish_publishing
 from osf.celery_stress_test.metrics import suite_metrics
 from osf.celery_stress_test.tasks import start_celery_stress_test
-from .forms import CeleryStressTestForm, WorkloadForm
+from .forms import CeleryStressTestForm, WorkloadForm, CeleryScenarioForm
+from osf.celery_stress_test.presets import PRESETS, resolve
 
 
 WorkloadFormSet = formset_factory(
@@ -153,6 +154,35 @@ def celery_stress_test_view(request):
         request,
         current_tab='celery_stress_test',
     )
+    preset = request.POST.get('preset', request.GET.get('preset', 'load'))
+    if preset not in PRESETS:
+        from django.http import HttpResponseBadRequest
+        return HttpResponseBadRequest('Unknown suite preset.')
+    if preset != 'load':
+        form = CeleryScenarioForm(request.POST if request.method == 'POST' else None,
+                                  suite_type=preset, initial=PRESETS[preset]['defaults'])
+        if request.method == 'POST' and form.is_valid():
+            config = resolve(preset, form.cleaned_data)
+            if preset == 'workflow':
+                try:
+                    celery_app.backend.ensure_chords_allowed()
+                except (NotImplementedError, AttributeError) as exc:
+                    form.add_error(None, f'This result backend does not support chords: {exc}')
+            if not form.errors:
+                from datetime import timedelta
+                from django.utils import timezone
+                suite = CeleryTestSuite.objects.create(name=config['name'], config=config, created_by=request.user,
+                    deadline_at=timezone.now() + timedelta(seconds=config['deadline_seconds']))
+                try:
+                    start_celery_stress_test.apply_async(args=[str(suite.id)],
+                        task_id=str(suite.coordinator_task_id), retry=False)
+                except Exception as exc:
+                    finish_publishing(suite.id, f'Coordinator publication failed: {exc}')
+                    messages.error(request, 'Failed to submit the suite.')
+                return redirect('celery_stress_suite_detail', suite_id=suite.id)
+        context.update({'form': form, 'presets': PRESETS, 'selected_preset': preset})
+        return render(request, 'admin/dj_celery_panel/scenario_testing.html', context)
+    context.update({'presets': PRESETS, 'selected_preset': preset})
 
     if request.method == 'POST':
         form = CeleryStressTestForm(request.POST)
@@ -161,6 +191,8 @@ def celery_stress_test_view(request):
         if form.is_valid() and workload_formset.is_valid():
             config = {
                 **form.cleaned_data,
+                'suite_type': 'load',
+                'preset_version': 1,
                 'workloads': [
                     workload_form.cleaned_data
                     for workload_form in workload_formset

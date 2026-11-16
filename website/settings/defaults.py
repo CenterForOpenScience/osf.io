@@ -687,6 +687,7 @@ class CeleryConfig:
             'osf.utils.download_telemetry.write_download_event': {'queue': 'celery'},
             'scripts.disable_removed_beat_tasks': {'queue': 'celery'},
             'scripts.premigrate_created_modified.run_sql': {'queue': 'celery'},
+            'stress_testing.reconcile_suites': {'queue': 'celery'},
             'stress_testing.simulated_workload': {'queue': 'celery'},
             'stress_testing.start_celery_stress_test': {'queue': 'celery'},
         }
@@ -747,6 +748,7 @@ class CeleryConfig:
         'osf.management.commands.restart_stuck_registrations',
         'osf.email.notification_campaign',
         'osf.celery_stress_test.tasks',
+        'osf.celery_stress_test.scenarios',
         'addons.boa.tasks',
         'addons.osfstorage.listeners',
         'addons.osfstorage.utils',
@@ -790,6 +792,10 @@ class CeleryConfig:
     #  Setting up a scheduler, essentially replaces an independent cron job
     # Note: these times must be in UTC
     beat_schedule = {
+        'reconcile-celery-test-suites': {
+            'task': 'stress_testing.reconcile_suites',
+            'schedule': 15.0,
+        },
         'disable_removed_beat_tasks': {
             'task': 'scripts.disable_removed_beat_tasks',
             'schedule': crontab(minute=0, hour=0),  # Daily 8:00 PM EDT

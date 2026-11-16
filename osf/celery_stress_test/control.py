@@ -11,12 +11,21 @@ def finalize(suite):
         return
     if suite.cancel_requested_at:
         suite.status = Suite.Status.CANCELLED
+    elif suite.config.get('suite_type', 'load') != 'load':
+        from .scenarios import evaluate
+        suite.results, passed = evaluate(suite)
+        suite.verdict = 'passed' if passed and not suite.error else 'failed'
+        suite.status = Suite.Status.COMPLETED if suite.verdict == 'passed' else Suite.Status.FAILED
     elif suite.error or suite.tasks.filter(status__in=[Task.Status.FAILED, Task.Status.CANCELLED]).exists():
         suite.status = Suite.Status.FAILED
     else:
         suite.status = Suite.Status.COMPLETED
+    if suite.cancel_requested_at:
+        suite.verdict = 'cancelled'
+    elif suite.config.get('suite_type', 'load') == 'load':
+        suite.verdict = 'passed' if suite.status == Suite.Status.COMPLETED else 'failed'
     suite.finished_at = timezone.now()
-    suite.save(update_fields=['status', 'finished_at'])
+    suite.save(update_fields=['status', 'finished_at', 'verdict', 'results'])
 
 
 def finish_publishing(suite_id, error=''):
@@ -64,7 +73,7 @@ def cancel_suite(suite_id, user, app):
         if suite.started_at is None:
             suite.publishing_finished_at = timezone.now()
         suite.save(update_fields=['cancel_requested_at', 'cancelled_by', 'status', 'publishing_finished_at'])
-        suite.tasks.filter(status=Task.Status.QUEUED).update(
+        suite.tasks.filter(status__in=[Task.Status.QUEUED, Task.Status.RETRYING]).update(
             status=Task.Status.CANCELLED, finished_at=timezone.now(),
         )
         finalize(suite)

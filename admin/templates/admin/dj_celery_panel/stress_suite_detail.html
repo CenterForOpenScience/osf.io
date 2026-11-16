@@ -4,6 +4,31 @@
 {% block panel_page_content %}
   <p><a href="{% url 'celery_stress_test' %}">{% trans "All test suites" %}</a></p>
   <h1>{{ suite.name }}</h1>
+  <p>Suite: {{ suite.config.suite_type|default:"load" }} · Verdict: {{ suite.verdict }}</p>
+  {% if suite.results.checks %}
+    <section class="dcr-card">
+      <div class="dcr-card__body">
+        <h2>Scenario assertions</h2>
+        <p>Suite duration: {{ suite.results.duration_seconds|floatformat:2 }} s</p>
+        {% for check in suite.results.checks %}
+          <h3>{{ check.scenario }}: {{ check.passed|yesno:"Passed,Failed" }}</h3>
+          <p>Expected: {{ check.expected }} · Actual: {{ check.actual_status }} · Observations: {{ check.observations }}</p>
+          <p>Recovery: {{ check.recovery_seconds|default_if_none:"—" }} s · Retry exhaustion observed: {{ check.exhausted_retries|yesno:"Yes,No" }}</p>
+          <p>Attempts: {{ check.attempts }} · Scheduled retry delay: {{ check.scheduled_retry_delay }} s · Observed delays: {{ check.observed_retry_delays }} · Duration: {{ check.duration_seconds }} s</p>
+        {% endfor %}
+      </div>
+    </section>
+  {% endif %}
+  {% if suite.config.suite_type and suite.config.suite_type != 'load' %}
+    <details><summary>Attempt history</summary>
+      {% for task in task_page %}
+        <h3>{{ task.scenario }}</h3>
+        {% for attempt in task.attempts.all %}
+          <p>Attempt {{ attempt.number }} · {{ attempt.outcome }} · {{ attempt.started_at }} → {{ attempt.finished_at }} · Retry at {{ attempt.retry_at|default:"—" }} · {{ attempt.error }}</p>
+        {% endfor %}
+      {% endfor %}
+    </details>
+  {% endif %}
   <p>{{ suite.id }} · {{ suite.get_status_display }}</p>
   {% if suite.is_active %}
     <form method="post" action="{% url 'celery_stress_suite_cancel' suite_id=suite.id %}">{% csrf_token %}
@@ -43,6 +68,18 @@
         <dd>{{ suite.heartbeat_at|default:"—" }}</dd>
         <dt>{% trans "Coordinator task" %}</dt>
         <dd>{{ suite.coordinator_task_id }}</dd>
+        {% if suite.config.suite_type and suite.config.suite_type != 'load' %}
+          <dt>Queue / execution deadline</dt>
+          <dd>{{ suite.config.queue }} / {{ suite.deadline_at }}</dd>
+          <dt>Preset version</dt><dd>{{ suite.config.preset_version }}</dd>
+          {% if suite.config.suite_type == 'workflow' %}
+            <dt>Workflow sets / chain length / group size / chord header size</dt>
+            <dd>{{ suite.config.workflow_count|default:"1" }} / {{ suite.config.chain_length|default:"2" }} / {% firstof suite.config.group_size suite.config.width 3 %} / {% firstof suite.config.chord_size suite.config.width 3 %}</dd>
+          {% else %}
+            <dt>Tasks per scenario / transient failures / maximum retries / retry delay</dt>
+            <dd>{{ suite.config.tasks_per_scenario|default:"1" }} / {{ suite.config.transient_failures|default:"2" }} / {{ suite.config.max_retries }} / {{ suite.config.retry_delay }} s</dd>
+          {% endif %}
+        {% else %}
         <dt>{% trans "Configured duration" %}</dt>
         <dd>{{ suite.config.total_duration }} s</dd>
         <dt>{% trans "Requested rate / global cap / effective ceiling" %}</dt>
@@ -51,6 +88,7 @@
         <dd>{{ metrics.publishing_seconds|floatformat:2 }} / {{ metrics.elapsed_seconds|floatformat:2 }} s</dd>
         <dt>{% trans "Observed publishing rate / successful throughput" %}</dt>
         <dd>{{ metrics.publish_rate|floatformat:2|default:"—" }} / {{ metrics.throughput|floatformat:2|default:"—" }} tasks/s</dd>
+        {% endif %}
         <dt>{% trans "Workers observed" %}</dt>
         <dd>
           {% for worker in metrics.workers %}
@@ -68,7 +106,7 @@
   <section class="dcr-card">
     <div class="dcr-card__body">
       <h2>{% trans "Task outcomes" %}</h2>
-      <p>{% trans "Submitted" %}: {{ metrics.total }} · {% trans "Published" %}: {{ metrics.published }} · {% trans "Queued" %}: {{ metrics.queued }} · {% trans "Running" %}: {{ metrics.running }} · {% trans "Succeeded" %}: {{ metrics.succeeded }} · {% trans "Failed" %}: {{ metrics.failed }} · {% trans "Cancelled" %}: {{ metrics.cancelled }}</p>
+      <p>{% trans "Submitted" %}: {{ metrics.total }} · {% trans "Published" %}: {{ metrics.published }} · {% trans "Queued" %}: {{ metrics.queued }} · {% trans "Running" %}: {{ metrics.running }} · {% trans "Retrying" %}: {{ metrics.retrying }} · {% trans "Succeeded" %}: {{ metrics.succeeded }} · {% trans "Failed" %}: {{ metrics.failed }} · {% trans "Cancelled" %}: {{ metrics.cancelled }}</p>
       <p>{% trans "Failure rate (failed / succeeded + failed)" %}: {{ metrics.failure_percent|floatformat:2|default:"—" }}%</p>
       <h3>{% trans "Successful task latency" %}</h3>
       <table class="dcr-table">

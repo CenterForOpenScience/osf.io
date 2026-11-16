@@ -1,0 +1,13 @@
+{% extends "admin/dj_celery_panel/base.html" %}
+{% load i18n %}
+{% block panel_page_content %}
+  <h1>{% trans "Correctness and recovery suites" %}</h1>
+  {% include "admin/dj_celery_panel/suite_presets.html" %}
+  <p>{% trans "Run bounded synthetic tasks and validate their outcomes. The deadline includes queue waiting time." %}</p>
+  <form method="post">
+    {% csrf_token %}
+    <input type="hidden" name="preset" value="{{ selected_preset }}">
+    {{ form.as_p }}
+    <button type="submit" class="dcr-btn dcr-btn--primary">{% trans "Start suite" %}</button>
+  </form>
+{% endblock %}

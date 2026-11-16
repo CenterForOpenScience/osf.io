@@ -8,6 +8,7 @@ from django.utils import timezone
 from framework.celery_tasks import app as celery_app
 from osf.models.celery_test import CeleryTestSuite as Suite, CeleryTestTask as Task
 from .control import finish_publishing, finish_task
+from .scenarios import publish_scenarios  # Registers scenario tasks for signal handlers.
 
 
 @shared_task(name='stress_testing.start_celery_stress_test')
@@ -23,7 +24,10 @@ def start_celery_stress_test(suite_id):
 
     error = ''
     try:
-        _publish_workloads(suite_id, config)
+        if config.get('suite_type', 'load') == 'load':
+            _publish_workloads(suite_id, config)
+        else:
+            publish_scenarios(suite_id, config)
     except Exception as exc:
         error = str(exc)
         raise
@@ -155,7 +159,7 @@ def simulated_workload(self, mode='io', io_seconds=1.0, cpu_iterations=1_000_000
 def record_test_failure(sender=None, task_id=None, exception=None, **kwargs):
     # Covers failures reported by the worker parent, including hard timeouts and
     # lost children, where the task's finally block cannot run.
-    if sender and sender.name == 'stress_testing.simulated_workload':
+    if sender and sender.name in ('stress_testing.simulated_workload', 'stress_testing.scenario'):
         if Task.objects.filter(pk=task_id).exists():
             finish_task(task_id, Task.Status.FAILED, str(exception))
     elif sender and sender.name == 'stress_testing.start_celery_stress_test':
@@ -164,12 +168,14 @@ def record_test_failure(sender=None, task_id=None, exception=None, **kwargs):
             finish_publishing(suite.id, str(exception))
 
 
-def record_test_revocation(request=None, **kwargs):
+def record_test_revocation(sender=None, request=None, **kwargs):
     if request is None:
         return
-    if request.name == 'stress_testing.simulated_workload' and Task.objects.filter(pk=request.id).exists():
+    # Parent-process revocation may supply a Context with task, not name.
+    task_name = getattr(sender, 'name', None) or getattr(request, 'task', None) or getattr(request, 'name', None)
+    if task_name in ('stress_testing.simulated_workload', 'stress_testing.scenario') and Task.objects.filter(pk=request.id).exists():
         finish_task(request.id, Task.Status.CANCELLED, 'Task revoked.')
-    elif request.name == 'stress_testing.start_celery_stress_test':
+    elif task_name == 'stress_testing.start_celery_stress_test':
         suite = Suite.objects.filter(coordinator_task_id=request.id).first()
         if suite:
             finish_publishing(suite.id, '' if suite.cancel_requested_at else 'Coordinator revoked.')
@@ -180,6 +186,7 @@ def register_test_signal_handlers(sender, **kwargs):
     # Resolve shared tasks through the finalized app's registry, not their proxies.
     for task_name in (
         'stress_testing.simulated_workload',
+        'stress_testing.scenario',
         'stress_testing.start_celery_stress_test',
     ):
         task = sender.tasks[task_name]
