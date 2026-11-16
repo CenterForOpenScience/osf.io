@@ -1,6 +1,7 @@
 import logging
 from urllib.parse import urlparse
 
+from billiard.exceptions import SoftTimeLimitExceeded
 from django.apps import apps
 from django.db import connection
 from django.db.models import Sum
@@ -113,14 +114,23 @@ def ban_url(instance):
                     )
 
 
-@app.task(max_retries=5, default_retry_delay=10)
+@app.task(
+    max_retries=5,
+    default_retry_delay=10,
+    soft_time_limit=270,
+    time_limit=300,
+)
 def update_storage_usage_cache(target_id, target_guid, per_page=_DEFAULT_FILEVERSION_PAGE_SIZE):
     if not settings.ENABLE_STORAGE_USAGE_CACHE:
         return
     from osf.models import Guid
-    storage_usage_total = compute_storage_usage_total(Guid.load(target_guid).referent, per_page=per_page)
-    key = cache_settings.STORAGE_USAGE_KEY.format(target_id=target_guid)
-    storage_usage_cache.set(key, storage_usage_total, settings.STORAGE_USAGE_CACHE_TIMEOUT)
+    try:
+        storage_usage_total = compute_storage_usage_total(Guid.load(target_guid).referent, per_page=per_page)
+        key = cache_settings.STORAGE_USAGE_KEY.format(target_id=target_guid)
+        storage_usage_cache.set(key, storage_usage_total, settings.STORAGE_USAGE_CACHE_TIMEOUT)
+    except SoftTimeLimitExceeded:
+        logger.exception('Storage usage cache update timed out for target %s', target_guid)
+        raise
 
 
 def compute_storage_usage_total(target_obj, per_page=_DEFAULT_FILEVERSION_PAGE_SIZE):
