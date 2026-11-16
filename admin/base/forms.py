@@ -27,6 +27,7 @@ class ArchiveRegistrationWithPigeonForm(forms.Form):
 
 
 class CeleryStressTestForm(forms.Form):
+    name = forms.CharField(max_length=100, initial='Celery load test')
     total_duration = forms.IntegerField(
         label='Duration (seconds)',
         min_value=1,

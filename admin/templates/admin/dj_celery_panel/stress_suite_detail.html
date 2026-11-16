@@ -1,0 +1,179 @@
+{% extends "admin/dj_celery_panel/base.html" %}
+{% load i18n %}
+
+{% block panel_page_content %}
+  <p><a href="{% url 'celery_stress_test' %}">{% trans "All test suites" %}</a></p>
+  <h1>{{ suite.name }}</h1>
+  <p>{{ suite.id }} · {{ suite.get_status_display }}</p>
+  {% if suite.is_active %}
+    <form method="post" action="{% url 'celery_stress_suite_cancel' suite_id=suite.id %}">{% csrf_token %}
+      <button type="submit" class="dcr-btn dcr-btn--secondary">
+        {% if suite.cancel_requested_at %}
+          {% trans "Retry cancellation" %}
+        {% else %}
+          {% trans "Cancel suite and tasks" %}
+        {% endif %}
+      </button>
+    </form>
+    <p>{% trans "Refresh to update. Publishing ends before a suite finishes: queued and running tasks must drain first." %}</p>
+  {% endif %}
+  {% if suite.heartbeat_stale %}
+    <p role="alert">{% trans "The coordinator heartbeat is overdue. The worker may be unavailable; these results may be incomplete." %}</p>
+  {% endif %}
+  {% if suite.error %}
+    <p role="alert">{{ suite.error }}</p>
+  {% endif %}
+  <section class="dcr-card">
+    <div class="dcr-card__body">
+      <h2>{% trans "Run configuration and timing" %}</h2>
+      <dl>
+        <dt>{% trans "Started by" %}</dt>
+        <dd>{{ suite.created_by|default:"—" }}</dd>
+        <dt>{% trans "Created / started" %}</dt>
+        <dd>{{ suite.created_at }} / {{ suite.started_at|default:"Not started" }}</dd>
+        <dt>{% trans "Publishing finished / suite finished" %}</dt>
+        <dd>{{ suite.publishing_finished_at|default:"—" }} / {{ suite.finished_at|default:"—" }}</dd>
+        <dt>{% trans "Cancellation requested" %}</dt>
+        <dd>{{ suite.cancel_requested_at|default:"—" }}
+          {% if suite.cancelled_by %}
+            ({{ suite.cancelled_by }})
+          {% endif %}
+        </dd>
+        <dt>{% trans "Coordinator heartbeat" %}</dt>
+        <dd>{{ suite.heartbeat_at|default:"—" }}</dd>
+        <dt>{% trans "Coordinator task" %}</dt>
+        <dd>{{ suite.coordinator_task_id }}</dd>
+        <dt>{% trans "Configured duration" %}</dt>
+        <dd>{{ suite.config.total_duration }} s</dd>
+        <dt>{% trans "Requested rate / global cap / effective ceiling" %}</dt>
+        <dd>{{ metrics.requested_rate }} / {{ suite.config.max_total_rate }} / {{ metrics.effective_rate_cap }} tasks/s</dd>
+        <dt>{% trans "Actual publishing / elapsed time" %}</dt>
+        <dd>{{ metrics.publishing_seconds|floatformat:2 }} / {{ metrics.elapsed_seconds|floatformat:2 }} s</dd>
+        <dt>{% trans "Observed publishing rate / successful throughput" %}</dt>
+        <dd>{{ metrics.publish_rate|floatformat:2|default:"—" }} / {{ metrics.throughput|floatformat:2|default:"—" }} tasks/s</dd>
+        <dt>{% trans "Workers observed" %}</dt>
+        <dd>
+          {% for worker in metrics.workers %}
+            {{ worker }}
+            {% if not forloop.last %}
+              ,
+            {% endif %}
+          {% empty %}
+            —
+          {% endfor %}
+        </dd>
+      </dl>
+    </div>
+  </section>
+  <section class="dcr-card">
+    <div class="dcr-card__body">
+      <h2>{% trans "Task outcomes" %}</h2>
+      <p>{% trans "Submitted" %}: {{ metrics.total }} · {% trans "Published" %}: {{ metrics.published }} · {% trans "Queued" %}: {{ metrics.queued }} · {% trans "Running" %}: {{ metrics.running }} · {% trans "Succeeded" %}: {{ metrics.succeeded }} · {% trans "Failed" %}: {{ metrics.failed }} · {% trans "Cancelled" %}: {{ metrics.cancelled }}</p>
+      <p>{% trans "Failure rate (failed / succeeded + failed)" %}: {{ metrics.failure_percent|floatformat:2|default:"—" }}%</p>
+      <h3>{% trans "Successful task latency" %}</h3>
+      <table class="dcr-table">
+        <thead>
+          <tr>
+            <th>{% trans "Metric" %}</th>
+            <th>{% trans "Mean (s)" %}</th>
+            <th>{% trans "P95 (s)" %}</th>
+            <th>{% trans "Samples" %}</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>{% trans "Submission to start" %}</td>
+            <td>{{ metrics.wait.mean|floatformat:3|default:"—" }}</td>
+            <td>{{ metrics.wait.p95|floatformat:3|default:"—" }}</td>
+            <td>{{ metrics.wait.samples }}</td>
+          </tr>
+          <tr>
+            <td>{% trans "Execution" %}</td>
+            <td>{{ metrics.runtime.mean|floatformat:3|default:"—" }}</td>
+            <td>{{ metrics.runtime.p95|floatformat:3|default:"—" }}</td>
+            <td>{{ metrics.runtime.samples }}</td>
+          </tr>
+          <tr>
+            <td>{% trans "Submission to finish" %}</td>
+            <td>{{ metrics.total_latency.mean|floatformat:3|default:"—" }}</td>
+            <td>{{ metrics.total_latency.p95|floatformat:3|default:"—" }}</td>
+            <td>{{ metrics.total_latency.samples }}</td>
+          </tr>
+        </tbody>
+      </table>
+      <p>{% trans "P95 is the value at or below which 95% of successful samples fall. Cancelled and failed tasks are excluded from latency summaries. Active runs have partial results." %}</p>
+      <p>{% trans "Publishing rate uses confirmed send calls divided by publishing time. Successful throughput uses the full elapsed suite time, including draining. Submission-to-start includes broker submission and scheduling; it is not pure broker wait. Cross-worker timings require synchronized clocks. Database tracking and cancellation polling add overhead to this synthetic test." %}</p>
+    </div>
+  </section>
+  <section class="dcr-card">
+    <div class="dcr-card__body" style="overflow-x:auto">
+      <h2>{% trans "Workloads" %}</h2>
+      <table class="dcr-table">
+        <thead>
+          <tr>
+            <th>{% trans "Workload / mode / queue" %}</th>
+            <th>{% trans "I/O (s) / CPU iterations" %}</th>
+            <th>{% trans "Requested / actual rate" %}</th>
+            <th>{% trans "Queued / running" %}</th>
+            <th>{% trans "Succeeded / failed / cancelled" %}</th>
+            <th>{% trans "Wait P95 (s)" %}</th>
+            <th>{% trans "Execution P95 (s)" %}</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for workload in metrics.workloads %}
+            <tr>
+              <td>{{ workload.config.name }} / {{ workload.config.mode }} / {{ workload.config.queue }}</td>
+              <td>{{ workload.config.io_seconds|default_if_none:"—" }} / {{ workload.config.cpu_iterations|default_if_none:"—" }}</td>
+              <td>{{ workload.config.rate }} / {{ workload.publish_rate|floatformat:2|default:"—" }}</td>
+              <td>{{ workload.queued }} / {{ workload.running }}</td>
+              <td>{{ workload.succeeded }} / {{ workload.failed }} / {{ workload.cancelled }}</td>
+              <td>{{ workload.wait.p95|floatformat:3|default:"—" }}</td>
+              <td>{{ workload.runtime.p95|floatformat:3|default:"—" }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+  <section class="dcr-card">
+    <div class="dcr-card__body" style="overflow-x:auto">
+      <h2>{% trans "Individual tasks" %}</h2>
+      <table class="dcr-table">
+        <thead>
+          <tr>
+            <th>{% trans "Task ID" %}</th>
+            <th>{% trans "Status" %}</th>
+            <th>{% trans "Queue / worker" %}</th>
+            <th>{% trans "Submitted / finished" %}</th>
+            <th>{% trans "Wait / execution (s)" %}</th>
+            <th>{% trans "Error" %}</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for task in task_page %}
+            <tr>
+              <td>{{ task.id }}</td>
+              <td>{{ task.get_status_display }}</td>
+              <td>{{ task.queue }} / {{ task.worker|default:"—" }}</td>
+              <td>{{ task.submitted_at }} / {{ task.finished_at|default:"—" }}</td>
+              <td>{{ task.wait_seconds|floatformat:3|default:"—" }} / {{ task.runtime_seconds|floatformat:3|default:"—" }}</td>
+              <td>{{ task.error|default:"—" }}</td>
+            </tr>
+          {% empty %}
+            <tr>
+              <td colspan="6">{% trans "No tasks submitted yet." %}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      {% if task_page.has_previous %}
+        <a href="?page={{ task_page.previous_page_number }}">{% trans "Previous" %}</a>
+      {% endif %}
+      <span>{% trans "Page" %} {{ task_page.number }} / {{ task_page.paginator.num_pages }}</span>
+      {% if task_page.has_next %}
+        <a href="?page={{ task_page.next_page_number }}">{% trans "Next" %}</a>
+      {% endif %}
+    </div>
+  </section>
+{% endblock %}
