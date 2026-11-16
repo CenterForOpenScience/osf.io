@@ -19,6 +19,7 @@ runs:
   - name: Install lxml
     shell: bash
     run: |
+      sudo sed -i 's#http://azure\\.archive\\.ubuntu\\.com#http://archive.ubuntu.com#' /etc/apt/apt-mirrors.txt
       sudo apt update
       sudo apt-get install libxml2-dev libxslt-dev python3
   - name: Copy Settings
