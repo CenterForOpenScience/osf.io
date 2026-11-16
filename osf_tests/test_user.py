@@ -1105,6 +1105,44 @@ class TestIsActive:
         assert user.is_active is False
 
 
+@pytest.mark.django_db
+class TestAdminLoginId:
+
+    @pytest.fixture()
+    def staff(self):
+        return AuthUserFactory(is_staff=True)
+
+    def test_admin_login_id_is_none_if_not_staff(self):
+        assert AuthUserFactory().admin_login_id is None
+        assert AuthUserFactory(is_superuser=True).admin_login_id is None
+
+    def test_admin_login_id_is_encrypted(self, staff):
+        admin_login_id = staff.admin_login_id
+        assert admin_login_id
+        assert staff._id not in admin_login_id
+        # can't be duplicated: the same user never gets the same value twice
+        assert admin_login_id != staff.admin_login_id
+
+    def test_check_admin_login_id(self, staff):
+        assert staff.check_admin_login_id(staff.admin_login_id)
+
+    @pytest.mark.parametrize('admin_login_id', [None, '', 'forged', 'a.b.c.d.e'])
+    def test_check_admin_login_id_invalid(self, staff, admin_login_id):
+        assert not staff.check_admin_login_id(admin_login_id)
+
+    def test_check_admin_login_id_not_encrypted(self, staff):
+        assert not staff.check_admin_login_id(f'{staff._id}:{staff.pk}')
+
+    def test_check_admin_login_id_of_another_user(self, staff):
+        assert not staff.check_admin_login_id(AuthUserFactory(is_staff=True).admin_login_id)
+
+    def test_check_admin_login_id_not_staff_anymore(self, staff):
+        admin_login_id = staff.admin_login_id
+        staff.is_staff = False
+        staff.save()
+        assert not staff.check_admin_login_id(admin_login_id)
+
+
 class TestHasAcceptedCurrentTermsOfService:
 
     def test_is_false_when_never_accepted(self):

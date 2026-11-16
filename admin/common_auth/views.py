@@ -17,6 +17,8 @@ from osf.models import AdminProfile
 from admin.base.utils import login_not_required
 from admin.common_auth.forms import LoginForm, UserRegistrationForm, DeskUserForm, TwoFactorForm, get_admin_app_groups
 
+LOGIN_ERROR_MESSAGE = 'Unable to log in. Please check your credentials and try again.'
+
 
 class LoginView(FormView):
     form_class = LoginForm
@@ -36,81 +38,57 @@ class LoginView(FormView):
 
         return LoginForm
 
+    def login_failed(self):
+        messages.error(self.request, LOGIN_ERROR_MESSAGE)
+        return redirect('auth:login')
+
     def post(self, request, *args, **kwargs):
         form = self.get_context_data()['form']
-        if isinstance(form, LoginForm):
-            error_message = 'Email and/or Password incorrect. Please try again.'
-        else:
-            error_message = 'Invalid two-factor code. Please try again.'
-            if 'guid' not in form.data:
-                error_message = 'Email and/or Password incorrect. Please try again.'
-
         if not form.is_valid():
-            messages.error(self.request, error_message)
-            return redirect('auth:login')
+            return self.login_failed()
 
-        email = form.cleaned_data.get('email', '').strip()
-        password = form.cleaned_data.get('password', '').strip()
-        guid = form.cleaned_data.get('guid', '')
         if isinstance(form, LoginForm):
-            user = authenticate(username=email, password=password)
-        else:
-            user = OSFUser.load(guid)
+            return self.password_step(form)
+        return self.two_factor_step(form)
 
-        if not user:
-            messages.error(request, error_message)
-            return redirect('auth:login')
+    def password_step(self, form):
+        user = authenticate(
+            username=form.cleaned_data['email'].strip(),
+            password=form.cleaned_data['password'].strip(),
+        )
+        # only staff users with two-factor auth enabled can log in to the admin app
+        if not user or not user.is_staff or not user.enabled_two_factor_settings:
+            return self.login_failed()
 
-        # login and two-factor auth is not possible without having two-factor auth enabled
+        # the two-factor step is a separate request, so the guid tells it which user is logging in
+        # and admin_login_id proves that this user has passed the password step
+        return render(
+            self.request,
+            'two_factor.html',
+            {
+                'form': TwoFactorForm(
+                    initial={
+                        'guid': user._id,
+                        'admin_login_id': user.admin_login_id,
+                    }
+                )
+            }
+        )
+
+    def two_factor_step(self, form):
+        user = OSFUser.load(form.cleaned_data['guid'])
+        if not user or not user.is_active or not user.check_admin_login_id(form.cleaned_data['admin_login_id']):
+            return self.login_failed()
+
         two_factor_settings = user.enabled_two_factor_settings
-        if not two_factor_settings:
-            messages.error(
-                request,
-                'Two-factor authentication must be enabled.'
-            )
-            return redirect('auth:login')
-
-        # to not lose user after login request, we save its guid
-        # and use HiddenInput to not display it
-        if isinstance(form, LoginForm):
-            self.form_class = TwoFactorForm
-            return render(
-                request,
-                'two_factor.html',
-                {
-                    'form': self.form_class(
-                        initial={
-                            'guid': str(user._id),
-                        }
-                    )
-                }
-            )
-
-        # two-factor section
-        is_valid_code = two_factor_settings.verify_code(form.cleaned_data.get('code'))
-        if not is_valid_code:
-            messages.error(
-                self.request,
-                'Invalid two-factor code. Please try again.'
-            )
-            self.form_class = TwoFactorForm
-            return render(
-                request,
-                'two_factor.html',
-                {
-                    'form': self.form_class(
-                        initial={
-                            'guid': str(user._id)
-                        }
-                    )
-                }
-            )
+        if not two_factor_settings or not two_factor_settings.verify_code(form.cleaned_data['code']):
+            return self.login_failed()
 
         # during 2FA step we don't authenticate user via authenticate(),
         # so need to specify backend to set all appropriate attributes to the user correctly
         user.backend = 'api.base.authentication.backends.ODMBackend'
         login(self.request, user)
-        return super().post(request, *args, **kwargs)
+        return redirect(self.get_success_url())
 
     def get_success_url(self):
         redirect_to = self.request.GET.get(self.redirect_field_name, '')

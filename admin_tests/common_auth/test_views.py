@@ -6,7 +6,7 @@ from django.core.exceptions import PermissionDenied
 from django.utils import timezone
 from django.test import RequestFactory
 from django.urls import resolve, reverse
-from django.http import Http404
+from django.http import Http404, HttpResponse
 from admin.nodes.views import NodeSearchView
 from tests.base import AdminTestCase
 from osf_tests.factories import AuthUserFactory, ProjectFactory
@@ -15,8 +15,15 @@ from admin_tests.utilities import setup_view, setup_form_view
 
 from osf.models.user import OSFUser
 from addons.twofactor.models import UserSettings as TwoFactorUserSettings
-from admin.common_auth.views import RegisterUser, LoginView, AdminUserAudit, AdminUserStaffChange, AdminUserSuperuserRevoke
-from admin.common_auth.forms import TwoFactorForm, UserRegistrationForm
+from admin.common_auth.views import (
+    LOGIN_ERROR_MESSAGE,
+    RegisterUser,
+    LoginView,
+    AdminUserAudit,
+    AdminUserStaffChange,
+    AdminUserSuperuserRevoke,
+)
+from admin.common_auth.forms import UserRegistrationForm
 from django.contrib.messages.storage.fallback import FallbackStorage
 
 
@@ -214,13 +221,46 @@ class TestLoginView(AdminTestCase):
 
     def setUp(self):
         self.view = LoginView()
-        self.user = AuthUserFactory()
-        self.user.is_superuser = True
+        self.user = AuthUserFactory(is_staff=True, is_superuser=True)
         self.user.set_password('1234')
         self.user.save()
 
-    def create_user_two_factor_settings(self):
-        return TwoFactorUserSettings.objects.create(owner=self.user)
+    def enable_two_factor(self, user=None, is_confirmed=True, deleted=None):
+        return TwoFactorUserSettings.objects.create(owner=user or self.user, is_confirmed=is_confirmed, deleted=deleted)
+
+    def post_login(self, data, valid_code=True):
+        """Post to the login view. Returns the response, the request and the mocks of messages.error and login"""
+        request = RequestFactory().post('/fake_path', data=data)
+        request._dont_enforce_csrf_checks = True
+        patch_messages(request)
+
+        def custom_login(request, user, *args, **kwargs):
+            request.user = user
+
+        view = setup_view(self.view, request)
+        with mock.patch('django.contrib.messages.error') as message_error:
+            with mock.patch('addons.twofactor.models.UserSettings.verify_code', return_value=valid_code):
+                with mock.patch('admin.common_auth.views.login', side_effect=custom_login) as mocked_login:
+                    response = view.dispatch(request)
+        return response, request, message_error, mocked_login
+
+    def assert_login_failed(self, data, valid_code=True):
+        response, request, message_error, mocked_login = self.post_login(data, valid_code=valid_code)
+
+        # every failure looks the same, whichever check of whichever step failed
+        assert response.status_code == 302
+        assert response.headers['Location'] == '/account/login'
+        message_error.assert_called_once_with(request, LOGIN_ERROR_MESSAGE)
+        mocked_login.assert_not_called()
+        assert not hasattr(request, 'user')
+
+    def password_data(self, password='1234'):
+        return {'email': self.user.username, 'password': password}
+
+    def two_factor_data(self, **overrides):
+        data = {'guid': self.user._id, 'admin_login_id': self.user.admin_login_id, 'code': '123456'}
+        data.update(overrides)
+        return {key: value for key, value in data.items() if value is not None}
 
     def test_login_form_displayed_on_initial_get_request(self):
         request = RequestFactory().get('/fake_path')
@@ -230,175 +270,106 @@ class TestLoginView(AdminTestCase):
         assert not hasattr(request, 'user')
 
     def test_login_post_invalid_credentials(self):
-        request = RequestFactory().post('/fake_path', data={'email': self.user.username, 'password': 'invalid'})
-        patch_messages(request)
-
-        view = setup_view(self.view, request)
-        with mock.patch('django.contrib.messages.error') as message_error:
-            response = view.post(request)
-
-        assert response.status_code == 302
-        assert response.headers['Location'] == '/account/login'
-        message_error.assert_called_with(request, 'Email and/or Password incorrect. Please try again.')
-        assert not hasattr(request, 'user')
+        self.enable_two_factor()
+        self.assert_login_failed(self.password_data(password='invalid'))
 
     def test_login_post_correct_credentials_disabled_two_factor_auth(self):
-        request = RequestFactory().post('/fake_path', data={'email': self.user.username, 'password': '1234'})
-        patch_messages(request)
-
-        view = setup_view(self.view, request)
-        with mock.patch('django.contrib.messages.error') as message_error:
-            response = view.post(request)
-
-        # redirect to the same page for two-factor
-        assert response.headers['Location'] == '/account/login'
-        assert response.status_code == 302
-        message_error.assert_called_with(request, 'Two-factor authentication must be enabled.')
-        assert not hasattr(request, 'user')
+        self.assert_login_failed(self.password_data())
 
     def test_login_post_deleted_two_factor(self):
-        request = RequestFactory().post('/fake_path', data={'email': self.user.username, 'password': '1234'})
-        settings = self.create_user_two_factor_settings()
-        settings.is_confirmed = True
-        settings.deleted = timezone.now()
-        settings.save()
-
-        patch_messages(request)
-
-        view = setup_view(self.view, request)
-        with mock.patch('django.contrib.messages.error') as message_error:
-            response = view.post(request)
-
-        # redirect to the same page for two-factor
-        assert response.headers['Location'] == '/account/login'
-        assert response.status_code == 302
-        message_error.assert_called_with(request, 'Two-factor authentication must be enabled.')
-        assert not hasattr(request, 'user')
+        self.enable_two_factor(deleted=timezone.now())
+        self.assert_login_failed(self.password_data())
 
     def test_login_post_unconfirmed_two_factor(self):
-        request = RequestFactory().post('/fake_path', data={'email': self.user.username, 'password': '1234'})
-        settings = self.create_user_two_factor_settings()
-        settings.is_confirmed = False
-        settings.deleted = None
-        settings.save()
+        self.enable_two_factor(is_confirmed=False)
+        self.assert_login_failed(self.password_data())
 
-        patch_messages(request)
+    def test_login_post_not_staff(self):
+        self.enable_two_factor()
+        self.user.is_staff = False
+        self.user.is_superuser = True
+        self.user.save()
+        self.assert_login_failed(self.password_data())
 
-        view = setup_view(self.view, request)
-        with mock.patch('django.contrib.messages.error') as message_error:
-            response = view.post(request)
+    def test_login_post_correct_credentials_displays_two_factor_form(self):
+        self.enable_two_factor()
 
-        # redirect to the same page for two-factor
-        assert response.headers['Location'] == '/account/login'
-        assert response.status_code == 302
-        message_error.assert_called_with(request, 'Two-factor authentication must be enabled.')
-        assert not hasattr(request, 'user')
-
-    def test_login_post_set_confirmed_two_factor(self):
-        request = RequestFactory().post('/fake_path', data={'email': self.user.username, 'password': '1234'})
-        settings = self.create_user_two_factor_settings()
-        settings.is_confirmed = True
-        settings.deleted = None
-        settings.save()
-
-        patch_messages(request)
-
-        view = setup_view(self.view, request)
-        with mock.patch('django.contrib.messages.error') as message_error:
-            with mock.patch('admin.common_auth.views.render') as mock_render:
-                view.post(request)
+        with mock.patch('admin.common_auth.views.render', return_value=HttpResponse()) as mock_render:
+            _, request, message_error, mocked_login = self.post_login(self.password_data())
 
         message_error.assert_not_called()
-        assert 'two_factor.html' in mock_render.call_args[0]
-
-        # user guid is used to authenticate user again
-        # on two factor auth, thus we hide it from the form to be sure
-        # the same user completes two-factor auth and get user object
-        # within two different requests: sign in and code submit
-        for field in ['guid', 'code']:
-            assert field in mock_render.call_args[0][2]['form'].fields
-
-        assert not hasattr(request, 'user')
-
-    def test_login_post_invalid_code(self):
-        request = RequestFactory().post('/fake_path', data={'email': self.user.username, 'password': '1234'})
-        settings = self.create_user_two_factor_settings()
-        settings.is_confirmed = True
-        settings.deleted = None
-        settings.save()
-
-        patch_messages(request)
-
-        view = setup_view(self.view, request)
-        # imitate case when email and password are valid and enter an invalid code
-        view.extra_context = {'form': TwoFactorForm({'code': 'nonono', 'guid': self.user._id})}
-        with mock.patch('django.contrib.messages.error') as message_error:
-            with mock.patch('admin.common_auth.views.render') as _:
-                with mock.patch('addons.twofactor.models.UserSettings.verify_code') as mock_verify_code:
-                    mock_verify_code.return_value = False
-                    view.post(request)
-
-        message_error.assert_called_with(request, 'Invalid two-factor code. Please try again.')
-        assert not hasattr(request, 'user')
-
-    def test_login_post_valid_code(self):
-        request = RequestFactory().post('/fake_path', data={'email': self.user.username, 'password': '1234'})
-        settings = self.create_user_two_factor_settings()
-        settings.is_confirmed = True
-        settings.deleted = None
-        settings.save()
-
-        patch_messages(request)
-
-        def custom_login(request, user, *args, **kwargs):
-            request.user = user
-
-        view = setup_view(self.view, request)
-        # imitate case when email and password are valid and enter a valid code
-        view.extra_context = {'form': TwoFactorForm({'code': 'yesyes', 'guid': str(self.user._id)})}
-        with mock.patch('django.contrib.messages.error') as message_error:
-            with mock.patch('admin.common_auth.views.render') as mock_render:
-                with mock.patch('addons.twofactor.models.UserSettings.verify_code') as mock_verify_code:
-                    with mock.patch('admin.common_auth.views.login') as mocked_login:
-                        mocked_login.side_effect = custom_login
-                        mock_verify_code.return_value = True
-                        view.post(request)
-
-        message_error.assert_not_called()
-        mock_render.assert_not_called()
-        mocked_login.assert_called_once_with(request, self.user)
-        # user is assigned to request only after successfull log in and verification code via login()
-        assert hasattr(request, 'user')
-
-        response = NodeSearchView.as_view()(request)
-        assert response.status_code == 200
-
-    def test_two_factor_without_guid_redirects_to_login(self):
-        request = RequestFactory().post('/fake_path', data={'email': self.user.username, 'password': '1234'})
-        settings = self.create_user_two_factor_settings()
-        settings.is_confirmed = True
-        settings.deleted = None
-        settings.save()
-
-        patch_messages(request)
-
-        def custom_login(request, user, *args, **kwargs):
-            request.user = user
-
-        view = setup_view(self.view, request)
-        view.extra_context = {'form': TwoFactorForm({'code': 'yesyes'})}
-        with mock.patch('django.contrib.messages.error') as message_error:
-            with mock.patch('admin.common_auth.views.redirect') as mock_redirect:
-                with mock.patch('addons.twofactor.models.UserSettings.verify_code') as mock_verify_code:
-                    with mock.patch('admin.common_auth.views.login') as mocked_login:
-                        mocked_login.side_effect = custom_login
-                        mock_verify_code.return_value = True
-                        view.post(request)
-
-        message_error.assert_called_with(request, 'Email and/or Password incorrect. Please try again.')
-        mock_redirect.assert_called()
         mocked_login.assert_not_called()
         assert not hasattr(request, 'user')
+        assert 'two_factor.html' in mock_render.call_args[0]
+
+        # the two-factor step is a separate request: the hidden guid tells it which user is logging in
+        # and the hidden admin_login_id proves that this user has passed the password step
+        form = mock_render.call_args[0][2]['form']
+        assert form.initial['guid'] == self.user._id
+        assert self.user.check_admin_login_id(form.initial['admin_login_id'])
+        rendered_form = form.as_p()
+        for field in ('guid', 'admin_login_id'):
+            assert f'type="hidden" name="{field}" value="{form.initial[field]}"' in rendered_form
+
+    def test_two_factor_post_valid_code(self):
+        self.enable_two_factor()
+
+        response, request, message_error, mocked_login = self.post_login(self.two_factor_data())
+
+        message_error.assert_not_called()
+        mocked_login.assert_called_once_with(request, self.user)
+        assert response.status_code == 302
+        assert response.headers['Location'] == reverse('home')
+
+        # the logged-in user can use the admin app
+        admin_request = RequestFactory().get('/fake_path')
+        admin_request.user = request.user
+        assert NodeSearchView.as_view()(admin_request).status_code == 200
+
+    def test_two_factor_post_invalid_code(self):
+        self.enable_two_factor()
+        self.assert_login_failed(self.two_factor_data(), valid_code=False)
+
+    def test_two_factor_post_without_admin_login_id(self):
+        # a guid and a valid code are not enough: the password step can't be skipped
+        self.enable_two_factor()
+        self.assert_login_failed(self.two_factor_data(admin_login_id=None))
+
+    def test_two_factor_post_without_guid(self):
+        self.enable_two_factor()
+        self.assert_login_failed(self.two_factor_data(guid=None))
+
+    def test_two_factor_post_unknown_guid(self):
+        self.enable_two_factor()
+        self.assert_login_failed(self.two_factor_data(guid='abc12'))
+
+    def test_two_factor_post_forged_admin_login_id(self):
+        self.enable_two_factor()
+        self.assert_login_failed(self.two_factor_data(admin_login_id='forged'))
+        self.assert_login_failed(self.two_factor_data(admin_login_id=f'{self.user._id}:{self.user.pk}'))
+
+    def test_two_factor_post_admin_login_id_of_another_user(self):
+        self.enable_two_factor()
+        other_staff = AuthUserFactory(is_staff=True)
+        self.assert_login_failed(self.two_factor_data(admin_login_id=other_staff.admin_login_id))
+
+    def test_two_factor_post_not_staff_anymore(self):
+        self.enable_two_factor()
+        data = self.two_factor_data()
+        self.user.is_staff = False
+        self.user.save()
+        self.assert_login_failed(data)
+
+    def test_two_factor_post_disabled_user(self):
+        self.enable_two_factor()
+        data = self.two_factor_data()
+        self.user.is_disabled = True
+        self.user.save()
+        assert not self.user.is_active
+        self.assert_login_failed(data)
+
+    def test_two_factor_post_disabled_two_factor_auth(self):
+        self.assert_login_failed(self.two_factor_data())
 
     def test_django_admin_login_uses_login_view(self):
         match = resolve(reverse('admin:login'))
