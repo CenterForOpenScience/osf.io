@@ -4,9 +4,12 @@ import pytest
 from importlib import import_module
 from django.conf import settings as django_conf_settings
 
+from django.db import connection, transaction
+from django.test.utils import CaptureQueriesContext
 from rest_framework import fields
 
 from api.base import utils as api_utils
+from osf.models import AbstractNode
 from osf.models.base import coerce_guid, Guid, GuidMixin, OptionalGuidMixin, VersionedGuidMixin, InvalidGuid
 from osf_tests.factories import ProjectFactory, PreprintFactory
 from tests.test_websitefiles import TestFile
@@ -49,6 +52,45 @@ class TestIsDeprecated(unittest.TestCase):
         is_deprecated = api_utils.is_deprecated(request_version, self.min_version, self.max_version)
         assert is_deprecated is True
 
+
+@pytest.mark.django_db
+@mock.patch('osf.utils.requests.settings.SELECT_FOR_UPDATE_ENABLED', True)
+class TestGetObjectOrErrorSelectForUpdate:
+
+    @pytest.fixture()
+    def node(self):
+        return ProjectFactory()
+
+    @staticmethod
+    def lock_queries(ctx):
+        for_update_sql = connection.ops.for_update_sql()
+        return [query for query in ctx.captured_queries if for_update_sql in query['sql']]
+
+    def test_locks_row_on_mutating_request_by_default(self, node):
+        with transaction.atomic(), CaptureQueriesContext(connection) as ctx:
+            obj = api_utils.get_object_or_error(AbstractNode, node._id, mock.Mock(method='POST'))
+
+        assert obj == node
+        assert self.lock_queries(ctx)
+
+    def test_does_not_lock_row_when_select_for_update_not_allowed(self, node):
+        with transaction.atomic(), CaptureQueriesContext(connection) as ctx:
+            obj = api_utils.get_object_or_error(
+                AbstractNode,
+                node._id,
+                mock.Mock(method='POST'),
+                allow_select_for_update=False,
+            )
+
+        assert obj == node
+        assert not self.lock_queries(ctx)
+
+    def test_does_not_lock_row_on_safe_request(self, node):
+        with transaction.atomic(), CaptureQueriesContext(connection) as ctx:
+            obj = api_utils.get_object_or_error(AbstractNode, node._id, mock.Mock(method='GET'))
+
+        assert obj == node
+        assert not self.lock_queries(ctx)
 
 @pytest.mark.django_db
 class TestFlaskDjangoIntegration:

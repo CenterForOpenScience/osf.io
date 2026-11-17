@@ -37,6 +37,7 @@ class DraftNodeMixin:
             Q(guids___id=self.kwargs['node_id']),
             request=self.request,
             display_name='node',
+            allow_select_for_update=False,
         )
 
         if check_object_permissions:

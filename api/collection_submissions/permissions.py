@@ -18,6 +18,7 @@ class CollectionSubmissionActionsListPermission(permissions.BasePermission):
             ),
             request=request,
             display_name='collection submission',
+            allow_select_for_update=False,
         )
         return self.has_object_permission(request, view, obj)
 

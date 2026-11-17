@@ -182,6 +182,7 @@ class CollectionSubmissionActionListPermission(permissions.BasePermission):
             ),
             request=request,
             display_name='collection submission',
+            allow_select_for_update=False,
         )
         if obj.guid.referent.deleted:
             raise Gone()

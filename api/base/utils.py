@@ -87,7 +87,7 @@ def absolute_reverse(view_name, query_kwargs=None, args=None, kwargs=None):
     return url
 
 
-def get_object_or_error(model_or_qs, query_or_pk=None, request=None, display_name=None, check_deleted=True):
+def get_object_or_error(model_or_qs, query_or_pk=None, request=None, display_name=None, check_deleted=True, allow_select_for_update=True):
     OSFUser = apps.get_model('osf', 'OSFUser')
     if not request:
         # for backwards compat with existing get_object_or_error usages
@@ -95,7 +95,7 @@ def get_object_or_error(model_or_qs, query_or_pk=None, request=None, display_nam
 
     obj = query = None
     model_cls = model_or_qs
-    select_for_update = check_select_for_update(request)
+    select_for_update = allow_select_for_update and check_select_for_update(request)
 
     if isinstance(model_or_qs, QuerySet):
         # they passed a queryset
