@@ -9,6 +9,9 @@ from sentry_sdk.integrations.flask import FlaskIntegration
 
 from website.settings import SENTRY_DSN, VERSION, CeleryConfig
 
+# Connects signals when a worker or beat starts
+from framework.celery_tasks import checks  # noqa: F401
+
 app = Celery()
 app.config_from_object(CeleryConfig)
 # Make this app the fallback for celery.current_app in every thread, not only the importing one
