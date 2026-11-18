@@ -1,11 +1,9 @@
-"""Checks of the Celery routing and beat schedule, reported to Sentry when a worker or beat starts.
+"""Checks of the Celery routing and beat schedule, which framework.celery_tasks reports to Sentry when a worker or beat starts.
 
 They run against the settings of the environment the process starts in, which the tests in
 osf_tests/test_celery_routing.py don't see: e.g. a deployed local.py or the periodic tasks stored in the database.
 """
 from fnmatch import fnmatchcase
-
-from celery.signals import beat_init, worker_init
 
 # Set on the task itself (e.g. @app.task(queue=...)), these take precedence over task_routes
 ROUTING_ATTRIBUTES = ('queue', 'exchange', 'routing_key')
@@ -64,42 +62,3 @@ def find_periodic_tasks_with_unregistered_task(app, periodic_tasks):
     # periodic_tasks are (entry name, task name) pairs, e.g. from CeleryConfig.beat_schedule or the database.
     # Beat sends tasks by name, so otherwise an unregistered one is only noticed when a worker discards it
     return {name: task for name, task in periodic_tasks if task not in app.tasks}
-
-
-@worker_init.connect
-def check_routing(sender, **kwargs):
-    """Sent once the worker has imported CeleryConfig.imports, so the registry has every task.
-    """
-    from framework import sentry
-
-    app = sender.app
-    tasks = get_registered_tasks(app)
-    for message, found in (
-        ('Celery tasks sent to the default queue without a route naming it',
-         find_tasks_sent_to_default_queue_implicitly(app, tasks)),
-        ('Celery routes to queues missing from CeleryConfig.task_queues',
-         find_routes_to_undeclared_queues(app)),
-        ('Celery routes matching no registered task',
-         find_routes_matching_no_task(app, tasks)),
-        ('Celery tasks setting routing attributes instead of using CeleryConfig.task_routes',
-         find_tasks_setting_routing_attributes(tasks)),
-    ):
-        if found:
-            sentry.log_message(message, skip_session=True, extra_data={'found': found})
-
-
-@beat_init.connect
-def check_periodic_tasks(sender, **kwargs):
-    """Sent once beat has imported CeleryConfig.imports and synced CeleryConfig.beat_schedule to the database, so the enabled PeriodicTask rows are every entry beat will run.
-    """
-    from django_celery_beat.models import PeriodicTask
-    from framework import sentry
-
-    enabled = PeriodicTask.objects.enabled().values_list('name', 'task')
-    unregistered = find_periodic_tasks_with_unregistered_task(sender.app, enabled)
-    if unregistered:
-        sentry.log_message(
-            'Enabled periodic tasks running unregistered Celery tasks',
-            skip_session=True,
-            extra_data={'found': unregistered},
-        )
