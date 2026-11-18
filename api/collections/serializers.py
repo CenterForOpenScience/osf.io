@@ -6,7 +6,8 @@ from rest_framework import serializers as ser
 
 from osf import features
 from osf.models import AbstractNode, Node, Collection, Guid, Registration, CedarMetadataRecord
-from osf.exceptions import ValidationError, NodeStateError
+from osf.exceptions import ValidationError, NodeStateError, LicenseNotAcceptedError
+from website.project.licenses import validate_object_license_for_collection_provider
 from api.base.serializers import LinksField, RelationshipField, LinkedNodesRelationshipSerializer, LinkedRegistrationsRelationshipSerializer, LinkedPreprintsRelationshipSerializer
 from api.base.serializers import JSONAPISerializer, IDField, TypeField, VersionedDateTimeField, EnumField
 from api.base.exceptions import InvalidModelValueError, RelationshipPostMakesNoChanges
@@ -408,6 +409,15 @@ class LegacyCollectionSubmissionSerializer(TaxonomizableSerializerMixin, JSONAPI
         return obj
 
 
+def _validate_collected_object_license(referent, collection):
+    if not collection.provider_id:
+        return
+    try:
+        validate_object_license_for_collection_provider(referent, collection.provider)
+    except LicenseNotAcceptedError as e:
+        raise exceptions.ValidationError(detail=str(e))
+
+
 class CollectionSubmissionCreateSerializer(CollectionSubmissionSerializer):
     # Makes guid writeable only on create
     guid = GuidRelationshipField(
@@ -429,6 +439,7 @@ class CollectionSubmissionCreateSerializer(CollectionSubmissionSerializer):
             raise exceptions.ValidationError('"creator" must be specified.')
         if not (creator.has_perm('write_collection', collection) or (hasattr(guid.referent, 'has_permission') and guid.referent.has_permission(creator, WRITE))):
             raise exceptions.PermissionDenied('Must have write permission on either collection or collected object to collect.')
+        _validate_collected_object_license(guid.referent, collection)
         cedar_record = None
         if waffle.switch_is_active(features.COLLECTION_SUBMISSION_WITH_CEDAR) and collection.provider_id:
             try:
@@ -482,6 +493,7 @@ class LegacyCollectionSubmissionCreateSerializer(LegacyCollectionSubmissionSeria
             raise exceptions.ValidationError('"creator" must be specified.')
         if not (creator.has_perm('write_collection', collection) or (hasattr(guid.referent, 'has_permission') and guid.referent.has_permission(creator, WRITE))):
             raise exceptions.PermissionDenied('Must have write permission on either collection or collected object to collect.')
+        _validate_collected_object_license(guid.referent, collection)
         cedar_record = None
         if waffle.switch_is_active(features.COLLECTION_SUBMISSION_WITH_CEDAR) and collection.provider_id:
             try:

@@ -42,6 +42,11 @@ class NodeStateError(NodeError):
     pass
 
 
+class LicenseNotAcceptedError(NodeStateError):
+    """Raised when a license is not in the provider's list of accepted licenses"""
+    pass
+
+
 class UserStateError(OSFError):
     """Raised when the user's state is not suitable for the requested action
 
