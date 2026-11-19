@@ -1252,6 +1252,10 @@ class NodeContributorsBulkCreateListSerializer(JSONAPIListSerializer):
         }
 
     def _add_contributors_to_node(self, node, payload, auth):
+        if not node.has_permission(auth.user, osf_permissions.ADMIN):
+            raise exceptions.PermissionDenied(
+                detail=f'You must have admin permission on node {node._id} to add contributors.',
+            )
         try:
             return node.add_contributors_registered_or_not(payload, auth=auth, save=True)
         except ValidationError as e:
