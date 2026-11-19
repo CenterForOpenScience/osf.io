@@ -4,10 +4,11 @@ from datetime import timedelta
 from celery import chain, chord, group, shared_task
 from celery.exceptions import Ignore
 from django.db import transaction
+from django.db.models import Q
 from django.utils import timezone
 
 from osf.models.celery_test import CeleryTestSuite as Suite, CeleryTestTask as Task, CeleryTestTaskAttempt as Attempt
-from .control import finish_task
+from .control import finish_task, wait_for_tasks
 
 
 def signature(task):
@@ -15,6 +16,7 @@ def signature(task):
 
 
 def publish_scenarios(suite_id, config):
+    """Register and publish the scenarios, then sync progress until they finish."""
     with transaction.atomic():
         suite = Suite.objects.select_for_update().get(pk=suite_id)
         if suite.cancel_requested_at:
@@ -52,26 +54,24 @@ def publish_scenarios(suite_id, config):
             canvas = group(workflows)
     # All control rows are committed before the canvas can be consumed.
     # Partial publication failures leave missing steps for deadline reconciliation.
-    canvas.apply_async()
-    Task.objects.filter(suite_id=suite_id).update(published_at=timezone.now())
+    publication_error = None
+    try:
+        canvas.apply_async()
+        Task.objects.filter(suite_id=suite_id).update(published_at=timezone.now())
+    except Exception as exc:
+        publication_error = exc
+    wait_for_tasks(suite_id, publication_error)
 
 
 @shared_task(bind=True, name='stress_testing.scenario', ignore_result=False)
 def scenario_task(self, previous=None, test_task_id=None):
-    suite_id = Task.objects.values_list('suite_id', flat=True).get(pk=test_task_id)
     number = self.request.retries + 1
     with transaction.atomic():
-        suite = Suite.objects.select_for_update().get(pk=suite_id)
-        task = Task.objects.get(pk=test_task_id)
-        if task.scenario.split('.')[0] == 'callback':
+        task = Task.objects.select_for_update().get(pk=test_task_id)
+        suite = task.suite
+        if task.scenario_name == 'callback':
             task.observations['callback_count'] = task.observations.get('callback_count', 0) + 1
             task.save(update_fields=['observations'])
-            if suite.finished_at and suite.verdict == 'passed':
-                results, passed = evaluate(suite)
-                suite.results = results
-                suite.verdict = 'passed' if passed else 'failed'
-                suite.status = Suite.Status.COMPLETED if passed else Suite.Status.FAILED
-                suite.save(update_fields=['results', 'verdict', 'status'])
         if suite.cancel_requested_at or suite.finished_at or task.status in Task.TERMINAL_STATUSES:
             return task.observations.get('result')
         attempt, created = Attempt.objects.get_or_create(task=task, number=number,
@@ -84,31 +84,25 @@ def scenario_task(self, previous=None, test_task_id=None):
         task.wait_seconds = max(0, (task.started_at - task.submitted_at).total_seconds())
         task.save(update_fields=['status', 'started_at', 'worker', 'wait_seconds'])
     if suite.config['suite_type'] == 'retry' and number <= task.expected['failures']:
-        retry = task.scenario.split('.')[0] != 'non_retryable' and number <= suite.config['max_retries']
+        retry = task.scenario_name != 'non_retryable' and number <= suite.config['max_retries']
         now = timezone.now()
         Attempt.objects.filter(pk=attempt.pk).update(
             finished_at=now, outcome='retry' if retry else 'failed', error='Synthetic failure',
             retry_at=now + timedelta(seconds=suite.config['retry_delay']) if retry else None)
         if retry:
-            with transaction.atomic():
-                current_suite = Suite.objects.select_for_update().get(pk=suite_id)
-                if current_suite.cancel_requested_at or current_suite.finished_at:
-                    finish_task(task.id, Task.Status.CANCELLED)
-                    return
-                Task.objects.filter(pk=task.id, status=Task.Status.RUNNING).update(status=Task.Status.RETRYING)
+            retrying = Task.objects.filter(pk=task.id, status=Task.Status.RUNNING,
+                                           suite__cancel_requested_at__isnull=True,
+                                           suite__finished_at__isnull=True).update(status=Task.Status.RETRYING)
+            if not retrying:
+                finish_task(task.id, Task.Status.CANCELLED)
+                return
             raise self.retry(exc=RuntimeError('Synthetic transient failure'),
                              countdown=suite.config['retry_delay'], max_retries=suite.config['max_retries'])
         finish_task(task.id, Task.Status.FAILED, 'Synthetic failure: no further retries')
         raise RuntimeError('Synthetic failure: no further retries')
-    value = (sum(previous) if task.scenario.split('.')[0] == 'callback' else
+    value = (sum(previous) if task.scenario_name == 'callback' else
              (previous or 0) + task.expected.get('value', 0))
-    with transaction.atomic():
-        Suite.objects.select_for_update().get(pk=suite_id)
-        task.refresh_from_db()
-        task.observations['result'] = value
-        task.save(update_fields=['observations'])
-        Attempt.objects.filter(pk=attempt.pk).update(finished_at=timezone.now(), outcome='succeeded')
-        finish_task(task.id, Task.Status.SUCCEEDED)
+    finish_task(task.id, Task.Status.SUCCEEDED, result=value)
     return value
 
 
@@ -122,7 +116,7 @@ def evaluate(suite):
             passed = passed and len(attempts) == expected['attempts']
         if 'result' in expected:
             passed = passed and task.observations.get('result') == expected['result']
-        if task.scenario.split('.')[0] == 'callback':
+        if task.scenario_name == 'callback':
             passed = passed and task.observations.get('callback_count') == 1
         delays = [(b.started_at - a.finished_at).total_seconds()
                   for a, b in zip(attempts, attempts[1:]) if a.finished_at]
@@ -133,8 +127,8 @@ def evaluate(suite):
                        'attempts': len(attempts), 'observed_retry_delays': delays,
                        'scheduled_retry_delay': delay,
                        'duration_seconds': task.total_seconds,
-                       'recovery_seconds': task.total_seconds if task.scenario.split('.')[0] == 'transient' and task.status == 'succeeded' else None,
-                       'exhausted_retries': task.scenario.split('.')[0] == 'exhausted' and task.status == 'failed' and len(attempts) == expected.get('attempts')})
+                       'recovery_seconds': task.total_seconds if task.scenario_name == 'transient' and task.status == 'succeeded' else None,
+                       'exhausted_retries': task.scenario_name == 'exhausted' and task.status == 'failed' and len(attempts) == expected.get('attempts')})
     duration = (timezone.now() - suite.started_at).total_seconds() if suite.started_at else None
     return {'checks': checks, 'duration_seconds': duration}, bool(checks) and all(c['passed'] for c in checks)
 
@@ -142,8 +136,11 @@ def evaluate(suite):
 @shared_task(name='stress_testing.reconcile_suites')
 def reconcile_suites():
     from .control import finalize
-    for suite_id in Suite.objects.filter(status__in=Suite.ACTIVE_STATUSES,
-                                         deadline_at__lte=timezone.now()).values_list('id', flat=True):
+    now = timezone.now()
+    overdue = Suite.objects.filter(status__in=Suite.ACTIVE_STATUSES).filter(
+        Q(deadline_at__lte=now) | Q(deadline_at__isnull=True, created_at__lte=now - timedelta(hours=2)),
+    )
+    for suite_id in overdue.values_list('id', flat=True):
         with transaction.atomic():
             suite = Suite.objects.select_for_update().get(pk=suite_id)
             if not suite.is_active:

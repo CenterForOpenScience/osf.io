@@ -22,5 +22,5 @@
   <span>{% trans "Page" %} {{ history.number }} / {{ history.paginator.num_pages }}</span>
   {% if history.has_next %}<a href="?page={{ history.next_page_number }}">{% trans "Next" %}</a>{% endif %}
 </div></section>
-<p>{% trans "Refresh to update suite status. Cancelling remains active until running work acknowledges the stop request." %}</p>
+<p>{% trans "Refresh to update suite status. Cancelling stops publication; running load tasks finish naturally. Use manual reconciliation for overdue suites after worker loss." %}</p>
 {% endblock %}

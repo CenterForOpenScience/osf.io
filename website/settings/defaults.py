@@ -461,6 +461,12 @@ RABBITMQ_VHOST = os.environ.get('RABBITMQ_VHOST', '/')
 # Seconds, not an actual celery setting
 CELERY_RETRY_BACKOFF_BASE = 5
 
+# Only these configured queues may receive synthetic stress-test work.
+CELERY_STRESS_TEST_QUEUES = ('high', 'med', 'low', 'celery')
+CELERY_STRESS_TEST_MAX_TASKS = 20000
+CELERY_STRESS_TEST_RETENTION_DAYS = 30
+
+
 class CeleryConfig:
     """
     Celery Configuration
@@ -669,6 +675,7 @@ class CeleryConfig:
             'osf.utils.download_telemetry.write_download_event': {'queue': 'celery'},
             'scripts.disable_removed_beat_tasks': {'queue': 'celery'},
             'scripts.premigrate_created_modified.run_sql': {'queue': 'celery'},
+            'stress_testing.cleanup_history': {'queue': 'celery'},
             'stress_testing.reconcile_suites': {'queue': 'celery'},
             'stress_testing.scenario': {'queue': 'celery'},
             'stress_testing.simulated_workload': {'queue': 'celery'},
@@ -775,6 +782,10 @@ class CeleryConfig:
     #  Setting up a scheduler, essentially replaces an independent cron job
     # Note: these times must be in UTC
     beat_schedule = {
+        'cleanup-celery-test-history': {
+            'task': 'stress_testing.cleanup_history',
+            'schedule': crontab(minute=30, hour=3),
+        },
         'disable_removed_beat_tasks': {
             'task': 'scripts.disable_removed_beat_tasks',
             'schedule': crontab(minute=0, hour=0),  # Daily 8:00 PM EDT

@@ -1,5 +1,6 @@
 from django import forms
 from django.core.validators import validate_email
+from website import settings
 
 
 class GuidForm(forms.Form):
@@ -28,6 +29,8 @@ class ArchiveRegistrationWithPigeonForm(forms.Form):
 
 class CeleryStressTestForm(forms.Form):
     name = forms.CharField(max_length=100, initial='Celery load test')
+    drain_timeout = forms.IntegerField(min_value=10, max_value=3600, initial=120,
+        help_text='Maximum time to wait for load tasks after publication ends.')
     total_duration = forms.IntegerField(
         label='Duration (seconds)',
         min_value=1,
@@ -55,7 +58,7 @@ class WorkloadForm(forms.Form):
         ],
         initial='io',
     )
-    queue = forms.ChoiceField(choices=[])
+    queue = forms.ChoiceField(choices=[(q, q) for q in settings.CELERY_STRESS_TEST_QUEUES])
 
     rate = forms.IntegerField(
         label='Task rate (tasks/second)',
@@ -81,11 +84,7 @@ class WorkloadForm(forms.Form):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        allowed_queues = ('high', 'med', 'low', 'celery')  # TODO: Replace with settings.CELERY_QUEUES
-
-        self.fields['queue'].choices = [
-            (queue, queue) for queue in allowed_queues
-        ]
+        # self.fields['queue'].choices = [(name, name) for name in settings.CELERY_STRESS_TEST_QUEUES]
 
     def clean(self):
         cleaned_data = super().clean()
@@ -102,7 +101,7 @@ class WorkloadForm(forms.Form):
 
 class CeleryScenarioForm(forms.Form):
     name = forms.CharField(max_length=100, initial='Celery correctness test')
-    queue = forms.ChoiceField(choices=[(q, q) for q in ('high', 'med', 'low', 'celery')])
+    queue = forms.ChoiceField(choices=[(q, q) for q in settings.CELERY_STRESS_TEST_QUEUES])
     deadline_seconds = forms.IntegerField(min_value=10, max_value=3600, initial=120)
     retry_delay = forms.IntegerField(min_value=1, max_value=60, initial=2)
     max_retries = forms.IntegerField(min_value=2, max_value=10, initial=3)
