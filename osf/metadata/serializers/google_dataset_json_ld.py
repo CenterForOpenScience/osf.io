@@ -49,6 +49,10 @@ class GoogleDatasetJsonLdSerializer(_base.MetadataSerializer):
             'license': format_license_list(self.basket),
         }
 
+        redirect_url = next(self.basket[OSF.redirectUrl], None)
+        if redirect_url:
+            metadata['redirectUrl'] = redirect_url
+
         if self.basket.focus.rdftype == OSF.Registration:
             _id = self.basket.focus.guid_metadata_record.guid._id
             registration_metadata = {

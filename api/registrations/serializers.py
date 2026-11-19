@@ -525,7 +525,10 @@ class RegistrationSerializer(NodeSerializer):
         # Overrides TaxonomizableSerializerMixin
         return 'registrations:registration-relationships-subjects'
 
-    links = LinksField({'html': 'get_absolute_html_url'})
+    links = LinksField({
+        'html': 'get_absolute_html_url',
+        'redirect_url': 'get_redirect_url',
+    })
 
     def get_has_project(self, obj):
         return obj.has_project

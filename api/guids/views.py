@@ -62,7 +62,7 @@ class GuidDetail(JSONAPIBaseView, generics.RetrieveAPIView):
         if not self.should_resolve(self.request):
             return super().get(request, **kwargs)
 
-        url = self.get_redirect_url(**kwargs)
+        url = self.get_resolved_url(**kwargs)
         if url:
             query_params = getattr(request, 'query_params', request.GET)
             if query_params:
@@ -70,7 +70,7 @@ class GuidDetail(JSONAPIBaseView, generics.RetrieveAPIView):
             return http.HttpResponseRedirect(url)
         raise NotFound
 
-    def get_redirect_url(self, **kwargs):
+    def get_resolved_url(self, **kwargs):
         guid_str, version_number = Guid.split_guid(kwargs['guids'])
         guid = Guid.load(guid_str)
         if not guid:

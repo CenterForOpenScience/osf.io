@@ -13,7 +13,7 @@ from osf.models import (
     CedarMetadataRecord,
 )
 
-from api.base.exceptions import Gone
+from api.base.exceptions import Gone, with_redirect_url
 from api.base.filters import ListFilterMixin
 from api.base.permissions import PermissionWithGetter
 from api.base.throttling import CreateGuidThrottle, NonCookieAuthThrottle, UserRateThrottle, BurstRateThrottle
@@ -48,7 +48,7 @@ class FileMixin:
             if not isinstance(obj, BaseFileNode):
                 raise NotFound
             if obj.is_deleted:
-                raise Gone(detail='The requested file is no longer available.')
+                raise Gone(detail='The requested file is no longer available.', meta=with_redirect_url(obj))
 
         if getattr(obj.target, 'deleted', None):
             raise Gone(detail='The requested file is no longer available.', meta={'flagged_content': getattr(obj.target, 'is_spammy', False)})

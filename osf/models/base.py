@@ -78,6 +78,32 @@ def coerce_guid(maybe_guid, create_if_needed=False):
     raise InvalidGuid(f'cannot coerce {type(maybe_guid)} ({maybe_guid}) into Guid')
 
 
+def redirect_guid(osf_item):
+    try:
+        guid = coerce_guid(osf_item)
+    except InvalidGuid:
+        guid = None
+    if guid and guid.redirect_url:
+        return guid
+    item = guid.referent if isinstance(osf_item, Guid) else osf_item
+    if isinstance(item, OptionalGuidMixin):
+        parent = getattr(item, 'target', None)
+    else:
+        root = getattr(item, 'root', None)  # only nodes have a root
+        parent = root if root is not None and root._id != item._id else None
+    return redirect_guid(parent) if parent is not None else None
+
+
+def guid_redirect_url(osf_item):
+    guid = redirect_guid(osf_item)
+    return guid.redirect_url if guid else None
+
+
+def guid_redirect_automatically(osf_item):
+    guid = redirect_guid(osf_item)
+    return guid.redirect_automatically if guid else False
+
+
 def osfid_iri(osfid: str) -> str:
     return ''.join((website_settings.DOMAIN.rstrip('/'), '/', osfid))
 
