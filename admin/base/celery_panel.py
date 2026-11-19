@@ -24,6 +24,7 @@ from osf.celery_stress_test.scenarios import reconcile_suites
 from osf.celery_stress_test.tasks import start_celery_stress_test
 from .forms import CeleryStressTestForm, WorkloadForm, CeleryScenarioForm
 from osf.celery_stress_test.presets import PRESETS, resolve
+from website import settings
 
 
 WorkloadFormSet = formset_factory(
@@ -207,6 +208,11 @@ def celery_stress_test_view(request):
                     request,
                     'Please configure at least one workload.',
                 )
+            elif config['total_duration'] * min(
+                config['max_total_rate'],
+                sum(workload['rate'] for workload in config['workloads']),
+            ) > settings.CELERY_STRESS_TEST_MAX_TASKS:
+                form.add_error(None, f'This run exceeds the {settings.CELERY_STRESS_TEST_MAX_TASKS:,} task limit.')
             else:
                 suite = CeleryTestSuite.objects.create(
                     name=config['name'], config=config, created_by=request.user,
