@@ -124,7 +124,10 @@ class RegistrationSerializer(NodeSerializer):
     fork = HideIfWithdrawal(ser.BooleanField(read_only=True, source='is_fork'))
     collection = HideIfWithdrawal(ser.BooleanField(read_only=True, source='is_collection'))
     access_requests_enabled = HideIfWithdrawal(ser.BooleanField(read_only=True))
-    node_license = HideIfWithdrawal(NodeLicenseSerializer(required=False, source='license'))
+    node_license = HideIfWithdrawal(
+        NodeLicenseSerializer(required=False, source='license'),
+        error_messages={'null': 'A license is required for a registration.'},
+    )
     tags = HideIfWithdrawal(ValuesListField(attr_name='name', child=ser.CharField(), required=False))
     article_doi = ser.CharField(required=False, allow_null=True)
     public = HideIfWithdrawal(

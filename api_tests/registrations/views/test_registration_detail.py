@@ -1188,6 +1188,12 @@ class TestUpdateRegistrationLicense(TestNodeUpdateLicense):
         return node
 
     @pytest.fixture()
+    def license_no(self):
+        # The inherited tests use `license_no` as "a license that requires a year and copyright holders".
+        # Registrations may not use 'No license', so use another license with the same required fields.
+        return NodeLicense.objects.get(name='MIT License')
+
+    @pytest.fixture()
     def url_node(self, node):
         return f'/{API_BASE}registrations/{node._id}/'
 
