@@ -599,8 +599,14 @@ class ModeratorMixin(ProviderMixin):
     provider_class = PreprintProvider
     model_class = OSFUser
 
-    def get_provider(self):
-        return get_object_or_error(self.provider_type, self.kwargs['provider_id'], self.request, display_name='PreprintProvider', allow_select_for_update=False)
+    def get_provider(self, allow_select_for_update=False):
+        return get_object_or_error(
+            self.provider_type,
+            self.kwargs['provider_id'],
+            self.request,
+            display_name='PreprintProvider',
+            allow_select_for_update=allow_select_for_update,
+        )
 
     def get_serializer_context(self, *args, **kwargs):
         ctx = super().get_serializer_context(*args, **kwargs)
@@ -656,6 +662,8 @@ class ProviderModeratorsDetail(ModeratorMixin, JSONAPIBaseView, generics.Retriev
         except AttributeError:
             # Group doesn't exist -- users not moderator
             raise NotFound
+        if perm_group == ADMIN:
+            self.get_provider(allow_select_for_update=True)
         setattr(user, 'permission_group', perm_group)
         return user
 

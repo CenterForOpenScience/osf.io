@@ -101,7 +101,7 @@ def get_object_or_error(model_or_qs, query_or_pk=None, request=None, display_nam
         # they passed a queryset
         model_cls = model_or_qs.model
         try:
-            obj = model_or_qs.select_for_update().get() if select_for_update else model_or_qs.get()
+            obj = model_or_qs.select_for_update(of=('self',)).get() if select_for_update else model_or_qs.get()
         except model_cls.DoesNotExist:
             raise NotFound
 
