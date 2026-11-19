@@ -1,13 +1,21 @@
+from copy import deepcopy
+from datetime import timedelta
+from pathlib import Path
 from unittest.mock import Mock, patch
+import dj_celery_panel
+import dj_control_room_base
 import pytest
 from django.test import RequestFactory
 from django.urls import reverse
 from django.core.exceptions import PermissionDenied
+from django.utils import timezone
 
 from admin.base import celery_panel
 from admin.base.forms import WorkloadForm, CeleryScenarioForm, CeleryStressTestForm
+from admin.base.settings import TEMPLATES as ADMIN_TEMPLATES
 from osf.celery_stress_test.presets import resolve
 from osf.models.celery_test import CeleryTestSuite as Suite, CeleryTestTask as Task
+from osf_tests.factories import AuthUserFactory
 from website import settings
 
 pytestmark = pytest.mark.django_db
@@ -26,6 +34,15 @@ def make_task(suite, **kwargs):
 @pytest.fixture
 def admin_views(settings):
     settings.ROOT_URLCONF = 'admin.base.urls'
+    templates = deepcopy(ADMIN_TEMPLATES)
+    templates[0]['DIRS'].extend(
+        Path(package.__file__).parent / 'templates'
+        for package in (dj_celery_panel, dj_control_room_base)
+    )
+    templates[0]['OPTIONS']['libraries'] = {
+        'dcr_icons': 'dj_control_room_base.templatetags.dcr_icons',
+    }
+    settings.TEMPLATES = templates
     return celery_panel
 
 
@@ -71,15 +88,19 @@ def test_create_committed_suite_before_broker_dispatch(admin_views):
         'form-0-name': 'I/O', 'form-0-mode': 'io', 'form-0-queue': 'celery',
         'form-0-rate': '1', 'form-0-io_seconds': '0',
     })
-    request.user = None  # The auth decorator is bypassed only for this handler test.
+    request.user = AuthUserFactory(is_staff=True, is_superuser=True)
+    submitted_at = timezone.now()
 
     def dispatch(*args, **kwargs):
-        assert Suite.objects.filter(pk=kwargs['args'][0]).exists()
+        submitted_suite = Suite.objects.get(pk=kwargs['args'][0])
+        assert submitted_suite.created_by == request.user
+        assert submitted_suite.deadline_at == submitted_at + timedelta(seconds=181)
         return Mock()
     with patch.object(admin_views.panel_config, 'get_context', return_value={}), \
             patch.object(admin_views.start_celery_stress_test, 'apply_async', side_effect=dispatch) as publish, \
+            patch.object(admin_views.timezone, 'now', return_value=submitted_at), \
             patch.object(admin_views.messages, 'success'):
-        response = admin_views.celery_stress_test_view.__wrapped__.__wrapped__(request)
+        response = admin_views.celery_stress_test_view(request)
     assert response.status_code == 302
     assert publish.call_count == 1
     assert 'default' in admin_views.celery_stress_test_view._non_atomic_requests
@@ -150,11 +171,11 @@ def test_retry_form_requires_recoverable_transient_case():
 
 def test_queue_allowlist_is_shared_and_configurable(monkeypatch):
     monkeypatch.setattr(settings, 'CELERY_STRESS_TEST_QUEUES', ('low', 'unknown'))
-    assert WorkloadForm().fields['queue'].choices == [('low', 'low')]
-    assert CeleryScenarioForm(suite_type='retry').fields['queue'].choices == [('low', 'low')]
+    assert list(WorkloadForm().fields['queue'].choices) == [('low', 'low')]
+    assert list(CeleryScenarioForm(suite_type='retry').fields['queue'].choices) == [('low', 'low')]
 
 
-def test_load_submission_sets_deadline_and_rejects_large_run(admin_views):
+def test_load_submission_rejects_large_run(admin_views):
     assert 'drain_timeout' in CeleryStressTestForm().fields
     request = admin_request('post', {
         'name': 'Too large', 'total_duration': 3600, 'drain_timeout': 120, 'max_total_rate': 1000,
@@ -167,3 +188,4 @@ def test_load_submission_sets_deadline_and_rejects_large_run(admin_views):
         response = admin_views.celery_stress_test_view(request)
     assert 'task limit' in response.content.decode()
     dispatch.assert_not_called()
+    assert not Suite.objects.filter(name='Too large').exists()

@@ -1,5 +1,6 @@
 from django import forms
 from django.core.validators import validate_email
+from framework.celery_tasks import app as celery_app
 from website import settings
 
 
@@ -45,6 +46,11 @@ class CeleryStressTestForm(forms.Form):
     )
 
 
+def stress_test_queue_choices():
+    declared_queues = {queue.name for queue in celery_app.conf.task_queues}
+    return [(name, name) for name in settings.CELERY_STRESS_TEST_QUEUES if name in declared_queues]
+
+
 class WorkloadForm(forms.Form):
     name = forms.CharField(
         max_length=100,
@@ -58,7 +64,7 @@ class WorkloadForm(forms.Form):
         ],
         initial='io',
     )
-    queue = forms.ChoiceField(choices=[(q, q) for q in settings.CELERY_STRESS_TEST_QUEUES])
+    queue = forms.ChoiceField(choices=stress_test_queue_choices)
 
     rate = forms.IntegerField(
         label='Task rate (tasks/second)',
@@ -81,11 +87,6 @@ class WorkloadForm(forms.Form):
         required=False,
     )
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-
-        # self.fields['queue'].choices = [(name, name) for name in settings.CELERY_STRESS_TEST_QUEUES]
-
     def clean(self):
         cleaned_data = super().clean()
         mode = cleaned_data.get('mode')
@@ -101,7 +102,7 @@ class WorkloadForm(forms.Form):
 
 class CeleryScenarioForm(forms.Form):
     name = forms.CharField(max_length=100, initial='Celery correctness test')
-    queue = forms.ChoiceField(choices=[(q, q) for q in settings.CELERY_STRESS_TEST_QUEUES])
+    queue = forms.ChoiceField(choices=stress_test_queue_choices)
     deadline_seconds = forms.IntegerField(min_value=10, max_value=3600, initial=120)
     retry_delay = forms.IntegerField(min_value=1, max_value=60, initial=2)
     max_retries = forms.IntegerField(min_value=2, max_value=10, initial=3)
