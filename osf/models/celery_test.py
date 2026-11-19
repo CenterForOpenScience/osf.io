@@ -14,12 +14,18 @@ class CeleryTestSuite(models.Model):
         FAILED = 'failed', 'Failed'
         CANCELLED = 'cancelled', 'Cancelled'
 
+    class Verdict(models.TextChoices):
+        PENDING = 'pending', 'Pending'
+        PASSED = 'passed', 'Passed'
+        FAILED = 'failed', 'Failed'
+        CANCELLED = 'cancelled', 'Cancelled'
+
     ACTIVE_STATUSES = (Status.QUEUED, Status.RUNNING, Status.DRAINING, Status.CANCELLING)
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     created_by = models.ForeignKey('OSFUser', null=True, blank=True, on_delete=models.SET_NULL)
     name = models.CharField(max_length=100, default='Celery load test')
     config = models.JSONField()
-    verdict = models.CharField(max_length=16, default='pending')
+    verdict = models.CharField(max_length=16, choices=Verdict.choices, default=Verdict.PENDING)
     results = models.JSONField(default=dict)
     deadline_at = models.DateTimeField(null=True, blank=True)
     status = models.CharField(max_length=16, choices=Status.choices, default=Status.QUEUED, db_index=True)
@@ -73,6 +79,10 @@ class CeleryTestTask(models.Model):
     runtime_seconds = models.FloatField(null=True, blank=True)
     total_seconds = models.FloatField(null=True, blank=True)
     error = models.TextField(blank=True)
+
+    @property
+    def scenario_name(self):
+        return self.scenario.partition('.')[0]
 
     class Meta:
         indexes = [models.Index(fields=['suite', 'status'], name='celery_test_suite_status_idx')]

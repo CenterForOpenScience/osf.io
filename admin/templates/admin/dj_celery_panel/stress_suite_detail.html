@@ -106,7 +106,7 @@
   <section class="dcr-card">
     <div class="dcr-card__body">
       <h2>{% trans "Task outcomes" %}</h2>
-      <p>{% trans "Submitted" %}: {{ metrics.total }} · {% trans "Published" %}: {{ metrics.published }} · {% trans "Queued" %}: {{ metrics.queued }} · {% trans "Running" %}: {{ metrics.running }} · {% trans "Retrying" %}: {{ metrics.retrying }} · {% trans "Succeeded" %}: {{ metrics.succeeded }} · {% trans "Failed" %}: {{ metrics.failed }} · {% trans "Cancelled" %}: {{ metrics.cancelled }}</p>
+      <p>{% trans "Submitted" %}: {{ metrics.total }} · {% trans "Published" %}: {{ metrics.published }} · {% trans "Queued" %}: {{ metrics.queued }} · {% trans "Running" %}: {{ metrics.running|default_if_none:"—" }} · {% trans "Retrying" %}: {{ metrics.retrying }} · {% trans "Succeeded" %}: {{ metrics.succeeded }} · {% trans "Failed" %}: {{ metrics.failed }} · {% trans "Cancelled" %}: {{ metrics.cancelled|default_if_none:"—" }}</p>
       <p>{% trans "Failure rate (failed / succeeded + failed)" %}: {{ metrics.failure_percent|floatformat:2|default:"—" }}%</p>
       <h3>{% trans "Successful task latency" %}</h3>
       <table class="dcr-table">
@@ -140,7 +140,7 @@
         </tbody>
       </table>
       <p>{% trans "P95 is the value at or below which 95% of successful samples fall. Cancelled and failed tasks are excluded from latency summaries. Active runs have partial results." %}</p>
-      <p>{% trans "Publishing rate uses confirmed send calls divided by publishing time. Successful throughput uses the full elapsed suite time, including draining. Submission-to-start includes broker submission and scheduling; it is not pure broker wait. Cross-worker timings require synchronized clocks. Database tracking and cancellation polling add overhead to this synthetic test." %}</p>
+      <p>{% trans "Publishing rate uses confirmed send calls divided by publishing time. Successful throughput uses the full elapsed suite time, including draining. Submission-to-start includes broker submission and scheduling; it is not pure broker wait. Cross-worker timings require synchronized clocks. Task result writes and progress aggregation add database overhead to this test." %}</p>
     </div>
   </section>
   <section class="dcr-card">
@@ -164,8 +164,8 @@
               <td>{{ workload.config.name }} / {{ workload.config.mode }} / {{ workload.config.queue }}</td>
               <td>{{ workload.config.io_seconds|default_if_none:"—" }} / {{ workload.config.cpu_iterations|default_if_none:"—" }}</td>
               <td>{{ workload.config.rate }} / {{ workload.publish_rate|floatformat:2|default:"—" }}</td>
-              <td>{{ workload.queued }} / {{ workload.running }}</td>
-              <td>{{ workload.succeeded }} / {{ workload.failed }} / {{ workload.cancelled }}</td>
+              <td>{{ workload.queued }} / {{ workload.running|default_if_none:"—" }}</td>
+              <td>{{ workload.succeeded }} / {{ workload.failed }} / {{ workload.cancelled|default_if_none:"—" }}</td>
               <td>{{ workload.wait.p95|floatformat:3|default:"—" }}</td>
               <td>{{ workload.runtime.p95|floatformat:3|default:"—" }}</td>
             </tr>

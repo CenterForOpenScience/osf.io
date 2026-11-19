@@ -8,7 +8,13 @@
       <td><a href="{% url 'celery_stress_suite_detail' suite_id=suite.id %}">{{ suite.name }}</a></td>
       <td>{{ suite.get_status_display }} · {{ suite.config.suite_type|default:"load" }} · {{ suite.verdict }}{% if suite.heartbeat_stale %} — {% trans "Coordinator heartbeat overdue" %}{% endif %}</td>
       <td>{{ suite.created_by|default:"—" }}</td><td>{{ suite.created_at }}</td>
-      <td>{{ suite.task_count }}</td><td>{{ suite.succeeded_count }}</td><td>{{ suite.failed_count }}</td>
+      {% if suite.results.load %}
+        <td>{{ suite.results.load.published }}</td>
+        <td>{{ suite.results.load.succeeded }}</td>
+        <td>{{ suite.results.load.failed }}</td>
+      {% else %}
+        <td>{{ suite.task_count }}</td><td>{{ suite.succeeded_count }}</td><td>{{ suite.failed_count }}</td>
+      {% endif %}
       <td>{% if suite.is_active %}<form method="post" action="{% url 'celery_stress_suite_cancel' suite_id=suite.id %}">{% csrf_token %}<button type="submit" class="dcr-btn dcr-btn--secondary">{% if suite.cancel_requested_at %}{% trans "Retry cancellation" %}{% else %}{% trans "Cancel suite" %}{% endif %}</button></form>{% endif %}</td>
     </tr>
   {% empty %}<tr><td colspan="8">{% trans "No suites." %}</td></tr>{% endfor %}

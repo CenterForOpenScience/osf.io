@@ -20,6 +20,7 @@
   <p><a href="{% url 'celery_stress_test' %}">{% trans "All test suites" %}</a></p>
   <form method="post" id="stress-test-form">
     {% csrf_token %}
+    <p>{{ form.drain_timeout.label_tag }} {{ form.drain_timeout }} {{ form.drain_timeout.errors }} {{ form.drain_timeout.help_text }}</p>
 
     {% if form.non_field_errors %}
       <div class="dcr-alert dcr-alert--danger">

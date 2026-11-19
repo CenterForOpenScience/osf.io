@@ -1,13 +1,16 @@
 from collections import defaultdict
+from datetime import timedelta
 from fnmatch import fnmatchcase
 from functools import cache
 
 from django.contrib import messages
+from django.http import HttpResponseBadRequest
 from django.core.paginator import Paginator
 from django.db import transaction
 from django.db.models import Count, Q
 from django.forms import formset_factory
 from django.shortcuts import get_object_or_404, redirect, render
+from django.utils import timezone
 from django.views.decorators.http import require_http_methods
 from dj_celery_panel import views
 from dj_celery_panel.celery_utils import CeleryQueuesInspectBackend, QueueDetailPage, QueueListPage
@@ -157,7 +160,6 @@ def celery_stress_test_view(request):
     )
     preset = request.POST.get('preset', request.GET.get('preset', 'load'))
     if preset not in PRESETS:
-        from django.http import HttpResponseBadRequest
         return HttpResponseBadRequest('Unknown suite preset.')
     if preset != 'load':
         form = CeleryScenarioForm(request.POST if request.method == 'POST' else None,
@@ -170,8 +172,6 @@ def celery_stress_test_view(request):
                 except (NotImplementedError, AttributeError) as exc:
                     form.add_error(None, f'This result backend does not support chords: {exc}')
             if not form.errors:
-                from datetime import timedelta
-                from django.utils import timezone
                 suite = CeleryTestSuite.objects.create(name=config['name'], config=config, created_by=request.user,
                     deadline_at=timezone.now() + timedelta(seconds=config['deadline_seconds']))
                 try:
@@ -210,6 +210,7 @@ def celery_stress_test_view(request):
             else:
                 suite = CeleryTestSuite.objects.create(
                     name=config['name'], config=config, created_by=request.user,
+                    deadline_at=timezone.now() + timedelta(seconds=config['total_duration'] + config['drain_timeout'] + 60),
                 )
                 try:
                     start_celery_stress_test.apply_async(
@@ -281,7 +282,7 @@ def celery_stress_suite_cancel(request, suite_id):
     if warning:
         messages.warning(request, warning)
     elif suite.cancel_requested_at:
-        messages.success(request, 'Cancellation requested. Queued tasks are revoked; running tasks and the coordinator stop cooperatively.')
+        messages.success(request, 'Cancellation requested. Publishing stops; queued load tasks are revoked where possible and expire at the deadline. Running load tasks finish naturally.')
     else:
         messages.info(request, 'This suite has already finished.')
     return redirect('celery_stress_suite_detail', suite_id=suite.id)
