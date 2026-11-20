@@ -1376,11 +1376,6 @@ def make_url_map(app):
             '/project/<pid>/node/<nid>/tags/<tag>/',
         ], 'delete', project_views.tag.project_remove_tag, json_renderer),
 
-        # Add / remove contributors
-        Rule([
-            '/project/<pid>/contributors/',
-            '/project/<pid>/node/<nid>/contributors/',
-        ], 'post', project_views.contributor.project_contributors_post, json_renderer),
         # Forks
         Rule(
             [

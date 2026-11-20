@@ -1,6 +1,12 @@
+import logging
+import uuid
+
 from django.db import models, transaction
 from django.utils import timezone
-import uuid
+
+from framework import sentry
+
+logger = logging.getLogger(__name__)
 
 
 class NotificationCampaignStatus(models.TextChoices):
@@ -13,8 +19,11 @@ class NotificationCampaignStatus(models.TextChoices):
     ENDED = 'ended', 'Ended'
 
 class NotificationCampaignRecipientStatus(models.TextChoices):
+    # Batch assigned; Celery send task in flight (counts toward max_queued_batches).
     QUEUED = 'queued', 'Queued'
     PENDING = 'pending', 'Pending'
+    # SendGrid accepted the message; waiting on Event Webhook delivery/failure.
+    AWAITING_DELIVERY = 'awaiting_delivery', 'Awaiting Delivery'
     SENT = 'sent', 'Sent'
     FAILED = 'failed', 'Failed'
     SKIPPED = 'skipped', 'Skipped'
@@ -68,28 +77,52 @@ class NotificationCampaign(models.Model):
     recipient_count = models.PositiveIntegerField(default=0)
     sent_count = models.PositiveIntegerField(default=0)
     failed_count = models.PositiveIntegerField(default=0)
+    skipped_count = models.PositiveIntegerField(default=0)
     retries = models.PositiveIntegerField(default=0)
 
     developer_reminder_sent = models.BooleanField(default=False)
 
     def cancel(self):
+        """Cancel a running notification campaign.
+        """
+        from osf.email.notification_campaign import send_campaign_log_email_task
+
+        cancelled_at = timezone.now()
         self.status = NotificationCampaignStatus.CANCELLED
         if self.completed_at is None:
-            self.completed_at = timezone.now()
+            self.completed_at = cancelled_at
         self.save()
+        message = f'[Notification Campaign #{self.id}] WARNING: Campaign cancelled at {cancelled_at}.'
+        logger.warning(message)
+        sentry.log_message(message)
+
+        transaction.on_commit(
+            lambda: send_campaign_log_email_task.delay(
+                campaign_id=self.id,
+                status=NotificationCampaignStatus.CANCELLED.label,
+                message='Campaign was cancelled. Batches that are already sending will finish; queued batches will not be sent.',
+            )
+        )
 
     def start(self, restart_failed=False, restart_stuck=False):
+        """Start a notification campaign in 3 cases:
+        1. Clean start a notification campaign with full recipients;
+        2. Restart a stuck campaign, operating only on queued recipients;
+        3. Restart a partially completed campaign, operating only on failed recipients.
+
+        Note: #3 can be manually started, but it is also part of the retry phase in #1 and #2
+        """
         from osf.email.notification_campaign import start_notification_campaign
         self.status = NotificationCampaignStatus.RUNNING
         self.started_at = timezone.now()
         self.run_id = uuid.uuid4()
         if not restart_failed and not restart_stuck:
             self.sent_count = 0
+            self.skipped_count = 0
         self.failed_count = 0
         self.retries = 0
         self.metadata.update({'template': self.notification_type.template})
         self.save()
-
         # run start_notification_campaign after transaction
         transaction.on_commit(
             lambda: start_notification_campaign.delay(
@@ -98,16 +131,26 @@ class NotificationCampaign(models.Model):
                 restart_stuck=restart_stuck,
             )
         )
+        # log message after transaction and after task kick off
+        message = (f'[Notification Campaign #{self.id}] INFO: '
+                   f'Campaign start or restart attempted at {self.started_at}, '
+                   f'with restart_stuck={restart_stuck} and restart_failed={restart_failed}), ')
+        logger.info(message)
+        sentry.log_message(message)
 
     def create_recipients(self):
         from osf.email.notification_campaign import create_campaign_recipients
-
+        attempted_at = timezone.now()
         self.metadata.update({'recipients_creation_finished': False})
         self.save()
-
+        # run create_recipients after transaction
         transaction.on_commit(
             lambda: create_campaign_recipients.delay(campaign_id=self.id)
         )
+        # log message after transaction and after task kick off
+        message = f'[Notification Campaign #{self.id}] INFO: Recipients creation attempted at {attempted_at}.'
+        logger.info(message)
+        sentry.log_message(message)
 
 
 class NotificationCampaignRecipient(models.Model):
@@ -131,6 +174,14 @@ class NotificationCampaignRecipient(models.Model):
 
     activity_score = models.IntegerField(default=0)
     batch_id = models.UUIDField(null=True, blank=True, db_index=True)
+    # Unix seconds when mail was handed to SendGrid for this send attempt. Mirrored
+    # into SendGrid custom_args as ``sent_at`` and matched on inbound webhooks so
+    # delayed events from a prior attempt (e.g. after restart_failed) are ignored.
+    sent_at = models.PositiveBigIntegerField(
+        null=True,
+        blank=True,
+        db_column='sent_at_big_int',
+    )
 
     class Meta:
         unique_together = ('campaign', 'user')
