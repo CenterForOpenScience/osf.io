@@ -1,0 +1,5 @@
+<nav aria-label="Suite presets">
+  {% for key, preset in presets.items %}
+    <a class="dcr-btn dcr-btn--secondary" href="{% url 'celery_stress_test_new' %}?preset={{ key }}">{{ preset.label }}</a>
+  {% endfor %}
+</nav>

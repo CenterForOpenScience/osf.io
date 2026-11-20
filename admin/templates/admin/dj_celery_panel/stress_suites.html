@@ -1,0 +1,26 @@
+{% extends "admin/dj_celery_panel/base.html" %}
+{% load i18n %}
+{% block panel_page_content %}
+<div class="dcr-page-header">
+  <h1>{% trans "Stress test suites" %}</h1>
+  <p>{% trans "Track active load tests, cancel work, and compare completed runs." %}</p>
+  <a class="dcr-btn dcr-btn--primary" href="{% url 'celery_stress_test_new' %}">{% trans "New test suite" %}</a>
+  <form method="post" action="{% url 'celery_stress_suites_reconcile' %}">
+    {% csrf_token %}
+    <button type="submit" class="dcr-btn dcr-btn--secondary">{% trans "Reconcile overdue suites" %}</button>
+  </form>
+  <p>{% trans "Manually mark suites past their execution deadline as failed. This does not stop worker processes." %}</p>
+</div>
+<section class="dcr-card"><div class="dcr-card__body">
+  <h2>{% trans "Active suites" %}</h2>
+  {% include "admin/dj_celery_panel/stress_suite_table.html" with suites=active_suites %}
+</div></section>
+<section class="dcr-card"><div class="dcr-card__body">
+  <h2>{% trans "Suite history" %}</h2>
+  {% include "admin/dj_celery_panel/stress_suite_table.html" with suites=history %}
+  {% if history.has_previous %}<a href="?page={{ history.previous_page_number }}">{% trans "Previous" %}</a>{% endif %}
+  <span>{% trans "Page" %} {{ history.number }} / {{ history.paginator.num_pages }}</span>
+  {% if history.has_next %}<a href="?page={{ history.next_page_number }}">{% trans "Next" %}</a>{% endif %}
+</div></section>
+<p>{% trans "Refresh to update suite status. Cancelling stops publication; running load tasks finish naturally. Use manual reconciliation for overdue suites after worker loss." %}</p>
+{% endblock %}
