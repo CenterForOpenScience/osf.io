@@ -52,6 +52,7 @@ def after_request(resp):
             max_age=api_settings.CSRF_COOKIE_AGE,
             domain=api_settings.CSRF_COOKIE_DOMAIN,
             path=api_settings.CSRF_COOKIE_PATH,
+            secure=api_settings.CSRF_COOKIE_SECURE,
             httponly=api_settings.CSRF_COOKIE_HTTPONLY,
         )
 
