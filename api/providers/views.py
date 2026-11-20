@@ -101,6 +101,7 @@ class ProviderMixin:
                 self.kwargs['provider_id'],
                 self.request,
                 display_name=self.provider_class.__name__,
+                allow_select_for_update=False,
             )
 
         if self.kwargs.get('node_id'):
@@ -287,7 +288,7 @@ class BaseProviderSubjects(SubjectList):
 
     def get_default_queryset(self):
         parent = self.request.query_params.get('filter[parent]', None)
-        provider = get_object_or_error(self.provider_class, self.kwargs['provider_id'], self.request, display_name=self.provider_class.__name__)
+        provider = get_object_or_error(self.provider_class, self.kwargs['provider_id'], self.request, display_name=self.provider_class.__name__, allow_select_for_update=False)
         if parent:
             if parent == 'null':
                 return optimize_subject_query(provider.top_level_subjects)
@@ -398,6 +399,7 @@ class GenericProviderLicenseList(LicenseList):
             self.kwargs['provider_id'],
             self.request,
             display_name=self.provider_class.__name__,
+            allow_select_for_update=False,
         )
 
         if provider.licenses_acceptable.count():
@@ -549,7 +551,7 @@ class RegistrationProviderSubmissionList(JSONAPIBaseView, generics.ListCreateAPI
 
     def perform_create(self, serializer):
         user = self.request.user
-        provider = get_object_or_error(RegistrationProvider, self.kwargs['provider_id'], self.request, display_name='RegistrationProvider')
+        provider = get_object_or_error(RegistrationProvider, self.kwargs['provider_id'], self.request, display_name='RegistrationProvider', allow_select_for_update=False)
         if provider and provider.primary_collection:
             return serializer.save(creator=user, collection=provider.primary_collection)
         raise ValidationError(f'Provider {provider.name} has no primary collection to submit to.')
@@ -597,8 +599,14 @@ class ModeratorMixin(ProviderMixin):
     provider_class = PreprintProvider
     model_class = OSFUser
 
-    def get_provider(self):
-        return get_object_or_error(self.provider_type, self.kwargs['provider_id'], self.request, display_name='PreprintProvider')
+    def get_provider(self, allow_select_for_update=False):
+        return get_object_or_error(
+            self.provider_type,
+            self.kwargs['provider_id'],
+            self.request,
+            display_name='PreprintProvider',
+            allow_select_for_update=allow_select_for_update,
+        )
 
     def get_serializer_context(self, *args, **kwargs):
         ctx = super().get_serializer_context(*args, **kwargs)
@@ -654,6 +662,8 @@ class ProviderModeratorsDetail(ModeratorMixin, JSONAPIBaseView, generics.Retriev
         except AttributeError:
             # Group doesn't exist -- users not moderator
             raise NotFound
+        if perm_group == ADMIN:
+            self.get_provider(allow_select_for_update=True)
         setattr(user, 'permission_group', perm_group)
         return user
 
@@ -884,7 +894,7 @@ class RegistrationBulkCreate(APIView, ProviderMixin):
 
     def put(self, request, *args, **kwargs):
         provider_id = kwargs['provider_id']
-        provider = get_object_or_error(RegistrationProvider, provider_id, request)
+        provider = get_object_or_error(RegistrationProvider, provider_id, request, allow_select_for_update=False)
         if not provider.allow_bulk_uploads:
             return JsonResponse(
                 {'errors': [{'type': 'bulkUploadNotAllowed'}]},

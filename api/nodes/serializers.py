@@ -1576,7 +1576,7 @@ class NodeInstitutionsRelationshipSerializer(BaseAPISerializer):
 class RegistrationSchemaRelationshipField(RelationshipField):
 
     def to_internal_value(self, registration_schema_id):
-        schema = get_object_or_error(RegistrationSchema, registration_schema_id, self.context['request'])
+        schema = get_object_or_error(RegistrationSchema, registration_schema_id, self.context['request'], allow_select_for_update=False)
         latest_version = RegistrationSchema.objects.get_latest_version(schema.name).schema_version
         if latest_version != schema.schema_version or not schema.active:
             raise exceptions.ValidationError('Registration supplement must be an active schema.')

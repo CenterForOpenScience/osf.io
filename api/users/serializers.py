@@ -861,6 +861,7 @@ class UserMessageSerializer(JSONAPISerializer):
             institution_id,
             request,
             'institution',
+            allow_select_for_update=False,
         )
 
         if not sender.is_institutional_admin_at(institution):
