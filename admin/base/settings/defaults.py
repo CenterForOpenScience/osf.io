@@ -216,6 +216,7 @@ DESK_KEY = ''
 DESK_KEY_SECRET = ''
 
 TINYMCE_APIKEY = ''
+SECURE_REFERRER_POLICY = 'strict-origin-when-cross-origin'
 
 SHARE_URL = osf_settings.SHARE_URL
 API_DOMAIN = osf_settings.API_DOMAIN

@@ -32,7 +32,6 @@ PREPRINT_PROVIDER_DOMAINS = {
     'suffix': ':4201/'
 }
 
-SEARCH_ENGINE = 'elastic'
 ELASTIC_TIMEOUT = 10
 
 # Email

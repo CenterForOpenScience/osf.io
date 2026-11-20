@@ -400,6 +400,9 @@ def _check_resource_permissions(resource, auth, action):
 
 def _ensure_resource_not_read_only(resource):
     """Block file/folder writes via Waterbutler while the resource is in read-only mode."""
+    if isinstance(resource, Preprint) and resource.is_migrated:
+        raise HTTPError(http_status.HTTP_403_FORBIDDEN, message='This preprint has been migrated; file writes are disabled.')
+
     if not isinstance(resource, Node):
         return
 
@@ -1133,6 +1136,13 @@ def persistent_file_download(auth, **kwargs):
         if type(file) is Preprint:
             referent, _ = Guid.load_referent(id_or_guid)
             file = referent.primary_file
+
+    # Initial and rejected preprints may have no primary file
+    if file is None:
+        raise HTTPError(http_status.HTTP_404_NOT_FOUND, data={
+            'message_short': 'File Not Found',
+            'message_long': 'The requested file could not be found.'
+        })
 
     if not file.is_file:
         raise HTTPError(http_status.HTTP_400_BAD_REQUEST, data={

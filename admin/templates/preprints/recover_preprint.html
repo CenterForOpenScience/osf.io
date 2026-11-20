@@ -7,6 +7,13 @@
 {% block content %}
     <div class="container-fluid">
         <h2>Recover Deleted Preprint</h2>
+        {% if messages %}
+            <ul class="messages">
+                {% for message in messages %}
+                    <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
+                {% endfor %}
+            </ul>
+        {% endif %}
         <p>
             Recreates a preprint that was hard-deleted by the Create-New-Version bug,
             restoring its original GUID and DOI. After recovering, attach the file,

@@ -11,6 +11,8 @@ from addons.osfstorage.models import OsfStorageFolder
 from osf.utils.workflows import DefaultStates
 from osf.utils import permissions as osf_permissions
 
+MIGRATED_PREPRINT_ERROR = 'This preprint has been migrated and may no longer be edited.'
+
 
 class PreprintPublishedOrAdmin(permissions.BasePermission):
 

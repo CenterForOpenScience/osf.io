@@ -440,7 +440,8 @@ def gather_registration_withdrawal(focus):
         yield (_withdrawal_ref, DCTERMS.created, _retraction.initiation_date)
         yield (_withdrawal_ref, DCTERMS.dateAccepted, _retraction.date_retracted)
         yield (_withdrawal_ref, DCTERMS.description, _retraction.justification)
-        yield (_withdrawal_ref, DCTERMS.creator, OsfFocus(_retraction.initiated_by))
+        if _retraction.initiated_by:
+            yield (_withdrawal_ref, DCTERMS.creator, OsfFocus(_retraction.initiated_by))
 
 
 @gather.er(

@@ -97,15 +97,23 @@ class RemoveAdminsAndModerators(PermissionRequiredMixin, TemplateView):
         removed_moderators = [moderator.replace('Moderator-', '') for moderator in to_be_removed if 'Moderator-' in moderator]
         moderators = OSFUser.objects.filter(id__in=removed_moderators)
         admins = OSFUser.objects.filter(id__in=removed_admins)
-        provider.get_group('moderator').user_set.remove(*moderators)
-        provider.get_group('admin').user_set.remove(*admins)
 
-        if moderators:
-            moderator_names = ' ,'.join(moderators.values_list('fullname', flat=True))
+        removed_moderator_names = []
+        for moderator in moderators:
+            provider.remove_from_group(moderator, 'moderator', unsubscribe=True)
+            removed_moderator_names.append(moderator.fullname)
+
+        removed_admin_names = []
+        for admin in admins:
+            provider.remove_from_group(admin, 'admin', unsubscribe=True, allow_last_admin_removal=True)
+            removed_admin_names.append(admin.fullname)
+
+        if removed_moderator_names:
+            moderator_names = ' ,'.join(removed_moderator_names)
             messages.success(request, f'The following moderators were successfully removed: {moderator_names}')
 
-        if admins:
-            admin_names = ' ,'.join(admins.values_list('fullname', flat=True))
+        if removed_admin_names:
+            admin_names = ' ,'.join(removed_admin_names)
             messages.success(request, f'The following admins were successfully removed: {admin_names}')
 
         return redirect(f'{self.url_namespace}:add_admin_or_moderator', provider_id=provider.id)

@@ -11,6 +11,7 @@ from .base import BaseModel
 from .mixins import TaxonomizableMixin
 from osf.utils.permissions import ADMIN
 from website.util import api_v2_url
+from website.project.licenses import validate_object_license_for_collection_provider
 from website.search.exceptions import SearchUnavailableError
 from osf.utils.workflows import CollectionSubmissionsTriggers, CollectionSubmissionStates
 
@@ -204,6 +205,8 @@ class CollectionSubmission(TaxonomizableMixin, BaseModel):
         if not is_moderator:
             raise PermissionsError(f'{user} must have moderator permissions.')
 
+        validate_object_license_for_collection_provider(self.guid.referent, self.collection.provider)
+
     def _notify_accepted(self, event_data):
         if self.collection.provider:
             logo_context = {}
@@ -394,6 +397,8 @@ class CollectionSubmission(TaxonomizableMixin, BaseModel):
         is_admin = self.guid.referent.has_permission(user, ADMIN)
         if not is_admin:
             raise PermissionsError(f'{user} must have admin permissions.')
+
+        validate_object_license_for_collection_provider(self.guid.referent, self.collection.provider)
 
     def _validate_cancel(self, event_data):
         user = event_data.kwargs.get('user')

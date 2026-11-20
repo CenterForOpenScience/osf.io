@@ -19,7 +19,7 @@ from api.nodes.serializers import (
 )
 from api.institutions.utils import update_institutions
 from api.taxonomies.serializers import TaxonomizableSerializerMixin
-from osf.exceptions import DraftRegistrationStateError
+from osf.exceptions import DraftRegistrationStateError, LicenseNotAcceptedError
 from osf.models import Node
 from website import settings
 
@@ -50,7 +50,10 @@ class DraftRegistrationSerializer(DraftRegistrationLegacySerializer, Taxonomizab
 
     category = ser.ChoiceField(required=False, choices=category_choices, help_text='Choices: ' + category_choices_string)
     tags = ValuesListField(attr_name='name', child=ser.CharField(), required=False)
-    node_license = NodeLicenseSerializer(required=False, source='license')
+    node_license = NodeLicenseSerializer(
+        required=False, source='license',
+        error_messages={'null': 'A license is required for a registration.'},
+    )
 
     links = LinksField({
         'self': 'get_absolute_url',
@@ -200,6 +203,8 @@ class DraftRegistrationDetailSerializer(DraftRegistrationSerializer, DraftRegist
             raise exceptions.PermissionDenied
         except DraftRegistrationStateError as e:
             raise InvalidModelValueError(detail=str(e))
+        except LicenseNotAcceptedError as e:
+            raise exceptions.ValidationError(detail=str(e))
 
         return draft
 

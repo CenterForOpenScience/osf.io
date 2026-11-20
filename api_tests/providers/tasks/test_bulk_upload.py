@@ -147,7 +147,7 @@ class TestBulkUploadTasks:
                 'Category': 'project',
                 'Affiliated Institutions': [],
                 'License': {
-                    'name': 'No license',
+                    'name': 'MIT License',
                     'required_fields': {
                         'year': '2030', 'copyright_holders': ['jane doe', 'john doe', 'joan doe']
                     }
@@ -187,7 +187,7 @@ class TestBulkUploadTasks:
                 'Category': 'project',
                 'Affiliated Institutions': [],
                 'License': {
-                    'name': 'No license',
+                    'name': 'MIT License',
                     'required_fields': {
                         'year': '2030', 'copyright_holders': ['jane doe', 'john doe', 'joan doe']
                     }
@@ -225,7 +225,7 @@ class TestBulkUploadTasks:
                 'Category': 'project',
                 'Affiliated Institutions': [],
                 'License': {
-                    'name': 'No license',
+                    'name': 'MIT License',
                     'required_fields': {
                         'year': '2030', 'copyright_holders': ['jane doe', 'john doe', 'joan doe']
                     }
@@ -262,7 +262,7 @@ class TestBulkUploadTasks:
                 'Category': 'project',
                 'Affiliated Institutions': [institution.name],
                 'License': {
-                    'name': 'No license',
+                    'name': 'MIT License',
                     'required_fields': {
                         'year': '2030', 'copyright_holders': ['jane doe', 'john doe', 'joan doe']
                     }

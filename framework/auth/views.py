@@ -645,6 +645,7 @@ def external_login_confirm_email_get(auth, uid, token):
 
     user.date_last_logged_in = timezone.now()
     user.external_identity[provider][provider_id] = 'VERIFIED'
+    user.record_external_identity_connected(provider, provider_id)
     del user.email_verifications[token]
     user.verification_key = generate_verification_key()
     user.save()
@@ -1116,6 +1117,8 @@ def clear_external_first_login_anonymous_session_data(session):
     session.pop('auth_user_external_first_login')
     session.pop('auth_user_external_id_provider')
     session.pop('auth_user_external_id')
+    session.pop('auth_user_external_id_access_token')
+    session.pop('auth_user_external_id_refresh_token')
     session.pop('auth_user_fullname')
     session.pop('service_url')
     session['post_request_removal'] = True

@@ -26,8 +26,6 @@ PREPRINT_PROVIDER_DOMAINS = {
     'suffix': ':4201/'
 }
 
-SEARCH_ENGINE = 'elastic'
-
 USE_CELERY = False
 
 # Email

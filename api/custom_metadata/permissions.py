@@ -2,8 +2,9 @@ import waffle
 from rest_framework import exceptions, permissions
 
 from api.base.utils import get_user_auth
+from api.preprints.permissions import MIGRATED_PREPRINT_ERROR
 from osf import features
-from osf.models import GuidMetadataRecord, BaseFileNode, Node
+from osf.models import GuidMetadataRecord, BaseFileNode, Node, Preprint
 
 
 class CustomMetadataPermission(permissions.BasePermission):
@@ -33,4 +34,6 @@ class ItemMetadataEditingNotAllowed(permissions.BasePermission):
                 request.method,
                 detail='This action is no longer available. Contact support if you have any questions.',
             )
+        if isinstance(delegate_obj, Preprint) and delegate_obj.is_migrated:
+            raise exceptions.PermissionDenied(detail=MIGRATED_PREPRINT_ERROR)
         return True

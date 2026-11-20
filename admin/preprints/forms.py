@@ -26,6 +26,7 @@ class RecoverDeletedPreprintForm(forms.Form):
         help_text='Recorded in the admin log so the recreated preprint is traceable.',
     )
 
+
 class ChangeProviderForm(forms.ModelForm):
     class Meta:
         model = Preprint

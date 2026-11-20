@@ -5,6 +5,7 @@ from collections import Counter
 import dataclasses
 import waffle
 
+from api.base.serializers import is_anonymized
 from api.collections.serializers import CollectionSerializer
 from osf import features
 from packaging.version import Version
@@ -2280,6 +2281,8 @@ class NodePreprintsList(JSONAPIBaseView, generics.ListAPIView, NodeMixin, Prepri
         return self.preprints_queryset(node.preprints.all(), auth_user, latest_only=True)
 
     def get_queryset(self):
+        if is_anonymized(self.request):
+            raise PermissionDenied
         return self.get_queryset_from_request()
 
 

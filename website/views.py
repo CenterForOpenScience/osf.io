@@ -224,6 +224,9 @@ def resolve_guid_download(guid, provider=None):
                     resource.has_permission(auth.user, permissions.ADMIN)):
                 raise HTTPError(http_status.HTTP_404_NOT_FOUND)
         resource = resource.primary_file
+        # Initial and rejected preprints may have no primary file
+        if resource is None:
+            raise HTTPError(http_status.HTTP_404_NOT_FOUND)
 
     request.args = request.args.copy()
     if 'revision' not in request.args:  # This is to maintain legacy behavior
