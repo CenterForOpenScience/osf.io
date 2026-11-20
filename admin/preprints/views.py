@@ -160,7 +160,6 @@ class PreprintSpamList(PermissionRequiredMixin, ListView):
     SPAM_STATE = SpamStatus.UNKNOWN
 
     paginate_by = 25
-    paginate_orphans = 1
     ordering = 'created'
     permission_required = ('osf.view_spam', 'osf.view_preprint')
     raise_exception = True
@@ -176,7 +175,7 @@ class PreprintSpamList(PermissionRequiredMixin, ListView):
         page_size = self.get_paginate_by(self.object_list)
         paginator, page, query_set, is_paginated = self.paginate_queryset(self.object_list, page_size)
         return {
-            'preprints': self.object_list,
+            'preprints': query_set,
             'page': page,
         }
 
