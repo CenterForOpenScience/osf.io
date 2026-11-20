@@ -1,4 +1,5 @@
 import json
+import pytest
 
 from api_tests.utils import create_test_file
 from osf.metadata.rdfutils import OSF, OSFIO
@@ -84,6 +85,7 @@ class TestRedirectUrlMetadata(OsfTestCase):
 
     # DataCite
 
+    @pytest.mark.usefixtures('mock_gravy_valet_get_verified_links')
     def test_datacite_is_unchanged(self):
         """the xml is validated against the DataCite schema,
         so neither it nor the json should change just because a guid redirects
