@@ -14,7 +14,7 @@ from api.base.serializers import (
     ShowIfVersion, TargetTypeField, TypeField,
     WaterbutlerLink, BaseAPISerializer,
     HideIfWikiDisabled, ShowIfAdminScopeOrAnonymous,
-    ValuesListField, TargetField,
+    ValuesListField, TargetField, GuidRedirectUrlMixin,
 )
 from api.base.settings import ADDONS_FOLDER_CONFIGURABLE
 from api.base.utils import (
@@ -188,7 +188,7 @@ def get_license_details(node, validated_data):
         'copyrightHolders': license_holders,
     }
 
-class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
+class NodeSerializer(GuidRedirectUrlMixin, TaxonomizableSerializerMixin, JSONAPISerializer):
     # TODO: If we have to redo this implementation in any of the other serializers, subclass ChoiceField and make it
     # handle blank choices properly. Currently DRF ChoiceFields ignore blank options, which is incorrect in this
     # instance
@@ -241,6 +241,7 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
         'preprint',
         'preprints',
         'public',
+        'redirect_automatically',
         'region',
         'registration',
         'root',
@@ -312,7 +313,11 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
                   'node have implicit read permissions for all child nodes',
     )
 
-    links = LinksField({'html': 'get_absolute_html_url'})
+    links = LinksField({
+        'html': 'get_absolute_html_url',
+        'redirect_url': 'get_redirect_url',
+    })
+
     # TODO: When we have osf_permissions.ADMIN permissions, make this writable for admins
 
     license = NodeLicenseRelationshipField(

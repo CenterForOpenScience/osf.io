@@ -4,14 +4,22 @@ from django.core.exceptions import MultipleObjectsReturned
 import pytest
 
 from framework.auth import Auth
-from osf.models import Guid, GuidVersionsThrough, NodeLicenseRecord, OSFUser, Preprint
-from osf.models.base import VersionedGuidMixin
+from api_tests.utils import create_test_file
+from osf.models import AbstractNode, Guid, GuidVersionsThrough, NodeLicenseRecord, OSFUser, Preprint
+from osf.models.base import (
+    VersionedGuidMixin,
+    coerce_guid,
+    guid_redirect_automatically,
+    guid_redirect_url,
+    redirect_guid,
+)
 from osf_tests.factories import (
     AuthUserFactory,
     NodeFactory,
     NodeLicenseRecordFactory,
     PreprintFactory,
     PreprintProviderFactory,
+    ProjectFactory,
     RegistrationFactory,
     UserFactory,
 )
@@ -340,3 +348,108 @@ class TestGuidVersionsThrough:
         GuidVersionsThrough.objects.filter(guid=preprint_guid).delete()
         preprint._id = None
         assert preprint._id is None
+
+
+@pytest.mark.django_db
+class TestGuidRedirect:
+    """the url a guid redirects to: its own, else the one of the item it is part of
+    (a file's target, a component's root)
+    """
+    URL = 'https://example.com/new-home'
+    OTHER_URL = 'https://example.com/other-home'
+
+    @pytest.fixture()
+    def user(self):
+        return AuthUserFactory()
+
+    @pytest.fixture()
+    def project(self, user):
+        return ProjectFactory(creator=user)
+
+    @pytest.fixture()
+    def component(self, project, user):
+        return NodeFactory(parent=project, creator=user)
+
+    @pytest.fixture()
+    def grandchild(self, component, user):
+        return NodeFactory(parent=component, creator=user)
+
+    def set_redirect(self, osf_item, url=URL, automatically=False):
+        guid = coerce_guid(osf_item)
+        guid.redirect_url = url
+        guid.redirect_automatically = automatically
+        guid.save()
+
+    @staticmethod
+    def reloaded(osf_item):
+        return type(osf_item).objects.get(pk=osf_item.pk)
+
+    def test_no_redirect(self, project, component, grandchild):
+        for item in (project, component, grandchild):
+            assert redirect_guid(item) is None
+            assert guid_redirect_url(item) is None
+            assert guid_redirect_automatically(item) is False
+
+    def test_own_redirect(self, project):
+        self.set_redirect(project, automatically=True)
+        assert redirect_guid(project) == coerce_guid(project)
+        assert guid_redirect_url(project) == self.URL
+        assert guid_redirect_automatically(project) is True
+
+    def test_components_inherit_from_root(self, project, component, grandchild):
+        self.set_redirect(project, automatically=True)
+        for item in map(self.reloaded, (component, grandchild)):
+            assert guid_redirect_url(item) == self.URL
+            assert guid_redirect_automatically(item) is True
+
+    def test_component_own_redirect_wins(self, project, component, grandchild):
+        self.set_redirect(project, automatically=True)
+        self.set_redirect(component, self.OTHER_URL)
+        component, grandchild = map(self.reloaded, (component, grandchild))
+        assert guid_redirect_url(component) == self.OTHER_URL
+        assert guid_redirect_automatically(component) is False
+        assert guid_redirect_url(grandchild) == self.URL
+
+    def test_root_does_not_inherit_from_component(self, project, component):
+        self.set_redirect(component)
+        assert guid_redirect_url(self.reloaded(project)) is None
+
+    def test_accepts_guid(self, project, component):
+        self.set_redirect(project)
+        assert guid_redirect_url(coerce_guid(self.reloaded(component))) == self.URL
+
+    def test_file_inherits_from_node(self, project, user):
+        file = create_test_file(project, user, filename='a.txt')
+        self.set_redirect(project, automatically=True)
+        file = self.reloaded(file)
+        assert guid_redirect_url(file) == self.URL
+        assert guid_redirect_automatically(file) is True
+
+    def test_file_in_component_inherits_from_root(self, project, component, user):
+        file = create_test_file(component, user, filename='a.txt')
+        self.set_redirect(project)
+        assert guid_redirect_url(self.reloaded(file)) == self.URL
+
+    def test_file_own_redirect_wins(self, project, user):
+        file = create_test_file(project, user, filename='a.txt')
+        self.set_redirect(project)
+        self.set_redirect(file, self.OTHER_URL)
+        assert guid_redirect_url(self.reloaded(file)) == self.OTHER_URL
+
+    def test_file_without_guid_inherits(self, project, user):
+        file = create_test_file(project, user, filename='a.txt', create_guid=False)
+        assert guid_redirect_url(self.reloaded(file)) is None
+        self.set_redirect(project)
+        assert guid_redirect_url(self.reloaded(file)) == self.URL
+
+    def test_preprint(self, user):
+        preprint = PreprintFactory(creator=user)
+        assert guid_redirect_url(preprint) is None
+        self.set_redirect(preprint)
+        assert guid_redirect_url(preprint) == self.URL
+
+    def test_soft_deleted_node_keeps_redirect(self, project, component):
+        self.set_redirect(project)
+        AbstractNode.objects.filter(pk=project.pk).update(is_deleted=True)  # marked as deleted, still in the db
+        assert guid_redirect_url(self.reloaded(project)) == self.URL
+        assert guid_redirect_url(self.reloaded(component)) == self.URL

@@ -171,6 +171,15 @@ def UserGone(user):
         },
     )
 
+def with_redirect_url(obj, meta=None):
+    from osf.models.base import guid_redirect_url
+    meta = dict(meta or {})
+    redirect_url = guid_redirect_url(obj)
+    if redirect_url:
+        meta['redirect_url'] = redirect_url
+    return meta
+
+
 class Conflict(JSONAPIException):
     status_code = status.HTTP_409_CONFLICT
     default_detail = ('Resource identifier does not match server endpoint.')

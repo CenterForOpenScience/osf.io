@@ -32,6 +32,7 @@ from osf.models import (
     Guid,
     BaseFileNode,
 )
+from osf.models.base import guid_redirect_automatically, guid_redirect_url
 from website import settings
 from website.project.model import has_anonymous_link
 from api.base.versioning import KEBAB_CASE_VERSION, get_kebab_snake_case_field
@@ -1119,6 +1120,22 @@ class TargetField(ser.Field):
                 'id': obj._id,
             },
         }
+
+
+class GuidRedirectUrlMixin(ser.Serializer):
+    """The redirect of an object's guid, for serializers of guid objects.
+
+    - `get_redirect_url` is the link method for a `links` field
+    - `redirect_automatically` is a read-only attribute
+
+    """
+    redirect_automatically = ser.SerializerMethodField()
+
+    def get_redirect_url(self, obj):
+        return guid_redirect_url(obj)
+
+    def get_redirect_automatically(self, obj):
+        return guid_redirect_automatically(obj)
 
 
 class LinksField(ser.Field):

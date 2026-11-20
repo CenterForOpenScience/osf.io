@@ -870,6 +870,12 @@ def gather_verified_link(focus):
         yield (ref, DCAT.accessURL, link['target_url'])
         yield (ref, DCTERMS.type, DATACITE[link['resource_type']])
 
+@gather.er(OSF.redirectUrl)
+def gather_redirect_url(focus):
+    redirect_url = osfdb.base.guid_redirect_url(focus.dbmodel)
+    if redirect_url:
+        yield (OSF.redirectUrl, rdflib.URIRef(redirect_url))
+
 @gather.er(OSF.affiliation)
 def gather_affiliated_institutions(focus):
     if hasattr(focus.dbmodel, 'get_affiliated_institutions'):   # like OSFUser, AbstractNode or Preprint
