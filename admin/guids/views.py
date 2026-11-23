@@ -1,6 +1,7 @@
 import logging
 
 from django.contrib import messages
+from django.conf import settings
 from django.contrib.auth.mixins import PermissionRequiredMixin
 from django.db import transaction
 from django.http import Http404
@@ -97,6 +98,7 @@ class GuidDetailView(PermissionRequiredMixin, TemplateView):
             'referent_url': get_referent_admin_url(referent) if referent is not None else None,
             'reassign_blocker': reassign_blocker,
             'can_reassign': referent is not None and reassign_blocker is None,
+            'reassign_enabled': getattr(settings, 'GUID_REASSIGN_ENABLED', False),
             'form': ReassignGuidForm(),
         })
         return super().get_context_data(**kwargs)
@@ -111,6 +113,9 @@ class GuidReassignView(PermissionRequiredMixin, View):
     def post(self, request, *args, **kwargs):
         guid_str = self.kwargs['guid']
         detail_url = reverse('guids:detail', kwargs={'guid': guid_str})
+        if not getattr(settings, 'GUID_REASSIGN_ENABLED', False):
+            messages.error(request, 'Guid reassignment is temporarily disabled.')
+            return redirect(detail_url)
         form = ReassignGuidForm(request.POST)
         if not form.is_valid():
             messages.error(request, 'A justification is required.')

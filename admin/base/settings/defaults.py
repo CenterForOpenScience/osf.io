@@ -234,3 +234,7 @@ if DEBUG:
 
 # If set to True, automated tests with extra queries will fail.
 NPLUSONE_RAISE = False
+
+# Temporarily disabled: the guid remove/reassign buttons are hidden and the reassign endpoint refuses requests.
+# The guid lookup/detail pages stay available.
+GUID_REASSIGN_ENABLED = False
