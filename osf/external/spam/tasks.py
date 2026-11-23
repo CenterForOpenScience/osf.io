@@ -7,7 +7,9 @@ from framework.postcommit_tasks.handlers import run_postcommit
 from django.contrib.contenttypes.models import ContentType
 from django.db import transaction
 from osf.external.askismet.client import AkismetClient
+from osf.external.askismet.exceptions import AkismetClientError
 from osf.external.oopspam.client import OOPSpamClient
+from osf.external.oopspam.exceptions import OOPSpamClientError
 from osf.utils.fields import ensure_str
 from website import settings
 
@@ -160,7 +162,12 @@ def check_resource_with_spam_services(resource, content, author, author_email, r
     preprints_to_flag = creator.preprints.filter(is_public=True, deleted__isnull=True)
 
     for client in spam_clients:
-        is_spam, details = client.check_content(**kwargs)
+        try:
+            is_spam, details = client.check_content(**kwargs)
+        except (requests.RequestException, AkismetClientError, OOPSpamClientError) as e:
+            # A spam service that can't be reached or answers with an error shouldn't fail the task or skip the other service
+            sentry.log_exception(e)
+            continue
         if not is_spam:
             continue
 
