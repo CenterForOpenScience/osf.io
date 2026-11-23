@@ -1,6 +1,7 @@
 from copy import deepcopy
 
 import pytest
+from webpack_loader.loaders import WebpackLoader
 
 from django.test import Client
 from django.urls import reverse
@@ -13,7 +14,8 @@ from admin.base import settings as admin_settings
 class TestAdminCSRF:
 
     @pytest.fixture
-    def admin_client(self, settings):
+    def admin_client(self, settings, monkeypatch):
+        monkeypatch.setattr(WebpackLoader, 'get_bundle', lambda self, bundle_name: [])
         # Admin templates need webpack_loader, which isn't in the API test settings.
         templates = deepcopy(admin_settings.TEMPLATES)
         templates[0]['OPTIONS']['libraries'] = {
