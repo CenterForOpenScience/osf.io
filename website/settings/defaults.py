@@ -2163,7 +2163,7 @@ RECAPTCHA_VERIFY_URL = 'https://recaptcha.net/recaptcha/api/siteverify'
 # akismet spam check
 AKISMET_APIKEY = None
 AKISMET_ENABLED = False
-DOMAIN_EXTRACTION_TIMEOUT = 60  # seconds
+DOMAIN_EXTRACTION_TIMEOUT = 10  # seconds
 
 # OOPSpam options
 OOPSPAM_APIKEY = None
