@@ -39,7 +39,7 @@ class AkismetClient:
                     'blog': self.website
                 },
                 headers=self._default_headers,
-                timeout=settings.EXTERNAL_REQUEST_TIMEOUT
+                timeout=settings.SPAM_SERVICE_REQUEST_TIMEOUT
             )
             self._apikey_is_valid = res.text == 'valid'
             return self._is_apikey_valid()
@@ -85,7 +85,7 @@ class AkismetClient:
             f'{self.API_PROTOCOL}{self.apikey}.{self.API_HOST}/1.1/comment-check',
             data=data,
             headers=self._default_headers,
-            timeout=5
+            timeout=settings.SPAM_SERVICE_REQUEST_TIMEOUT
         )
 
         if res.status_code != requests.codes.ok:
@@ -110,7 +110,7 @@ class AkismetClient:
             f'{self.API_PROTOCOL}{self.apikey}.{self.API_HOST}/1.1/submit-spam',
             data=data,
             headers=self._default_headers,
-            timeout=settings.EXTERNAL_REQUEST_TIMEOUT
+            timeout=settings.SPAM_SERVICE_REQUEST_TIMEOUT
         )
         if res.status_code != requests.codes.ok:
             raise AkismetClientError(reason=res.text)
@@ -132,7 +132,7 @@ class AkismetClient:
             f'{self.API_PROTOCOL}{self.apikey}.{self.API_HOST}/1.1/submit-ham',
             data=data,
             headers=self._default_headers,
-            timeout=settings.EXTERNAL_REQUEST_TIMEOUT
+            timeout=settings.SPAM_SERVICE_REQUEST_TIMEOUT
         )
         if res.status_code != requests.codes.ok:
             raise AkismetClientError(reason=res.text)

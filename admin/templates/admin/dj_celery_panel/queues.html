@@ -1,0 +1,54 @@
+{% extends "admin/dj_celery_panel/queues.html" %}
+{% load i18n %}
+
+{% block panel_page_content %}
+{{ block.super }}
+{% if queues %}
+<div class="dcr-data-table dcr-mt-lg">
+  <div class="dcr-data-table__header">
+    <div class="dcr-data-table__header-info">
+      <h3 class="dcr-data-table__title">{% trans "Routing" %}</h3>
+      <p class="dcr-data-table__subtitle">
+        {% trans "Tasks routed to each queue, and CeleryConfig routing entries that match no registered task" %}
+      </p>
+    </div>
+  </div>
+  <div class="dcr-data-table__scroll">
+    <table>
+      <thead>
+        <tr>
+          <th>{% trans "Queue Name" %}</th>
+          <th class="dcr-col--right">{% trans "Routed Tasks" %}</th>
+          <th>{% trans "Unmatched Routing Entries" %}</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for queue in queues %}
+        <tr>
+          <td>
+            <a href="{% url 'dj_celery_panel:queue_detail' queue.name %}" class="dcr-data-table__link">
+              <code class="dcr-code">{{ queue.name }}</code>
+            </a>
+          </td>
+          <td class="dcr-col--right">
+            {% if queue.routed_tasks_count %}
+            {{ queue.routed_tasks_count }}
+            {% else %}
+            <span class="dcr-badge dcr-badge--warning" title="{% trans 'No tasks are routed to this queue' %}">0</span>
+            {% endif %}
+          </td>
+          <td>
+            {% for entry in queue.unmatched_routing_entries %}
+            <code class="dcr-code">{{ entry }}</code>{% if not forloop.last %}<br>{% endif %}
+            {% empty %}
+            <span class="dcr-text-muted">—</span>
+            {% endfor %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endif %}
+{% endblock %}
