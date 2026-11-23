@@ -20,7 +20,7 @@ from framework.celery_tasks import app as celery_app
 from osf.models.celery_test import CeleryTestSuite, CeleryTestTask
 from osf.celery_stress_test.control import cancel_suite, finish_publishing
 from osf.celery_stress_test.metrics import suite_metrics
-from osf.celery_stress_test.scenarios import reconcile_suites
+from osf.celery_stress_test.scenarios import sync_overdue_suites
 from osf.celery_stress_test.tasks import start_celery_stress_test
 from .forms import CeleryStressTestForm, WorkloadForm, CeleryScenarioForm
 from osf.celery_stress_test.presets import PRESETS, resolve
@@ -253,6 +253,7 @@ def celery_stress_test_view(request):
 @panel_config.permission_required('celery_stress_test')
 @require_http_methods(['GET'])
 def celery_stress_suites(request):
+    """List active suites and paginate terminal runs."""
     context = panel_config.get_context(request, current_tab='celery_stress_test')
     suites = CeleryTestSuite.objects.annotate(
         task_count=Count('tasks'),
@@ -269,6 +270,7 @@ def celery_stress_suites(request):
 @panel_config.permission_required('celery_stress_test')
 @require_http_methods(['GET'])
 def celery_stress_suite_detail(request, suite_id):
+    """Show a saved suite configuration, metrics, and individual task records."""
     suite = get_object_or_404(CeleryTestSuite, pk=suite_id)
     context = panel_config.get_context(request, current_tab='celery_stress_test')
     context.update({
@@ -283,6 +285,7 @@ def celery_stress_suite_detail(request, suite_id):
 @panel_config.permission_required('celery_stress_test')
 @require_http_methods(['POST'])
 def celery_stress_suite_cancel(request, suite_id):
+    """Request cancellation and report whether broker revocation succeeded."""
     get_object_or_404(CeleryTestSuite, pk=suite_id)
     suite, warning = cancel_suite(suite_id, request.user, celery_app)
     if warning:
@@ -297,7 +300,8 @@ def celery_stress_suite_cancel(request, suite_id):
 @transaction.non_atomic_requests
 @panel_config.permission_required('celery_stress_test')
 @require_http_methods(['POST'])
-def celery_stress_suites_reconcile(request):
-    reconcile_suites.run()
-    messages.success(request, 'Checked overdue suites and reconciled their status.')
+def celery_stress_suites_sync_overdue(request):
+    """Close overdue active suites from the admin dashboard."""
+    sync_overdue_suites.run()
+    messages.success(request, 'Checked for overdue suites and closed any that were still active.')
     return redirect('celery_stress_test')

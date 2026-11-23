@@ -10,6 +10,7 @@ from osf.models.celery_test import CeleryTestSuite as Suite, CeleryTestTask as T
 
 
 def scenario_progress(suite):
+    """Count scenario task states, including tasks still waiting or retrying."""
     fields = {'total': Count('id'), 'published': Count('id', filter=Q(published_at__isnull=False))}
     fields.update({status: Count('id', filter=Q(status=status)) for status in Task.Status.values})
     summary = suite.tasks.aggregate(**fields)
@@ -18,6 +19,7 @@ def scenario_progress(suite):
 
 
 def sync_progress(suite):
+    """Refresh progress and the coordinator heartbeat for the suite type."""
     if suite.config.get('suite_type', 'load') == 'load':
         return sync_load_progress(suite)
     summary = scenario_progress(suite)
@@ -27,7 +29,7 @@ def sync_progress(suite):
 
 
 def wait_for_tasks(suite_id, publication_error=None):
-    """Suite handlers poll results and drain already-sent tasks after publication errors."""
+    """Poll in the coordinator slot until tasks finish or the suite deadline passes."""
     if publication_error is not None:
         Suite.objects.filter(pk=suite_id, finished_at__isnull=True).update(error=str(publication_error)[:4000])
     Suite.objects.filter(pk=suite_id, finished_at__isnull=True, publishing_finished_at__isnull=True).update(
@@ -58,7 +60,7 @@ def wait_for_tasks(suite_id, publication_error=None):
 
 
 def finalize(suite):
-    """Called with the suite row locked. Publication and all executions must finish."""
+    """Set the final verdict once publication and execution end. The caller locks the suite row."""
     if suite.finished_at:
         return
     if not suite.publishing_finished_at or suite.tasks.exclude(status__in=Task.TERMINAL_STATUSES).exists():
@@ -88,6 +90,7 @@ def finalize(suite):
 
 
 def finish_publishing(suite_id, error=''):
+    """Record the end of publication and finalize if all tasks are terminal."""
     with transaction.atomic():
         suite = Suite.objects.select_for_update().get(pk=suite_id)
         if suite.finished_at:
@@ -122,6 +125,7 @@ def finish_task(task_id, status, error='', runtime=None, result=None):
 
 
 def cancel_suite(suite_id, user, app):
+    """Record the cancellation request and try to revoke queued work through Celery."""
     with transaction.atomic():
         suite = Suite.objects.select_for_update().get(pk=suite_id)
         if not suite.is_active:

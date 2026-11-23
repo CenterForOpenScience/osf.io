@@ -7,6 +7,7 @@ from osf.models.celery_test import CeleryTestTask as Task
 
 
 def latency(tasks, field):
+    """Summarize a timing field using successful tasks with recorded samples."""
     samples = tasks.filter(status=Task.Status.SUCCEEDED, **{f'{field}__isnull': False})
     summary = samples.aggregate(count=Count('id'), mean=Avg(field))
     p95 = None
@@ -16,6 +17,7 @@ def latency(tasks, field):
 
 
 def task_metrics(tasks, publish_seconds, elapsed_seconds):
+    """Calculate task outcomes and rates over the supplied suite time windows."""
     counts = tasks.aggregate(**{
         status: Count('id', filter=Q(status=status)) for status in Task.Status.values
     })
@@ -35,6 +37,7 @@ def task_metrics(tasks, publish_seconds, elapsed_seconds):
 
 
 def suite_metrics(suite):
+    """Build suite and per-workload metrics for the admin detail page."""
     now = timezone.now()
     publish_seconds = ((suite.publishing_finished_at or now) - suite.started_at).total_seconds() if suite.started_at else 0
     elapsed = ((suite.finished_at or now) - suite.started_at).total_seconds() if suite.started_at else 0
@@ -49,7 +52,7 @@ def suite_metrics(suite):
         'workloads': workloads,
         'publishing_seconds': publish_seconds,
         'elapsed_seconds': elapsed,
-        'requested_rate': sum(w['rate'] for w in suite.config.get('workloads', [])),
-        'effective_rate_cap': min(suite.config.get('max_total_rate', 0), sum(w['rate'] for w in suite.config.get('workloads', []))),
+        'requested_rate': sum(workload['rate'] for workload in suite.config.get('workloads', [])),
+        'effective_rate_cap': min(suite.config.get('max_total_rate', 0), sum(workload['rate'] for workload in suite.config.get('workloads', []))),
         'workers': suite.tasks.exclude(worker='').values_list('worker', flat=True).distinct(),
     }

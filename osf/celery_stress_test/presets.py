@@ -11,6 +11,7 @@ PRESETS = {
 
 
 def resolve(preset, overrides):
+    """Merge submitted values with preset defaults and record the preset version."""
     definition = PRESETS[preset]
     return {**deepcopy(definition['defaults']), **overrides,
             'suite_type': preset, 'preset_version': definition['version']}

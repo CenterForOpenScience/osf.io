@@ -11,7 +11,7 @@
       <div class="dcr-page-header__body">
         <h1 class="dcr-page-header__title">{% trans "Stress Testing" %}</h1>
         <p class="dcr-page-header__subtitle">
-          {% trans "Run stress tests on your Celery workers to evaluate their performance and stability under load." %}
+            {% trans "Publish synthetic tasks at a controlled rate to measure throughput, latency, and failures on selected Celery queues." %}
         </p>
       </div>
     </div>
@@ -73,7 +73,7 @@
         <div>
           <h2>{% trans "Workloads" %}</h2>
           <p>
-            {% trans "Define the workloads to publish to your Celery queues." %}
+            {% trans "Choose a queue and publishing rate for each workload. I/O mode simulates waiting, CPU mode runs calculations, and mixed mode does both." %}
           </p>
         </div>
 

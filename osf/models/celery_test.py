@@ -5,6 +5,8 @@ from django.utils import timezone
 
 
 class CeleryTestSuite(models.Model):
+    """A submitted run with its configuration, absolute deadline, and final verdict."""
+
     class Status(models.TextChoices):
         QUEUED = 'queued', 'Queued'
         RUNNING = 'running', 'Publishing'
@@ -53,6 +55,8 @@ class CeleryTestSuite(models.Model):
 
 
 class CeleryTestTask(models.Model):
+    """One workload execution or scenario step and its recorded outcome."""
+
     class Status(models.TextChoices):
         QUEUED = 'queued', 'Queued'
         RUNNING = 'running', 'Running'
@@ -89,6 +93,8 @@ class CeleryTestTask(models.Model):
 
 
 class CeleryTestTaskAttempt(models.Model):
+    """One execution attempt for a scenario task, including any scheduled retry."""
+
     task = models.ForeignKey(CeleryTestTask, related_name='attempts', on_delete=models.CASCADE)
     number = models.PositiveSmallIntegerField()
     started_at = models.DateTimeField(default=timezone.now)

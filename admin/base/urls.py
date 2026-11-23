@@ -16,7 +16,7 @@ urlpatterns = [
             re_path(r'^middleware_check/$', views.admin_auth_middleware_check, name='middleware_check'),
             re_path(r'^admin/dj-celery-panel/$', celery_panel.overview),
             re_path(r'^admin/dj-celery-panel/celery_stress_test/$', celery_panel.celery_stress_suites, name='celery_stress_test'),
-            re_path(r'^admin/dj-celery-panel/celery_stress_test/reconcile/$', celery_panel.celery_stress_suites_reconcile, name='celery_stress_suites_reconcile'),
+            re_path(r'^admin/dj-celery-panel/celery_stress_test/sync-overdue/$', celery_panel.celery_stress_suites_sync_overdue, name='celery_stress_suites_sync_overdue'),
             re_path(r'^admin/dj-celery-panel/celery_stress_test/new/$', celery_panel.celery_stress_test_view, name='celery_stress_test_new'),
             re_path(r'^admin/dj-celery-panel/celery_stress_test/(?P<suite_id>[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/$', celery_panel.celery_stress_suite_detail, name='celery_stress_suite_detail'),
             re_path(r'^admin/dj-celery-panel/celery_stress_test/(?P<suite_id>[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/cancel/$', celery_panel.celery_stress_suite_cancel, name='celery_stress_suite_cancel'),

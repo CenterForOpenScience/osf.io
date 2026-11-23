@@ -17,6 +17,7 @@ from .scenarios import publish_scenarios  # Registers scenario tasks for signal 
 
 @shared_task(name='stress_testing.start_celery_stress_test')
 def start_celery_stress_test(suite_id):
+    """Claim a queued suite, publish its tasks, and wait for them in this worker slot."""
     with transaction.atomic():
         suite = Suite.objects.select_for_update().get(pk=suite_id)
         if suite.status != Suite.Status.QUEUED or suite.cancel_requested_at:
@@ -82,6 +83,7 @@ def simulated_workload(self, mode='io', io_seconds=1.0, cpu_iterations=1_000_000
 
 
 def record_test_failure(sender=None, task_id=None, exception=None, **kwargs):
+    """Persist Celery failures that may bypass normal task cleanup."""
     # Covers failures reported by the worker parent, including hard timeouts and
     # lost children, where the task's finally block cannot run.
     if sender and sender.name == 'stress_testing.simulated_workload':
@@ -96,6 +98,7 @@ def record_test_failure(sender=None, task_id=None, exception=None, **kwargs):
 
 
 def record_test_revocation(sender=None, request=None, **kwargs):
+    """Record revocations of scenario tasks and suite coordinators."""
     if request is None:
         return
     # Parent-process revocation may supply a Context with task, not name.
@@ -110,6 +113,7 @@ def record_test_revocation(sender=None, request=None, **kwargs):
 
 @celery_app.on_after_finalize.connect
 def register_test_signal_handlers(sender, **kwargs):
+    """Attach failure and revocation handlers to the registered task instances."""
     # Resolve shared tasks through the finalized app's registry, not their proxies.
     for task_name in (
         'stress_testing.simulated_workload',
@@ -134,4 +138,5 @@ if celery_app.finalized:
 
 @shared_task(name='stress_testing.cleanup_history')
 def cleanup_history():
+    """Apply the configured retention period to terminal suites."""
     call_command('cleanup_celery_tests')

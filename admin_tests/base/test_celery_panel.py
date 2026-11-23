@@ -132,26 +132,26 @@ def test_unknown_preset_is_rejected(admin_views):
     with patch.object(admin_views.panel_config, 'get_context', return_value={}):
         assert admin_views.celery_stress_test_view(request).status_code == 400
 
-def test_manual_reconciliation_is_post_only(admin_views):
-    with patch.object(admin_views.reconcile_suites, 'run') as reconcile:
-        assert admin_views.celery_stress_suites_reconcile(admin_request()).status_code == 405
-    reconcile.assert_not_called()
+def test_manual_overdue_suite_sync_is_post_only(admin_views):
+    with patch.object(admin_views.sync_overdue_suites, 'run') as sync_overdue:
+        assert admin_views.celery_stress_suites_sync_overdue(admin_request()).status_code == 405
+    sync_overdue.assert_not_called()
 
-def test_manual_reconciliation_runs_and_redirects(admin_views):
-    with patch.object(admin_views.reconcile_suites, 'run') as reconcile, \
+def test_manual_overdue_suite_sync_runs_and_redirects(admin_views):
+    with patch.object(admin_views.sync_overdue_suites, 'run') as sync_overdue, \
             patch.object(admin_views.messages, 'success'):
-        response = admin_views.celery_stress_suites_reconcile(admin_request('post'))
-    reconcile.assert_called_once_with()
+        response = admin_views.celery_stress_suites_sync_overdue(admin_request('post'))
+    sync_overdue.assert_called_once_with()
     assert response.status_code == 302
     assert response.url == reverse('celery_stress_test')
 
-def test_manual_reconciliation_requires_permission(admin_views):
+def test_manual_overdue_suite_sync_requires_permission(admin_views):
     request = admin_request('post')
     request.user.is_superuser = request.user.is_staff = False
-    with patch.object(admin_views.reconcile_suites, 'run') as reconcile:
+    with patch.object(admin_views.sync_overdue_suites, 'run') as sync_overdue:
         with pytest.raises(PermissionDenied):
-            admin_views.celery_stress_suites_reconcile(request)
-    reconcile.assert_not_called()
+            admin_views.celery_stress_suites_sync_overdue(request)
+    sync_overdue.assert_not_called()
 
 @pytest.mark.parametrize('overrides,field', [
     ({'workflow_count': 100, 'chain_length': 100}, 'workflow_count'),

@@ -694,7 +694,7 @@ class CeleryConfig:
             'scripts.disable_removed_beat_tasks': {'queue': 'celery'},
             'scripts.premigrate_created_modified.run_sql': {'queue': 'celery'},
             'stress_testing.cleanup_history': {'queue': 'celery'},
-            'stress_testing.reconcile_suites': {'queue': 'celery'},
+            'stress_testing.sync_overdue_suites': {'queue': 'celery'},
             'stress_testing.scenario': {'queue': 'celery'},
             'stress_testing.simulated_workload': {'queue': 'celery'},
             'stress_testing.start_celery_stress_test': {'queue': 'celery'},

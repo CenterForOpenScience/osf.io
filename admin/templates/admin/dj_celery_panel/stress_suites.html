@@ -3,13 +3,13 @@
 {% block panel_page_content %}
 <div class="dcr-page-header">
   <h1>{% trans "Stress test suites" %}</h1>
-  <p>{% trans "Track active load tests, cancel work, and compare completed runs." %}</p>
+  <p>{% trans "Run custom load, retry and recovery, or workflow correctness suites. Open a run to inspect its configuration and results." %}</p>
   <a class="dcr-btn dcr-btn--primary" href="{% url 'celery_stress_test_new' %}">{% trans "New test suite" %}</a>
-  <form method="post" action="{% url 'celery_stress_suites_reconcile' %}">
+  <form method="post" action="{% url 'celery_stress_suites_sync_overdue' %}">
     {% csrf_token %}
-    <button type="submit" class="dcr-btn dcr-btn--secondary">{% trans "Reconcile overdue suites" %}</button>
+    <button type="submit" class="dcr-btn dcr-btn--secondary">{% trans "Sync overdue suites" %}</button>
   </form>
-  <p>{% trans "Manually mark suites past their execution deadline as failed. This does not stop worker processes." %}</p>
+  <p>{% trans "Use this action after a worker restart or crash leaves a run active past its execution deadline. It marks remaining tasks as failed and closes the run in the database." %}</p>
 </div>
 <section class="dcr-card"><div class="dcr-card__body">
   <h2>{% trans "Active suites" %}</h2>
@@ -22,5 +22,5 @@
   <span>{% trans "Page" %} {{ history.number }} / {{ history.paginator.num_pages }}</span>
   {% if history.has_next %}<a href="?page={{ history.next_page_number }}">{% trans "Next" %}</a>{% endif %}
 </div></section>
-<p>{% trans "Refresh to update suite status. Cancelling stops publication; running load tasks finish naturally. Use manual reconciliation for overdue suites after worker loss." %}</p>
+<p>{% trans "Refresh to update suite status. The coordinator uses one worker slot while publishing and waiting for tasks. Cancelling stops further publication and requests revocation of queued work. Running load tasks can finish naturally." %}</p>
 {% endblock %}

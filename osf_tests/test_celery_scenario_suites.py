@@ -74,7 +74,7 @@ def test_deadline_finishes_missing_work():
     suite.deadline_at = timezone.now() - timedelta(seconds=1)
     suite.save()
     Task.objects.create(suite=suite, queue='celery', scenario='callback', expected={'result': 3})
-    scenarios.reconcile_suites.run()
+    scenarios.sync_overdue_suites.run()
     suite.refresh_from_db()
     assert suite.verdict == 'failed'
     assert suite.finished_at

@@ -40,7 +40,7 @@
         {% endif %}
       </button>
     </form>
-    <p>{% trans "Refresh to update. Publishing ends before a suite finishes: queued and running tasks must drain first." %}</p>
+    <p>{% trans "Refresh to update. Draining means publication has ended and the coordinator is waiting for queued, running, or retrying tasks to finish." %}</p>
   {% endif %}
   {% if suite.heartbeat_stale %}
     <p role="alert">{% trans "The coordinator heartbeat is overdue. The worker may be unavailable; these results may be incomplete." %}</p>
@@ -65,12 +65,14 @@
           {% endif %}
         </dd>
         <dt>{% trans "Coordinator heartbeat" %}</dt>
-        <dd>{{ suite.heartbeat_at|default:"—" }}</dd>
+        <dd>{{ suite.heartbeat_at|default:"—" }} <small>{% trans "Last progress update recorded by the coordinator." %}</small></dd>
         <dt>{% trans "Coordinator task" %}</dt>
         <dd>{{ suite.coordinator_task_id }}</dd>
+        <dt>{% trans "Execution deadline" %}</dt>
+        <dd>{{ suite.deadline_at|default:"—" }} <small>{% trans "The cutoff includes time spent waiting in the queue. Outstanding tasks can be marked as failed at this point." %}</small></dd>
         {% if suite.config.suite_type and suite.config.suite_type != 'load' %}
-          <dt>Queue / execution deadline</dt>
-          <dd>{{ suite.config.queue }} / {{ suite.deadline_at }}</dd>
+          <dt>{% trans "Scenario task queue" %}</dt>
+          <dd>{{ suite.config.queue }}</dd>
           <dt>Preset version</dt><dd>{{ suite.config.preset_version }}</dd>
           {% if suite.config.suite_type == 'workflow' %}
             <dt>Workflow sets / chain length / group size / chord header size</dt>
@@ -107,7 +109,7 @@
     <div class="dcr-card__body">
       <h2>{% trans "Task outcomes" %}</h2>
       <p>{% trans "Submitted" %}: {{ metrics.total }} · {% trans "Published" %}: {{ metrics.published }} · {% trans "Queued" %}: {{ metrics.queued }} · {% trans "Running" %}: {{ metrics.running|default_if_none:"—" }} · {% trans "Retrying" %}: {{ metrics.retrying }} · {% trans "Succeeded" %}: {{ metrics.succeeded }} · {% trans "Failed" %}: {{ metrics.failed }} · {% trans "Cancelled" %}: {{ metrics.cancelled|default_if_none:"—" }}</p>
-      <p>{% trans "Failure rate (failed / succeeded + failed)" %}: {{ metrics.failure_percent|floatformat:2|default:"—" }}%</p>
+      <p>{% trans "Failure rate among succeeded and failed tasks" %}: {{ metrics.failure_percent|floatformat:2|default:"—" }}%</p>
       <h3>{% trans "Successful task latency" %}</h3>
       <table class="dcr-table">
         <thead>
