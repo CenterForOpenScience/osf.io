@@ -2,7 +2,7 @@ import pytest
 from django.contrib.auth.models import Group
 from django.core.exceptions import PermissionDenied
 from django.http import Http404
-from django.test import RequestFactory
+from django.test import RequestFactory, override_settings
 from django.urls import reverse
 
 from admin.guids.views import GuidDetailView, GuidReassignView, GuidSearchView
@@ -99,6 +99,7 @@ class TestGuidDetailViewReferents(AdminTestCase):
         assert response.context_data['can_reassign'] is True
 
 
+@override_settings(GUID_REASSIGN_ENABLED=True)
 class TestGuidReassignView(AdminTestCase):
     def setUp(self):
         super().setUp()
