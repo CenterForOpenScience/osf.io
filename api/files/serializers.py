@@ -31,6 +31,7 @@ from addons.base.utils import get_mfr_url
 from api.base.serializers import (
     FileRelationshipField,
     format_relationship_links,
+    GuidRedirectUrlMixin,
     IDField,
     GuidOrIDField,
     JSONAPIListField,
@@ -182,7 +183,7 @@ def disambiguate_files_related_view_kwargs(filenode):
             'provider': '<provider>',
         }
 
-class BaseFileSerializer(JSONAPISerializer):
+class BaseFileSerializer(GuidRedirectUrlMixin, JSONAPISerializer):
     filterable_fields = frozenset([
         'id',
         'name',
@@ -258,6 +259,7 @@ class BaseFileSerializer(JSONAPISerializer):
         'render': 'get_render_link',
         'html': 'absolute_url',
         'new_folder': WaterbutlerLink(must_be_folder=True, kind='folder'),
+        'redirect_url': 'get_redirect_url',
     })
 
     def absolute_url(self, obj):

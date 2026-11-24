@@ -101,6 +101,10 @@ class BaseSignpostLinkset(MetadataSerializer, abc.ABC):
             for mime_type in self.basket[_file_iri:DCAT.mediaType]:
                 yield SignpostLink(focus_iri, 'item', str(_file_iri), [('type', mime_type)])
 
+        # redirect url
+        for _redirect_url in self.basket[OSF.redirectUrl]:
+            yield SignpostLink(focus_iri, str(OSF.redirectUrl), str(_redirect_url))
+
 
 class SignpostLinkset(BaseSignpostLinkset):
     mediatype = 'application/linkset'

@@ -2,7 +2,7 @@ from urllib.parse import urljoin
 
 from django.urls import resolve, reverse
 
-from api.base.serializers import JSONAPISerializer, IDField, TypeField, RelatedLambdaRelationshipField, RelationshipField, LinksField
+from api.base.serializers import GuidRedirectUrlMixin, JSONAPISerializer, IDField, TypeField, RelatedLambdaRelationshipField, RelationshipField, LinksField
 from api.base.utils import absolute_reverse
 from osf.models import OSFUser, AbstractNode, Registration, Guid, BaseFileNode, Collection, Node, Preprint
 from website import settings as website_settings
@@ -48,7 +48,7 @@ def get_custom_metadata_view(referent):
         return 'custom-file-metadata:custom-file-metadata-detail'
     return 'custom-item-metadata:custom-item-metadata-detail'
 
-class GuidSerializer(JSONAPISerializer):
+class GuidSerializer(GuidRedirectUrlMixin, JSONAPISerializer):
 
     class Meta:
         type_ = 'guids'
@@ -73,6 +73,7 @@ class GuidSerializer(JSONAPISerializer):
     links = LinksField({
         'self': 'get_absolute_url',
         'html': 'get_absolute_html_url',
+        'redirect_url': 'get_redirect_url',
     })
 
     def get_type(self, guid):

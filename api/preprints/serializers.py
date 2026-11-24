@@ -20,6 +20,7 @@ from api.base.serializers import (
     WaterbutlerLink,
     HideIfPreprint,
     LinkedNodesRelationshipSerializer,
+    GuidRedirectUrlMixin,
 )
 from api.base.settings import BULK_SETTINGS
 from api.base.utils import absolute_reverse, get_user_auth
@@ -92,7 +93,7 @@ class PreprintLicenseRelationshipField(RelationshipField):
         raise exceptions.NotFound('Unable to find specified license.')
 
 
-class PreprintSerializer(TaxonomizableSerializerMixin, MetricsSerializerMixin, JSONAPISerializer):
+class PreprintSerializer(GuidRedirectUrlMixin, TaxonomizableSerializerMixin, MetricsSerializerMixin, JSONAPISerializer):
     filterable_fields = frozenset([
         'id',
         'title',
@@ -244,6 +245,7 @@ class PreprintSerializer(TaxonomizableSerializerMixin, MetricsSerializerMixin, J
             'html': 'get_absolute_html_url',
             'doi': 'get_article_doi_url',
             'preprint_doi': 'get_preprint_doi_url',
+            'redirect_url': 'get_redirect_url',
         },
     )
 

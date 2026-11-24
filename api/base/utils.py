@@ -12,7 +12,7 @@ from rest_framework import exceptions
 from rest_framework.exceptions import NotFound
 from rest_framework.reverse import reverse
 
-from api.base.exceptions import Gone, UserGone
+from api.base.exceptions import Gone, UserGone, with_redirect_url
 from api.base.settings import HASHIDS_SALT
 from framework.auth import Auth
 from framework.auth.cas import CasResponse
@@ -158,7 +158,7 @@ def get_object_or_error(model_or_qs, query_or_pk=None, request=None, display_nam
             AbstractNode = apps.get_model('osf', 'AbstractNode')
             spammy_node = isinstance(obj, AbstractNode) and obj.is_spammy
             raise Gone(
-                detail=f'The requested {display_name} is no longer available.', meta={'flagged_content': True} if spammy_node else {},
+                detail=f'The requested {display_name} is no longer available.', meta=with_redirect_url(obj, {'flagged_content': True} if spammy_node else {}),
             )
     return obj
 

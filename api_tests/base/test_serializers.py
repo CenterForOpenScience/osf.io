@@ -195,6 +195,7 @@ class TestNodeSerializerAndRegistrationSerializerDifferences(ApiTestCase):
             'subjects',
             'wiki_enabled',
             'cedar_metadata_records',
+            'redirect_automatically',
         ]
         # fields that do not appear on registrations
         non_registration_fields = [
