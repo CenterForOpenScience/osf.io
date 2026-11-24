@@ -1,0 +1,17 @@
+{% extends "admin/dj_celery_panel/base.html" %}
+{% load i18n %}
+{% block panel_page_content %}
+  <h1>{% trans "Correctness and recovery suites" %}</h1>
+  {% include "admin/dj_celery_panel/suite_presets.html" %}
+  {% if selected_preset == 'retry' %}
+    <p>{% trans "Check that transient failures recover, persistent failures exhaust their retries, and non-retryable failures stop after one attempt. The suite compares the recorded outcomes and retry timing with the expected behavior." %}</p>
+  {% else %}
+    <p>{% trans "Check that chain steps pass results in order, group tasks finish independently, and each chord runs its callback once with the header results. This preset requires a result backend that supports chords." %}</p>
+  {% endif %}
+  <form method="post">
+    {% csrf_token %}
+    <input type="hidden" name="preset" value="{{ selected_preset }}">
+    {{ form.as_p }}
+    <button type="submit" class="dcr-btn dcr-btn--primary">{% trans "Start suite" %}</button>
+  </form>
+{% endblock %}
