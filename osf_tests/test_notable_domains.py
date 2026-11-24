@@ -621,3 +621,62 @@ class TestProtectedAuthorContentNotFlagged:
             )
         other.refresh_from_db()
         assert (other.spam_status == SpamStatus.FLAGGED) is (not protected)
+
+
+@pytest.mark.django_db
+class TestHamContentContributorStillChecked:
+    """A user who only contributes to HAM content is not banned, but their new content is still checked."""
+
+    @pytest.fixture()
+    def excluded(self):
+        return NotableDomain.objects.create(
+            domain='broken-excluded.example.com',
+            note=NotableDomain.Note.EXCLUDE_FROM_ACCOUNT_CREATION_AND_CONTENT,
+        )
+
+    @pytest.fixture()
+    def ham_content_contributor(self):
+        user = UserFactory()
+        ham_node = NodeFactory(is_public=True)
+        ham_node.add_contributor(user, save=True)
+        ham_node.confirm_ham(save=True)
+        assert user.is_protected_from_auto_spam
+        assert not user.is_hammy
+        return user
+
+    def test_check_spam_runs_for_ham_content_contributor(self, ham_content_contributor):
+        node = NodeFactory(creator=ham_content_contributor, is_public=True)
+        with mock.patch.object(type(node), 'do_check_spam') as do_check_spam, \
+                mock.patch.object(type(node), '_get_spam_content', return_value='some content'):
+            node.check_spam(ham_content_contributor, None, {})
+        do_check_spam.assert_called_once()
+
+    @pytest.mark.parametrize('kind', ['ham', 'assumed_ham'])
+    def test_check_spam_skipped_for_ham_and_assumed_ham(self, kind):
+        user = UserFactory()
+        if kind == 'ham':
+            user.confirm_ham(save=True)
+        else:
+            NotableDomain.objects.create(domain='trusted.edu', note=NotableDomain.Note.ASSUME_HAM_UNTIL_REPORTED)
+            user.emails.create(address='someone@trusted.edu')
+        node = NodeFactory(creator=user, is_public=True)
+        with mock.patch.object(type(node), 'do_check_spam') as do_check_spam, \
+                mock.patch.object(type(node), '_get_spam_content', return_value='some content'):
+            node.check_spam(user, None, {})
+        do_check_spam.assert_not_called()
+
+    def test_excluded_domain_flags_project_but_not_contributor(self, excluded, ham_content_contributor, mock_spam_head_request):
+        mock_spam_head_request.side_effect = spam_tasks.requests.exceptions.ConnectionError
+        node = NodeFactory(creator=ham_content_contributor, is_public=True)
+        spam_tasks.check_resource_for_spam_postcommit(
+            node._id,
+            'see broken-excluded.example.com',
+            ham_content_contributor.fullname,
+            ham_content_contributor.username,
+            {},
+        )
+        node.refresh_from_db()
+        ham_content_contributor.refresh_from_db()
+        assert node.spam_status == SpamStatus.SPAM
+        assert not ham_content_contributor.is_disabled
+        assert ham_content_contributor.spam_status != SpamStatus.SPAM
