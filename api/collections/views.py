@@ -66,6 +66,7 @@ class CollectionMixin:
             self.kwargs[self.obj_lookup_url_kwarg],
             self.request,
             display_name='collection',
+            allow_select_for_update=True,
         )
         # May raise a permission denied
         if check_object_permissions:
