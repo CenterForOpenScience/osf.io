@@ -8,7 +8,9 @@ from django.utils import timezone
 from osf.models import Preprint
 from osf_tests.factories import PreprintFactory, PreprintProviderFactory
 from osf.management.commands.resync_preprint_dois_v1 import (
+    get_preprints_needing_unversioned_doi,
     get_preprints_needing_v1_doi,
+    register_missing_unversioned_dois,
     resync_preprint_dois_v1,
     resync_preprint_dois_v1_task,
 )
@@ -337,3 +339,161 @@ class TestResyncPreprintDoisV1Command:
         mock_identifier_task.apply_async.assert_not_called()
         preprint.refresh_from_db()
         assert preprint.doi_resync_queued_at is None
+
+
+@pytest.fixture()
+def preprint_needing_unversioned(provider):
+    pp = PreprintFactory(provider=provider, is_published=True)
+    pp.set_identifier_values(doi=settings.DOI_FORMAT.format(prefix=provider.doi_prefix, guid=pp._id), save=True)
+    return pp
+
+
+def _make_unversioned_candidate(provider):
+    pp = PreprintFactory(provider=provider, is_published=True)
+    pp.set_identifier_values(doi=settings.DOI_FORMAT.format(prefix=provider.doi_prefix, guid=pp._id), save=True)
+    return pp
+
+
+TASK_PATH = 'osf.management.commands.resync_preprint_dois_v1.async_request_identifier_update'
+
+
+class TestGetPreprintsNeedingUnversionedDoi:
+
+    def test_includes_v1_preprint_without_unversioned(self, preprint_needing_unversioned):
+        assert preprint_needing_unversioned in get_preprints_needing_unversioned_doi()
+
+    def test_excludes_preprint_with_unversioned(self, preprint_needing_unversioned):
+        preprint_needing_unversioned.set_identifier_value('doi_unversioned', '10.31219/osf.io/x')
+        assert preprint_needing_unversioned not in get_preprints_needing_unversioned_doi()
+
+    def test_excludes_preprint_without_versioned_doi(self, preprint):
+        assert preprint not in get_preprints_needing_unversioned_doi()
+
+    def test_excludes_private_preprint(self, preprint_needing_unversioned):
+        Preprint.objects.filter(id=preprint_needing_unversioned.id).update(is_public=False)
+        assert preprint_needing_unversioned not in get_preprints_needing_unversioned_doi()
+
+    def test_excludes_provider_without_prefix(self, preprint_needing_unversioned):
+        provider = preprint_needing_unversioned.provider
+        provider.doi_prefix = ''
+        provider.save()
+        assert preprint_needing_unversioned not in get_preprints_needing_unversioned_doi()
+
+    def test_fresh_in_flight_excluded_stale_included(self, preprint_needing_unversioned):
+        Preprint.objects.filter(id=preprint_needing_unversioned.id).update(doi_resync_queued_at=timezone.now())
+        assert preprint_needing_unversioned not in get_preprints_needing_unversioned_doi()
+        stale = timezone.now() - settings.PREPRINT_DOI_RESYNC_INFLIGHT_TIMEOUT - timedelta(minutes=1)
+        Preprint.objects.filter(id=preprint_needing_unversioned.id).update(doi_resync_queued_at=stale)
+        assert preprint_needing_unversioned in get_preprints_needing_unversioned_doi()
+
+    def test_provider_filter(self, preprint_needing_unversioned):
+        other = PreprintProviderFactory()
+        assert preprint_needing_unversioned not in get_preprints_needing_unversioned_doi(provider_id=other._id)
+        assert preprint_needing_unversioned in get_preprints_needing_unversioned_doi(
+            provider_id=preprint_needing_unversioned.provider._id
+        )
+
+
+class TestRegisterMissingUnversionedDois:
+
+    @mock.patch(TASK_PATH)
+    def test_queues_and_marks_in_flight(self, mock_task, preprint_needing_unversioned):
+        result = register_missing_unversioned_dois(dry_run=False, batch_size=10)
+        mock_task.apply_async.assert_called_once_with(kwargs={'preprint_id': preprint_needing_unversioned._id})
+        assert result.queued == 1
+        preprint_needing_unversioned.refresh_from_db()
+        assert preprint_needing_unversioned.doi_resync_queued_at is not None
+
+    @mock.patch(TASK_PATH)
+    def test_dry_run_queues_nothing(self, mock_task, preprint_needing_unversioned):
+        register_missing_unversioned_dois(dry_run=True)
+        mock_task.apply_async.assert_not_called()
+
+    @mock.patch(TASK_PATH)
+    def test_capacity_limits(self, mock_task, provider):
+        for _ in range(4):
+            _make_unversioned_candidate(provider)
+        result = register_missing_unversioned_dois(dry_run=False, batch_size=100, capacity=2)
+        assert result.queued == 2
+        assert result.remaining == 2
+
+    @mock.patch(TASK_PATH)
+    def test_zero_capacity_queues_nothing_and_logs_why(self, mock_task, preprint_needing_unversioned, caplog):
+        with caplog.at_level('WARNING'):
+            result = register_missing_unversioned_dois(dry_run=False, capacity=0)
+        assert result.queued == 0
+        assert result.total == 1
+        assert 'capacity=0' in caplog.text
+
+
+class TestTaskCapacityAndStall:
+
+    @mock.patch(TASK_PATH)
+    def test_saturated_in_flight_blocks_both_passes_and_backs_off(self, mock_task, provider, preprint_needing_unversioned, preprint):
+        # 1 slot total, held by an unrelated in-flight preprint
+        holder = _make_unversioned_candidate(provider)
+        Preprint.objects.filter(id=holder.id).update(doi_resync_queued_at=timezone.now())
+        with mock.patch('osf.management.commands.resync_preprint_dois_v1.settings.PREPRINT_DOI_RESYNC_MAX_IN_FLIGHT', 1), \
+                mock.patch.object(resync_preprint_dois_v1_task, 'apply_async') as reschedule:
+            resync_preprint_dois_v1_task(batch_size=10, dry_run=False)
+        mock_task.apply_async.assert_not_called()
+        kwargs = reschedule.call_args.kwargs
+        assert kwargs['kwargs']['stalled_ticks'] == 1
+        assert kwargs['countdown'] == settings.PREPRINT_DOI_RESYNC_DISPATCH_INTERVAL.total_seconds() * 2
+
+    @mock.patch(TASK_PATH)
+    def test_backoff_is_capped(self, mock_task, preprint_needing_unversioned):
+        with mock.patch('osf.management.commands.resync_preprint_dois_v1.settings.PREPRINT_DOI_RESYNC_MAX_IN_FLIGHT', 0), \
+                mock.patch.object(resync_preprint_dois_v1_task, 'apply_async') as reschedule:
+            resync_preprint_dois_v1_task(batch_size=10, dry_run=False, stalled_ticks=30)
+        assert reschedule.call_args.kwargs['countdown'] <= settings.PREPRINT_DOI_RESYNC_MAX_BACKOFF.total_seconds()
+
+    @mock.patch(TASK_PATH)
+    def test_progress_resets_stall_counter(self, mock_task, preprint_needing_unversioned):
+        with mock.patch.object(resync_preprint_dois_v1_task, 'apply_async') as reschedule:
+            resync_preprint_dois_v1_task(batch_size=1, dry_run=False, stalled_ticks=5)
+        # unversioned candidate queued -> no reschedule needed or counter reset
+        if reschedule.called:
+            assert reschedule.call_args.kwargs['kwargs']['stalled_ticks'] == 0
+
+    @mock.patch(TASK_PATH)
+    def test_unversioned_not_starved_by_v1_backlog(self, mock_task, provider, preprint_needing_unversioned):
+        for _ in range(6):
+            pp = PreprintFactory(provider=provider, is_published=True)
+            pp.set_identifier_values(doi=settings.DOI_FORMAT.format(prefix=provider.doi_prefix, guid=pp.get_guid()._id), save=True)
+        with mock.patch('osf.management.commands.resync_preprint_dois_v1.settings.PREPRINT_DOI_RESYNC_MAX_IN_FLIGHT', 4), \
+                mock.patch.object(resync_preprint_dois_v1_task, 'apply_async'):
+            resync_preprint_dois_v1_task(batch_size=100, dry_run=False)
+        queued_ids = {c.kwargs['kwargs']['preprint_id'] for c in mock_task.apply_async.call_args_list}
+        assert preprint_needing_unversioned._id in queued_ids
+        assert len(queued_ids) == 4
+
+    @mock.patch(TASK_PATH)
+    def test_capacity_is_global_across_providers(self, mock_task, provider, preprint_needing_unversioned):
+        other = PreprintProviderFactory()
+        other.doi_prefix = '10.99999'
+        other.save()
+        other_pp = PreprintFactory(provider=other, is_published=True)
+        Preprint.objects.filter(id=other_pp.id).update(doi_resync_queued_at=timezone.now())
+        with mock.patch('osf.management.commands.resync_preprint_dois_v1.settings.PREPRINT_DOI_RESYNC_MAX_IN_FLIGHT', 1), \
+                mock.patch.object(resync_preprint_dois_v1_task, 'apply_async'):
+            resync_preprint_dois_v1_task(batch_size=10, dry_run=False, provider_id=provider._id)
+        # The other provider's in-flight preprint still consumes the single global slot.
+        mock_task.apply_async.assert_not_called()
+
+    @mock.patch(TASK_PATH)
+    def test_lifecycle_drains_backlog_and_stops(self, mock_task, provider):
+        candidates = [_make_unversioned_candidate(provider) for _ in range(3)]
+        with mock.patch('osf.management.commands.resync_preprint_dois_v1.settings.PREPRINT_DOI_RESYNC_MAX_IN_FLIGHT', 2), \
+                mock.patch.object(resync_preprint_dois_v1_task, 'apply_async') as reschedule:
+            resync_preprint_dois_v1_task(batch_size=100, dry_run=False)
+            assert reschedule.call_count == 1  # 1 left over
+            # Crossref confirms the first two: unversioned DOI stored, marker cleared
+            for pp in Preprint.objects.filter(doi_resync_queued_at__isnull=False):
+                pp.set_identifier_value('doi_unversioned', '10.31219/osf.io/' + pp.get_guid()._id)
+                Preprint.objects.filter(id=pp.id).update(doi_resync_queued_at=None)
+            reschedule.reset_mock()
+            resync_preprint_dois_v1_task(batch_size=100, dry_run=False)
+            reschedule.assert_not_called()
+        assert mock_task.apply_async.call_count == 3
+        assert len(candidates) == 3

@@ -14,6 +14,26 @@ from website.preprints.tasks import mint_doi_on_crossref_fail
 logger = logging.getLogger(__name__)
 
 
+def _get_v1_preprint(guid):
+    base_guid, _ = Guid.split_guid(guid)
+    if not base_guid:
+        return None
+    return Preprint.objects.filter(
+        versioned_guids__guid___id=base_guid,
+        versioned_guids__version=1,
+    ).first()
+
+
+def _clear_doi_resync_marker(guid):
+    # The marker lives on v1; a result for a later version says nothing about v1's pending submission.
+    _, version = Guid.split_guid(guid)
+    if version not in (None, '1'):
+        return
+    v1_preprint = _get_v1_preprint(guid) if guid else None
+    if v1_preprint:
+        Preprint.objects.filter(id=v1_preprint.id).update(doi_resync_queued_at=None)
+
+
 class ParseCrossRefConfirmation(APIView):
     # This view goes under the _/ namespace
     view_name = 'parse_crossref_confirmation_email'
@@ -57,13 +77,10 @@ class ParseCrossRefConfirmation(APIView):
                     if not version:
                         logger.info(f'Unversioned DOI confirmed by CrossRef: {doi}')
                         if guid:
-                            v1_preprint = Preprint.objects.filter(
-                                versioned_guids__guid___id=guid,
-                                versioned_guids__version=1,
-                            ).first()
+                            v1_preprint = _get_v1_preprint(guid)
                             if v1_preprint:
                                 v1_preprint.set_identifier_value(category='doi_unversioned', value=doi)
-                                Preprint.objects.filter(id=v1_preprint.id).update(doi_resync_queued_at=None)
+                                _clear_doi_resync_marker(guid)
                         dois_processed += 1
                         continue
 
@@ -93,9 +110,22 @@ class ParseCrossRefConfirmation(APIView):
                     # 2 records (versioned + unversioned DOI), so we continue instead of break to allow
                     # the remaining record to be processed.
                     elif 'less or equal to previously submitted version' in record.find('msg').text:
+                        # Crossref already holds this DOI, so record it locally; otherwise the preprint stays
+                        # eligible for the resync passes and is resubmitted (and rejected) on every tick.
+                        if doi and guid:
+                            _, rejected_version = Guid.split_guid(guid)
+                            if not rejected_version:
+                                v1_preprint = _get_v1_preprint(guid)
+                                if v1_preprint:
+                                    v1_preprint.set_identifier_value(category='doi_unversioned', value=doi)
+                            elif rejected_version == '1' and preprint and not preprint.get_identifier_value('doi'):
+                                preprint.set_identifier_value(category='doi', value=doi)
+                        _clear_doi_resync_marker(guid)
                         dois_processed += 1
                         continue
                     else:
+                        # Keep the marker: the in-flight timeout acts as a cooldown, so a record
+                        # Crossref keeps rejecting isn't resubmitted on every dispatcher tick.
                         unexpected_errors = True
             logger.info(f'Creation success email received from CrossRef for preprints: {guids}')
 

@@ -29,12 +29,23 @@ class ResyncPassResult:
 
 def get_in_flight_doi_resync_count():
     # Preprints with a DOI resync request dispatched to Crossref that hasn't been confirmed or gone stale.
+    # Always global: the limit protects Crossref, so it must not be multiplied by the number of providers.
     cutoff = timezone.now() - settings.PREPRINT_DOI_RESYNC_INFLIGHT_TIMEOUT
     return Preprint.objects.filter(doi_resync_queued_at__gte=cutoff).count()
 
 
 def get_available_doi_resync_capacity():
     return max(0, settings.PREPRINT_DOI_RESYNC_MAX_IN_FLIGHT - get_in_flight_doi_resync_count())
+
+
+def get_doi_resync_stats(provider_id=None):
+    """Snapshot of the resync backlog, handy from a shell when the dispatcher looks stuck."""
+    return {
+        'in_flight': get_in_flight_doi_resync_count(),
+        'capacity': get_available_doi_resync_capacity(),
+        'v1_eligible': get_preprints_needing_v1_doi(provider_id).count(),
+        'unversioned_eligible': get_preprints_needing_unversioned_doi(provider_id).count(),
+    }
 
 
 def _not_in_flight_query():
@@ -55,6 +66,16 @@ def _batch_for_pass(preprints_to_update, dry_run, batch_size, capacity):
         capacity = get_available_doi_resync_capacity()
     effective_batch_size = min(batch_size, capacity) if batch_size else capacity
     return preprints_to_update[:effective_batch_size] if effective_batch_size else []
+
+
+def _log_if_blocked(pass_name, total, queued, dry_run, capacity):
+    if dry_run or total == 0 or queued > 0:
+        return
+    logger.warning(
+        f'DOI resync ({pass_name}) queued nothing although {total} preprints are eligible: '
+        f'capacity={capacity}, in_flight={get_in_flight_doi_resync_count()}, '
+        f'max_in_flight={settings.PREPRINT_DOI_RESYNC_MAX_IN_FLIGHT}. Waiting for Crossref confirmations.'
+    )
 
 
 def get_preprints_needing_v1_doi(provider_id=None):
@@ -120,6 +141,7 @@ def resync_preprint_dois_v1(dry_run=True, batch_size=1000, provider_id=None, cap
             logger.exception(f'Failed to queue DOI resync for preprint {preprint._id}')
             errored += 1
 
+    _log_if_blocked('v1', total, queued, dry_run, capacity)
     logger.info(
         f'{"[DRY RUN] " if dry_run else ""}'
         f'Done: {queued} preprints queued, {errored} errored'
@@ -203,6 +225,7 @@ def register_missing_unversioned_dois(dry_run=True, batch_size=1000, provider_id
             logger.exception(f'Failed to queue unversioned DOI registration for preprint {preprint._id}')
             errored += 1
 
+    _log_if_blocked('unversioned', total, queued, dry_run, capacity)
     logger.info(
         f'{"[DRY RUN] " if dry_run else ""}'
         f'Unversioned DOI pass done: {queued} queued, {errored} errored'
@@ -217,14 +240,19 @@ def register_missing_unversioned_dois(dry_run=True, batch_size=1000, provider_id
 
 
 @app.task(bind=True, name='osf.management.commands.resync_preprint_dois_v1', max_retries=0)
-def resync_preprint_dois_v1_task(self, batch_size=1000, dry_run=False, provider_id=None):
+def resync_preprint_dois_v1_task(self, batch_size=1000, dry_run=False, provider_id=None, stalled_ticks=0):
     capacity = None if dry_run else get_available_doi_resync_capacity()
+
+    v1_capacity = capacity
+    if capacity is not None:
+        unversioned_backlog = get_preprints_needing_unversioned_doi(provider_id).count()
+        v1_capacity = capacity - min(capacity // 2, unversioned_backlog)
 
     v1_result = resync_preprint_dois_v1(
         dry_run=dry_run,
         batch_size=batch_size,
         provider_id=provider_id,
-        capacity=capacity,
+        capacity=v1_capacity,
     )
     if capacity is not None:
         capacity = max(0, capacity - v1_result.queued)
@@ -237,18 +265,24 @@ def resync_preprint_dois_v1_task(self, batch_size=1000, dry_run=False, provider_
     )
 
     if not dry_run and (v1_result.remaining > 0 or unversioned_result.remaining > 0):
+        made_progress = (v1_result.queued + unversioned_result.queued) > 0
+        stalled_ticks = 0 if made_progress else stalled_ticks + 1
+        interval = settings.PREPRINT_DOI_RESYNC_DISPATCH_INTERVAL
+        # Back off exponentially while nothing can be queued (waiting on Crossref) instead of polling every tick.
+        delay = min(interval * (2 ** min(stalled_ticks, 10)), settings.PREPRINT_DOI_RESYNC_MAX_BACKOFF) if stalled_ticks else interval
         logger.info(
-            f'Rescheduling DOI resync dispatcher in '
-            f'{settings.PREPRINT_DOI_RESYNC_DISPATCH_INTERVAL} '
-            f'({v1_result.remaining} v1 + {unversioned_result.remaining} unversioned remaining)'
+            f'Rescheduling DOI resync dispatcher in {delay} '
+            f'({v1_result.remaining} v1 + {unversioned_result.remaining} unversioned remaining, '
+            f'stalled_ticks={stalled_ticks})'
         )
         self.apply_async(
             kwargs={
                 'batch_size': batch_size,
                 'dry_run': dry_run,
                 'provider_id': provider_id,
+                'stalled_ticks': stalled_ticks,
             },
-            countdown=settings.PREPRINT_DOI_RESYNC_DISPATCH_INTERVAL.total_seconds(),
+            countdown=delay.total_seconds(),
         )
 
 

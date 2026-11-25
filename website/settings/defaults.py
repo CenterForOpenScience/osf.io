@@ -423,8 +423,11 @@ CROSSREF_JSON_API_URL = 'https://api.crossref.org/'
 PREPRINT_DOI_RESYNC_MAX_IN_FLIGHT = 1000
 # Reschedule interval while there's still eligible work and free capacity.
 PREPRINT_DOI_RESYNC_DISPATCH_INTERVAL = timedelta(minutes=5)
+# Upper bound for the exponential backoff applied while the dispatcher cannot queue anything (waiting on Crossref).
+PREPRINT_DOI_RESYNC_MAX_BACKOFF = timedelta(hours=1)
 # Preprint that hasn't received a Crossref confirmation within this window is treated as `stale` and it becomes eligible to be resync again.
-PREPRINT_DOI_RESYNC_INFLIGHT_TIMEOUT = timedelta(hours=24)
+# Crossref can take days to process a large backlog, so this must be longer than that to avoid duplicate submissions.
+PREPRINT_DOI_RESYNC_INFLIGHT_TIMEOUT = timedelta(days=4)
 
 
 # Leave as `None` for production, test/staging/local envs must set
