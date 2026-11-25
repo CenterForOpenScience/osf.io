@@ -30,14 +30,13 @@ DEBUG_PROPAGATE_EXCEPTIONS = True
 
 # session:
 SESSION_COOKIE_NAME = 'admin'
-SESSION_COOKIE_SECURE = osf_settings.SECURE_MODE
+SESSION_COOKIE_SECURE = osf_settings.SESSION_COOKIE_SECURE
 SESSION_COOKIE_HTTPONLY = osf_settings.SESSION_COOKIE_HTTPONLY
 
 # csrf:
 CSRF_COOKIE_NAME = 'admin-csrf'
-CSRF_COOKIE_SECURE = osf_settings.SECURE_MODE
-# set to False for admin draft registration uses a SPA and ajax and grab the token to use it in the requests
-CSRF_COOKIE_HTTPONLY = False
+CSRF_COOKIE_SECURE = osf_settings.SESSION_COOKIE_SECURE
+CSRF_COOKIE_HTTPONLY = True
 
 ALLOWED_HOSTS = [
     '.osf.io'
