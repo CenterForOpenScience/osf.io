@@ -6,6 +6,13 @@
 {% endblock title %}
 {% block content %}
     <div class="container-fluid">
+        {% if messages %}
+            <ul class="messages">
+                {% for message in messages %}
+                    <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
+                {% endfor %}
+            </ul>
+        {% endif %}
         <div class="row">
             <form action="{% url 'preprints:search' %}" method="post">
                 {% csrf_token %}

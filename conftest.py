@@ -35,8 +35,6 @@ SILENT_LOGGERS = [
     'framework.auth.core',
     'website.app',
     'website.archiver.tasks',
-    'website.search.elastic_search',
-    'website.search_migration.migrate',
     'website.util.paths',
     'requests_oauthlib.oauth2_session',
     'transitions.core',

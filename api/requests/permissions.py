@@ -1,6 +1,7 @@
 from rest_framework import exceptions, permissions as drf_permissions
 
 from api.base.utils import get_user_auth
+from api.preprints.permissions import MIGRATED_PREPRINT_ERROR
 from osf.models import (
     Node,
     NodeRequestAction,
@@ -120,6 +121,9 @@ class PreprintRequestPermission(drf_permissions.BasePermission):
         else:
             if not has_view_permission:
                 return False
+
+            if preprint.is_migrated:
+                raise exceptions.PermissionDenied(detail=MIGRATED_PREPRINT_ERROR)
 
             if trigger in [DefaultTriggers.ACCEPT.value, DefaultTriggers.REJECT.value]:
                 # Only moderators can approve or reject requests

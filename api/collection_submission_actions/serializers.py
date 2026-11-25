@@ -14,6 +14,7 @@ from api.base.exceptions import JSONAPIAttributeException
 from django.core.exceptions import PermissionDenied
 from transitions import MachineError
 from framework.exceptions import PermissionsError
+from osf.exceptions import LicenseNotAcceptedError
 from api.base.exceptions import Conflict
 from django.core.exceptions import ValidationError
 
@@ -99,6 +100,8 @@ class CollectionSubmissionActionSerializer(JSONAPISerializer):
                 f'Trigger "{trigger.db_name}" is not supported for the target CollectionSubmission '
                 f'with id [{collection_submission._id}] in state "{collection_submission.state.db_name}"',
             )
+        except LicenseNotAcceptedError as exc:
+            raise ValidationError(str(exc))
         except ValueError as exc:
             raise ValidationError(exc)
         return collection_submission.actions.last()

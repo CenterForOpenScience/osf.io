@@ -770,6 +770,25 @@ class TestOsfGathering(TestCase):
             (_withdrawal_bnode, DCTERMS.creator, osf_gathering.OsfFocus(_retraction.initiated_by)),
         })
 
+    @pytest.mark.usefixtures('mock_gravy_valet_get_verified_links')
+    def test_gather_registration_withdrawal_without_initiator(self):
+        _retraction = factories.WithdrawnRegistrationFactory(
+            registration=self.registration,
+            justification='withdrawn by support',
+        )
+        _retraction.initiated_by = None
+        _retraction.save()
+        self.registration.refresh_from_db()
+        _withdrawal_bnode = rdflib.BNode()
+        assert_triples(osf_gathering.gather_registration_withdrawal(self.registrationfocus), {
+            (self.registrationfocus.iri, OSF.dateWithdrawn, Literal(str(_retraction.date_retracted.date()))),
+            (self.registrationfocus.iri, OSF.withdrawal, _withdrawal_bnode),
+            (_withdrawal_bnode, RDF.type, OSF.Withdrawal),
+            (_withdrawal_bnode, DCTERMS.description, Literal('withdrawn by support')),
+            (_withdrawal_bnode, DCTERMS.created, Literal(str(_retraction.initiation_date.date()))),
+            (_withdrawal_bnode, DCTERMS.dateAccepted, Literal(str(_retraction.date_retracted.date()))),
+        })
+
     def test_gather_preprint_withdrawal(self):
         # non-withdrawn
         assert_triples(osf_gathering.gather_preprint_withdrawal(self.preprintfocus), set())

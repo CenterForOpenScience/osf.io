@@ -1,7 +1,8 @@
-from rest_framework import permissions as drf_permissions
+from rest_framework import exceptions, permissions as drf_permissions
 
 from api.base.utils import get_user_auth
-from osf.models import CollectionSubmissionAction
+from api.preprints.permissions import MIGRATED_PREPRINT_ERROR
+from osf.models import CollectionSubmissionAction, Preprint
 from osf.models.action import BaseAction
 from osf.models.mixins import ReviewableMixin, ReviewProviderMixin
 from osf.utils.workflows import ReviewTriggers
@@ -58,6 +59,9 @@ class ReviewActionPermission(drf_permissions.BasePermission):
 
             if not (is_node_admin or auth.user.has_perm('view_submissions', provider) or provisional_write_allowed):
                 return False
+
+            if isinstance(target, Preprint) and target.is_migrated:
+                raise exceptions.PermissionDenied(detail=MIGRATED_PREPRINT_ERROR)
 
             # User can trigger state changes on this reviewable, but can they use this trigger in particular?
             permission = TRIGGER_PERMISSIONS[trigger]

@@ -1422,21 +1422,6 @@ urllib3 = ">=1.26.2,<3"
 develop = ["aiohttp", "furo", "httpx", "opentelemetry-api", "opentelemetry-sdk", "orjson", "pytest", "pytest-asyncio", "pytest-cov", "pytest-httpserver", "pytest-mock", "requests", "respx", "sphinx (>2)", "sphinx-autodoc-typehints", "trustme"]
 
 [[package]]
-name = "elasticsearch2"
-version = "2.5.1"
-description = "Python client for Elasticsearch"
-optional = false
-python-versions = "*"
-groups = ["main"]
-files = [
-    {file = "elasticsearch2-2.5.1-py2.py3-none-any.whl", hash = "sha256:457909966bc00c37ad5639950bc4d8f4606a60baa530a8ec6d9848ba3e60ab87"},
-    {file = "elasticsearch2-2.5.1.tar.gz", hash = "sha256:f3bc508a37d04902610755777d3b20202121bdbce7b3717086e07a27affd62a6"},
-]
-
-[package.dependencies]
-urllib3 = ">=1.8,<2.0"
-
-[[package]]
 name = "elasticsearch8"
 version = "8.19.3"
 description = "Python client for Elasticsearch"
@@ -4488,20 +4473,21 @@ uritools = "*"
 
 [[package]]
 name = "urllib3"
-version = "1.26.18"
+version = "2.7.0"
 description = "HTTP library with thread-safe connection pooling, file post, and more."
 optional = false
-python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, !=3.4.*, !=3.5.*"
+python-versions = ">=3.10"
 groups = ["main", "addons", "dev"]
 files = [
-    {file = "urllib3-1.26.18-py2.py3-none-any.whl", hash = "sha256:34b97092d7e0a3a8cf7cd10e386f401b3737364026c45e622aa02903dffe0f07"},
-    {file = "urllib3-1.26.18.tar.gz", hash = "sha256:f8ecc1bba5667413457c529ab955bf8c67b45db799d159066261719e328580a0"},
+    {file = "urllib3-2.7.0-py3-none-any.whl", hash = "sha256:9fb4c81ebbb1ce9531cce37674bbc6f1360472bc18ca9a553ede278ef7276897"},
+    {file = "urllib3-2.7.0.tar.gz", hash = "sha256:231e0ec3b63ceb14667c67be60f2f2c40a518cb38b03af60abc813da26505f4c"},
 ]
 
 [package.extras]
-brotli = ["brotli (==1.0.9) ; os_name != \"nt\" and python_version < \"3\" and platform_python_implementation == \"CPython\"", "brotli (>=1.0.9) ; python_version >= \"3\" and platform_python_implementation == \"CPython\"", "brotlicffi (>=0.8.0) ; (os_name != \"nt\" or python_version >= \"3\") and platform_python_implementation != \"CPython\"", "brotlipy (>=0.6.0) ; os_name == \"nt\" and python_version < \"3\""]
-secure = ["certifi", "cryptography (>=1.3.4)", "idna (>=2.0.0)", "ipaddress ; python_version == \"2.7\"", "pyOpenSSL (>=0.14)", "urllib3-secure-extra"]
-socks = ["PySocks (>=1.5.6,!=1.5.7,<2.0)"]
+brotli = ["brotli (>=1.2.0) ; platform_python_implementation == \"CPython\"", "brotlicffi (>=1.2.0.0) ; platform_python_implementation != \"CPython\""]
+h2 = ["h2 (>=4,<5)"]
+socks = ["pysocks (>=1.5.6,!=1.5.7,<2.0)"]
+zstd = ["backports-zstd (>=1.0.0) ; python_version < \"3.14\""]
 
 [[package]]
 name = "uwsgi"
@@ -4764,4 +4750,4 @@ testing = ["coverage (>=5.0.3)", "zope.event", "zope.testing"]
 [metadata]
 lock-version = "2.1"
 python-versions = "^3.12"
-content-hash = "4e57c6af0b86e4cac001ccf6aae63657f193ec215720a84e21706cdb9483a593"
+content-hash = "5238d7c1fb4adb345664a3e9e8eb59f083bf2fc999ad7c9ca7bb7309b0928acb"

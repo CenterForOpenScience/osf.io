@@ -1427,19 +1427,6 @@ class TestArchiverBehavior(OsfTestCase):
             archive_callback(reg._id)
         assert mock_update_search.call_count == 1
 
-    @pytest.mark.enable_search
-    @mock.patch('website.search.elastic_search.delete_doc')
-    def test_archiving_nodes_not_added_to_search_on_archive_failure(self, mock_delete_index_node):
-        proj = factories.ProjectFactory()
-        reg = factories.RegistrationFactory(project=proj, archive=True)
-        reg.save()
-        with capture_notifications():
-            with nested(
-                mock.patch('osf.models.archive.ArchiveJob.archive_tree_finished', mock.Mock(return_value=True)),
-                mock.patch('osf.models.archive.ArchiveJob.success', mock.PropertyMock(return_value=False))
-            ) as (mock_finished, mock_success):
-                archive_callback(reg._id)
-
     @mock.patch('osf.models.AbstractNode.update_search')
     def test_archiving_nodes_not_added_to_search_on_archive_incomplete(self, mock_update_search):
         proj = factories.ProjectFactory()

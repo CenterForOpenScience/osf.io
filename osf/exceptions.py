@@ -42,11 +42,26 @@ class NodeStateError(NodeError):
     pass
 
 
+class LicenseNotAcceptedError(NodeStateError):
+    """Raised when a license is not in the provider's list of accepted licenses"""
+    pass
+
+
 class UserStateError(OSFError):
     """Raised when the user's state is not suitable for the requested action
 
     Example: user.gdpr_delete() is called, but the user has resources that cannot be deleted.
     """
+    pass
+
+
+class OrcidRevocationError(UserStateError):
+    """Raised when ORCiD fails to revoke an access token, e.g. when disconnecting an ORCiD identity."""
+    pass
+
+
+class OrcidTokenMissingError(UserStateError):
+    """Raised when an ORCiD identity is connected but there is no token to revoke, so it cannot be disconnected."""
     pass
 
 

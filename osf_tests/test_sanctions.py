@@ -6,7 +6,7 @@ import datetime
 from django.utils import timezone
 from transitions import MachineError
 
-from osf.models import NodeLog, Registration
+from osf.models import NodeLog, Registration, Sanction, SpamStatus
 from osf.exceptions import NodeStateError
 from osf_tests import factories
 from osf_tests.utils import mock_archive
@@ -83,6 +83,20 @@ class TestNodeEmbargoTerminations:
         assert fresh_registration.is_public is True
         assert fresh_registration.is_embargoed is False
         assert fresh_registration.moderation_state == 'accepted'
+
+    def test_failed_terminate_embargo_rolls_back_embargo_state(self, registration, user):
+        with capture_notifications():
+            registration.request_embargo_termination(user)
+        registration.spam_status = SpamStatus.SPAM
+        registration.save()
+
+        with pytest.raises(NodeStateError):
+            registration.terminate_embargo()
+
+        registration.refresh_from_db()
+        assert registration.embargo.state == Sanction.APPROVED
+        assert registration.embargo_termination_approval.state == Sanction.UNAPPROVED
+        assert not registration.is_public
 
 
 @pytest.mark.django_db

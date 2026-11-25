@@ -175,7 +175,10 @@ class CedarMetadataRecordsDetailSerializer(CedarMetadataRecordsBaseSerializer):
                 instance.is_published = value
             else:
                 continue  # ignore other attributes
-        instance.save()
+        try:
+            instance.save()
+        except ValidationError as e:
+            raise InvalidModelValueError(detail=e.messages[0])
         return instance
 
     def create(self, validated_data):

@@ -6,7 +6,7 @@ import logging
 
 from django.db.models import Q
 from django.utils import timezone
-from osf.models import Node, Preprint, Registration
+from osf.models import Node, OSFUser, Preprint, Registration
 
 logger = logging.getLogger(__name__)
 
@@ -92,5 +92,5 @@ def find_spammy_content_fast(regex, days, model, ban):
         item_data['fullname'] = item['creator__fullname']
         data.append(item_data)
         if ban:
-            model.load(item['guids___id']).suspend_spam_user(item['creator__guids___id'], self_spam=True)
+            model.load(item['guids___id']).suspend_spam_user(OSFUser.load(item['creator__guids___id']), self_spam=True)
     return data

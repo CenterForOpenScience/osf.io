@@ -153,6 +153,7 @@ class PreprintSerializer(TaxonomizableSerializerMixin, MetricsSerializerMixin, J
     date_last_transitioned = NoneIfWithdrawal(VersionedDateTimeField(read_only=True))
     version = ser.IntegerField(read_only=True)
     is_latest_version = ser.BooleanField(read_only=True)
+    is_migrated = ser.BooleanField(read_only=True)
 
     versions = RelationshipField(
         related_view='preprints:preprint-versions',

@@ -188,6 +188,7 @@ class TestPublicItemUsageReporter(RealElasticTestCase, TestCase):
         self._setup_busy_month_item1()
         self._setup_busy_month_item2()
         OsfCountedUsageEvent.refresh()
+        MonthlyPublicItemUsageReport.refresh()
 
         _empty = list_monthly_reports(PublicItemUsageReporter(self.ym_empty))
         _sparse = list_monthly_reports(PublicItemUsageReporter(self.ym_sparse))

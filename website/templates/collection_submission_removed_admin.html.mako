@@ -11,7 +11,7 @@
             will need to reapply to the collection again.
         % else:
             <a href="${remover_absolute_url}">${remover_fullname}</a> removed
-            <a href="${node_absolute_url}">${node_title}</a> from <a href="${domain + 'collections/' + collection_provider._id}">${collection_provider_name}</a>.
+            <a href="${node_absolute_url}">${node_title}</a> from <a href="${collections_link}">${collection_provider_name}</a>.
              If you wish to be associated with the collection, an admin will need to reapply to the collection again.
         % endif
     </p>

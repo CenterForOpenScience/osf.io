@@ -216,6 +216,7 @@ DESK_KEY = ''
 DESK_KEY_SECRET = ''
 
 TINYMCE_APIKEY = ''
+SECURE_REFERRER_POLICY = 'strict-origin-when-cross-origin'
 
 SHARE_URL = osf_settings.SHARE_URL
 API_DOMAIN = osf_settings.API_DOMAIN
@@ -233,3 +234,7 @@ if DEBUG:
 
 # If set to True, automated tests with extra queries will fail.
 NPLUSONE_RAISE = False
+
+# Temporarily disabled: the guid remove/reassign buttons are hidden and the reassign endpoint refuses requests.
+# The guid lookup/detail pages stay available.
+GUID_REASSIGN_ENABLED = False
