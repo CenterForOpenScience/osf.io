@@ -308,3 +308,103 @@ class TestCrossRefEmailResponse:
         preprint.reload()
         assert preprint.get_identifier_value('doi') == versioned_doi
         assert preprint.get_identifier_value('doi_unversioned') == unversioned_doi
+
+    def _post_records(self, app, url, preprint, records, expect_none=True):
+        body = ''.join(
+            f'<record_diagnostic status="{status}"><doi>{doi}</doi><msg>{msg}</msg></record_diagnostic>'
+            for doi, status, msg in records
+        )
+        xml = (
+            '<?xml version="1.0" encoding="UTF-8"?>'
+            '<doi_batch_diagnostic status="completed" sp="cs3.crossref.org">'
+            f'<submission_id>1</submission_id><batch_id>{preprint._id}</batch_id>{body}'
+            f'<batch_data><record_count>{len(records)}</record_count></batch_data>'
+            '</doi_batch_diagnostic>'
+        )
+        data = self.make_mailgun_payload(crossref_response=xml)
+        if expect_none:
+            with capture_notifications(expect_none=True):
+                app.post(url, data)
+        else:
+            app.post(url, data)
+
+    def _dois(self, preprint):
+        prefix = preprint.provider.doi_prefix
+        return (
+            settings.DOI_FORMAT.format(prefix=prefix, guid=preprint._id),
+            settings.DOI_FORMAT.format(prefix=prefix, guid=preprint.get_guid()._id),
+        )
+
+    def test_success_clears_in_flight_marker(self, app, url, preprint):
+        versioned, unversioned = self._dois(preprint)
+        preprint.doi_resync_queued_at = timezone.now()
+        preprint.save()
+        self._post_records(app, url, preprint, [
+            (versioned, 'Success', 'Successfully updated'),
+            (unversioned, 'Success', 'Successfully updated'),
+        ])
+        preprint.reload()
+        assert preprint.doi_resync_queued_at is None
+
+    def test_unversioned_success_alone_clears_in_flight_marker(self, app, url, preprint):
+        _, unversioned = self._dois(preprint)
+        preprint.doi_resync_queued_at = timezone.now()
+        preprint.save()
+        self._post_records(app, url, preprint, [(unversioned, 'Success', 'Successfully updated')])
+        preprint.reload()
+        assert preprint.doi_resync_queued_at is None
+        assert preprint.get_identifier_value('doi_unversioned') == unversioned
+
+    def test_less_or_equal_failure_clears_marker_and_stores_unversioned(self, app, url, preprint):
+        versioned, unversioned = self._dois(preprint)
+        preprint.doi_resync_queued_at = timezone.now()
+        preprint.save()
+        msg = 'Record not processed because submitted version number is less or equal to previously submitted version'
+        self._post_records(app, url, preprint, [
+            (versioned, 'Failure', msg),
+            (unversioned, 'Failure', msg),
+        ])
+        preprint.reload()
+        assert preprint.doi_resync_queued_at is None
+        assert preprint.get_identifier_value('doi_unversioned') == unversioned
+
+    def test_less_or_equal_failure_on_v1_stores_versioned_doi(self, app, url, preprint):
+        # Crossref already has the v1 DOI; without storing it the preprint would be resubmitted every tick.
+        from osf.management.commands.resync_preprint_dois_v1 import get_preprints_needing_v1_doi
+        versioned, _ = self._dois(preprint)
+        preprint.doi_resync_queued_at = timezone.now()
+        preprint.save()
+        msg = 'Record not processed because submitted version number is less or equal to previously submitted version'
+        self._post_records(app, url, preprint, [(versioned, 'Failure', msg)])
+        preprint.reload()
+        assert preprint.doi_resync_queued_at is None
+        assert preprint.get_identifier_value('doi') == versioned
+        assert not get_preprints_needing_v1_doi().filter(id=preprint.id).exists()
+
+    def test_unexpected_failure_keeps_marker_as_cooldown(self, app, url, preprint):
+        versioned, _ = self._dois(preprint)
+        preprint.doi_resync_queued_at = timezone.now()
+        preprint.save()
+        self._post_records(app, url, preprint, [(versioned, 'Failure', 'Something unexpected')], expect_none=False)
+        preprint.reload()
+        assert preprint.doi_resync_queued_at is not None
+
+    def test_later_version_failure_keeps_v1_marker(self, app, url, preprint):
+        preprint.doi_resync_queued_at = timezone.now()
+        preprint.save()
+        v2_doi = settings.DOI_FORMAT.format(prefix=preprint.provider.doi_prefix, guid=f'{preprint.get_guid()._id}_v2')
+        msg = 'Record not processed because submitted version number is less or equal to previously submitted version'
+        self._post_records(app, url, preprint, [(v2_doi, 'Failure', msg)])
+        preprint.reload()
+        assert preprint.doi_resync_queued_at is not None
+
+    def test_relation_target_failure_keeps_marker(self, app, url, preprint):
+        from unittest import mock
+        versioned, _ = self._dois(preprint)
+        preprint.doi_resync_queued_at = timezone.now()
+        preprint.save()
+        with mock.patch('api.crossref.views.mint_doi_on_crossref_fail') as mock_mint:
+            self._post_records(app, url, preprint, [(versioned, 'Failure', 'Relation target DOI does not exist')], expect_none=False)
+        mock_mint.apply_async.assert_called_once()
+        preprint.reload()
+        assert preprint.doi_resync_queued_at is not None
