@@ -185,3 +185,46 @@ class TestCedarMetadataRecordDetailUpdateProjectReadOnly(TestCedarMetadataRecord
         assert resp.status_code == 200
         cedar_record_for_node.reload()
         assert cedar_record_for_node.metadata == cedar_record_metadata_alt_json
+
+
+@pytest.mark.django_db
+@pytest.mark.enable_implicit_clean
+class TestCedarMetadataRecordDetailUpdatePublish(TestCedarMetadataRecord):
+
+    def test_record_detail_update_publish_with_invalid_metadata(self, app, user, payload_record_update, cedar_record_for_node, cedar_record_metadata_json):
+        cedar_record_for_node.template.template = {'type': 'object', 'required': ['School Type']}
+        cedar_record_for_node.template.save()
+        payload_record_update['data']['attributes']['is_published'] = 'true'
+
+        resp = app.patch_json(f'/_/cedar_metadata_records/{cedar_record_for_node._id}/', payload_record_update, auth=user.auth, expect_errors=True)
+        assert resp.status_code == 400
+        assert 'does not validate against template' in resp.json['errors'][0]['detail']
+        cedar_record_for_node.reload()
+        assert cedar_record_for_node.metadata == cedar_record_metadata_json
+
+    def test_record_detail_update_publish_with_extra_nested_context_keys(self, app, user, payload_record_update, cedar_record_for_node):
+        context_schema = {'type': 'object', 'properties': {'Modality': {'type': 'string'}}, 'additionalProperties': False}
+        cedar_record_for_node.template.template = {
+            'type': 'object',
+            'properties': {
+                '@context': {'type': 'object', 'properties': {'Dataset': {'type': 'string'}}, 'additionalProperties': False},
+                'Dataset': {'type': 'object', 'properties': {'@context': context_schema, 'Modality': {'type': 'object'}}},
+            },
+        }
+        cedar_record_for_node.template.save()
+        payload_record_update['data']['attributes'] = {
+            'metadata': {
+                '@context': {'Dataset': 'iri', 'About': 'static'},
+                'Dataset': {'@context': {'Modality': 'iri', 'Modality instruction': 'static'}, 'Modality': {'@value': 'Behavior'}},
+            },
+            'is_published': 'true',
+        }
+
+        resp = app.patch_json(f'/_/cedar_metadata_records/{cedar_record_for_node._id}/', payload_record_update, auth=user.auth)
+        assert resp.status_code == 200
+        cedar_record_for_node.reload()
+        assert cedar_record_for_node.is_published
+        assert cedar_record_for_node.metadata == {
+            '@context': {'Dataset': 'iri'},
+            'Dataset': {'@context': {'Modality': 'iri'}, 'Modality': {'@value': 'Behavior'}},
+        }
