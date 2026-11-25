@@ -1,3 +1,5 @@
+import copy
+
 from django.core.exceptions import ValidationError
 from django.db import models
 from jsonschema import validate as jsonschema_validate, ValidationError as JsonSchemaValidationError
@@ -16,6 +18,52 @@ CEDAR_SERVER_GENERATED_FIELDS = frozenset({
     'schema:name',
     'schema:description',
 })
+
+
+def _allow_empty_optional_multiple_choice(schema):
+    # cedar-embeddable-editor sends [] for a multiple choice field with nothing selected,
+    # so minItems only applies when the field is required
+    if not isinstance(schema, dict):
+        return
+    for child in schema.get('properties', {}).values():
+        if not isinstance(child, dict):
+            continue
+        items = child.get('items')
+        if isinstance(items, dict):
+            constraints = items.get('_valueConstraints', {})
+            if constraints.get('multipleChoice') and not constraints.get('requiredValue'):
+                child.pop('minItems', None)
+            _allow_empty_optional_multiple_choice(items)
+        else:
+            _allow_empty_optional_multiple_choice(child)
+
+
+def _filter_context(metadata, schema):
+    if not isinstance(metadata, dict) or not isinstance(schema, dict):
+        return
+    properties = schema.get('properties', {})
+    context = metadata.get('@context')
+    context_schema = properties.get('@context', {})
+    defined_context = context_schema.get('properties')
+    # elements with attribute-value fields allow extra @context keys, keep them there
+    if isinstance(context, dict) and isinstance(defined_context, dict) and context_schema.get('additionalProperties') is False:
+        filtered_context = {
+            k: v for k, v in context.items()
+            if k in defined_context
+        }
+        if filtered_context:
+            metadata['@context'] = filtered_context
+        else:
+            metadata.pop('@context', None)
+    for key, value in metadata.items():
+        child_schema = properties.get(key)
+        if key == '@context' or not isinstance(child_schema, dict):
+            continue
+        if isinstance(value, list):
+            for item in value:
+                _filter_context(item, child_schema.get('items'))
+        else:
+            _filter_context(value, child_schema)
 
 
 class CedarMetadataTemplate(ObjectIDMixin, BaseModel):
@@ -64,26 +112,16 @@ class CedarMetadataRecord(ObjectIDMixin, BaseModel):
 
     def clean(self):
         if self.is_published:
-            schema = dict(self.template.template)
+            schema = copy.deepcopy(self.template.template)
             if 'required' in schema:
                 schema['required'] = [
                     f for f in schema['required']
                     if f not in CEDAR_SERVER_GENERATED_FIELDS
                 ]
-            # Workaround for a cedar-embeddable-editor bug that injects extra keys into
-            # @context; strip it down to only the schema-required keys before saving.
-            context = self.metadata.get('@context')
-            if isinstance(context, dict):
-                defined_context = schema.get('properties', {}).get('@context', {}).get('properties')
-                if isinstance(defined_context, dict):
-                    filtered_context = {
-                        k: v for k, v in context.items()
-                        if k in defined_context
-                    }
-                    if filtered_context:
-                        self.metadata['@context'] = filtered_context
-                    else:
-                        self.metadata.pop('@context', None)
+            _allow_empty_optional_multiple_choice(schema)
+            # Workaround for CEDAR components injecting extra keys (e.g. static fields) into
+            # @context, also in nested elements; strip them down to the schema keys before saving.
+            _filter_context(self.metadata, schema)
             try:
                 jsonschema_validate(self.metadata, schema)
             except JsonSchemaValidationError as e:
