@@ -354,6 +354,12 @@ def gather_identifiers(focus: gather.Focus):
                 yield (OWL.sameAs, rdflib.URIRef(_iri))
             yield (DCTERMS.identifier, rdflib.Literal(_iri))
 
+    _guids = getattr(focus.dbmodel, 'guids', None)
+    if _guids is not None:
+        for _guid in _guids.all():
+            if _guid.redirect_url:
+                yield (DCTERMS.isReplacedBy, rdflib.Literal(_guid.redirect_url))
+
 
 @gather.er(DCTERMS.type)
 def gather_flexible_types(focus):
