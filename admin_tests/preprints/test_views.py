@@ -137,6 +137,31 @@ class TestPreprintView:
         assert spam_preprint._id in response_ids
         assert preprint._id not in response_ids
 
+    @pytest.mark.parametrize('view_class, url_name, spam_status', [
+        (views.PreprintFlaggedSpamList, 'flagged-spam', SpamStatus.FLAGGED),
+        (views.PreprintKnownSpamList, 'known-spam', SpamStatus.SPAM),
+    ])
+    def test_spam_list_pagination(self, superuser, view_class, url_name, spam_status):
+        preprints = PreprintFactory.create_batch(26, creator=superuser, finish=False, set_doi=False)
+        preprint_ids = [preprint.id for preprint in preprints]
+        Preprint.objects.filter(id__in=preprint_ids).update(spam_status=spam_status)
+
+        request = RequestFactory().get(reverse(f'preprints:{url_name}'))
+        request.user = superuser
+        response = view_class.as_view()(request)
+
+        assert response.status_code == 200
+        assert [res.id for res in response.context_data['preprints']] == preprint_ids[:25]
+        assert response.context_data['page'].paginator.num_pages == 2
+
+        request = RequestFactory().get(reverse(f'preprints:{url_name}'), {'page': 2})
+        request.user = superuser
+        response = view_class.as_view()(request)
+
+        assert response.status_code == 200
+        assert [res.id for res in response.context_data['preprints']] == preprint_ids[25:]
+        assert response.context_data['page'].number == 2
+
     def test_get_known_ham(self, superuser, preprint, ham_preprint, spam_preprint, flagged_preprint):
         request = RequestFactory().get(reverse('preprints:known-ham'))
         request.user = superuser
