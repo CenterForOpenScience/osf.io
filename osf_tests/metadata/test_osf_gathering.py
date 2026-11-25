@@ -163,6 +163,31 @@ class TestOsfGathering(TestCase):
             (self.filefocus.iri, DCTERMS.identifier, Literal(self.filefocus.iri)),
         })
 
+    def test_gather_guid_redirect_urls(self):
+        project_redirect_url = 'https://example.org/projects/redirected'
+        project_guid = self.project.guids.first()
+        project_guid.redirect_url = project_redirect_url
+        project_guid.save()
+
+        assert_triples(osf_gathering.gather_identifiers(self.projectfocus), {
+            (self.projectfocus.iri, DCTERMS.identifier, Literal(self.projectfocus.iri)),
+            (self.projectfocus.iri, DCTERMS.isReplacedBy, Literal(project_redirect_url)),
+        })
+
+        preprint_redirect_url = 'https://example.org/preprints/redirected'
+        preprint_guid = self.preprint.guids.first()
+        preprint_guid.redirect_url = preprint_redirect_url
+        preprint_guid.save()
+        _sameAs_iri = URIRef('https://doi.org/None/FK2osf.io/' + self.preprint._id)
+        _identifier_iri = Literal('https://doi.org/None/FK2osf.io/' + self.preprint._id)
+
+        assert_triples(osf_gathering.gather_identifiers(self.preprintfocus), {
+            (self.preprintfocus.iri, OWL.sameAs, _sameAs_iri),
+            (self.preprintfocus.iri, DCTERMS.identifier, _identifier_iri),
+            (self.preprintfocus.iri, DCTERMS.identifier, Literal(self.preprintfocus.iri)),
+            (self.preprintfocus.iri, DCTERMS.isReplacedBy, Literal(preprint_redirect_url)),
+        })
+
     def test_gather_flexible_types(self):
         # focus: project
         assert_triples(osf_gathering.gather_flexible_types(self.projectfocus), {
