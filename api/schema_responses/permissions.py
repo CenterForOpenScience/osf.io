@@ -138,6 +138,7 @@ class SchemaResponseListPermission(permissions.BasePermission):
                 Registration,
                 query_or_pk=request_json['data']['relationships']['registration']['data']['id'],
                 request=request,
+                allow_select_for_update=False,
             )
 
             return self.has_object_permission(request, view, obj)

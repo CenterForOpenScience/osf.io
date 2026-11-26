@@ -2,6 +2,8 @@ import pytest
 from waffle.testutils import override_flag
 
 from framework.auth.core import Auth
+from django.db import connection, transaction
+from django.test.utils import CaptureQueriesContext
 from django.utils import timezone
 from api_tests.nodes.views.test_node_draft_registration_list import AbstractDraftRegistrationTestCase
 from api.base.settings.defaults import API_BASE
@@ -464,6 +466,17 @@ class TestDraftRegistrationCreateWithoutNode(AbstractDraftRegistrationTestCase):
         draft = DraftRegistration.load(data['id'])
         assert draft.creator == user
         assert draft.has_permission(user, ADMIN) is True
+
+    def test_create_draft_does_not_lock_registration_schema(self, app, user, url_draft_registrations, payload):
+        with transaction.atomic(), CaptureQueriesContext(connection) as ctx, capture_notifications():
+            res = app.post_json_api(url_draft_registrations, payload, auth=user.auth)
+
+        assert res.status_code == 201
+        for_update_sql = connection.ops.for_update_sql()
+        assert not any(
+            for_update_sql in query['sql'] and 'FROM "osf_registrationschema"' in query['sql']
+            for query in ctx.captured_queries
+        )
 
     def test_create_no_project_draft_emails_initiator(self, app, user, url_draft_registrations, payload):
         with capture_notifications() as notifications:

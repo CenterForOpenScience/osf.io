@@ -59,6 +59,7 @@ class InstitutionMixin:
             self.kwargs[self.institution_lookup_url_kwarg],
             self.request,
             display_name='institution',
+            allow_select_for_update=False,
         )
         return inst
 
