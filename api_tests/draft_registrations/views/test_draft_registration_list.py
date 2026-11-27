@@ -8,7 +8,10 @@ from api.base.settings.defaults import API_BASE
 
 from osf import features
 from osf.migrations import ensure_invisible_and_inactive_schema
-from osf.models import DraftRegistration, NodeLicense, RegistrationProvider, RegistrationSchema, NotificationTypeEnum
+from osf.models import (
+    DraftNode, DraftRegistration, DraftRegistrationLog, NodeLicense,
+    NotificationTypeEnum, RegistrationProvider, RegistrationSchema,
+)
 from osf_tests.factories import (
     RegistrationFactory,
     CollectionFactory,
@@ -172,7 +175,7 @@ class TestDraftRegistrationCreateWithNode(AbstractDraftRegistrationTestCase):
         return {
             'data': {
                 'type': 'draft_registrations',
-                'attributes': {},
+                'attributes': {'acceptable_use_confirmed': True},
                 'relationships': {
                     'registration_schema': {
                         'data': {
@@ -455,6 +458,7 @@ class TestDraftRegistrationCreateWithoutNode(AbstractDraftRegistrationTestCase):
         data = res.json['data']
         assert metaschema_open_ended._id in data['relationships']['registration_schema']['links']['related']['href']
         assert data['attributes']['registration_metadata'] == {}
+        assert 'acceptable_use_confirmed' not in data['attributes']
         assert data['relationships']['provider']['links']['related']['href'] == \
                f'{settings.API_DOMAIN}v2/providers/registrations/{RegistrationProvider.default__id}/'
 
@@ -464,6 +468,24 @@ class TestDraftRegistrationCreateWithoutNode(AbstractDraftRegistrationTestCase):
         draft = DraftRegistration.load(data['id'])
         assert draft.creator == user
         assert draft.has_permission(user, ADMIN) is True
+
+    @pytest.mark.parametrize('attributes', [
+        {},
+        {'acceptable_use_confirmed': False},
+        {'acceptable_use_confirmed': None},
+        {'acceptable_use_confirmed': 'true'},
+        {'acceptable_use_confirmed': 1},
+    ])
+    def test_create_requires_acceptable_use_confirmation(self, app, user, url_draft_registrations, payload, attributes):
+        payload['data']['attributes'] = attributes
+
+        response = app.post_json_api(url_draft_registrations, payload, auth=user.auth, expect_errors=True)
+
+        assert response.status_code == 400
+        assert response.json['errors'][0]['source']['pointer'] == '/data/attributes/acceptable_use_confirmed'
+        assert not DraftRegistration.objects.filter(initiator=user).exists()
+        assert not DraftNode.objects.filter(creator=user).exists()
+        assert not DraftRegistrationLog.objects.filter(user=user, action=DraftRegistrationLog.ACCEPTABLE_USE_CONFIRMED).exists()
 
     def test_create_no_project_draft_emails_initiator(self, app, user, url_draft_registrations, payload):
         with capture_notifications() as notifications:
@@ -488,6 +510,8 @@ class TestDraftRegistrationCreateWithoutNode(AbstractDraftRegistrationTestCase):
 
         draft = DraftRegistration.load(data['id'])
         assert draft.provider == non_default_provider
+        confirmation = draft.logs.get(action=DraftRegistrationLog.ACCEPTABLE_USE_CONFIRMED)
+        assert confirmation.user == user
 
     def test_cannot_create_draft_when_provider_disallows_submissions(
             self, app, user, url_draft_registrations, non_default_provider, payload_with_non_default_provider):

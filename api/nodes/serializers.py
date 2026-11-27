@@ -1,6 +1,6 @@
 import functools
 
-from django.db import connection
+from django.db import connection, transaction
 from packaging.version import Version
 
 from api.base.exceptions import (
@@ -37,7 +37,7 @@ from addons.base.exceptions import InvalidAuthError, InvalidFolderError
 from addons.osfstorage.models import Region
 from osf.exceptions import NodeStateError
 from osf.models import (
-    Comment, DraftRegistration, ExternalAccount,
+    Comment, DraftRegistration, DraftRegistrationLog, ExternalAccount,
     RegistrationSchema, AbstractNode, PrivateLink, Preprint,
     RegistrationProvider, NodeLicense, DraftNode,
     Registration, Node, OSFUser,
@@ -1594,6 +1594,12 @@ class DraftRegistrationLegacySerializer(JSONAPISerializer):
     # Will be eventually deprecated in favor of registration_responses
     registration_metadata = ser.DictField(required=False)
     registration_responses = ser.DictField(required=False)
+    acceptable_use_confirmed = ser.JSONField(
+        required=False,
+        allow_null=True,
+        write_only=True,
+        help_text='Must be true when creating a draft registration.',
+    )
     datetime_initiated = VersionedDateTimeField(read_only=True)
     datetime_updated = VersionedDateTimeField(read_only=True)
 
@@ -1661,8 +1667,17 @@ class DraftRegistrationLegacySerializer(JSONAPISerializer):
     def get_node(self, validated_data=None):
         return self.context['view'].get_node()
 
+    def validate(self, attrs):
+        attrs = super().validate(attrs)
+        if self.instance is None and attrs.get('acceptable_use_confirmed') is not True:
+            raise exceptions.ValidationError({
+                'acceptable_use_confirmed': 'Confirm acceptable use by setting this field to true.',
+            })
+        return attrs
+
+    @transaction.atomic
     def create(self, validated_data):
-        initiator = get_user_auth(self.context['request']).user
+        auth = get_user_auth(self.context['request'])
         node = self.get_node(validated_data)
         # Old workflow - deeply nested
         metadata = validated_data.pop('registration_metadata', None)
@@ -1673,7 +1688,7 @@ class DraftRegistrationLegacySerializer(JSONAPISerializer):
         self.enforce_metadata_or_registration_responses(metadata, registration_responses)
 
         try:
-            draft = DraftRegistration.create_from_node(node=node, user=initiator, schema=schema, provider=provider)
+            draft = DraftRegistration.create_from_node(node=node, user=auth.user, schema=schema, provider=provider)
         except ValidationError as e:
             raise exceptions.ValidationError(e.message)
 
@@ -1683,6 +1698,7 @@ class DraftRegistrationLegacySerializer(JSONAPISerializer):
         if registration_responses:
             self.update_registration_responses(draft, registration_responses)
 
+        draft.add_log(DraftRegistrationLog.ACCEPTABLE_USE_CONFIRMED, {}, auth)
         return draft
 
     class Meta:

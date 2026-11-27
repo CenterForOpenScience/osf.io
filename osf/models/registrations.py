@@ -1022,6 +1022,7 @@ class DraftRegistrationLog(ObjectIDMixin, BaseModel):
     user = models.ForeignKey('OSFUser', db_index=True, null=True, blank=True, on_delete=models.CASCADE)
     params = DateTimeAwareJSONField(default=dict)
 
+    ACCEPTABLE_USE_CONFIRMED = 'acceptable_use_confirmed'
     SUBMITTED = 'submitted'
     REGISTERED = 'registered'
     APPROVED = 'approved'
