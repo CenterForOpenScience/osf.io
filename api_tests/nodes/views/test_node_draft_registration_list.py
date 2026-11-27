@@ -4,7 +4,7 @@ from django.utils import timezone
 from api.base.settings.defaults import API_BASE
 from framework.auth.core import Auth
 from osf.migrations import ensure_invisible_and_inactive_schema
-from osf.models import RegistrationSchema, RegistrationProvider
+from osf.models import DraftRegistration, DraftRegistrationLog, RegistrationSchema, RegistrationProvider
 from osf_tests.factories import (
     ProjectFactory,
     RegistrationFactory,
@@ -119,7 +119,7 @@ class AbstractDraftRegistrationTestCase:
         return {
             'data': {
                 'type': 'draft_registrations',
-                'attributes': {},
+                'attributes': {'acceptable_use_confirmed': True},
                 'relationships': {
                     'registration_schema': {
                         'data': {
@@ -153,7 +153,7 @@ class AbstractDraftRegistrationTestCase:
         return {
             'data': {
                 'type': 'draft_registrations',
-                'attributes': {},
+                'attributes': {'acceptable_use_confirmed': True},
                 'relationships': {
                     'registration_schema': {
                         'data': {
@@ -287,29 +287,6 @@ class TestDraftRegistrationCreate(AbstractDraftRegistrationTestCase):
     def url_draft_registrations(self, project_public):
         return f'/{API_BASE}nodes/{project_public._id}/draft_registrations/?version=2.19'
 
-    @pytest.fixture()
-    def payload(self, metaschema_open_ended, provider):
-        return {
-            'data': {
-                'type': 'draft_registrations',
-                'attributes': {},
-                'relationships': {
-                    'registration_schema': {
-                        'data': {
-                            'type': 'registration_schema',
-                            'id': metaschema_open_ended._id
-                        }
-                    },
-                    'provider': {
-                        'data': {
-                            'type': 'registration-providers',
-                            'id': provider._id,
-                        }
-                    }
-                }
-            }
-        }
-
     def test_type_is_draft_registrations(self, app, user, metaschema_open_ended, url_draft_registrations):
         draft_data = {
             'data': {
@@ -349,6 +326,20 @@ class TestDraftRegistrationCreate(AbstractDraftRegistrationTestCase):
                data['relationships']['provider']['links']['related']['href']
         assert data['embeds']['branched_from']['data']['id'] == project_public._id
         assert data['embeds']['initiator']['data']['id'] == user._id
+        draft = DraftRegistration.load(data['id'])
+        confirmation = draft.logs.get(action=DraftRegistrationLog.ACCEPTABLE_USE_CONFIRMED)
+        assert confirmation.user == user
+
+    @pytest.mark.parametrize('version', ['2.19', '2.20'])
+    def test_create_requires_acceptable_use_confirmation(self, app, user, project_public, payload, version):
+        url = f'/{API_BASE}nodes/{project_public._id}/draft_registrations/?version={version}'
+        payload['data']['attributes'].pop('acceptable_use_confirmed')
+
+        response = app.post_json_api(url, payload, auth=user.auth, expect_errors=True)
+
+        assert response.status_code == 400
+        assert response.json['errors'][0]['source']['pointer'] == '/data/attributes/acceptable_use_confirmed'
+        assert not DraftRegistration.objects.filter(initiator=user).exists()
 
     def test_write_only_contributor_cannot_create_draft(
             self, app, user_write_contrib, project_public, payload, url_draft_registrations

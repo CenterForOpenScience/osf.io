@@ -132,6 +132,7 @@ class TestSerializerMetaType(ApiTestCase):
         payload = {
             'data': {
                 'type': 'draft_registrations',
+                'attributes': {'acceptable_use_confirmed': True},
                 'relationships': {
                     'registration_schema': {
                         'data': {
